@@ -371,7 +371,7 @@
                 @if ($creditNote)
                     <div class="">@lang('app.credit-note'): {{ $creditNote->cn_number }}</div>
                 @endif
-                <div class="date">@lang('app.menu.issues') @lang('app.date'):
+                <div class="date">@lang('app.menu.issuesDate'):
                     {{ $invoice->issue_date->translatedFormat(company()->date_format) }}</div>
                 @if ($invoice->status === 'unpaid')
                     <div class="date">@lang('app.dueDate'):
@@ -452,12 +452,12 @@
                     </tr>
                 @endif
                 <tr dontbreak="true">
-                    <td colspan="4">@lang('modules.invoices.total') @lang('modules.invoices.paid')</td>
+                    <td colspan="4">@lang('app.totalPaid')</td>
                     <td style="text-align: center">{{ number_format((float) $invoice->getPaidAmount(), 2, '.', '') }}
                     </td>
                 </tr>
                 <tr dontbreak="true">
-                    <td colspan="4">@lang('modules.invoices.total') @lang('modules.invoices.due')</td>
+                    <td colspan="4">@lang('app.totalDue')</td>
                     <td style="text-align: center">{{ number_format((float) $invoice->amountDue(), 2, '.', '') }}</td>
                 </tr>
             </tfoot>
@@ -474,6 +474,9 @@
                 @lang('modules.invoiceSettings.invoiceTerms')
                 <br>
                 {!! nl2br($invoiceSetting->invoice_terms) !!}
+            @endif
+            @if (isset($invoiceSetting->other_info))
+                <br>{!! nl2br($invoiceSetting->other_info) !!}
             @endif
 
         </p>

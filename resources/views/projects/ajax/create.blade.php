@@ -13,7 +13,7 @@
         <x-form id="save-project-data-form">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.project') @lang('app.details')</h4>
+                    @lang('app.projectDetails')</h4>
                 <input type="hidden" name="template_id" value="{{ $projectTemplate->id ?? '' }}">
                 <div class="row p-20">
                     <div class="col-lg-6 col-md-6">
@@ -79,9 +79,6 @@
                         </x-forms.input-group>
                     </div>
 
-                    @foreach ($teams as $team)
-                        {{-- @dump( $project->team_id === $team->id) --}}
-                    @endforeach
                     @if (!in_array('client', user_roles()))
                         <div class="col-md-4">
                             <x-forms.label class="my-3" fieldId="department" :fieldLabel="__('app.department')">
@@ -91,7 +88,7 @@
                                         data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($teams as $team)
-                                        <option @if ($project && $project->team_id === $team->id) selected @endif value="{{ $team->id }}">{{ $team->team_name }}</option>
+                                        <option @if ($project && $project->team_id == $team->id) selected @endif value="{{ $team->id }}">{{ $team->team_name }}</option>
                                     @endforeach
                                 </select>
                             </x-forms.input-group>
@@ -531,14 +528,6 @@
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        let checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     $('#save-project-data-form').on('change', '#employee_department', function () {
         let id = $(this).val();

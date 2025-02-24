@@ -23,8 +23,13 @@ return new class extends Migration {
             $projects = Project::select(['project_name', 'id'])->get();
 
             foreach ($projects as $project) {
-                $project->project_short_code = $this->initials($project->project_name);
-                $project->saveQuietly();
+                try {
+
+                    $project->project_short_code = $this->initials($project->project_name);
+                    $project->saveQuietly();
+                // @codingStandardsIgnoreLine
+                }catch (\Exception $e){
+                }
             }
         }
     }

@@ -118,7 +118,7 @@ trait CustomFieldsTrait
 
             $fieldType = CustomField::findOrFail($id)->type;
 
-            $value = ($fieldType == 'date') ? Carbon::createFromFormat(company()->date_format, $value)->format('Y-m-d') : $value;
+            $value = ($fieldType == 'date') ? Carbon::createFromFormat(companyOrGlobalSetting()->date_format, $value)->format('Y-m-d') : $value;
             $value = ($fieldType == 'file' && !is_string($value) && !is_null($value)) ? Files::uploadLocalOrS3($value, 'custom_fields') : $value;
 
             // Find is entry exists

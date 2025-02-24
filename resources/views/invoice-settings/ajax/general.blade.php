@@ -165,6 +165,18 @@
             </div>
         </div>
 
+        <div class="col-lg-12 mt-3">
+            <div class="form-group my-3">
+                <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2"
+                                    :fieldLabel="__('modules.invoiceSettings.otherInfo')"
+                                    fieldName="other_info"
+                                    fieldId="other_info"
+                                    :fieldPlaceholder="__('placeholders.invoices.otherInfo')"
+                                    :fieldValue="$invoiceSetting->other_info">
+                </x-forms.textarea>
+            </div>
+        </div>
+
     </div>
 
 </div>

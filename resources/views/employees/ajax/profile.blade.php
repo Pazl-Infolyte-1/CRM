@@ -102,7 +102,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                     <div class="d-flex flex-wrap justify-content-between">
                                         <span>
                                             <label class="f-11 text-dark-grey mb-12 text-capitalize"
-                                                for="usr">@lang('app.open') @lang('app.menu.tasks')</label>
+                                                for="usr">@lang('app.openTasks')</label>
                                             <p class="mb-0 f-18 f-w-500">{{ $employee->open_tasks_count }}</p>
                                         </span>
                                         <span>

@@ -28,7 +28,7 @@
         <x-alert type="info">
             @lang('app.viewedOn') {{$invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->date_format)}}
             @lang('app.at') {{$invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->time_format)}}
-            @lang('app.using') @lang('modules.attendance.ipAddress'):{{$invoice->ip_address}}
+            @lang('app.usingIpAddress'):{{$invoice->ip_address}}
 
             @if (request()->ip() == $invoice->ip_address)
                 <strong>(@lang('modules.invoices.sameIp'))</strong>
@@ -328,7 +328,7 @@
                             <table>
                                 <tr>@lang('app.note')</tr>
                                 <tr>
-                                    <p class="text-dark-grey">{!! !empty($invoice->note) ? $invoice->note : '--' !!}</p>
+                                    <p class="text-dark-grey">{!! !empty($invoice->note) ? nl2br($invoice->note) : '--' !!}</p>
                                 </tr>
                             </table>
                         </td>
@@ -341,6 +341,18 @@
                             </table>
                         </td>
                     </tr>
+                    @if (isset($invoiceSetting->other_info))
+                        <tr>
+                            <td align="vertical-align: text-top">
+                                <table>
+                                    <tr>
+                                        <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                        </p>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    @endif
                     <tr>
                         <td>
                             @if (isset($taxes) && invoice_setting()->tax_calculation_msg == 1)

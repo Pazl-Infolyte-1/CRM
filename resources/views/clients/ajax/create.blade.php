@@ -42,27 +42,6 @@ $addPermission = user()->permission('add_clients');
                                 </x-forms.email>
                             </div>
                             <div class="col-md-4">
-                                <x-forms.label class="mt-3" fieldId="password" :fieldLabel="__('app.password')"
-                                    :popover="__('messages.requiredForLogin')">
-                                </x-forms.label>
-                                <x-forms.input-group>
-                                    <input type="password" name="password" id="password" class="form-control height-35 f-14">
-                                    <x-slot name="preappend">
-                                        <button type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('app.viewPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
-                                                class="fa fa-eye"></i></button>
-                                    </x-slot>
-                                    <x-slot name="append">
-                                        <button id="random_password" type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('modules.client.generateRandomPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35"><i
-                                                class="fa fa-random"></i></button>
-                                    </x-slot>
-                                </x-forms.input-group>
-                                <small class="form-text text-muted">@lang('placeholders.password')</small>
-                            </div>
-                            <div class="col-md-4">
                                 <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country"
                                     search="true">
                                     @foreach ($countries as $item)
@@ -111,7 +90,7 @@ $addPermission = user()->permission('add_clients');
                         </x-forms.select>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.select fieldId="locale" :fieldLabel="__('modules.accountSettings.changeLanguage')"
                             fieldName="locale" search="true">
                             @foreach ($languages as $language)
@@ -122,7 +101,7 @@ $addPermission = user()->permission('add_clients');
                         </x-forms.select>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.label class="mt-3" fieldId="category"
                             :fieldLabel="__('modules.client.clientCategory')">
                         </x-forms.label>
@@ -147,7 +126,7 @@ $addPermission = user()->permission('add_clients');
                         </x-forms.input-group>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.label class="mt-3" fieldId="sub_category_id"
                             :fieldLabel="__('modules.client.clientSubCategory')"></x-forms.label>
                         <x-forms.input-group>
@@ -167,7 +146,7 @@ $addPermission = user()->permission('add_clients');
                         </x-forms.input-group>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group my-3">
                             <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
                                 for="usr">@lang('modules.client.clientCanLogin')</label>
@@ -180,7 +159,7 @@ $addPermission = user()->permission('add_clients');
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group my-3">
                             <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
                                 for="usr">@lang('modules.emailSettings.emailNotifications')</label>
@@ -481,14 +460,6 @@ $addPermission = user()->permission('add_clients');
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     @if (function_exists('sms_setting') && sms_setting()->telegram_status)
         var clipboard = new ClipboardJS('.btn-copy');

@@ -61,8 +61,8 @@ $changeStatusPermission = user()->permission('change_lead_status');
                                 aria-labelledby="dropdownMenuLink" tabindex="0">
                                 @if ($addLeadPermission != 'none')
                                     <a class="dropdown-item openRightModal"
-                                        href="{{ route('leads.create') }}?column_id={{ $column->id }}">@lang('app.add')
-                                        @lang('app.lead')</a>
+                                        href="{{ route('leads.create') }}?column_id={{ $column->id }}">@lang('app.addLead')
+                                        </a>
                                     @endif
                                 @if ($manageStatusPermission == 'all')
                                     <hr class="my-1">

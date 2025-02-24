@@ -94,7 +94,7 @@ $addOrderPermission = user()->permission('add_order');
                 @if ($addProductPermission == 'all' || $addProductPermission == 'added')
                     <x-forms.link-primary :link="route('products.create')" class="mr-3 openRightModal float-left"
                         icon="plus">
-                        @lang('app.addProduct')
+                        @lang('app.menu.addProducts')
                     </x-forms.link-primary>
                 @endif
             </div>

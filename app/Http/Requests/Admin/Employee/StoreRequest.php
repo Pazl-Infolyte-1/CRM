@@ -26,12 +26,18 @@ class StoreRequest extends CoreRequest
      */
     public function rules()
     {
+        \Illuminate\Support\Facades\Validator::extend('check_superadmin', function ($attribute, $value, $parameters, $validator) {
+            return !\App\Models\User::withoutGlobalScopes([\App\Scopes\ActiveScope::class, \App\Scopes\CompanyScope::class])
+                ->where('email', $value)
+                ->where('is_superadmin', 1)
+                ->exists();
+        });
+
         $setting = company();
         $rules = [
             'employee_id' => 'required|unique:employee_details,employee_id,null,id,company_id,' . company()->id.'|max:100',
             'name' => 'required|max:50',
-            'email' => 'required|email:rfc|unique:users,email,null,id,company_id,' . company()->id.'|max:100',
-            'password' => 'required|min:8|max:50',
+            'email' => 'required|email:rfc|unique:users,email,null,id,company_id,' . company()->id.'|max:100|check_superadmin',
             'slack_username' => 'nullable|unique:employee_details,slack_username,null,id,company_id,' . company()->id.'|max:30',
             'hourly_rate' => 'nullable|numeric',
             'joining_date' => 'required',
@@ -62,6 +68,13 @@ class StoreRequest extends CoreRequest
         $attributes = $this->customFieldsAttributes($attributes);
 
         return $attributes;
+    }
+
+    public function messages()
+    {
+        return [
+            'email.check_superadmin' => __('superadmin.emailAlreadyExist'),
+        ];
     }
 
 }

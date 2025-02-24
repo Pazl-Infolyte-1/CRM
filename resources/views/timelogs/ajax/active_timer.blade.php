@@ -287,4 +287,14 @@ $addTaskPermission = user()->permission('add_tasks');
 
     init(MODAL_XL);
 
+@if(!is_null($myActiveTimer) && Route::current()->getName() != "timelogs.start_timer")
+    $('.stop-active-timer').click(function(){
+        var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+        var id = "{{$selfActiveTimer->id}}"
+        url = url.replace(':id', id);
+        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_LG, url);
+    })
+@endif
+
 </script>

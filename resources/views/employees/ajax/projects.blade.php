@@ -13,8 +13,7 @@ $addProjectPermission = user()->permission('add_projects');
                 @if ($addProjectPermission == 'all' || $addProjectPermission == 'added')
                     <x-forms.link-primary :link="route('projects.create').'?default_assign='.$employee->id"
                         class="mr-3 openRightModal" icon="plus" data-redirect-url="{{ url()->full() }}">
-                        @lang('app.add')
-                        @lang('app.project')
+                        @lang('app.addProject')
                     </x-forms.link-primary>
                 @endif
             </div>

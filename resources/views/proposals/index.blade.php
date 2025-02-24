@@ -223,7 +223,7 @@ $addProposalTemplatePermission = user()->permission('manage_proposal_template');
             showTable();
         });
 
-        $('body').on('click', '.delete-table-row', function() {
+        $('body').on('click', '.delete-proposal-table-row', function() {
             var id = $(this).data('proposal-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",

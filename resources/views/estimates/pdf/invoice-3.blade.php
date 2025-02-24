@@ -791,6 +791,9 @@
                 @endif
                 <br>@lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}<br>
                 <br>
+                @if (isset($invoiceSetting->other_info))
+                    {!! nl2br($invoiceSetting->other_info) !!}<br>
+                @endif
                 @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)
                     <p class="text-dark-grey mt-2 description">
                         @if ($estimate->calculate_tax == 'after_discount')

@@ -333,11 +333,18 @@ $deleteOrderPermission = user()->permission('delete_order');
                         <table>
                             <tr>@lang('app.clientNote')</tr>
                             <tr>
-                                <p class="text-dark-grey">{!! !empty($order->note) ? $order->note : '--' !!}</p>
+                                <p class="text-dark-grey">{!! !empty($order->note) ? nl2br($order->note) : '--' !!}</p>
                             </tr>
                         </table>
                     </td>
                 </tr>
+                @if ($invoiceSetting->other_info)
+                    <tr>
+                        <td>
+                            <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}</p>
+                        </td>
+                    </tr>
+                @endif
             </table>
         </div>
     </div>
@@ -443,7 +450,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                             <li>
                                 <a class="dropdown-item f-14 text-dark" href="javascript:void(0);"
                                     id="payfastModal">
-                                    <img style="height: 15px;" src="{{ asset('img/payfast-logo.png') }}">
+                                    <img style="height: 15px;" src="{{ asset('img/payfast.png') }}">
                                     @lang('modules.invoices.payPayfast')</a>
                             </li>
                         @endif

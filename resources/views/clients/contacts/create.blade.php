@@ -3,7 +3,7 @@
         <x-form id="save-client-data-form">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.contact') @lang('app.details')</h4>
+                    @lang('app.contactDetails')</h4>
 
                 <input type="hidden" name="user_id" value="{{ $clientId }}">
 

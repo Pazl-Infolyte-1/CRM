@@ -1,6 +1,7 @@
 /node_modules
 /public/hot
 /public/storage
+/public/css/app-custom.css
 /public/user-uploads/*
 !public/user-uploads/.htaccess
 /storage/*.key
@@ -31,3 +32,4 @@ resources/lang/*
 !resources/lang/eng/
 !resources/lang/vendor/backup/eng
 !resources/lang/eng.json
+froiden-verify/

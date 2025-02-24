@@ -8,7 +8,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
 
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.expense') @lang('app.details')</h4>
+                    @lang('app.expenseDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-6 col-lg-3">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.expenses.itemName')"
@@ -247,14 +247,6 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 
     $('body').on("change", '#currency, #project_id', function() {
         if ($('#project_id').val() != '') {

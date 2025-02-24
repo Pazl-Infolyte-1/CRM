@@ -44,30 +44,8 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                             <div class="col-md-4">
                                 <x-forms.text fieldId="email" :fieldLabel="__('modules.employees.employeeEmail')"
                                     fieldName="email" fieldRequired="true" :fieldValue="$employee->email"
-                                    :fieldPlaceholder="__('placeholders.email')">
+                                    :fieldPlaceholder="__('placeholders.email')" :fieldReadOnly="true" :popover="__('superadmin.emailCannotChange')">
                                 </x-forms.text>
-                            </div>
-                            <div class="col-md-4">
-                                <x-forms.label class="mt-3" fieldId="password"
-                                    :fieldLabel="__('app.password')">
-                                </x-forms.label>
-                                <x-forms.input-group>
-                                    <input type="password" name="password" id="password" autocomplete="off"
-                                        class="form-control height-35 f-14">
-                                    <x-slot name="preappend">
-                                        <button type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('app.viewPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
-                                                class="fa fa-eye"></i></button>
-                                    </x-slot>
-                                    <x-slot name="append">
-                                        <button id="random_password" type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('modules.client.generateRandomPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35"><i
-                                                class="fa fa-random"></i></button>
-                                    </x-slot>
-                                </x-forms.input-group>
-                                <small class="form-text text-muted">@lang('modules.client.passwordUpdateNote')</small>
                             </div>
                             <div class="col-md-4">
                                 <x-forms.label class="my-3" fieldId="designation"
@@ -106,6 +84,8 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                                     </select>
                                 </x-forms.input-group>
                             </div>
+
+
                         </div>
                     </div>
                     <div class="col-lg-3">
@@ -117,7 +97,7 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                             :fieldValue="($employee->image ? $employee->masked_image_url : $userImage)" fieldName="image"
                             fieldId="image" fieldHeight="119" :popover="__('messages.fileFormat.ImageFile')" />
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-lg-3">
                         <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country"
                             search="true">
                             <option value="">--</option>
@@ -143,10 +123,10 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                                 @endforeach
                             </x-forms.select>
                             <input type="tel" class="form-control height-35 f-14" placeholder="@lang('placeholders.mobile')"
-                                name="mobile" id="mobile" value="{{ $employee->mobile }}">
+                                   name="mobile" id="mobile" value="{{ $employee->mobile }}">
                         </x-forms.input-group>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-lg-3">
                         <x-forms.select fieldId="gender" :fieldLabel="__('modules.employees.gender')"
                             fieldName="gender">
                             <option @if ($employee->gender == 'male') selected @endif value="male">@lang('app.male')</option>
@@ -154,18 +134,18 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                             <option @if ($employee->gender == 'others') selected @endif value="others">@lang('app.others')</option>
                         </x-forms.select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-lg-3">
                         <x-forms.datepicker fieldId="joining_date" :fieldLabel="__('modules.employees.joiningDate')"
                             fieldName="joining_date" :fieldPlaceholder="__('placeholders.date')" fieldRequired="true"
                             :fieldValue="$employee->employeeDetail->joining_date->format(company()->date_format)" />
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-lg-3">
                         <x-forms.datepicker fieldId="date_of_birth" :fieldLabel="__('modules.employees.dateOfBirth')"
                             fieldName="date_of_birth" :fieldPlaceholder="__('placeholders.date')"
                             :fieldValue="($employee->employeeDetail->date_of_birth ? $employee->employeeDetail->date_of_birth->format(company()->date_format) : '')" />
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-lg-3">
                         <x-forms.select fieldId="reporting_to" :fieldLabel="__('modules.employees.reportingTo')"
                             fieldName="reporting_to" :fieldPlaceholder="__('placeholders.date')" search="true">
                             <option value="">--</option>
@@ -174,7 +154,7 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                             @endforeach
                         </x-forms.select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-lg-3">
                         <x-forms.select fieldId="locale" :fieldLabel="__('app.language')"
                             fieldName="locale" search="true">
                             @foreach ($languages as $language)
@@ -191,7 +171,7 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                     && $employee->id != user()->id
                     && $changeEmployeeRolePermission == 'all'
                     )
-                        <div class="col-md-4">
+                        <div class="col-md-4 col-lg-3">
                             <x-forms.select fieldId="role" :fieldLabel="__('app.role')" fieldName="role">
                                 @foreach ($roles as $role)
                                     <option
@@ -209,7 +189,7 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
 
 
                     @if ($employee->id != user()->id)
-                        <div class="col-md-4">
+                        <div class="col-md-4 col-lg-3">
                             <x-forms.datepicker fieldId="last_date" :fieldLabel="__('modules.employees.lastDate')"
                                 fieldName="last_date" :fieldPlaceholder="__('placeholders.date')"
                                 :fieldValue="($employee->employeeDetail->last_date ? $employee->employeeDetail->last_date->format(company()->date_format) : '')" />
@@ -587,14 +567,6 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     $('.cropper').on('dropify.fileReady', function(e) {
             var inputId = $(this).find('input').attr('id');

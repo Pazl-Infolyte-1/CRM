@@ -68,7 +68,7 @@ $editImmigrationPermission = user()->permission('edit_immigration');
                     <p class="mb-0 text-dark-grey f-14 w-70">
                         @if($passport->file)
                             <a target="_blank" class="text-dark-grey"
-                                href="{{ $passport->image_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.view') @lang('modules.employees.scanCopy')</u></a>
+                                href="{{ $passport->image_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.viewScanCopy')</u></a>
                         @else
                         --
                         @endif

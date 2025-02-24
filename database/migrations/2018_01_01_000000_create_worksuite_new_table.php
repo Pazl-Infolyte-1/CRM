@@ -449,7 +449,7 @@ return new class extends Migration {
                 $table->longText('contract_detail')->nullable();
                 $table->unsignedInteger('added_by')->nullable()->index('contracts_added_by_foreign');
                 $table->unsignedInteger('last_updated_by')->nullable()->index('contracts_last_updated_by_foreign');
-                $table->text('hash')->nullable();
+                $table->string('hash')->nullable();
                 $table->unsignedInteger('currency_id')->nullable()->index('contracts_currency_id_foreign');
                 $table->foreign(['added_by'])->references(['id'])->on('users')->onUpdate('CASCADE')->onDelete('SET NULL');
                 $table->foreign(['client_id'])->references(['id'])->on('users')->onUpdate('CASCADE')->onDelete('CASCADE');
@@ -678,7 +678,7 @@ return new class extends Migration {
                 $table->integer('company_id')->unsigned()->nullable();
                 $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade')->onUpdate('cascade');
                 $table->enum('currency_position', ['left', 'right', 'left_with_space', 'right_with_space'])->default('left');
-                $table->unsignedInteger('no_of_decimal');
+                $table->unsignedInteger('no_of_decimal')->default(2);
                 $table->string('thousand_separator')->nullable();
                 $table->string('decimal_separator')->nullable();
             });
@@ -1748,6 +1748,7 @@ return new class extends Migration {
                 $table->increments('id');
                 $table->string('module_name');
                 $table->string('description')->nullable();
+                $table->boolean('is_superadmin')->default(0);
                 $table->timestamps();
             });
 
@@ -1892,9 +1893,11 @@ return new class extends Migration {
                 $table->string('sandbox_paypal_secret')->nullable();
                 $table->string('test_stripe_client_id')->nullable();
                 $table->string('test_stripe_secret')->nullable();
+                $table->string('test_stripe_webhook_secret')->nullable();
+
                 $table->string('test_razorpay_key')->nullable();
                 $table->string('test_razorpay_secret')->nullable();
-                $table->string('test_stripe_webhook_secret')->nullable();
+
                 $table->enum('stripe_mode', ['test', 'live'])->default('test');
                 $table->enum('razorpay_mode', ['test', 'live'])->default('test');
                 $table->string('paystack_key')->nullable();
@@ -2805,7 +2808,6 @@ return new class extends Migration {
                 $table->unsignedInteger('channel_id')->nullable()->index('tickets_channel_id_foreign');
                 $table->unsignedInteger('type_id')->nullable()->index('tickets_type_id_foreign');
                 $table->date('close_date')->nullable();
-                $table->softDeletes();
                 $table->string('mobile')->nullable();
                 $table->unsignedInteger('country_id')->nullable()->index('tickets_country_id_foreign');
                 $table->unsignedInteger('added_by')->nullable()->index('tickets_added_by_foreign');
@@ -2819,6 +2821,7 @@ return new class extends Migration {
                 $table->foreign(['user_id'])->references(['id'])->on('users')->onUpdate('CASCADE')->onDelete('CASCADE');
                 $table->timestamp('created_at')->nullable();
                 $table->timestamp('updated_at')->nullable()->index();
+                $table->softDeletes();
             });
 
             Schema::create('ticket_replies', function (Blueprint $table) {
@@ -2828,11 +2831,12 @@ return new class extends Migration {
                 $table->foreign(['ticket_id'])->references(['id'])->on('tickets')->onUpdate('CASCADE')->onDelete('CASCADE');
                 $table->foreign(['user_id'])->references(['id'])->on('users')->onUpdate('CASCADE')->onDelete('CASCADE');
                 $table->mediumText('message')->nullable();
-                $table->softDeletes();
+
                 $table->string('imap_message_id')->nullable();
                 $table->string('imap_message_uid')->nullable();
                 $table->string('imap_in_reply_to')->nullable();
                 $table->timestamps();
+                $table->softDeletes();
             });
 
             Schema::create('ticket_files', function (Blueprint $table) {

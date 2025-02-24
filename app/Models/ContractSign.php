@@ -55,6 +55,7 @@ class ContractSign extends BaseModel
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
+
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class, 'contract_id');

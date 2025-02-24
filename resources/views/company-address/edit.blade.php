@@ -198,13 +198,15 @@
                         <div id="map" class="border rounded"></div>
                     </div>
                 @else
-                    <div class="col-md-12">
-                        <x-alert type="secondary">
-                            <span class="form-text">
-                                @lang('messages.googleMapMessage') <a href="{{ route('app-settings.index') }}?tab=google-map-setting">@lang('app.googleMapSettings')</a>
-                            </span>
-                        </x-alert>
-                    </div>
+                    @if(isWorksuite())
+                        <div class="col-md-12">
+                            <x-alert type="secondary">
+                                <span class="form-text">
+                                    @lang('messages.googleMapMessage') <a href="{{ route('app-settings.index') }}?tab=google-map-setting">@lang('app.googleMapSettings')</a>
+                                </span>
+                            </x-alert>
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>

@@ -6,7 +6,7 @@
 @endcomponent
 
 @component('mail::button', ['url' => $url, 'themeColor' => $themeColor])
-@lang('app.view') @lang('app.project')
+@lang('app.viewProject')
 @endcomponent
 
 @lang('email.regards'),<br>

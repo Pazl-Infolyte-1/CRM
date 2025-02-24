@@ -1078,7 +1078,9 @@ class ProjectController extends AccountBaseController
         }
         else {
 
-            $members = ProjectMember::with('user')->where('project_id', $id)->get();
+            $members = ProjectMember::with('user')->where('project_id', $id)->whereHas('user', function ($q) {
+                $q->where('status', 'active');
+            })->get();
 
 
             foreach ($members as $item) {

@@ -99,13 +99,15 @@ class NewMentionChat extends BaseNotification
     public function toSlack($notifiable)
     {
         $slack = SlackSetting::setting();
+        $url = route('messages.index');
+        $url = getDomainSpecificUrl($url, $this->company);
 
         if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
             return (new SlackMessage())
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('<' . route('messages.index') . '|' .  __('email.newChat.subject') . ' ' . __('app.from') . ' ' . $this->userChat->fromUser->name . '>');
+                ->content('<' . $url . '|' .  __('email.newChat.subject') . ' ' . __('app.from') . ' ' . $this->userChat->fromUser->name . '>');
         }
 
         return (new SlackMessage())

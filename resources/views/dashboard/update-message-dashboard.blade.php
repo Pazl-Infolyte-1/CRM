@@ -1,4 +1,4 @@
-@if (global_setting()->system_update == 1 &&  in_array('admin', user_roles()))
+@if (global_setting()->system_update == 1 &&  (in_array('admin', user_roles())|| user()->is_superadmin))
     @php
         $updateVersionInfo = \Froiden\Envato\Functions\EnvatoUpdate::updateVersionInfo();
     @endphp
@@ -20,4 +20,5 @@
             </x-alert>
         </div>
     @endif
+
 @endif

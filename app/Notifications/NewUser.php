@@ -45,7 +45,7 @@ class NewUser extends BaseNotification
             return $via;
         }
 
-        if ($this->emailSetting->send_email == 'yes' && $notifiable->email_notifications && $notifiable->email != '') {
+        if ($this->emailSetting->send_email == 'yes' && ($notifiable->email_notifications == '' || $notifiable->email_notifications) && $notifiable->email != '') {
             array_push($via, 'mail');
         }
 
@@ -69,6 +69,9 @@ class NewUser extends BaseNotification
 
         $url = route('login');
         $url = getDomainSpecificUrl($url, $this->company);
+
+        // WORKSUITESAAS
+        $this->password = $this->password ? $this->password : __('superadmin.previousPassword');
 
         $content = __('email.newUser.text') . '<br><br>' . __('app.email') . ': <b>' . $notifiable->email . '</b><br>' . __('app.password') . ': <b>' . $this->password.'</b>';
 

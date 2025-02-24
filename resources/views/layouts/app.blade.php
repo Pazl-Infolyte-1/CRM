@@ -133,7 +133,11 @@
     }
 </script>
 {{-- include topbar --}}
-@include('sections.topbar')
+@if(user()->is_superadmin)
+    @includeIf('super-admin.sections.topbar')
+@else
+    @include('sections.topbar')
+@endif
 
 {{-- include sidebar menu --}}
 @include('sections.sidebar')
@@ -534,6 +538,14 @@
             }
         });
     }
+
+    function checkboxChange(parentClass, id) {
+        var checkedData = '';
+        $('.' + parentClass).find("input[type='checkbox']:checked").each(function() {
+            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
+        });
+        $('#' + id).val(checkedData);
+    }
 </script>
 
 <script>
@@ -619,47 +631,13 @@
         })
     });
 
-    $('body').on('click', '.stop-active-timer', function () {
-        const id = $(this).data('time-id');
-        let url = "{{ route('timelogs.stop_timer', ':id') }}";
-        url = url.replace(':id', id);
-        const token = '{{ csrf_token() }}';
-
-        let currentUrl = $(this).data('url');
-
-        $.easyAjax({
-            url: url,
-            type: "POST",
-            data: {
-                timeId: id,
-                currentUrl: currentUrl,
-                _token: token
-            },
-            success: function (response) {
-                if ($('#myActiveTimer').length > 0) {
-                    $(MODAL_XL + ' .modal-content').html(response.html);
-                }
-
-                if (response.activeTimerCount > 0) {
-                    $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
-                } else {
-                    $('#show-active-timer .active-timer-count').addClass('d-none');
-                }
-
-                $('#timer-clock').html('');
-                if ($('#allTasks-table').length) {
-                    window.LaravelDataTables["allTasks-table"].draw(false);
-                }
-
-                if (response.reload === 'yes') {
-                    window.location.reload();
-                }
-
-            }
-        })
-
+    $('body').on('click', '.stop-active-timer', function() {
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
+            url = url.replace(':id', id);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
     });
-
 </script>
 
 @if (in_array('messages', user_modules()))
@@ -705,11 +683,13 @@
             });
         }
 
+    @if(!user()->is_superadmin)
         if (message_setting.send_sound_notification == 1 && !(pusher_setting.status === 1 && pusher_setting.messages === 1)) {
             window.setInterval(function () {
                 checkNewMessage()
             }, 10000); // Check messages every 10 seconds
         }
+    @endif
 
     </script>
 @endif

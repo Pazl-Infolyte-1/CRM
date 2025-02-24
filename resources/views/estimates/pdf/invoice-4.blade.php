@@ -802,6 +802,9 @@
                         <br>@lang('app.note') <br> {!! nl2br($estimate->note) !!}
                     @endif
                     <br><br>@lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}
+                    @if (isset($invoiceSetting->other_info))
+                        <br><br>{!! nl2br($invoiceSetting->other_info) !!}
+                    @endif
                 </div>
             </section>
             @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)

@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
+use App\Models\Role;
+use App\Models\UserAuth;
+use App\Scopes\ActiveScope;
+use Artisan;
 use App\Scopes\CompanyScope;
 use Carbon\Carbon;
 use Stripe\Stripe;
 use App\Models\Lead;
-use App\Models\Role;
 use App\Models\Task;
 use App\Models\User;
 use App\Helper\Files;
 use App\Helper\Reply;
-use App\Models\Order;
 use App\Models\Ticket;
 use GuzzleHttp\Client;
 use App\Models\Company;
@@ -27,7 +30,6 @@ use App\Models\TicketType;
 use App\Models\CreditNotes;
 use App\Models\LeadProduct;
 use App\Models\TicketReply;
-use App\Scopes\ActiveScope;
 use App\Models\InvoiceItems;
 use App\Models\ProposalItem;
 use App\Models\ProposalSign;
@@ -44,7 +46,6 @@ use Nwidart\Modules\Facades\Module;
 use App\Traits\UniversalSearchTrait;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Artisan;
 use App\Models\PaymentGatewayCredentials;
 use App\Http\Requests\Lead\StorePublicLead;
 use App\Http\Requests\ProposalAcceptRequest;
@@ -770,13 +771,14 @@ class HomeController extends Controller
         $newUser = $existing_user;
 
         if (!$existing_user) {
-            $password = str_random(8);
+            $userAuth = UserAuth::createUserAuthCredentials($request->email);
+
             // create new user
             $client = new User();
             $client->company_id = $request->company_id;
             $client->name = $request->name;
             $client->email = $request->email;
-            $client->password = Hash::make($password);
+            $client->user_auth_id = $userAuth->id;
             $client->save();
 
             // attach role

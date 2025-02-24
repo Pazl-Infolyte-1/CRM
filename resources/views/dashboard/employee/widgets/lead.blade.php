@@ -8,7 +8,7 @@
                     <a href="{{ route('leads.index') . '?assignee=me&type=lead' }}">
                         <p class="mb-0 f-21 font-weight-bold text-blue d-grid mr-5">
                             {{ $totalLead }}<span
-                                class="f-12 font-weight-normal text-lightest">@lang('app.total') @lang('app.menu.leads')</span>
+                                class="f-12 font-weight-normal text-lightest">@lang('app.totalLeads')</span>
                         </p>
                     </a>
 

@@ -19,7 +19,7 @@
                             <x-forms.text fieldId="hour_of_day"
                                           :fieldLabel="__('modules.databaseBackup.hourOfDayForbackup')"
                                           fieldName="hour_of_day" fieldRequired="true" fieldPlaceholder=""
-                                          :fieldValue="\Carbon\Carbon::createFromFormat('H:i:s', $backupSetting->hour_of_day)->translatedFormat(company()->time_format)">
+                                          :fieldValue="\Carbon\Carbon::createFromFormat('H:i:s', $backupSetting->hour_of_day)->translatedFormat(companyOrGlobalSetting()->time_format)">
                             </x-forms.text>
                         </div>
                     </div>
@@ -50,7 +50,7 @@
     $(document).ready(function () {
 
         $('#hour_of_day').timepicker({
-            @if (company()->time_format == 'H:i')
+            @if (companyOrGlobalSetting()->time_format == 'H:i')
             showMeridian: false,
             @endif
             minuteStep: 60,

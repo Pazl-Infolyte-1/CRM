@@ -108,6 +108,9 @@ class MentionTicketAgent extends BaseNotification
         $slack = $notifiable->company->slackSetting;
 
         if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+            $url = route('tickets.show', $this->ticket->ticket_number);
+            $url = getDomainSpecificUrl($url, $this->company);
+
             return (new SlackMessage())
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)

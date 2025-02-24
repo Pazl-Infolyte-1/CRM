@@ -114,7 +114,7 @@
         });
 
         $('body').on('click', '#save-file-upload-setting-form', function () {
-            const url = "{{ route('app-settings.update', [company()->id]) }}?page=file-upload-setting";
+            const url = "{{ route('app-settings.update', [companyOrGlobalSetting()->id]) }}?page=file-upload-setting";
 
             $.easyAjax({
                 url: url,

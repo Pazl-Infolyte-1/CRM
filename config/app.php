@@ -17,9 +17,9 @@ return [
     */
 
     // This will determine if the application worksuite or worksuite-saas
-    'app_name' => 'worksuite',
+    'app_name' => 'worksuite-saas',
 
-    'name' => 'Worksuite',
+    'name' => 'Worksuite Saas',
     /*
     |--------------------------------------------------------------------------
     | Application Name
@@ -46,6 +46,8 @@ return [
     'redirect_https' => env('REDIRECT_HTTPS', false),
     'seed_record_count' => env('SEED_RECORD_COUNT', 5),
     'extra_company_seed_count' => env('EXTRA_COMPANY_SEED_COUNT', 0),
+    'main_application_subdomain' => env('MAIN_APPLICATION_SUBDOMAIN'),
+    'short_domain_name' => env('SHORT_DOMAIN_NAME', false),
     /*
     |--------------------------------------------------------------------------
     | Application Environment
@@ -247,6 +249,9 @@ return [
         Barryvdh\TranslationManager\ManagerServiceProvider::class,
         Macellan\Zip\ZipServiceProvider::class,
         Froiden\LaravelInstaller\Providers\LaravelInstallerServiceProvider::class,
+
+        // WORKSUITESAAS
+        App\Providers\SuperAdmin\EventServiceProvider::class,
     ],
 
     /*

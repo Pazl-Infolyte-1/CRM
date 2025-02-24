@@ -19,7 +19,7 @@ class PushNotificationController extends AccountBaseController
         $this->pageTitle = 'app.menu.pushNotifications';
         $this->activeSettingMenu = 'notification_settings';
         $this->middleware(function ($request, $next) {
-            abort_403(!(user()->permission('manage_notification_setting') == 'all'));
+            abort_403(!(user()->permission('manage_notification_setting') == 'all') && (!user()->is_superadmin));
             return $next($request);
         });
     }
@@ -27,13 +27,18 @@ class PushNotificationController extends AccountBaseController
     //phpcs:ignore
     public function update(UpdateRequest $request, $id)
     {
-        $this->savePushNotificationSettings($request);
-
-        $setting = PushNotificationSetting::first();
-        $setting->onesignal_app_id = $request->onesignal_app_id;
-        $setting->onesignal_rest_api_key = $request->onesignal_rest_api_key;
-        $setting->status = ($request->has('status') ? $request->status : 'inactive');
-        $setting->save();
+        // WORKSUITESAAS
+        if(!user()->is_superadmin) {
+            $this->savePushNotificationSettings($request);
+        }
+        // WORKSUITESAAS
+        if(user()->is_superadmin){
+            $setting = PushNotificationSetting::first();
+            $setting->onesignal_app_id = $request->onesignal_app_id;
+            $setting->onesignal_rest_api_key = $request->onesignal_rest_api_key;
+            $setting->status = ($request->has('status') ? $request->status : 'inactive');
+            $setting->save();
+        }
 
         session()->forget('email_notification_setting');
         session()->forget('push_setting');

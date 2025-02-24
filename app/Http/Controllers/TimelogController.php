@@ -2,21 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\TimeLogsDataTable;
-use App\Exports\EmployeeTimelogs;
-use App\Helper\Reply;
-use App\Http\Requests\TimeLogs\StartTimer;
-use App\Http\Requests\TimeLogs\StoreTimeLog;
-use App\Http\Requests\TimeLogs\UpdateTimeLog;
-use App\Models\Project;
-use App\Models\ProjectTimeLog;
-use App\Models\ProjectTimeLogBreak;
+use Carbon\Carbon;
 use App\Models\Task;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Helper\Reply;
+use App\Models\Project;
+use Carbon\CarbonInterval;
 use Illuminate\Http\Request;
+use App\Models\ProjectTimeLog;
+use App\Exports\EmployeeTimelogs;
 use Illuminate\Support\Facades\DB;
+use App\Models\ProjectTimeLogBreak;
 use Maatwebsite\Excel\Facades\Excel;
+use App\DataTables\TimeLogsDataTable;
+use App\Http\Requests\TimeLogs\StartTimer;
+use App\Http\Requests\TimeLogs\StopTimer;
+use App\Http\Requests\TimeLogs\StoreTimeLog;
+use App\Http\Requests\TimeLogs\UpdateTimeLog;
 
 class TimelogController extends AccountBaseController
 {
@@ -444,7 +446,7 @@ class TimelogController extends AccountBaseController
         return Reply::error(__('messages.timerAlreadyRunning'));
     }
 
-    public function stopTimer(Request $request)
+    public function stopTimer(StopTimer $request)
     {
         $timeId = $request->timeId;
         $timeLog = ProjectTimeLog::with('activeBreak', 'project')->findOrFail($timeId);
@@ -472,6 +474,7 @@ class TimelogController extends AccountBaseController
         $timeLog->total_hours = $timeLog->end_time->diffInHours($timeLog->start_time);
         $timeLog->total_minutes = $timeLog->end_time->diffInMinutes($timeLog->start_time);
         $timeLog->edited_by_user = $this->user->id;
+        $timeLog->memo = $request->memo;
         $timeLog->save();
 
         // Stop breaktime if active
@@ -559,6 +562,8 @@ class TimelogController extends AccountBaseController
             ->get();
 
         $this->projects = Project::byEmployee(user()->id);
+
+        $this->selfActiveTimer = $this->myActiveTimer;
 
         return view('timelogs.ajax.active_timer', $this->data);
     }
@@ -801,6 +806,23 @@ class TimelogController extends AccountBaseController
         $this->selfActiveTimer = ProjectTimeLog::selfActiveTimer();
         return Reply::dataOnly(['status' => 'success', 'data' => $this->selfActiveTimer]);
 
+    }
+
+    public function stopperAlert($id)
+    {
+        $timeLogg = ProjectTimeLog::findOrFail($id);
+
+        if (is_null($timeLogg->end_time)) {
+
+            $totalMinutes = (($timeLogg->activeBreak) ? $timeLogg->activeBreak->start_time->diffInMinutes($timeLogg->start_time) : now()->diffInMinutes($timeLogg->start_time)) - $timeLogg->breaks->sum('total_minutes');
+            $timeLogged = CarbonInterval::formatHuman($totalMinutes); /** @phpstan-ignore-line */
+        }
+        else {
+            $totalMinutes = $timeLogg->total_minutes - $timeLogg->breaks->sum('total_minutes');
+            $timeLogged = CarbonInterval::formatHuman($totalMinutes); /** @phpstan-ignore-line */
+        }
+
+        return view('timelogs.stopper-alert', ['timeLogg' => $timeLogged, 'timeLog' => $timeLogg]);
     }
 
 }

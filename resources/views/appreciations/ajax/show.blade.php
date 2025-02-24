@@ -9,7 +9,7 @@ $deletePermission = user()->permission('delete_appreciation');
                 <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-10">
-                            <h3 class="heading-h1 mb-3">@lang('modules.appreciations.appreciation') @lang('app.details')</h3>
+                            <h3 class="heading-h1 mb-3">@lang('app.appreciationDetails')</h3>
                         </div>
                         <div class="col-lg-2 col-2 text-right">
 

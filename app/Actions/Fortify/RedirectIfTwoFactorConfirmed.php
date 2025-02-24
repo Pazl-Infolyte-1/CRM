@@ -22,7 +22,7 @@ class RedirectIfTwoFactorConfirmed extends RedirectIfTwoFactorAuthenticatable
         in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user))) {
             // Send otp to user from here
             $user->generateTwoFactorCode();
-            event(new TwoFactorCodeEvent($user));
+            event(new TwoFactorCodeEvent($user->user));
             return $this->twoFactorChallengeResponse($request, $user);
         }
 

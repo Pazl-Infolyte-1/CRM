@@ -3,7 +3,7 @@
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
 </div>
 <div class="modal-body">
-    <x-form id="acceptEstimate">
+    <x-form id="acceptEstimates">
         <div class="row">
             <div class="col-sm-12 bg-grey p-4 signature">
                 <x-forms.label fieldId="sign-pad" fieldRequired="true" :fieldLabel="__('modules.estimates.signature')" />
@@ -92,25 +92,46 @@
             return false;
         }
 
-        $.easyAjax({
-            url: "{{ route('companySign.sign', $contract->id) }}",
-            container: '#acceptEstimate',
-            type: "POST",
-            blockUI: true,
-            file: true,
-            disableButton: true,
-            buttonSelector: '#save-sign',
-            data: {
-                signature: signature,
-                image: image,
-                signature_type: signature_type,
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                if (response.status == 'success') {
-                    window.location.reload();
-                }
+        if(signature_type == 'upload')
+            {
+                $.easyAjax({
+                    url: "{{ route('companySign.sign', $contract->id) }}",
+                    container: '#acceptEstimates',
+                    type: "POST",
+                    blockUI: true,
+                    file: true,
+                    disableButton: true,
+                    buttonSelector : '#save-sign',
+                    data: $('#acceptEstimates').serialize(),
+                    success: function(response) {
+                        if (response.status == 'success') {
+                            window.location.reload();
+                        }
+                    }
+                })
             }
-        })
+            else
+            {
+                $.easyAjax({
+                    url: "{{ route('companySign.sign', $contract->id) }}",
+                    container: '#acceptEstimate',
+                    type: "POST",
+                    blockUI: true,
+                    file: true,
+                    disableButton: true,
+                    buttonSelector : '#save-sign',
+                    data: {
+                        signature: signature,
+                        image: image,
+                        signature_type: signature_type,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.status == 'success') {
+                            window.location.reload();
+                        }
+                    }
+                })
+            }
     });
 </script>

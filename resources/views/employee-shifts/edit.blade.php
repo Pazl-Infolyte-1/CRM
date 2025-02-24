@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-colorpicker.css') }}" />
 
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.update') @lang('modules.attendance.shift')</h5>
+    <h5 class="modal-title">@lang('app.updateShift')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 

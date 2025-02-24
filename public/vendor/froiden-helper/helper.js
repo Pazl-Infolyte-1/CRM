@@ -329,7 +329,7 @@
                         var helpBlockContainer = $(grp);
 
                         helpBlockContainer.append(
-                            '<div class="invalid-feedback">' +
+                            '<div class="d-block invalid-feedback">' +
                             response.errors[keys[i]] +
                             "</div>"
                         );

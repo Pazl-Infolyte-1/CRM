@@ -6,6 +6,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 
 class ResetPassword extends BaseNotification
 {
+
     /**
      * The password reset token.
      *
@@ -30,7 +31,7 @@ class ResetPassword extends BaseNotification
     /**
      * Create a notification instance.
      *
-     * @param  string  $token
+     * @param string $token
      * @return void
      */
     public function __construct($token)
@@ -51,7 +52,7 @@ class ResetPassword extends BaseNotification
     /**
      * Build the mail representation of the notification.
      *
-     * @param  mixed  $notifiable
+     * @param mixed $notifiable
      * @return \Illuminate\Notifications\Messages\MailMessage
      */
     public function toMail($notifiable)
@@ -66,12 +67,12 @@ class ResetPassword extends BaseNotification
     /**
      * Get the reset password notification mail message for the given URL.
      *
-     * @param  string  $url
+     * @param string $url
      * @return \Illuminate\Notifications\Messages\MailMessage
      */
     protected function buildMailMessage($url)
     {
-        return (new MailMessage)
+        return $this->build()
             ->subject(__('email.forgetPassword.subject'))
             ->line(__('email.forgetPassword.content'))
             ->action(__('email.forgetPassword.actionButton'), $url)
@@ -82,7 +83,7 @@ class ResetPassword extends BaseNotification
     /**
      * Get the reset URL for the given notifiable.
      *
-     * @param  mixed  $notifiable
+     * @param mixed $notifiable
      * @return string
      */
     protected function resetUrl($notifiable)
@@ -91,16 +92,20 @@ class ResetPassword extends BaseNotification
             return call_user_func(static::$createUrlCallback, $notifiable, $this->token);
         }
 
-        return url(route('password.reset', [
+        $url = route('password.reset', [
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
+        ], false);
+
+        $url = getDomainSpecificUrl($url, $notifiable->company ?? null);
+
+        return url($url);
     }
 
     /**
      * Set a callback that should be used when creating the reset password button URL.
      *
-     * @param  \Closure(mixed, string): string  $callback
+     * @param \Closure(mixed, string): string $callback
      * @return void
      */
     public static function createUrlUsing($callback)
@@ -111,7 +116,7 @@ class ResetPassword extends BaseNotification
     /**
      * Set a callback that should be used when building the notification mail message.
      *
-     * @param  \Closure(mixed, string): \Illuminate\Notifications\Messages\MailMessage  $callback
+     * @param \Closure(mixed, string): \Illuminate\Notifications\Messages\MailMessage $callback
      * @return void
      */
     public static function toMailUsing($callback)

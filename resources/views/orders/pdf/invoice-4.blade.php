@@ -600,7 +600,10 @@
 
             <div class="notes word-break">
                 @if(!is_null($order->note))
-                    <br> {!! nl2br($order->note) !!}
+                    <br> {!! nl2br($order->note) !!}<br>
+                @endif
+                @if (!is_null($invoiceSetting->other_info))
+                    <br>{!! nl2br($invoiceSetting->other_info) !!}
                 @endif
             </div>
 

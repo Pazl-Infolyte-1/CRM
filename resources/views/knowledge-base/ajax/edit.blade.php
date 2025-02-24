@@ -344,4 +344,8 @@ color: #fff !important;
 
 
     });
+
+    $('#close-settings').click(function() {
+        closeTaskDetail()
+    });
 </script>

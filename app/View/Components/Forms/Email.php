@@ -13,6 +13,7 @@ class Email extends Component
     public $fieldName;
     public $fieldId;
     public $popover;
+    public $fieldReadOnly;
     public $fieldHelp;
 
     /**
@@ -20,7 +21,7 @@ class Email extends Component
      *
      * @return void
      */
-    public function __construct($fieldLabel, $fieldPlaceholder, $fieldName, $fieldId, $fieldRequired = false, $fieldValue = null, $popover = null, $fieldHelp = null)
+    public function __construct($fieldLabel, $fieldPlaceholder, $fieldName, $fieldId, $fieldRequired = false, $fieldValue = null, $popover = null, $fieldHelp = null, $fieldReadOnly = false)
     {
         $this->fieldLabel = $fieldLabel;
         $this->fieldRequired = $fieldRequired;
@@ -30,6 +31,7 @@ class Email extends Component
         $this->fieldId = $fieldId;
         $this->popover = $popover;
         $this->fieldHelp = $fieldHelp;
+        $this->fieldReadOnly = $fieldReadOnly;
     }
 
     /**

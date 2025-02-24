@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SocialAuthSetting;
+use App\Models\UserAuth;
 use Carbon\Carbon;
 use Froiden\Envato\Traits\AppBoot;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -57,9 +59,11 @@ class Controller extends BaseController
 
             // To keep the session we need to move it to middleware
             $this->gdpr = gdpr_setting();
-            $this->company = company();
-
             $this->global = global_setting();
+
+            // WORKSUITESAAS
+            $this->company = companyOrGlobalSetting();
+
 
             $this->socialAuthSettings = social_auth_setting();
 

@@ -5,9 +5,9 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">
         @if ($type == 'edit')
-        @lang('app.menu.attendance') @lang('app.details')
+            @lang('app.attendanceDetails')
         @else
-        @lang('app.mark')  @lang('app.menu.attendance')
+        @lang('modules.attendance.markAttendance')
         @endif
     </h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
@@ -165,12 +165,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
             ($(this).val() == 'other') ? $('#otherPlace').show() : $('#otherPlace').hide();
         });
 
-        $('#save-attendance').click(function () {
-            @if($type == 'edit')
-                var url = "{{route('attendances.update', $row->id)}}";
-            @else
-                var url = "{{route('attendances.store')}}";
-            @endif
+        const saveAttendanceForm = (url) => {
             $.easyAjax({
                 url: url,
                 type: "POST",
@@ -188,6 +183,54 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                     }
                 }
             })
+        }
+
+        $('#save-attendance').click(function () {
+            @if($type == 'edit')
+                var url = "{{route('attendances.update', $row->id)}}";
+                saveAttendanceForm(url);
+            @else
+                var url = "{{ route('attendances.check_half_day') }}";
+                $.easyAjax({
+                    url: url,
+                    type: "POST",
+                    container: '#attendance-container',
+                    blockUI: true,
+                    disableButton: true,
+                    buttonSelector: "#save-attendance",
+                    data: $('#attendance-container').serialize(),
+                    success: function (response) {
+                        url = "{{route('attendances.store')}}";
+                        if (response.halfDayExist == true && response.requestedHalfDay == 'no') {
+                            Swal.fire({
+                                title: "@lang('messages.sweetAlertTitle')",
+                                text: "@lang('messages.halfDayAlreadyApplied')",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                focusConfirm: false,
+                                confirmButtonText: "@lang('messages.rejectIt')",
+                                cancelButtonText: "@lang('app.cancel')",
+                                customClass: {
+                                    confirmButton: 'btn btn-primary mr-3',
+                                    cancelButton: 'btn btn-secondary'
+                                },
+                                showClass: {
+                                    popup: 'swal2-noanimation',
+                                    backdrop: 'swal2-noanimation'
+                                },
+                                buttonsStyling: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    saveAttendanceForm(url);
+                                }
+                            });
+
+                        } else {
+                            saveAttendanceForm(url);
+                        }
+                    }
+                });
+            @endif
         });
     });
 

@@ -55,8 +55,7 @@ $memberIds = $project->members->pluck('user_id')->toArray();
                                 || ($editProjectPermission == 'both' && (user()->id == $project->client_id || user()->id == $project->added_by))
                                 || ($editProjectPermission == 'both' && in_array(user()->id, $memberIds) && in_array('employee', user_roles())))
                                 <a class="dropdown-item openRightModal"
-                                    href="{{ route('projects.edit', $project->id) }}">@lang('app.edit')
-                                    @lang('app.project')
+                                    href="{{ route('projects.edit', $project->id) }}">@lang('app.editProject')
                                 </a>
 
                                 <a class="dropdown-item"
@@ -66,7 +65,7 @@ $memberIds = $project->members->pluck('user_id')->toArray();
 
                                 <a class="dropdown-item"
                                     href="{{ route('front.taskboard', $project->hash) }}" target="_blank">
-                                    @lang('app.public') @lang('modules.tasks.taskBoard')
+                                    @lang('app.publicTaskBoard')
                                 </a>
                                 <hr class="my-1">
                             @endif
@@ -75,12 +74,12 @@ $memberIds = $project->members->pluck('user_id')->toArray();
 
                             @if ($projectPin)
                                 <a class="dropdown-item" href="javascript:;" id="pinnedItem"
-                                    data-pinned="pinned">@lang('app.unpin')
-                                    @lang('app.project')</a>
+                                    data-pinned="pinned">@lang('app.unpinProject')
+                                    </a>
                             @else
                                 <a class="dropdown-item" href="javascript:;" id="pinnedItem"
-                                    data-pinned="unpinned">@lang('app.pin')
-                                    @lang('app.project')</a>
+                                    data-pinned="unpinned">@lang('app.pinProject')
+                                    </a>
                             @endif
                         </div>
                     </div>

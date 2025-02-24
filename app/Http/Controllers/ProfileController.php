@@ -8,6 +8,7 @@ use App\Http\Requests\User\UpdateProfile;
 use App\Models\EmployeeDetails;
 use App\Models\User;
 use App\Scopes\ActiveScope;
+use App\Scopes\CompanyScope;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -33,10 +34,6 @@ class ProfileController extends AccountBaseController
         $user->rtl = $request->rtl;
         $user->google_calendar_status = $request->google_calendar_status;
 
-        if (!is_null($request->password)) {
-            $user->password = Hash::make($request->password);
-        }
-
         if ($request->image_delete == 'yes') {
             Files::deleteFile($user->image, 'avatar');
             $user->image = null;
@@ -55,7 +52,31 @@ class ProfileController extends AccountBaseController
             $redirect = true;
         }
 
+
+        // Update email in userauth also
+        if ($user->isDirty('email')) {
+
+            $userCount = User::withoutGlobalScopes([CompanyScope::class, ActiveScope::class])->where('user_auth_id', $user->user_auth_id)->count();
+
+
+            if ($userCount > 1) {
+                $userAuth = $user->userAuth->replicate();
+                $userAuth->email = $request->email;
+                $userAuth->save();
+
+                $user->user_auth_id = $userAuth->id;
+            }
+            else {
+                $user->userAuth->email = $request->email;
+                $user->userAuth->save();
+            }
+        }
+
         $user->save();
+
+        if (!is_null($request->password)) {
+            $user->userAuth->update(['password' => Hash::make($request->password)]);
+        }
 
         if ($user->clientDetails) {
             $fields = $request->only($user->clientDetails->getFillable());
@@ -65,7 +86,11 @@ class ProfileController extends AccountBaseController
         }
 
         // adding address to employee_details
-        $this->addEmployeeDetail($request, $user);
+        // WORKSUITESAAS move outside addEmployeeDetail for worksuitesaas
+        if(!user()->is_superadmin) {
+            $this->addEmployeeDetail($request, $user);
+        }
+
         session()->forget('user');
 
         $this->logUserActivity($user->id, 'messages.updatedProfile');
@@ -74,6 +99,11 @@ class ProfileController extends AccountBaseController
 
         if ($redirectUrl == '') {
             $redirectUrl = route('profile-settings.index');
+
+            // WORKSUITESAAS
+            if(user()->is_superadmin) {
+                $redirectUrl = route('superadmin.settings.super-admin-profile.index');
+            }
         }
 
         return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => $redirectUrl, 'redirect' => $redirect]);

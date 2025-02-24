@@ -17,28 +17,35 @@ return new class extends Migration {
 
     public function up()
     {
-        Schema::table('currencies', function (Blueprint $table) {
-            $table->enum('currency_position', ['left', 'right', 'left_with_space', 'right_with_space'])->default('left');
-            $table->unsignedInteger('no_of_decimal');
-            $table->string('thousand_separator')->nullable();
-            $table->string('decimal_separator')->nullable();
-        });
+        if (!Schema::hasColumn('currencies', 'no_of_decimal')) {
+            Schema::table('currencies', function (Blueprint $table) {
+                $table->unsignedInteger('no_of_decimal')->default(2);
+                $table->string('thousand_separator')->nullable();
+                $table->string('decimal_separator')->nullable();
+
+                if (Schema::hasColumn('currencies', 'currency_position')) {
+                    DB::statement("ALTER TABLE currencies CHANGE COLUMN currency_position currency_position ENUM('left', 'right', 'left_with_space', 'right_with_space') NOT NULL DEFAULT 'left'");
+                }
+                else {
+                    $table->enum('currency_position', ['left', 'right', 'left_with_space', 'right_with_space'])->default('left');
+                }
+            });
 
 
-        $companies = Company::select('id')->get();
+            $companies = Company::select('id')->get();
 
-        foreach ($companies as $company) {
-            $currencyFormat = CurrencyFormatSetting::where('company_id', $company->id)->first();
+            foreach ($companies as $company) {
+                $currencyFormat = CurrencyFormatSetting::where('company_id', $company->id)->first();
 
-            Currency::where('company_id', $company->id)
-                ->update([
-                    'currency_position' => $currencyFormat->currency_position,
-                    'no_of_decimal' => $currencyFormat->no_of_decimal,
-                    'thousand_separator' => $currencyFormat->thousand_separator,
-                    'decimal_separator' => $currencyFormat->decimal_separator
-                ]);
+                Currency::where('company_id', $company->id)
+                    ->update([
+                        'currency_position' => $currencyFormat->currency_position,
+                        'no_of_decimal' => $currencyFormat->no_of_decimal,
+                        'thousand_separator' => $currencyFormat->thousand_separator,
+                        'decimal_separator' => $currencyFormat->decimal_separator
+                    ]);
+            }
         }
-
 
     }
 

@@ -21,10 +21,6 @@ use App\Http\Controllers\Payment\StripeWebhookController;
 use App\Http\Controllers\PublicLeadGdprController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect(route('login'));
-});
-
 Route::get('/invitation/{code}', [RegisterController::class, 'invitation'])->name('invitation');
 Route::post('/invitation/accept-invite', [RegisterController::class, 'acceptInvite'])->name('accept_invite');
 
@@ -77,7 +73,7 @@ Route::post('/consent/l/update/{lead}', [PublicLeadGdprController::class, 'updat
 Route::get('/redirect/{provider}', [LoginController::class, 'redirect'])->name('social_login');
 Route::get('/callback/{provider}', [LoginController::class, 'callback'])->name('social_login_callback');
 Route::post('check-email', [LoginController::class, 'checkEmail'])->name('check_email');
-Route::post('check-code', [LoginController::class, 'checkCode'])->name('check_code');
+Route::post('/check-code', [LoginController::class, 'checkCode'])->name('check_code');
 Route::get('resend-code', [LoginController::class, 'resendCode'])->name('resend_code');
 
 // Payment routes

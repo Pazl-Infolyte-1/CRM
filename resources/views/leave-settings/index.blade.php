@@ -9,7 +9,7 @@
         .nav-tabs .nav-link.active {
             border-bottom: 2px solid var(--header_color) !important;
         }
-        
+
         .nav-tabs .nav-link {
             border: unset;
         }
@@ -48,7 +48,7 @@
                 <div class="row">
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="addNewLeaveType" class="addNewLeaveType mb-2 actionBtn">
-                            @lang('app.addNew') @lang('modules.leaves.leaveType')
+                            @lang('app.addNewLeaveType')
                         </x-forms.button-primary>
                     </div>
                 </div>

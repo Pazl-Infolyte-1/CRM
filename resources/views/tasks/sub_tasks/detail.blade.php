@@ -3,7 +3,7 @@ $deleteSubTaskPermission = user()->permission('delete_sub_tasks');
 @endphp
 
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('modules.tasks.subTask') @lang('app.details')</h5>
+    <h5 class="modal-title" id="modelHeading"></h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
 </div>

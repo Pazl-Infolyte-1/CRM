@@ -16,8 +16,7 @@ $projectArchived = $project->trashed();
             @if (($addTaskPermission == 'all' || $addTaskPermission == 'added' || $project->project_admin == user()->id) && !$projectArchived)
                 <x-forms.link-primary :link="route('tasks.create').'?task_project_id='.$project->id"
                     class="mr-3 openRightModal" icon="plus" data-redirect-url="{{ url()->full() }}">
-                    @lang('app.add')
-                    @lang('app.task')
+                    @lang('app.addTask')
                 </x-forms.link-primary>
             @endif
         </div>

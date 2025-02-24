@@ -27,10 +27,17 @@ class StoreRequest extends CoreRequest
 
     public function rules()
     {
+        \Illuminate\Support\Facades\Validator::extend('check_superadmin', function ($attribute, $value, $parameters, $validator) {
+            return !\App\Models\User::withoutGlobalScopes([\App\Scopes\ActiveScope::class, \App\Scopes\CompanyScope::class])
+                ->where('email', $value)
+                ->where('is_superadmin', 1)
+                ->exists();
+        });
+
         $rules = array();
 
         $rules['client_name'] = 'required';
-        $rules['client_email'] = 'nullable|email:rfc';
+        $rules['client_email'] = 'nullable|email:rfc|check_superadmin';
         $rules['website'] = 'nullable|url';
 
         $rules = $this->customFieldRules($rules);
@@ -48,6 +55,13 @@ class StoreRequest extends CoreRequest
         $attributes['client_name'] = __('app.lead').' '.__('app.name');
 
         return $attributes;
+    }
+
+    public function messages()
+    {
+        return [
+            'client_email.check_superadmin' => __('superadmin.emailAlreadyExist'),
+        ];
     }
 
 }

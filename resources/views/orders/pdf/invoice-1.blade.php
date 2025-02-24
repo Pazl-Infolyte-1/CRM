@@ -470,6 +470,9 @@
             @if (!is_null($order->note))
                 {!! nl2br($order->note) !!}<br>
             @endif
+            @if (!is_null($invoiceSetting->other_info))
+                <br>{!! nl2br($invoiceSetting->other_info) !!}
+            @endif
         </p>
 
 

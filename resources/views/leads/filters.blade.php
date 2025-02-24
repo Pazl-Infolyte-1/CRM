@@ -63,7 +63,7 @@
         </div>
 
         <div class="more-filter-items">
-            <label class="f-14 text-dark-grey mb-12 text-capitalize" for="min">@lang('app.lead') @lang('app.value')</label>
+            <label class="f-14 text-dark-grey mb-12 text-capitalize" for="min">@lang('app.leadValue')</label>
             <div class="select-filter mb-4">
                 <div class="select-status d-flex">
                     <input type="number" class="position-relative text-dark form-control border-5 p-2 text-left f-14 f-w-500 border-additional-grey" placeholder="@lang('placeholders.min')" id="min" name="min" min="0">

@@ -5,6 +5,7 @@
     $addTaskFilePermission = user()->permission('add_task_files');
     $addTaskPermission = user()->permission('add_tasks');
     $viewMilestonePermission = user()->permission('view_project_milestones');
+    $viewProjectPermission = user()->permission('view_projects');
     $checked = request()->has('duplicate_task') ? ($projectId = $task->project_id) : ($projectId = '');
 @endphp
 
@@ -74,6 +75,7 @@
                             <x-forms.select fieldId="project_id" fieldName="project_id" :fieldLabel="__('app.project')"
                                             search="true">
                                 <option value="">--</option>
+                                @if($viewProjectPermission != 'none' && in_array('employee', user_roles()))
                                 @foreach ($projects as $data)
                                     <option
                                         @if ((isset($project) && $project->id == $data->id) || ( !is_null($task) && $data->id == $task->project_id)) selected
@@ -81,6 +83,7 @@
                                         {{ $data->project_name }}
                                     </option>
                                 @endforeach
+                                @endif
                             </x-forms.select>
                         @endif
                     </div>
@@ -918,11 +921,4 @@
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id) {
-        let checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 </script>

@@ -18,7 +18,7 @@
                 <div class="row">
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="addNewLeaveType" class="addNewLeaveType mb-2">
-                            @lang('app.addNew') @lang('app.address')
+                            @lang('app.addNewAddress')
                         </x-forms.button-primary>
                     </div>
                 </div>

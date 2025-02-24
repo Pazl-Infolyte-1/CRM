@@ -163,7 +163,7 @@ class CustomFieldController extends AccountBaseController
             ],
 
         ];
-
+        
         $this->addCustomField($group);
 
         return Reply::success('messages.recordSaved');

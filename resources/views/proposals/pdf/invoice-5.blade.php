@@ -542,10 +542,17 @@
             </tbody>
         </table>
     <p>
-    <div style="margin-top: 10px;" class="f-11 line-height text-grey">
-        <b>@lang('modules.invoiceSettings.invoiceTerms')</b><br>{!! nl2br($invoiceSetting->invoice_terms) !!}
-    </div>
+        <div style="margin-top: 10px;" class="f-11 line-height text-grey">
+            <b>@lang('modules.invoiceSettings.invoiceTerms')</b><br>{!! nl2br($invoiceSetting->invoice_terms) !!}
+        </div>
     </p>
+    @if (isset($invoiceSetting->other_info))
+        <p>
+            <div style="margin-top: 10px;" class="f-11 line-height text-grey">
+                {!! nl2br($invoiceSetting->other_info) !!}
+            </div>
+        </p>
+    @endif
 
     @endif
 

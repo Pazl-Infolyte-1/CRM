@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('app.update') @lang('modules.contracts.renewContract')</h5>
+    <h5 class="modal-title" id="modelHeading">@lang('app.updateRenewContract')</h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
 </div>

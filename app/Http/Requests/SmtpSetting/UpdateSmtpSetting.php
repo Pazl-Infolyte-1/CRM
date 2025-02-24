@@ -24,6 +24,11 @@ class UpdateSmtpSetting extends CoreRequest
      */
     public function rules()
     {
+        // WORKSUITESAAS
+        if (!user()->superadmin){
+            return [];
+        }
+
         return [
             'mail_driver' => 'required',
             'mail_host' => 'required',

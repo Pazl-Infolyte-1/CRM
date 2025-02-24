@@ -44,7 +44,7 @@ class CompanyAddress extends BaseModel
 
     use HasFactory, HasCompany;
 
-    protected $fillable = ['address', 'is_default', 'location', 'tax_number', 'tax_name', 'longitude', 'latitude'];
+    protected $fillable = ['country_id', 'address', 'is_default', 'location', 'tax_number', 'tax_name', 'longitude', 'latitude'];
 
     public static function defaultAddress()
     {

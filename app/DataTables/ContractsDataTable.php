@@ -166,21 +166,22 @@ class ContractsDataTable extends BaseDataTable
                 if ($row->signature) {
                     return __('app.signed');
                 }
-            })->editColumn('contract_number', function ($row) {
-                    return '<a href="' . route('contracts.show', [$row->id]) . '" class="text-darkest-grey">' . $row->contract_number . '</a>';
+            })
+            ->editColumn('contract_number', function ($row) {
+                return '<a href="' . route('contracts.show', [$row->id]) . '" class="text-darkest-grey">' . $row->contract_number . '</a>';
             })
             ->addIndexColumn()
             ->smart(false)
             ->setRowId(function ($row) {
                 return 'row-' . $row->id;
             })
-            ->rawColumns(array_merge(['project_name','action', 'client.name', 'check', 'subject','contract_number'], $customFieldColumns));
+            ->rawColumns(array_merge(['project_name', 'action', 'client.name', 'check', 'subject', 'contract_number'], $customFieldColumns));
     }
 
     /**
      * @param Contract $model
-     * @property-read \App\Models\Award $title
      * @return \Illuminate\Database\Eloquent\Builder
+     * @property-read \App\Models\Award $title
      */
     public function query(Contract $model)
     {
@@ -196,18 +197,18 @@ class ContractsDataTable extends BaseDataTable
             $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
         }
 
-            $model = $model->with(
-                [
-                    'project' => function ($q) {
-                        $q->withTrashed();
-                        $q->select('id', 'project_name', 'project_short_code', 'client_id');
-                    },
-                    'currency:id,currency_symbol,currency_code', 'project.client', 'client', 'project.clientdetails'
-                ]
-            )->with('contractType', 'client', 'signature', 'client.clientDetails')
-                ->join('users', 'users.id', '=', 'contracts.client_id')
-                ->join('client_details', 'users.id', '=', 'client_details.user_id')
-                ->select('contracts.*');
+        $model = $model->with(
+            [
+                'project' => function ($q) {
+                    $q->withTrashed();
+                    $q->select('id', 'project_name', 'project_short_code', 'client_id');
+                },
+                'currency:id,currency_symbol,currency_code', 'project.client', 'client', 'project.clientdetails'
+            ]
+        )->with('contractType', 'client', 'signature', 'client.clientDetails')
+            ->join('users', 'users.id', '=', 'contracts.client_id')
+            ->join('client_details', 'users.id', '=', 'client_details.user_id')
+            ->select('contracts.*');
 
         if ($startDate !== null && $endDate !== null) {
             $model->where(function ($q) use ($startDate, $endDate) {
@@ -235,12 +236,12 @@ class ContractsDataTable extends BaseDataTable
                     ->orWhere('contracts.amount', 'like', '%' . request('searchText') . '%')
                     ->orWhere('client_details.company_name', 'like', '%' . request('searchText') . '%');
             })
-            ->orWhere(function ($query) {
-                $query->whereHas('project', function ($q) {
-                    $q->where('project_name', 'like', '%' . request('searchText') . '%')
-                        ->orWhere('project_short_code', 'like', '%' . request('searchText') . '%'); // project short code
+                ->orWhere(function ($query) {
+                    $query->whereHas('project', function ($q) {
+                        $q->where('project_name', 'like', '%' . request('searchText') . '%')
+                            ->orWhere('project_short_code', 'like', '%' . request('searchText') . '%'); // project short code
+                    });
                 });
-            });
         }
 
         if ($this->viewContractPermission == 'added') {
@@ -264,8 +265,8 @@ class ContractsDataTable extends BaseDataTable
     /**
      * Optional method if you want to use html builder.
      *
-     * @property-read \App\Models\Award $title
      * @return \Yajra\DataTables\Html\Builder
+     * @property-read \App\Models\Award $title
      */
     public function html()
     {

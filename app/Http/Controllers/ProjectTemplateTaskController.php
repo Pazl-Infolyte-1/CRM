@@ -25,6 +25,11 @@ class ProjectTemplateTaskController extends AccountBaseController
         });
     }
 
+    public function index()
+    {
+        return redirect()->route('project-template.index');
+    }
+
     /**
      * Show the form for creating a new resource.
      *

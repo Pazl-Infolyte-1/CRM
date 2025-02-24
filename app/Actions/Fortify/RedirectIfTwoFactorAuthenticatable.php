@@ -51,9 +51,9 @@ class RedirectIfTwoFactorAuthenticatable
     {
         $user = $this->validateCredentials($request);
 
-        if (($user->two_fa_verify_via != '') && in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user)))
+        if (($user->userAuth->two_fa_verify_via != '') && in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user)))
         {
-            if($user->two_fa_verify_via == 'email') {
+            if($user->userAuth->two_fa_verify_via == 'email') {
                 // Send otp to user from here
                 $user->generateTwoFactorCode();
                 event(new TwoFactorCodeEvent($user));

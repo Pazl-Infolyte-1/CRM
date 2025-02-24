@@ -3,13 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Mail\DailyTimeLogReport;
-use App\Mail\MonthlyAttendance;
-use App\Models\AttendanceSetting;
 use App\Models\Company;
 use App\Models\LogTimeFor;
 use App\Models\Role;
-use App\Models\User;
-use App\Notifications\BaseNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 

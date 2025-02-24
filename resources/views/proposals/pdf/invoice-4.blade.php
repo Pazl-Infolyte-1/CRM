@@ -578,6 +578,9 @@
                     @endif
                     <br><br>@lang('modules.invoiceSettings.invoiceTerms')
                     <br>{!! nl2br($invoiceSetting->invoice_terms) !!}
+                    @if (isset($invoiceSetting->other_info))
+                        <br><br>{!! nl2br($invoiceSetting->other_info) !!}
+                    @endif
                 </div>
                 <br>
                 <div  class="description">

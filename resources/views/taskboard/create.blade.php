@@ -12,6 +12,24 @@
                     fieldRequired="true" />
             </div>
 
+            @php
+            $firstPriority = min($allBoardColumns->pluck('priority')->toArray());
+            @endphp
+
+            <div class="col-md-6">
+                <x-forms.select fieldId="priority" :fieldLabel="__('modules.tasks.position')" fieldName="priority"
+                    search="true">
+                    @foreach ($allBoardColumns as $column)
+                        @if ($column->priority == $firstPriority)
+                            <option value="{{$column->priority}}" priority-type="before">Before {{$column->column_name}}</option>
+                            <option value="{{$column->priority}}" >After {{$column->column_name}}</option>
+                        @else
+                            <option value="{{$column->priority}}" >After {{$column->column_name}}</option>
+                        @endif
+                    @endforeach
+                </x-forms.select>
+            </div>
+
             <div class="col-md-6">
                 <div class="form-group my-3">
                     <x-forms.label fieldId="colorselector" fieldRequired="true"
@@ -42,8 +60,17 @@
         "color": "#ff0000"
     });
 
+    $("#createTaskBoardColumn .select-picker").selectpicker();
+
     $('#save-board-column').click(function() {
-        var url = "{{ route('taskboards.store') }}";
+        var priorityType = $("#priority").find(':selected').attr('priority-type');
+
+        if(priorityType == "before"){
+            var url = "{{ route('taskboards.store') }}?before";
+        }
+        else{
+            var url = "{{ route('taskboards.store') }}";
+        }
         $.easyAjax({
             url: url,
             container: '#createTaskBoardColumn',

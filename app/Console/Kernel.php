@@ -26,6 +26,8 @@ use App\Console\Commands\SyncUserPermissions;
 use App\Console\Commands\SendTimeTracker;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Console\Commands\SuperAdmin\FreeLicenceRenew;
+use App\Console\Commands\SuperAdmin\TrialExpire;
 
 class Kernel extends ConsoleKernel
 {
@@ -57,7 +59,11 @@ class Kernel extends ConsoleKernel
         BirthdayReminderCommand::class,
         SendTimeTracker::class,
         SendMonthlyAttendanceReport::class,
-        SendDailyTimelogReport::class
+        SendDailyTimelogReport::class,
+        // WORKSUITE SAAS
+        FreeLicenceRenew::class,
+        TrialExpire::class,
+
     ];
 
     /**
@@ -106,8 +112,13 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('queue:flush')->weekly();
 
+        // WORKSUITESAAS
+        $schedule->command('free-licence-renew')->daily();
+        $schedule->command('licence-expire')->daily();
+        $schedule->command('trial-expire')->daily();
+
         // Schedule the queue:work command to run without overlapping and with 3 tries
-        $schedule->command('queue:work --tries=3 --stop-when-empty')->withoutOverlapping();
+        $schedule->command('queue:work database --tries=3 --stop-when-empty')->withoutOverlapping();
     }
 
     /**

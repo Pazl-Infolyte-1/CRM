@@ -114,7 +114,7 @@ return new class extends Migration {
             $date = $issueDate->issue_date ?? now();
         }
         else {
-            $date = $issueDate->purchase_date;
+            $date = $issueDate->purchase_date ?? now();
         }
 
         $days = match ($recurring->rotation) {

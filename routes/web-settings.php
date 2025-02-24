@@ -56,6 +56,8 @@ use App\Http\Controllers\UnitTypeController;
 use App\Http\Controllers\UpdateAppController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('account/settings/google-auth', [GoogleAuthController::class, 'index'])->name('googleAuth');
+
 Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function () {
 
     Route::post('app-settings/deleteSessions', [AppSettingController::class, 'deleteSessions'])->name('app-settings.delete_sessions');
@@ -191,7 +193,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
 
     // Google Calendar Settings
     Route::resource('google-calendar-settings', GoogleCalendarSettingController::class);
-    Route::get('google-auth', [GoogleAuthController::class, 'index'])->name('googleAuth');
     Route::delete('google-auth', [GoogleAuthController::class, 'destroy'])->name('googleAuth.destroy');
 
 
@@ -240,6 +241,5 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     // Update App
     Route::post('update-settings/deleteFile', [UpdateAppController::class, 'deleteFile'])->name('update-settings.deleteFile');
     Route::get('update-settings/install', [UpdateAppController::class, 'install'])->name('update-settings.install');
-    Route::get('update-settings/manual-update', [UpdateAppController::class, 'manual'])->name('update-settings.manual');
     Route::resource('update-settings', UpdateAppController::class);
 });

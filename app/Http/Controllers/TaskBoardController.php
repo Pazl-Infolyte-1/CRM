@@ -341,13 +341,28 @@ class TaskBoardController extends AccountBaseController
      */
     public function store(StoreTaskBoard $request)
     {
-        $maxPriority = TaskboardColumn::max('priority');
 
+        $priority = $request->priority;
         $board = new TaskboardColumn();
         $board->column_name = $request->column_name;
         $board->label_color = $request->label_color;
         $board->slug = str_slug($request->column_name, '_');
-        $board->priority = ($maxPriority + 1);
+
+
+        if($request->has('before')) {
+            TaskboardColumn::where('priority', '>=', $priority)
+                ->orderBy('priority', 'asc')
+                ->increment('priority');
+
+            $board->priority = $priority;
+        }
+        else {
+            TaskboardColumn::where('priority', '>', $priority)
+                ->orderBy('priority', 'asc')
+                ->increment('priority');
+            $board->priority = $priority + 1;
+        }
+
         $board->save();
 
         return Reply::success(__('messages.recordSaved'));
@@ -555,6 +570,8 @@ class TaskBoardController extends AccountBaseController
     {
         abort_403(user()->permission('add_status') !== 'all');
 
+        $this->allBoardColumns = TaskBoardColumn::orderBy('priority', 'asc')->get();
+
         return view('taskboard.create', $this->data);
 
     }
@@ -570,6 +587,16 @@ class TaskBoardController extends AccountBaseController
         abort_403(user()->permission('add_status') !== 'all');
 
         $this->boardColumn = TaskboardColumn::findOrFail($id);
+
+        $this->allBoardColumns = TaskBoardColumn::orderBy('priority', 'asc')->get();
+        $this->lastBoardColumn = $this->allBoardColumns->filter(function ($value, $key) {
+            return $value->priority == ($this->boardColumn->priority - 1);
+        })->first();
+
+        $this->afterBoardColumn = $this->allBoardColumns->filter(function ($value, $key) {
+            return $value->priority == ($this->boardColumn->priority + 1);
+        })->first();
+
         $this->maxPriority = TaskboardColumn::max('priority');
         return view('taskboard.edit', $this->data);
     }
@@ -580,26 +607,39 @@ class TaskBoardController extends AccountBaseController
      * @return array
      * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
      */
+
     public function update(UpdateTaskBoard $request, $id)
     {
         $board = TaskboardColumn::findOrFail($id);
         $oldPosition = $board->priority;
         $newPosition = $request->priority;
 
-        if ($oldPosition < $newPosition) {
+        if($request->has('before'))
+        {
+            TaskboardColumn::where('priority', '<', $oldPosition)
+                ->where('priority', '>=', $newPosition)
+                ->orderBy('priority', 'asc')
+                ->increment('priority');
 
+            $board->priority = $request->priority;
+        }
+        elseif($oldPosition > $newPosition)
+        {
+            TaskboardColumn::where('priority', '<', $oldPosition)
+                ->where('priority', '>', $newPosition)
+                ->orderBy('priority', 'asc')
+                ->increment('priority');
+
+            $board->priority = $request->priority + 1;
+        }
+        else
+        {
             TaskboardColumn::where('priority', '>', $oldPosition)
                 ->where('priority', '<=', $newPosition)
                 ->orderBy('priority', 'asc')
                 ->decrement('priority');
 
-        }
-        else if ($oldPosition > $newPosition) {
-
-            TaskboardColumn::where('priority', '<', $oldPosition)
-                ->where('priority', '>=', $newPosition)
-                ->orderBy('priority', 'asc')
-                ->increment('priority');
+            $board->priority = $request->priority;
         }
 
         $board->column_name = $request->column_name;
@@ -609,10 +649,9 @@ class TaskBoardController extends AccountBaseController
         }
 
         $board->label_color = $request->label_color;
-        $board->priority = $request->priority;
+
         $board->save();
 
-        $this->updatePrioritySequence($request, $id);
 
         return Reply::success(__('messages.recordSaved'));
     }

@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.menu.leaves') @lang('app.details')</h5>
+    <h5 class="modal-title">@lang('app.leavesDetails')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 <div class="modal-body px-0 pt-0">

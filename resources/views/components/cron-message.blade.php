@@ -1,13 +1,14 @@
-@if(!$modal)
-    {{-- This message hides instantly the cron job is runned. It then do not show for next 2 days   --}}
-    @if ($globalSetting->hide_cron_message == 0 || now()->diffInHours($globalSetting->last_cron_run) > 48)
-        @include('app-settings.cron-message')
-    @endif
-@else
-    {{-- This message is shown only when last cron run is greater than 48   --}}
+@if((in_array('admin', user_roles()) && isWorksuite()) || user()->is_superadmin)
+    @if(!$modal)
+        {{-- This message hides instantly the cron job is runned. It then do not show for next 2 days   --}}
+        @if ($globalSetting->hide_cron_message == 0 || now()->diffInHours($globalSetting->last_cron_run) > 48)
+            @include('app-settings.cron-message')
+        @endif
+    @else
+        {{-- This message is shown only when last cron run is greater than 48   --}}
 
-    @if (now()->diffInHours($globalSetting->last_cron_run) > 48)
-        @if(in_array('admin', user_roles()))
+        @if (now()->diffInHours($globalSetting->last_cron_run) > 48)
+
             <div class="col-md-12 cursor-pointer">
                 <x-alert type="danger" icon="exclamation-circle" data-toggle="modal" data-target="#cronJobModal">
                     @lang('messages.cronIsNotRunning').

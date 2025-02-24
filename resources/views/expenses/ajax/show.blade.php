@@ -66,7 +66,6 @@
                     <x-employee :user="$expense->user" />
                 </p>
             </div>
-
             <x-cards.data-row :label="__('app.description')"
             :value="!empty($expense->description) ? $expense->description : '--'"
             html="true"/>

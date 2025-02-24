@@ -38,7 +38,8 @@ class OrdersDataTable extends BaseDataTable
             ->addIndexColumn()
             ->addColumn('action', function ($row) {
                 $action = '<div class="task_view">
-
+<a href="' . route('orders.show', [$row->id]) . '"
+                        class="taskView  text-darkest-grey f-w-500">' . __('app.view') . '</a>
                 <div class="dropdown">
                     <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
                         id="dropdownMenuLink-' . $row->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -50,7 +51,6 @@ class OrdersDataTable extends BaseDataTable
                     $action .= '<a class="dropdown-item orderStatusChange" href="javascript:;"  data-order-id="' . $row->id . '" data-status="completed"><i class="fa fa-check mr-2"></i>' . __('app.orderMarkAsComplete') . '</a>';
                 }
 
-                $action .= ' <a href="' . route('orders.show', [$row->id]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->viewOrderPermission == 'all' || ($this->viewOrderPermission == 'both' && ($row->added_by == user()->id || $row->client_id == user()->id)) || ($this->viewOrderPermission == 'owned' && $row->client_id == user()->id) || ($this->viewOrderPermission == 'added' && $row->added_by == user()->id)) {
                     $action .= '<a class="dropdown-item" href="' . route('orders.download', [$row->id]) . '">
@@ -85,16 +85,16 @@ class OrdersDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('orders.show', [$row->id]) . '">' . $row->order_number . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('orders.show', [$row->id]) . '">' . $row->custom_order_number . '</a></h5>
                     </div>
                   </div>';
 
             })
             ->addColumn('order', function ($row) {
-                return $row->order_number;
+                return $row->custom_order_number;
             })
             ->addColumn('order_number_export', function ($row) {
-                return $row->order_number;
+                return $row->custom_order_number;
 
             })
             ->addColumn('client_name', function ($row) {
@@ -279,6 +279,7 @@ class OrdersDataTable extends BaseDataTable
         return [
             __('app.id') => ['data' => 'id', 'name' => 'id', 'visible' => false, 'title' => __('app.id')],
             __('app.order') . __('app.no') => ['data' => 'order_number_export', 'name' => 'order_number_export', 'visible' => false, 'title' => __('app.order') . ' ' . __('app.no')],
+            __('app.orderNumber')  => ['data' => 'order_number', 'name' => 'order_number', 'visible' => true, 'title' => __('app.orderNumber')],
             __('app.client_name') => ['data' => 'client_name', 'name' => 'project.client.name', 'visible' => false, 'title' => __('app.client_name')],
             __('app.client') => ['data' => 'name', 'name' => 'name', 'visible' => !in_array('client', user_roles()), 'exportable' => false, 'title' => __('app.client')],
             __('modules.invoices.total') => ['data' => 'total', 'name' => 'total', 'title' => __('modules.invoices.total')],

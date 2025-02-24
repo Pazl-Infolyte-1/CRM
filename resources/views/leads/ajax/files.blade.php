@@ -11,8 +11,7 @@ $addLeadFilePermission = user()->permission('add_lead_files');
                 @if ($addLeadFilePermission == 'all' || $addLeadFilePermission == 'added')
                     <x-forms.link-primary link="javascript:;" id="add-files" class="mr-3 float-left" icon="plus"
                         data-lead-id="{{ $lead->id }}">
-                        @lang('app.add')
-                        @lang('modules.lead.file')
+                        @lang('modules.lead.addFile')
                     </x-forms.link-primary>
                 @endif
             </div>

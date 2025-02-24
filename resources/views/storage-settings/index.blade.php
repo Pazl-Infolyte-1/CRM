@@ -34,15 +34,15 @@
                                         fieldName="storage">
                             <option value="local"
                                     @if (isset($localCredentials) && $localCredentials->status == 'enabled') selected @endif>@lang('app.storageSetting.local')</option>
-                            <option value="aws_s3"
-                                    data-content="<img src='{{ asset('img/aws_s3.svg') }}' width='20' height='20' /> @lang('app.storageSetting.aws_s3')"
-                                    @if (isset($awsCredentials) && $awsCredentials->status == 'enabled') selected @endif>@lang('app.storageSetting.aws_s3')</option>
                             <option value="digitalocean"
                                     data-content="<img src='{{ asset('img/digitalocean.svg') }}' width='20' height='20' /> @lang('app.storageSetting.digitalocean')"
                                     @if (isset($digitalOceanCredentials) && $digitalOceanCredentials->status == 'enabled') selected @endif>
                                     @lang('app.storageSetting.digitalocean')
                             </option>
-
+                            <option value="aws_s3"
+                                    data-content="<img src='{{ asset('img/aws_s3.svg') }}' width='20' height='20' /> @lang('app.storageSetting.aws_s3')"
+                                    @if (isset($awsCredentials) && $awsCredentials->status == 'enabled') selected @endif>@lang('app.storageSetting.aws_s3')
+                            </option>
                             <option value="wasabi"
                                     data-content="<img src='{{ asset('img/wasabi.svg') }}' width='20' height='20' /> @lang('app.storageSetting.wasabi')"
                                     @if (isset($wasabiCredentials) && $wasabiCredentials->status == 'enabled') selected @endif>

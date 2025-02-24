@@ -107,6 +107,7 @@ class InvoiceSettingController extends AccountBaseController
         $setting->show_client_phone     = $request->has('show_client_phone') ? 'yes' : 'no';
         $setting->show_client_company_name = $request->has('show_client_company_name') ? 'yes' : 'no';
         $setting->show_client_company_address   = $request->has('show_client_company_address') ? 'yes' : 'no';
+        $setting->other_info = $request->other_info;
 
         if ($request->hasFile('logo')) {
             Files::deleteFile($setting->logo, 'app-logo');

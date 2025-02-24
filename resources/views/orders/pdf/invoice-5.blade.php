@@ -497,6 +497,13 @@
                 <tr class="text-grey">
                     <td class="f-11 line-height word-break">{!! $order->note ? nl2br($order->note) : '--' !!}</td>
                 </tr>
+                @if ($invoiceSetting->other_info)
+                    <tr class="text-grey">
+                        <td class="f-11 line-height word-break">
+                            <br>{!! nl2br($invoiceSetting->other_info) !!}
+                        </td>
+                    </tr>
+                @endif
 
             <!-- Table Row End -->
         </tbody>

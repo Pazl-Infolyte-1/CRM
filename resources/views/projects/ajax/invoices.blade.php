@@ -22,7 +22,7 @@ $addInvoicePermission = user()->permission('add_invoices');
 
                     @if (in_array('timelogs', user_modules()))
                         <x-forms.link-secondary class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 openRightModal" icon="plus" :link="route('invoices.create', ['type' => 'timelog', 'project_id' => $project->id])">
-                            @lang('app.create') @lang('app.timeLog') @lang('app.invoice')
+                            @lang('app.createTimeLogInvoice')
                         </x-forms.link-secondary>
                     @endif
 

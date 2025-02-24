@@ -19,7 +19,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoice') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoiceDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -200,7 +200,7 @@
             </div>
 
             <div class="col-md-4 mt-4 information-box">
-                <p id="plan">@lang('modules.invoices.customerCharged') @lang('app.daily')</p>
+                <p id="plan">@lang('app.customerChargedDaily')</p>
                 <p id="current_date">@lang('modules.recurringInvoice.currentInvoiceDate') <span class="font-weight-bold">{{Carbon\Carbon::now()->translatedFormat(company()->date_format)}}</span></p>
                 <p id="next_date">@lang('modules.recurringInvoice.nextInvoiceDate') <span class="font-weight-bold">{{Carbon\Carbon::now()->addDay()->translatedFormat(company()->date_format)}}</span></p>
                 <p>@lang('modules.recurringInvoice.soOn')</p>

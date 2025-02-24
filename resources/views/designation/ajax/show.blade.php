@@ -9,7 +9,7 @@ $deleteDesignationPermission = user()->permission('delete_designation');
                 <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-md-10 col-10">
-                            <h3 class="heading-h1">@lang('app.menu.designation') @lang('app.details')</h3>
+                            <h3 class="heading-h1">@lang('app.designationDetails')</h3>
                         </div>
                         <div class="col-md-2 col-2 text-right">
                             <div class="dropdown">

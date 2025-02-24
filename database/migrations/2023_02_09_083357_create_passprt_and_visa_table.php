@@ -24,7 +24,7 @@ return new class extends Migration
 
         $module = Module::where('module_name', 'employees')->first();
 
-        if(!is_null($module)){
+        if(!is_null($module) && isWorksuite()){
             $permissionType = [
                 [
                     'module_id' => $module->id,

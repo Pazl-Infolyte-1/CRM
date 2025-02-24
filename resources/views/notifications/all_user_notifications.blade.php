@@ -13,6 +13,12 @@
                         @include('notifications.'.$userType.'.'.\Illuminate\Support\Str::snake(class_basename($notification->type)))
                     @endif
 
+                    @if (isWorksuiteSaas())
+                        @if(view()->exists('notifications.superadmin.'.\Illuminate\Support\Str::snake(class_basename($notification->type))))
+                            @include('notifications.superadmin.'.\Illuminate\Support\Str::snake(class_basename($notification->type)))
+                        @endif
+                    @endif
+
                     @foreach ($worksuitePlugins as $item)
                         @if(View::exists($item.'::notifications.'.\Illuminate\Support\Str::snake(class_basename($notification->type))))
                             @include($item.'::notifications.'.\Illuminate\Support\Str::snake(class_basename($notification->type)))

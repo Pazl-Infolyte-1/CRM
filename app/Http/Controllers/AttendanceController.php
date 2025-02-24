@@ -546,6 +546,17 @@ class AttendanceController extends AccountBaseController
             ]);
         }
         else {
+            $leave = Leave::where([
+                ['user_id', $request->user_id],
+                ['leave_date', $request->attendance_date],
+                ['duration', 'half day'],
+                ['status', 'approved']
+            ])->first();
+
+            if(isset($leave))
+            {
+                $leave->update(['status' => 'rejected']);
+            }
 
             // Check maximum attendance in a day
             if ($clockInCount < $this->attendanceSettings->clockin_in_day || $request->user_id) {
@@ -831,14 +842,20 @@ class AttendanceController extends AccountBaseController
 
             foreach ($period as $date) {
 
-                $leaveDates = Leave::where('user_id', $userId)
+                $leave = Leave::where('user_id', $userId)
                     ->where('leave_date', $date)
                     ->where('status', 'approved')
-                    ->pluck('leave_date')->toArray();
+                    ->first();
 
-                if(isset($leaveDates[0])) {
 
-                    if($date->format('Y-m-d') == $leaveDates[0]->format('Y-m-d')) {
+                if(isset($leave)) {
+
+                    if(!is_null($leave->half_day_type) && $request->half_day == 'no')
+                    {
+                        $leave->update(['status' => 'rejected']);
+                    }
+
+                    if($date->format('Y-m-d') == $leave->leave_date->format('Y-m-d') && is_null($leave->half_day_type)) {
                         continue;
                     }
                 }
@@ -897,6 +914,53 @@ class AttendanceController extends AccountBaseController
         }
 
         return Reply::redirect($redirectUrl, __('messages.attendanceSaveSuccess'));
+    }
+
+    public function checkHalfDay(Request $request)
+    {
+        if($request->type == 'bulkMark')
+        {
+            $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->startOfMonth();
+            $endDate = $startDate->copy()->endOfMonth();
+            $period = CarbonPeriod::create($startDate, $endDate);
+
+            $dates = [];
+
+            foreach($period as $date)
+            {
+                $dates[] = $date;
+            }
+
+            $leaves = Leave::whereIn('user_id', $request->user_id)->whereIn('leave_date', $dates)->where('duration', 'half day')->get();
+
+            if($leaves->isNotEmpty())
+            {
+                $this->halfDayExist = true;
+                $this->requestedHalfDay = $request->half_day;
+            }
+
+            return reply::dataOnly($this->data);
+        }
+        else
+        {
+            $leave = Leave::where([
+                ['user_id', $request->user_id],
+                ['leave_date', $request->attendance_date],
+                ['duration', 'half day']
+                ])->first();
+
+            if(isset($leave))
+            {
+                $halfDay = $request->halfday == null ? 'no' : 'yes';
+                $this->halfDayExist = true;
+                $this->requestedHalfDay = $halfDay;
+                $this->user = $leave->user->name;
+
+            }
+
+            return reply::dataOnly($this->data);
+        }
+
     }
 
     public function destroy($id)

@@ -133,7 +133,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                     <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                         <option value="">@lang('app.selectAction')</option>
                         @if ($approveRejectPermission == 'all')
-                            <option value="change-leave-status">@lang('app.change') @lang('app.leaveStatus')</option>
+                            <option value="change-leave-status">@lang('app.changeLeaveStatus')</option>
                         @endif
                         <option value="delete">@lang('app.delete')</option>
                     </select>

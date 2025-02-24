@@ -20,6 +20,7 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property int $verified
+ * @property int $email_verified
  * @property-read mixed $icon
  * @property-read mixed $set_smtp_message
  * @method static \Illuminate\Database\Eloquent\Builder|SmtpSetting newModelQuery()
@@ -97,6 +98,12 @@ class SmtpSetting extends BaseModel
         }
 
         return null;
+    }
+
+    public static function isVerified()
+    {
+        $data = self::first();
+        return $data->verified;
     }
 
 }

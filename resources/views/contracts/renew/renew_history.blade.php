@@ -15,7 +15,7 @@ $deleteContractPermission = user()->permission('delete_contract');
                         href="{{ route('employees.show', $history->renewedBy->id) }}">{{ $history->renewedBy->name }}</a>
                         <br>
                         <span class="card-date f-11 text-lightest mb-0">
-                            <i class="fa fa-calendar-alt"></i> @lang('app.renew') @lang('app.date') - {{ $history->created_at->timezone(company()->timezone)->translatedFormat(company()->date_format) }}
+                            <i class="fa fa-calendar-alt"></i> @lang('app.renewDate')  - {{ $history->created_at->timezone(company()->timezone)->translatedFormat(company()->date_format) }}
                         </span>
                     </h4>
                     <div class="dropdown ml-auto comment-action">

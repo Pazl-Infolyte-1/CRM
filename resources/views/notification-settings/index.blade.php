@@ -5,7 +5,12 @@
     <!-- SETTINGS START -->
     <div class="w-100 d-flex ">
 
-        <x-setting-sidebar :activeMenu="$activeSettingMenu" />
+        {{-- WORKSUITESAAS --}}
+        @if(user()->is_superadmin)
+            <x-super-admin.setting-sidebar :activeMenu="$activeSettingMenu"/>
+        @else
+            <x-setting-sidebar :activeMenu="$activeSettingMenu"/>
+        @endif
 
         <x-setting-card>
 
@@ -17,23 +22,28 @@
                                 href="{{ route('notifications.index') }}" role="tab" aria-controls="nav-ticketAgents"
                                 aria-selected="true">@lang('app.email')
                             </a>
-                            <a class="nav-item nav-link f-15 slack-setting"
-                                href="{{ route('notifications.index') }}?tab=slack-setting" role="tab"
-                                aria-controls="nav-ticketTypes" aria-selected="true" ajax="false">@lang('app.slack') <i
-                                class="fa fa-circle ml-1 {{ $slackSettings->status == 'active' ? 'text-light-green' : 'text-red' }}"></i>
-                            </a>
+                            {{-- WORKSUITESAAS --}}
+                            @if (!user()->is_superadmin)
+                                <a class="nav-item nav-link f-15 slack-setting"
+                                    href="{{ route('notifications.index') }}?tab=slack-setting" role="tab"
+                                    aria-controls="nav-ticketTypes" aria-selected="true" ajax="false">@lang('app.slack') <i
+                                    class="fa fa-circle ml-1 {{ $slackSettings->status == 'active' ? 'text-light-green' : 'text-red' }}"></i>
+                                </a>
+                            @endif
                             <a class="nav-item nav-link f-15 push-notification-setting"
                                 href="{{ route('notifications.index') }}?tab=push-notification-setting" role="tab"
                                 aria-controls="nav-ticketTypes" aria-selected="true"
                                 ajax="false">@lang('app.pushNotification')<i
                                 class="fa fa-circle ml-1 {{ $pushSettings->status == 'active' ? 'text-light-green' : 'text-red' }}"></i>
                             </a>
+                            @if (user()->is_superadmin)
                             <a class="nav-item nav-link f-15 pusher-setting"
                                 href="{{ route('notifications.index') }}?tab=pusher-setting" role="tab"
                                 aria-controls="nav-ticketTypes" aria-selected="true"
                                 ajax="false">@lang('app.menu.pusherSettings')<i
                                 id="pusher-setting-tab" class="fa fa-circle ml-1 {{ $pusherSettings->status == 1 ? 'text-light-green' : 'text-red' }}"></i>
                             </a>
+                            @endif
                         </div>
                     </nav>
                 </div>

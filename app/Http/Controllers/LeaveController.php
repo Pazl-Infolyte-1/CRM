@@ -29,6 +29,7 @@ class LeaveController extends AccountBaseController
     {
         parent::__construct();
         $this->pageTitle = 'app.menu.leaves';
+        $this->leaveSetting = LeaveSetting::first();
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('leaves', $this->user->modules));
 

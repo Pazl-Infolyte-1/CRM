@@ -32,11 +32,17 @@ class ChatStoreRequest extends CoreRequest
 
     public function rules()
     {
-        return [
-            'message' => 'required',
+
+        $rules = [
             'user_id' => 'required_if:user_type,employee',
             'client_id' => 'required_if:user_type,client',
         ];
+
+        if($this->types == 'modal'){
+            $rules['message'] = 'required';
+        }
+
+        return $rules;
     }
 
     public function messages()

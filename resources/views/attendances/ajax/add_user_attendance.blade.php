@@ -5,7 +5,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">
-        @lang('app.mark')  @lang('app.menu.attendance')
+        @lang('modules.attendance.markAttendance')
     </h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>

@@ -238,7 +238,14 @@ class AttendanceReportDataTable extends BaseDataTable
 
         }
 
-        return sprintf('%d'.__('app.hrs').' %d'.__('app.mins'), floor($timeLogInMinutes / 60), floor($timeLogInMinutes / 60) % 60);
+        if($timeLogInMinutes <= 59) {
+            return sprintf('%d'.__('app.hrs').' %d'.__('app.mins'), 0, $timeLogInMinutes);
+        }
+        else
+        {
+            return sprintf('%d'.__('app.hrs').' %d'.__('app.mins'), floor($timeLogInMinutes / 60), floor($timeLogInMinutes / 60) % 60);
+        };
+
     }
 
     public function extraDays($startDate, $endDate, $userId, $holidays)

@@ -18,7 +18,7 @@
     <link href="{{ asset('vendor/froiden-helper/helper.css') }}" rel="stylesheet" defer="defer">
     <link type="text/css" rel="stylesheet" media="all" href="{{ asset('css/main.css') }}">
 
-    <title>{{ $globalSetting->global_app_name }}</title>
+    <title>{{ $globalSetting->global_app_name ?? $globalSetting->app_name }}</title>
 
 
     @stack('styles')
@@ -42,6 +42,9 @@
             }
         </style>
     @endif
+
+    @includeif('sections.custom_script')
+
 
 </head>
 

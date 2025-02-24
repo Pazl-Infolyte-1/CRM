@@ -41,7 +41,10 @@ return new class extends Migration
                     ->where('company_id', $company->id)
                     ->first();
 
-                $permissionRole = new PermissionRole();
+                $permissionRole = PermissionRole::where('permission_id', $permission->id)
+                    ->where('role_id', $role->id)
+                    ->first();
+                $permissionRole = $permissionRole ?: new PermissionRole();
                 $permissionRole->permission_id = $permission->id;
                 $permissionRole->role_id = $role->id;
                 $permissionRole->permission_type_id = 4; // All

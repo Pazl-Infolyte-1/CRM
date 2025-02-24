@@ -714,7 +714,7 @@
                 </tr>
                 <tr>
                     <th>
-                        @lang('app.adjustment') @lang('app.amount'):</th>
+                        @lang('app.adjustmentAmount'):</th>
                     <td>
                         {{ currency_format($creditNote->adjustment_amount, $creditNote->currency_id, false) }}</td>
                 </tr>
@@ -735,9 +735,9 @@
 
         <section id="terms"  class="description">
 
-            <div class="notes"  class="description">
+            <div class="notes description" >
                 <div>
-                    <span>@lang('app.menu.issues') @lang('app.date'):</span>
+                    <span>@lang('app.issuesDate'):</span>
                     <span>{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}</span>
                 </div>
                 @if ($invoiceNumber)
@@ -754,6 +754,9 @@
                 @endif
                 @if ($creditNote->status == 'open')
                     <br>{!! nl2br($creditNoteSetting->credit_note_terms) !!}
+                @endif
+                @if (isset($invoiceSetting->other_info))
+                    <br>{!! nl2br($invoiceSetting->other_info) !!}
                 @endif
             </div>
 

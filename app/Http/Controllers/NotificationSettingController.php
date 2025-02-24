@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helper\Reply;
 use App\Models\EmailNotificationSetting;
+use App\Models\GlobalSetting;
 use App\Models\PusherSetting;
 use App\Models\PushNotificationSetting;
 use App\Models\SlackSetting;
@@ -18,7 +19,7 @@ class NotificationSettingController extends AccountBaseController
         $this->pageTitle = 'app.menu.notificationSettings';
         $this->activeSettingMenu = 'notification_settings';
         $this->middleware(function ($request, $next) {
-            abort_403(user()->permission('manage_notification_setting') !== 'all');
+            abort_403(user()->permission('manage_notification_setting') !== 'all' && GlobalSetting::validateSuperAdmin('manage_superadmin_notification_settings'));
 
             return $next($request);
         });

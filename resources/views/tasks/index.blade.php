@@ -69,7 +69,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                     <select class="form-control select-picker" name="date_filter_on" id="date_filter_on">
                         <option value="start_date">@lang('app.startDate')</option>
                         <option value="due_date">@lang('app.dueDate')</option>
-                        <option value="completed_on">@lang('app.date') @lang('app.completed')</option>
+                        <option value="completed_on">@lang('app.dateCompleted')</option>
                     </select>
                 </div>
             </div>
@@ -602,38 +602,38 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             })
         });
 
-        $('#allTasks-table').on('click', '.stop-timer', function() {
-            var id = $(this).data('time-id');
-            var url = "{{ route('timelogs.stop_timer', ':id') }}";
-            url = url.replace(':id', id);
-            var token = '{{ csrf_token() }}';
-            $.easyAjax({
-                url: url,
-                blockUI: true,
-                container: '#allTasks-table',
-                type: "POST",
-                data: {
-                    timeId: id,
-                    _token: token
-                },
-                success: function(response) {
-                    if (response.activeTimerCount > 0) {
-                        $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
-                    } else {
-                        $('#show-active-timer .active-timer-count').addClass('d-none');
-                    }
+        // $('#allTasks-table').on('click', '.stop-timer', function() {
+        //     var id = $(this).data('time-id');
+        //     var url = "{{ route('timelogs.stop_timer', ':id') }}";
+        //     url = url.replace(':id', id);
+        //     var token = '{{ csrf_token() }}';
+        //     $.easyAjax({
+        //         url: url,
+        //         blockUI: true,
+        //         container: '#allTasks-table',
+        //         type: "POST",
+        //         data: {
+        //             timeId: id,
+        //             _token: token
+        //         },
+        //         success: function(response) {
+        //             if (response.activeTimerCount > 0) {
+        //                 $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
+        //             } else {
+        //                 $('#show-active-timer .active-timer-count').addClass('d-none');
+        //             }
 
-                    if (response.activeTimer == null) {
-                        $('#timer-clock').html('');
-                        runTimeClock = false;
-                    }
+        //             if (response.activeTimer == null) {
+        //                 $('#timer-clock').html('');
+        //                 runTimeClock = false;
+        //             }
 
-                    if ($('#allTasks-table').length) {
-                        window.LaravelDataTables["allTasks-table"].draw(false);
-                    }
-                }
-            })
-        });
+        //             if ($('#allTasks-table').length) {
+        //                 window.LaravelDataTables["allTasks-table"].draw(false);
+        //             }
+        //         }
+        //     })
+        // });
 
         $('#allTasks-table').on('click', '.resume-timer', function() {
             var id = $(this).data('time-id');
@@ -699,6 +699,13 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             })
         });
 
+        $('#allTasks-table').on('click', '.stop-timer', function() {
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
+            url = url.replace(':id', id);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
+        })
 
     </script>
 @endpush

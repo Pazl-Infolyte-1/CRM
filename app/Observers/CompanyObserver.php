@@ -8,36 +8,47 @@ use App\Http\Controllers\RolePermissionController;
 use App\Models\AttendanceSetting;
 use App\Models\Company;
 use App\Models\Currency;
-use App\Models\EmailNotificationSetting;
-use App\Models\GlobalSetting;
-use App\Models\GoogleCalendarModule;
-use App\Models\InvoiceSetting;
-use App\Models\LogTimeFor;
-use App\Models\ModuleSetting;
-use App\Models\Permission;
-use App\Models\ProjectSetting;
-use App\Models\Role;
-use App\Models\SlackSetting;
-use App\Models\ThemeSetting;
-use App\Models\TicketEmailSetting;
-use App\Models\TicketType;
-use App\Models\User;
 use App\Models\CustomFieldGroup;
 use App\Models\DashboardWidget;
 use App\Models\DiscussionCategory;
+use App\Models\EmailNotificationSetting;
 use App\Models\EmployeeShift;
+use App\Models\GlobalSetting;
+use App\Models\GoogleCalendarModule;
+use App\Models\InvoiceSetting;
 use App\Models\LeadCustomForm;
 use App\Models\LeadSource;
-use App\Models\MessageSetting;
-use App\Models\TicketChannel;
-use App\Models\TicketCustomForm;
 use App\Models\LeadStatus;
 use App\Models\LeaveType;
+use App\Models\LogTimeFor;
+use App\Models\MessageSetting;
+use App\Models\Module;
+use App\Models\ModuleSetting;
+use App\Models\Notification;
+use App\Models\PackageUpdateNotify;
+use App\Models\Permission;
 use App\Models\PermissionRole;
+use App\Models\ProjectSetting;
 use App\Models\ProjectStatusSetting;
 use App\Models\QuickBooksSetting;
+use App\Models\Role;
+use App\Models\SlackSetting;
+use App\Models\SuperAdmin\GlobalCurrency;
+use App\Models\SuperAdmin\GlobalInvoice;
+use App\Models\SuperAdmin\GlobalSubscription;
+use App\Models\SuperAdmin\Package;
+use App\Models\SuperAdmin\PackageSetting;
 use App\Models\TaskboardColumn;
+use App\Models\ThemeSetting;
+use App\Models\TicketChannel;
+use App\Models\TicketCustomForm;
+use App\Models\TicketEmailSetting;
+use App\Models\TicketType;
 use App\Models\UnitType;
+use App\Models\User;
+use App\Models\UserAuth;
+use App\Scopes\ActiveScope;
+use App\Scopes\CompanyScope;
 
 class CompanyObserver
 {
@@ -46,6 +57,13 @@ class CompanyObserver
     {
         $this->copyFromGlobalSettings($company);
         $this->dateFormats($company);
+
+        // WORKSUITESAAS
+        $this->packageInsert($company);
+
+        if (global_setting()->company_need_approval && !user()?->is_superadmin) {
+            $company->approved = 0;
+        }
     }
 
     private function copyFromGlobalSettings($company)
@@ -58,26 +76,35 @@ class CompanyObserver
         $company->sidebar_logo_style = $globalSetting->sidebar_logo_style;
         $company->auth_theme = $globalSetting->auth_theme;
         $company->auth_theme_text = $globalSetting->auth_theme_text;
-        $company->light_logo = $globalSetting->light_logo;
+//        $company->light_logo = $globalSetting->light_logo;
         $company->favicon = $globalSetting->favicon;
         $company->datatable_row_limit = $globalSetting->datatable_row_limit;
 
-        $company->time_format = $globalSetting->time_format;
-        $company->date_format = $globalSetting->date_format;
-        $company->locale = $globalSetting->locale;
-        $company->logo = $globalSetting->logo;
+        // When company is added from superadmin panel
+        if (!user()) {
+            $company->timezone = $globalSetting->timezone;
+            $company->locale = $globalSetting->locale;
+            $company->logo = $globalSetting->logo;
+            $company->date_format = $globalSetting->date_format;
+            $company->time_format = $globalSetting->time_format;
+        }
 
         return $company;
     }
 
     public function saving(Company $company)
     {
+
         $user = user();
 
         if ($user) {
             $company->last_updated_by = $user->id;
         }
 
+
+        if ($company->isDirty('approved')) {
+            $company->approved_by = $user->id;
+        }
 
         if ($company->isDirty('date_format')) {
             $this->dateFormats($company);
@@ -110,6 +137,10 @@ class CompanyObserver
             $global->timezone = $company->timezone;
             $global->saveQuietly();
         }
+
+        // WORKSUITESAAS
+        $this->saasSaving($company);
+        cache()->forget('user_'.$company->id.'_is_active');
 
         session()->forget(['company', 'company.*', 'company.currency', 'company.paymentGatewayCredentials']);
         cache()->forget('global_setting');
@@ -152,14 +183,38 @@ class CompanyObserver
         $this->googleCalendar($company);
         $this->unitType($company);
 
+        // WORKSUITESAAS
+        $this->updateSubscription($company, $company->package);
+
         // Will be used in various module
         event(new NewCompanyCreatedEvent($company));
 
 
     }
 
+    public function deleting(Company $company)
+    {
+        Notification::whereIn('type', ['App\Notifications\SuperAdmin\NewCompanyRegister', 'App\Notifications\NewUser'])
+            ->whereNull('read_at')
+            ->where(function ($q) use ($company) {
+                $q->where('data', 'like', '{"id":' . $company->id . '%');
+                $q->orWhere('data', 'like', '%"company_id":' . $company->id . '%');
+            })->delete();
+    }
+
+    public function deleted()
+    {
+        UserAuth::doesntHave('users')->delete();
+    }
+
     public function currencies($company)
     {
+        if (isWorksuiteSaas()) {
+            $this->globalCurrencyCopy($company);
+
+            return true;
+        }
+
         $currency = new Currency();
         $currency->currency_name = 'Dollars';
         $currency->currency_symbol = '$';
@@ -503,7 +558,9 @@ class CompanyObserver
         $clientRole->description = 'Client can see own tasks and projects.'; // optional
         $clientRole->saveQuietly();
 
-        $allPermissions = Permission::all();
+        $allPermissions = Permission::whereHas('module', function ($query) {
+            $query->withoutGlobalScopes()->where('is_superadmin', '0');
+        })->get();
 
         // DELETE ALL PERMISSION ROLE OF ABOVE ROLES IF ANY
         PermissionRole::whereIn('role_id', [$adminRole->id, $employeeRole->id, $clientRole->id])->delete();
@@ -614,6 +671,11 @@ class CompanyObserver
 
     public function moduleSettings($company): void
     {
+        if (isWorksuiteSaas()) {
+            $this->createModuleSettings($company);
+
+            return;
+        }
 
         $data = [
             'admin' => [
@@ -661,6 +723,16 @@ class CompanyObserver
         $sidebarTextColor = '#99A5B5';
         $linkColor = '#F7FAFF';
 
+        // WORKSUITE SAAS
+        $globalTheme = ThemeSetting::withoutGlobalScope(CompanyScope::class)->where('panel', 'superadmin')->first();
+
+        if ($globalTheme) {
+            $headerColor = $globalTheme->header_color;
+            $sidebarColor = $globalTheme->sidebar_color;
+            $sidebarTextColor = $globalTheme->sidebar_text_color;
+            $linkColor = $globalTheme->link_color;
+        }
+
         $themeSettings = [
             ['panel' => 'admin', 'company_id' => $company->id, 'header_color' => $headerColor, 'sidebar_color' => $sidebarColor, 'sidebar_text_color' => $sidebarTextColor, 'link_color' => $linkColor],
             ['panel' => 'project_admin', 'company_id' => $company->id, 'header_color' => $headerColor, 'sidebar_color' => $sidebarColor, 'sidebar_text_color' => $sidebarTextColor, 'link_color' => $linkColor],
@@ -697,6 +769,261 @@ class CompanyObserver
         $unitTypes = ['unit_type' => 'Pcs', 'default' => 1, 'company_id' => $company->id];
 
         UnitType::create($unitTypes);
+    }
+
+    // WORKSUITESAAS
+    private function packageInsert($company)
+    {
+        // Package setting for get trial package active or not
+        $packageSetting = PackageSetting::where('status', 'active')->first();
+        $packages = Package::all();
+
+        // get trial package data
+        $trialPackage = $packages->filter(function ($value) {
+            return $value->default == 'trial';
+        })->first();
+
+        // get default package data
+        $defaultPackage = $packages->filter(function ($value) {
+            return $value->default == 'yes';
+        })->first();
+
+        // get another  package data if trial and default package not found
+        $otherPackage = $packages->filter(function ($value) {
+            return $value->default == 'no';
+        })->first();
+
+        // if trial package is active set package to company
+        if ($packageSetting && !is_null($trialPackage)) {
+            $company->package_id = $trialPackage->id;
+            // set company license expire date
+            $noOfDays = (!is_null($packageSetting->no_of_days) && $packageSetting->no_of_days != 0) ? $packageSetting->no_of_days : 30;
+            $company->licence_expire_on = now()->addDays($noOfDays)->format('Y-m-d');
+        }
+
+        // if trial package is not active set default package to company
+        elseif (!is_null($defaultPackage)) {
+            $company->package_id = $defaultPackage->id;
+
+        }
+        else {
+            $company->package_id = $otherPackage->id;
+        }
+    }
+
+    private function globalCurrencyCopy($company): void
+    {
+        $currencies = GlobalCurrency::all();
+
+        $data = $currencies->map(function ($currency) use ($company) {
+            return [
+                'currency_name' => $currency->currency_name,
+                'currency_symbol' => $currency->currency_symbol,
+                'currency_code' => $currency->currency_code,
+                'exchange_rate' => $currency->exchange_rate,
+                'currency_position' => $currency->currency_position,
+                'no_of_decimal' => $currency->no_of_decimal,
+                'thousand_separator' => $currency->thousand_separator,
+                'decimal_separator' => $currency->decimal_separator,
+                'company_id' => $company->id,
+            ];
+        })->toArray();
+
+        Currency::insert($data);
+
+        $defaultCurrencyQuery = Currency::where('company_id', $company->id);
+
+        if (global_setting()->currency) {
+            $defaultCurrencyQuery->where('currency_code', global_setting()->currency->currency_code);
+        }
+
+        $defaultCurrency = $defaultCurrencyQuery->firstOrFail();
+
+        $company->currency_id = $defaultCurrency->id;
+        $company->saveQuietly();
+    }
+
+    public function clearCompanyUserCache($company): void
+    {
+        User::withoutGlobalScopes([ActiveScope::class, CompanyScope::class])
+            ->where('company_id', $company->id)->each(function ($user) {
+                cache()->forget('user_modules_' . $user->id);
+            });
+    }
+
+    public function createModuleSettings($company): void
+    {
+        $moduleInPackage = collect(json_decode(Package::where('id', $company->package_id)->first()->module_in_package));
+
+        $data = [
+            'admin' => [
+                ...ModuleSetting::CLIENT_MODULES, ...ModuleSetting::OTHER_MODULES
+            ],
+            'employee' => [
+                ...ModuleSetting::CLIENT_MODULES, ...ModuleSetting::OTHER_MODULES
+            ],
+            'client' => [
+                ...ModuleSetting::CLIENT_MODULES
+            ]
+        ];
+
+        $moduleSettings = [];
+        $existingModuleSettings = ModuleSetting::where('company_id', $company->id)->get();
+
+        foreach ($data as $type => $moduleList) {
+            foreach ($moduleList as $module) {
+                $existingModuleSetting = $existingModuleSettings->where('type', $type)->where('module_name', $module)->first();
+
+                if ($existingModuleSetting) {
+                    $existingModuleSetting->update([
+                        'status' => $moduleInPackage->contains($module) ? 'active' : 'deactive',
+                        'is_allowed' => $moduleInPackage->contains($module) ? 1 : 0,
+                    ]);
+
+                    continue;
+                }
+
+                $moduleSettings[] = [
+                    'company_id' => $company->id,
+                    'type' => $type,
+                    'module_name' => $module,
+                    'status' => $moduleInPackage->contains($module) ? 'active' : 'deactive',
+                    'is_allowed' => $moduleInPackage->contains($module) ? 1 : 0,
+                ];
+            }
+        }
+
+        ModuleSetting::insert($moduleSettings);
+
+        $this->clearCompanyUserCache($company);
+    }
+
+    public function updateModuleSettings($company): void
+    {
+
+        $moduleSettings = ModuleSetting::where('company_id', $company->id)->get();
+        $moduleInPackage = collect(json_decode(Package::where('id', $company->package_id)->first()->module_in_package));
+        self::widgetUpdate($company, $moduleInPackage->toArray());
+
+        $activeModuleSettings = [];
+        $inactiveModuleSettings = [];
+
+        foreach ($moduleSettings as $moduleSetting) {
+            if ($moduleInPackage->contains($moduleSetting->module_name)) {
+                $activeModuleSettings[] = $moduleSetting->id;
+            }
+            else {
+                $inactiveModuleSettings[] = $moduleSetting->id;
+            }
+        }
+
+        ModuleSetting::whereIn('id', $activeModuleSettings)->update(['status' => 'active', 'is_allowed' => 1]);
+        ModuleSetting::whereIn('id', $inactiveModuleSettings)->update(['status' => 'deactive', 'is_allowed' => 0]);
+
+        $this->clearCompanyUserCache($company);
+    }
+
+    public function saasSaving(Company $company): void
+    {
+
+        if ($company->isDirty('licence_expire_on')) {
+            $company->license_updated_at = now();
+        }
+
+        if ($company->isDirty('package_id')) {
+            $package = Package::where('default', 'no')->where('is_free', 0)->where('id', $company->package_id)->first();
+
+            if ($package) {
+                $company->subscription_updated_at = now();
+            }
+
+            $this->updateModuleSettings($company);
+
+            PackageUpdateNotify::where('company_id', $company->id)->delete();
+            clearCompanyValidPackageCache($company->id);
+        }
+
+    }
+
+    public static function widgetUpdate($company, $moduleInPackage)
+    {
+        $modulesAll = Module::where('module_name', '<>', 'settings')
+            ->where('module_name', '<>', 'dashboards')
+            ->whereNotIn('module_name', Module::disabledModuleArray())
+            ->get();
+        $moduleArray = $modulesAll->pluck('module_name')->toArray();
+
+        $missingModules = array_diff($moduleArray, $moduleInPackage);
+                   $commonModules = array_intersect($moduleArray, $moduleInPackage);
+                   $widgets = DashboardWidget::MODULE;
+
+        foreach ($widgets as $widget) {
+            foreach ($widget as $key => $widgetValue) {
+                if (in_array($key, $missingModules)) {
+                    if (!is_array($widgetValue)) {
+                        $widgetValue = [$widgetValue];
+                    }
+
+                    DashboardWidget::whereIn('widget_name', $widgetValue)
+                        ->where('company_id', $company->id)
+                        ->where('dashboard_type', 'private-dashboard')
+                        ->update(['active' => 0]);
+
+                } elseif (in_array($key, $commonModules)) {
+                    if (!is_array($widgetValue)) {
+                        $widgetValue = [$widgetValue];
+
+                    }
+
+                    DashboardWidget::whereIn('widget_name', $widgetValue)
+                        ->where('company_id', $company->id)
+                        ->where('dashboard_type', 'private-dashboard')
+                        ->update(['active' => 1]);
+                }
+            }
+        }
+
+    }
+
+    public function updateSubscription(Company $company, Package $package)
+    {
+        $packageType = $package->annual_status ? 'annual' : 'monthly';
+        $currencyId = $package->currency_id ?: global_setting()->currency_id;
+        $planExpireDate = $company->licence_expire_on;
+
+        if (!$planExpireDate){
+            $planExpireDate = $packageType == 'annual' ? now()->addYear() : now()->addMonth();
+        }
+
+        GlobalSubscription::where('company_id', $company->id)
+        ->where('subscription_status', 'active')
+        ->update(['subscription_status' => 'inactive']);
+
+        $subscription = new GlobalSubscription();
+        $subscription->company_id = $company->id;
+        $subscription->package_id = $package->id;
+        $subscription->currency_id = $currencyId;
+        $subscription->package_type = $packageType;
+        $subscription->quantity = 1;
+        $subscription->gateway_name = 'offline';
+        $subscription->subscription_status = 'active';
+        $subscription->subscribed_on_date = now();
+        $subscription->ends_at = $planExpireDate;
+        $subscription->transaction_id = str(str()->random(15))->upper();
+        $subscription->save();
+
+        $offlineInvoice = new GlobalInvoice();
+        $offlineInvoice->global_subscription_id = $subscription->id;
+        $offlineInvoice->company_id = $company->id;
+        $offlineInvoice->currency_id = $currencyId;
+        $offlineInvoice->package_id = $company->package_id;
+        $offlineInvoice->package_type = $packageType;
+        $offlineInvoice->total = 0.00;
+        $offlineInvoice->pay_date = now();
+        $offlineInvoice->next_pay_date = $planExpireDate;
+        $offlineInvoice->gateway_name = 'offline';
+        $offlineInvoice->transaction_id = $subscription->transaction_id;
+        $offlineInvoice->save();
     }
 
 }

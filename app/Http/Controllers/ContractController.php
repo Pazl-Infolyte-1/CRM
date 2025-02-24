@@ -18,7 +18,6 @@ use App\Models\Currency;
 use App\Models\Project;
 use App\Models\User;
 use Carbon\Carbon;
-use GPBMetadata\Google\Api\Control;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
@@ -265,7 +264,6 @@ class ContractController extends AccountBaseController
                     $q->where('contract_discussions.added_by', user()->id);
                 }
             }, 'discussion.user'])->findOrFail($id)->withCustomFields();
-
         abort_403(!(
         $viewPermission == 'all'
         || ($viewPermission == 'added' && user()->id == $this->contract->added_by)
@@ -436,7 +434,7 @@ class ContractController extends AccountBaseController
         }
 
         $contract->company_sign = $imageName;
-        $contract->sign_date = Carbon::now();
+        $contract->sign_date = now();
         $contract->update();
 
         return Reply::successWithData(__('messages.signatureAdded'), ['status' => 'success' ]);
@@ -463,6 +461,12 @@ class ContractController extends AccountBaseController
         $options = BaseModel::options($projects, null, 'project_name');
 
         return Reply::dataOnly(['status' => 'success', 'data' => $options]);
+    }
+
+    public function companySig($id)
+    {
+        $this->contract = Contract::find($id);
+        return view('contracts.companysign.sign', $this->data);
     }
 
 }

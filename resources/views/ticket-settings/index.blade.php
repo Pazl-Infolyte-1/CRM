@@ -58,27 +58,25 @@
 
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="addTicketType" class="type-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('modules.tickets.ticketType')
+                            @lang('app.addNewTicketType')
                         </x-forms.button-primary>
 
                         <x-forms.button-primary icon="plus" id="addAgent" class="agent-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew')
-                            @lang('modules.tickets.agents')
+                            @lang('app.addNewAgents')
                         </x-forms.button-primary>
 
                         <x-forms.button-primary icon="plus" id="addChannel" class="channel-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew')
-                            @lang('app.menu.ticketChannel')
+                            @lang('app.addNewTicketChannel')
                         </x-forms.button-primary>
 
                         <x-forms.button-primary icon="plus" id="addReplyTemplate"
                             class="reply-template-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('app.menu.template')
+                            @lang('app.addNewTemplate')
                         </x-forms.button-primary>
 
                         <x-forms.button-primary icon="plus" id="addGroup"
                             class="group-manage-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('app.menu.group')
+                            @lang('app.addNewGroup')
                         </x-forms.button-primary>
                     </div>
 

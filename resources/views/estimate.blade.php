@@ -418,6 +418,18 @@
                                         </table>
                                     </td>
                                 </tr>
+                                @if (isset($invoiceSetting->other_info))
+                                    <tr>
+                                        <td align="vertical-align: text-top">
+                                            <table>
+                                                <tr>
+                                                    <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                                    </p>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                @endif
                                 @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)
                                 <tr>
                                     <td>

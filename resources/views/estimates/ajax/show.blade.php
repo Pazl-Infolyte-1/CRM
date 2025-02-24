@@ -39,7 +39,7 @@
             {{ $invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->date_format) }}
             @lang('app.at')
             {{ $invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->time_format) }}
-            @lang('app.using') @lang('modules.attendance.ipAddress'):{{ $invoice->ip_address }}
+            @lang('app.usingIpAddress'):{{ $invoice->ip_address }}
         </x-alert>
     @endif
 @endif
@@ -360,7 +360,7 @@
                         <table>
                             <tr>@lang('app.note')</tr>
                             <tr>
-                                <p class="text-dark-grey">{!! !empty($invoice->note) ? $invoice->note : '--' !!}</p>
+                                <p class="text-dark-grey">{!! !empty($invoice->note) ? nl2br($invoice->note) : '--' !!}</p>
                             </tr>
                         </table>
                     </td>
@@ -373,6 +373,18 @@
                         </table>
                     </td>
                 </tr>
+                @if (isset($invoiceSetting->other_info))
+                    <tr>
+                        <td align="vertical-align: text-top">
+                            <table>
+                                <tr>
+                                    <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                    </p>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                @endif
                 @if (isset($taxes) && invoice_setting()->tax_calculation_msg == 1)
                     <tr>
                         <td>
@@ -481,8 +493,8 @@
                     @if ($addEstimatePermission == 'all' || $addEstimatePermission == 'added')
                         <li>
                             <a href="{{ route('estimates.create') . '?estimate=' . $invoice->id }}"
-                                class="dropdown-item"><i class="fa fa-copy mr-2"></i> @lang('app.create')
-                                @lang('app.duplicate')</a>
+                                class="dropdown-item"><i class="fa fa-copy mr-2"></i> @lang('app.createDuplicate')
+                                </a>
                         </li>
                     @endif
                     @if ($firstEstimate->id == $invoice->id)

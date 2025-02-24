@@ -21,7 +21,8 @@
         "dompdf/dompdf": "2.0.1",
         "edujugon/push-notification": "^5.2",
         "eluceo/ical": "^0.16.1",
-        "froiden/envato": "^4.0",
+        "endroid/qr-code": "^5.0",
+        "froiden/envato": "^5.0",
         "froiden/laravel-installer": "^1.6",
         "froiden/laravel-rest-api": "^10.0",
         "google/apiclient": "^2.10",
@@ -63,6 +64,7 @@
         "razorpay/razorpay": "^2.5",
         "saloonphp/xml-wrangler": "^0.2.0",
         "sentry/sentry-laravel": "^3.3",
+        "setasign/fpdf": "^1.8",
         "spatie/laravel-backup": "8.*",
         "square/square": "16.0.0.20211117",
         "stichoza/google-translate-php": "^4.1",
@@ -136,7 +138,8 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Modules\\": "Modules/"
+            "Modules\\": "Modules/",
+            "Froiden\\Envato\\": "froiden-verify/src"
         },
         "files": [
             "app/Helper/start.php"

@@ -85,7 +85,7 @@ $addLeavePermission = user()->permission('add_leave');
                 <div class="select-status mr-3 pl-3">
                     <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                         <option value="">@lang('app.selectAction')</option>
-                        <option value="change-leave-status">@lang('app.change') @lang('app.leaveStatus')</option>
+                        <option value="change-leave-status">@lang('app.changeLeaveStatus')</option>
                         <option value="delete">@lang('app.delete')</option>
                     </select>
                 </div>

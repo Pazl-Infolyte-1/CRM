@@ -206,7 +206,7 @@ $addTicketPermission = user()->permission('add_tickets');
 @section('content')
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
-        <div class="row row-cols-lg-5 my-3">
+        <div class="row row-cols-lg-5">
 
             <div class="col mb-4">
                 <a href="javascript:;" data-status="all" class="widget-filter-status">
@@ -247,7 +247,7 @@ $addTicketPermission = user()->permission('add_tickets');
 
         <!-- Add Task Export Buttons Start -->
         <div class="d-flex justify-content-between action-bar">
-            <div id="table-actions" class="flex-grow-1 align-items-center mt-3">
+            <div id="table-actions" class="flex-grow-1 align-items-center ">
                 @if ($addTicketPermission == 'all' || $addTicketPermission == 'added')
                     <x-forms.link-primary :link="route('tickets.create')" class="mr-3 openRightModal float-left"
                         icon="plus">
@@ -390,34 +390,24 @@ $addTicketPermission = user()->permission('add_tickets');
         $('#agent_id, #ticket-status, #priority, #channel_id, #type_id, #tag_id, #group_id, #project')
             .on('change keyup',
                 function() {
-                    if ($('#ticket-status').val() != "not finished") {
+                    const filters = [
+                        $('#ticket-status').val(),
+                        $('#agent_id').val(),
+                        $('#priority').val(),
+                        $('#channel_id').val(),
+                        $('#type_id').val(),
+                        $('#tag_id').val(),
+                        $('#group_id').val(),
+                        $('#project').val()
+                    ];
+
+                    if (filters.some(filter => filter !== "all" && filter !== "not finished")) {
                         $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#agent_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#priority').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#channel_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#type_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#tag_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#group_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#project').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
                     } else {
                         $('#reset-filters').addClass('d-none');
-                        showTable();
                     }
+
+                    showTable();
                 });
 
         $('#search-text-field').on('keyup', function() {

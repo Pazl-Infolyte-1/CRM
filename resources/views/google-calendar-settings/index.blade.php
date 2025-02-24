@@ -15,7 +15,11 @@
                 </div>
             </x-slot>
 
+            @if(user()->is_superadmin)
+            <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4">
+            @else
             <div class="col-lg-8 col-md-8 ntfcn-tab-content-left w-100 p-4">
+            @endif
                 <div class="row">
                     <div class="col-lg-12">
                         <x-forms.checkbox :fieldLabel="__('app.status')" fieldName="status" fieldId="google_status"
@@ -24,6 +28,8 @@
                     </div>
                 </div>
                 <div class="row google_details mt-3 @if ($companyOrGlobalSetting->google_calendar_status == 'inactive') d-none @endif">
+                    {{-- WORKSUITESAAS --}}
+                    @if(user()->is_superadmin)
                     <div class="col-lg-12 col-md-12">
                         <x-forms.text
                             :fieldLabel="__('modules.googleCalendar.clientId')"
@@ -55,17 +61,26 @@
                                        :fieldLabel="__('messages.googleCalendar.AuthorizedRedirectURI')"
                                        :popover="__('messages.googleCalendar.AuthorizedRedirectURIInfoMessage')">
                         </x-forms.label>
-                        <p class="text-bold"><span id="google-calendar-link-text">{{ route('googleAuth') }}</span>
+                        <p class="text-bold"><span id="google-calendar-link-text">{{ config('services.google.redirect_uri') }}</span>
                             <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
                                data-clipboard-target="#google-calendar-link-text">
                                 <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
                         </p>
                         <p class="text-primary">(@lang('messages.googleCalendar.addGoogleCalendarUrl'))</p>
                     </div>
-
+                    @else
+                        <div class="w-100 h-100 d-flex align-items-center justify-content-center">
+                            <div>
+                                @lang('superadmin.googleCalendarConfig')
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 
+
+            {{-- WORKSUITESAAS --}}
+            @if(!user()->is_superadmin && user()->permission('manage_google_calendar_setting') == 'all')
             <div class="col-xl-4 col-lg-12 col-md-12 ntfcn-tab-content-right border-left-grey p-4">
                 <h4 class="f-16 text-capitalize f-w-500 text-dark-grey">@lang("messages.googleCalendar.notificationTitle")</h4>
                 <div class="mb-3 d-flex">
@@ -109,6 +124,7 @@
                                       :fieldValue="$module->holiday_status"/>
                 </div>
             </div>
+            @endif
 
             <x-slot name="action">
                 <!-- Buttons Start -->

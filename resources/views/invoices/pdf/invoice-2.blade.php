@@ -772,7 +772,7 @@
                                 @if ($invoiceSetting->hsn_sac_code_show)
                                     <td>{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                                 @endif
-                                <td>{{ $item->quantity }} <br><span class="item-summary">{{ $item->unit->unit_type }}</td>
+                                <td align="right" width="10%" class="border-bottom-0">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                                 <td>{{ currency_format($item->unit_price, $invoice->currency_id, false) }}</td>
                                 <td>{{ $item->tax_list }}</td>
                                 <td>{{ currency_format($item->amount, $invoice->currency_id, false) }}</td>
@@ -820,7 +820,7 @@
                     @endif
                     <tr>
                         <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5' : '4' }}">
-                            @lang('modules.invoices.total') @lang('modules.invoices.paid'):</td>
+                            @lang('app.totalPaid'):</td>
                         <td class="text-right">
                             {{ currency_format($invoice->getPaidAmount(), $invoice->currency_id, false) }}
                         </td>
@@ -828,7 +828,7 @@
                     @if ($invoice->amountDue())
                     <tr>
                         <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5' : '4' }}">
-                            @lang('modules.invoices.total') @lang('modules.invoices.due'):</td>
+                            @lang('app.totalDue'):</td>
                         <td class="text-right">
                             {{ currency_format($invoice->amountDue(), $invoice->currency_id, false) }}
                             {{ $invoice->currency->currency_code }}</td>
@@ -854,6 +854,11 @@
                     <div class="word-break item-summary description"><b>@lang('app.note')</b><br>{!! nl2br($invoice->note) !!}</div>
                 @endif
                 <div class="word-break item-summary description"><b>@lang('modules.invoiceSettings.invoiceTerms')</b><br>{!! nl2br($invoiceSetting->invoice_terms) !!}</div>
+                @if (isset($invoiceSetting->other_info))
+                    <div class="word-break item-summary description">
+                        {!! nl2br($invoiceSetting->other_info) !!}
+                    </div>
+                @endif
 
             </section>
 

@@ -1,16 +1,10 @@
 <?php
-// Updates folder
-$product = 'worksuite-new';
 
-// Envato id
-$envato_item_id = 20052522;
-
-// Product Url from codecanyon
-$productUrl = 'https://1.envato.market/worksuite';
-
-$updatesDomain = 'https://froiden-updates.s3.ap-south-1.amazonaws.com';
-
-$verifyDomain = 'https://envato.froid.works';
+$PRODUCT = 'worksuite-saas-new';
+$ENVATO_ID = 23263417;
+$PRODUCT_URL = 'https://1.envato.market/worksuitesaas';
+$UPDATE_DOMAIN = 'https://froiden-update-hub.s3.ap-south-1.amazonaws.com';
+$VERIFY_DOMAIN = 'https://envato.froid.works';
 
 return [
 
@@ -24,13 +18,13 @@ return [
      */
     'redirectRoute' => 'login',
 
-    'envato_item_id' => $envato_item_id,
+    'envato_item_id' => $ENVATO_ID,
 
-    'envato_product_name' => $product,
+    'envato_product_name' => $PRODUCT,
 
-    'envato_product_url' => $productUrl,
+    'envato_product_url' => $PRODUCT_URL,
 
-    'plugins_url' => $verifyDomain . '/plugins/' . $envato_item_id,
+    'plugins_url' => $VERIFY_DOMAIN . '/plugins/' . $ENVATO_ID,
 
     /*
     * Temp folder to store update before to install it.
@@ -39,16 +33,18 @@ return [
     /*
     * URL where your updates are stored ( e.g. for a folder named 'updates', under http://site.com/yourapp ).
     */
-    'update_baseurl' => $updatesDomain . '/' . $product,
+    'update_baseurl' => $UPDATE_DOMAIN . '/' . $PRODUCT,
     /*
     * URL to verify your purchase code
     */
-    'verify_url' => $verifyDomain . '/verify-purchase',
+    'verify_url' => $VERIFY_DOMAIN . '/verify-purchase',
+
+    'latest_version_file' => $VERIFY_DOMAIN . '/latest-version/' . $ENVATO_ID,
 
     /*
      * Update log file
      */
-    'updater_file_path' => $updatesDomain . '/' . $product . '/laraupdater.json',
+    'updater_file_path' => $UPDATE_DOMAIN . '/' . $PRODUCT . '/laraupdater.json',
 
     /*
     * Set a middleware for the route: updater.update
@@ -66,31 +62,5 @@ return [
     /*
      * Change Log URL
      */
-    'versionLog' => $verifyDomain . '/version-log/' . $product,
-
-    'xss_ignore_index' => [
-        'description',
-        'summery',
-        'note',
-        'notes',
-        'project_summary',
-        'reply_heading',
-        'comment',
-        'message',
-        'details',
-        // Modules
-        'job_description',
-        'meta_description',
-        'cover_letter',
-        'candidate_comment',
-        'remark',
-        'reason',
-        'about',
-        'internal_note',
-        'billing_address',
-        'shipping_address',
-        'item_summary',
-        'note_details',
-    ],
-
+    'versionLog' => $VERIFY_DOMAIN . '/version-log/' . $PRODUCT
 ];

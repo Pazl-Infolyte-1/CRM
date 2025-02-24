@@ -21,7 +21,7 @@
         <x-alert type="info">
             {{$invoice->client->name}} @lang('app.viewedOn') {{$invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->date_format)}}
             @lang('app.at') {{$invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->time_format)}}
-            @lang('app.using') @lang('modules.attendance.ipAddress'):{{$invoice->ip_address}}
+            @lang('app.usingIpAddress'):{{$invoice->ip_address}}
         </x-alert>
     @endif
 @endif
@@ -415,8 +415,8 @@
                 </tr>
                 <tr>
                     <th width="50%" class="f-16 bg-light-grey text-dark font-weight-bold">
-                        @lang('modules.invoices.total')
-                        @lang('modules.invoices.due')</th>
+                        @lang('app.totalDue')
+                        </th>
                     <td width="50%" class="f-16 bg-light-grey text-dark font-weight-bold">
                         {{ currency_format($invoice->amountDue(), $invoice->currency_id, false) }}
                         {{ $invoice->currency->currency_code }}</td>
@@ -432,12 +432,19 @@
                 </tr>
                 <tr>
                     <td style="vertical-align: text-top">
-                        <p class="text-dark-grey">{!! !empty($invoice->note) ? $invoice->note : '--' !!}</p>
+                        <p class="text-dark-grey">{!! !empty($invoice->note) ? nl2br($invoice->note) : '--' !!}</p>
                     </td>
                     <td style="text-align: right;">
                         <p class="text-dark-grey">{!! nl2br($invoiceSetting->invoice_terms) !!}</p>
                     </td>
                 </tr>
+                @if ($invoiceSetting->other_info)
+                    <tr>
+                        <td>
+                            <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}</p>
+                        </td>
+                    </tr>
+                @endif
 
                 <tr>
                     <td colspan="2" align="right">
@@ -683,8 +690,8 @@
 
                     @if ($addInvoicesPermission == 'all' || $addInvoicesPermission == 'added')
                         <a href="{{ route('invoices.create') . '?invoice=' . $invoice->id }}"
-                            class="dropdown-item"><i class="fa fa-copy mr-2"></i> @lang('app.create')
-                            @lang('app.duplicate')</a>
+                            class="dropdown-item"><i class="fa fa-copy mr-2"></i> @lang('app.createDuplicate')
+                            </a>
                     @endif
 
                     @if (
@@ -705,7 +712,7 @@
                             <a class="dropdown-item f-14 text-dark openRightModal"
                                 href="{{ route('invoices.applied_credits', $invoice->id) }}">
                                 <i class="fa fa-money-bill-alt f-w-500  mr-2 f-12"></i>
-                                @lang('app.view') @lang('app.invoice') @lang('app.menu.payments')
+                                @lang('app.viewInvoicePayments')
                             </a>
                         </li>
                     @endif
@@ -756,7 +763,7 @@
                         @if ($credentials->payfast_status == 'active')
                             <li>
                                 <a class="dropdown-item f-14 text-dark" href="javascript:void(0);" id="payfastModal">
-                                    <img style="height: 15px;" src="{{ asset('img/payfast-logo.png') }}">
+                                    <img style="height: 15px;" src="{{ asset('img/payfast.png') }}">
                                     @lang('modules.invoices.payPayfast')</a>
                             </li>
                         @endif

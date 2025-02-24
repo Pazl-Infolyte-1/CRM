@@ -88,13 +88,13 @@
             </div>
         @endif
 
-
-        @if(in_array('admin', user_roles()))
-            <div class="row">
-                @include('dashboard.update-message-dashboard')
-                {{-- Remove for versions above 5.2.4 --}}
-                @include('dashboard.update-gateway-credentials')
-                <x-cron-message :modal="true"></x-cron-message>
+        @if(session('impersonate'))
+            <div class="row pt-2">
+                <div class="col-md-12">
+                    <x-alert type="success" icon="info-circle">
+                        {{__('superadmin.impersonate')}} <b>{{ company()->company_name }}</b>
+                    </x-alert>
+                </div>
             </div>
         @endif
 
@@ -211,7 +211,7 @@
                                         @if(in_array('tasks', user_modules()))
                                             <span>
                                                 <label class="f-12 text-dark-grey mb-12 text-capitalize" for="usr">
-                                                    @lang('app.open') @lang('app.menu.tasks') </label>
+                                                    @lang('app.openTasks') </label>
                                                 <p class="mb-0 f-18 f-w-500">
                                                     <a href="{{ route('tasks.index') . '?assignee=me' }}"
                                                         class="text-dark">

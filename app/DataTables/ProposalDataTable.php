@@ -89,7 +89,7 @@ class ProposalDataTable extends BaseDataTable
                 }
 
                 if (!$row->signature && $this->deleteProposalPermission == 'all' || ($this->deleteProposalPermission == 'added' && user()->id == $row->added_by)) {
-                    $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-proposal-id="' . $row->id . '">
+                    $action .= '<a class="dropdown-item delete-proposal-table-row" href="javascript:;" data-proposal-id="' . $row->id . '">
                                 <i class="fa fa-trash mr-2"></i>
                                 ' . trans('app.delete') . '
                             </a>';

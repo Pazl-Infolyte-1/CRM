@@ -51,7 +51,7 @@ $attendeesIds = $event->attendee->pluck('user_id')->toArray();
 
                     <div class="col-12 px-0 pb-3 d-flex">
                         <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
-                            @lang('modules.events.attendees') @lang('app.employee')</p>
+                           @lang('app.attendeesEmployee')</p>
                         <p class="mb-0 text-dark-grey f-14">
                             @foreach ($event->attendee as $item)
                             @if(in_array('employee', $item->user->roles->pluck('name')->toArray()))
@@ -66,7 +66,7 @@ $attendeesIds = $event->attendee->pluck('user_id')->toArray();
 
                     <div class="col-12 px-0 pb-3 d-flex">
                         <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
-                            @lang('modules.events.attendees') @lang('app.client')</p>
+                            @lang('app.attendeesClients')</p>
                         <p class="mb-0 text-dark-grey f-14">
                             @foreach ($event->attendee as $item)
                             @if(in_array('client', $item->user->roles->pluck('name')->toArray()))

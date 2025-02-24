@@ -77,6 +77,7 @@
 </style>
 <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 ml-3 ">
     <div class="row">
+        @if(isWorksuite())
         <div class="col-lg-12 mt-2 mb-0">
             @php
                 $link = route('business-address.index');
@@ -86,6 +87,7 @@
                 {!!   __('messages.googleMapTooltip',['route' => $link])  !!}
             </x-alert>
         </div>
+        @endif
         <div class="col-lg-8 mb-0">
             <x-forms.text :fieldLabel="__('modules.accountSettings.google_map_key')"
                           :fieldPlaceholder="__('placeholders.googleMapKey')"
@@ -108,7 +110,7 @@
 
 <script>
     $('body').on('click', '#save-google-map-setting-form', function () {
-        const url = "{{ route('app-settings.update', [company()->id]) }}?page=google-map-setting";
+        const url = "{{ route('app-settings.update', [global_setting()->id]) }}?page=google-map-setting";
 
         $.easyAjax({
             url: url,

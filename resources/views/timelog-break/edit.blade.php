@@ -9,12 +9,12 @@
         <div class="row">
 
             <div class="col-6 mb-4">
-                <div class='f-14 text-dark-grey mb-12'>@lang('app.timeLog') @lang('modules.timeLogs.startTime')</div>
+                <div class='f-14 text-dark-grey mb-12'>@lang('app.timeLogStartTime')</div>
                 <div>{{ $timelogBreak->timeLog->start_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}</div>
             </div>
 
             <div class="col-6 mb-4">
-                <div class='f-14 text-dark-grey mb-12'>@lang('app.timeLog') @lang('modules.timeLogs.endTime')</div>
+                <div class='f-14 text-dark-grey mb-12'>@lang('app.timeLogEndTime')</div>
                 <div>{{ $timelogBreak->timeLog->end_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}</div>
             </div>
 

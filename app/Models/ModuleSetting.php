@@ -105,6 +105,9 @@ class ModuleSetting extends BaseModel
     {
         self::addCompanyIdToNullModule($company, $module);
 
+        // WORKSUITESAAS
+        $moduleInPackage = collect(json_decode($company->package->module_in_package));
+
         foreach ($roles as $role) {
             $data = ModuleSetting::withoutGlobalScope(CompanyScope::class)
                 ->where('module_name', $module)
@@ -117,8 +120,11 @@ class ModuleSetting extends BaseModel
                     'module_name' => $module,
                     'type' => $role,
                     'company_id' => $company->id,
+                    'status' => $moduleInPackage->contains($module) ? 'active' : 'deactive',
+                    'is_allowed' => $moduleInPackage->contains($module) ? 1 : 0,
                 ]);
             }
+
         }
 
         PermissionRole::insertModuleRolePermission($module, $company->id);

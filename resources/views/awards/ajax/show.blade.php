@@ -8,7 +8,7 @@
                 <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-10">
-                            <h3 class="heading-h1">@lang('modules.appreciations.appreciationType') @lang('app.details')</h3>
+                            <h3 class="heading-h1">@lang('app.appreciationTypeDetails')</h3>
                         </div>
                         <div class="col-lg-2 col-2 text-right">
 

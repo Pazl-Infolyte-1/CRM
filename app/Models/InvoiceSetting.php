@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $template
  * @property int $due_after
  * @property string $invoice_terms
+ * @property string|null $other_info
  * @property string|null $gst_number
  * @property string|null $show_gst
  * @property \Illuminate\Support\Carbon|null $created_at

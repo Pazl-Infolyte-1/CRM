@@ -563,6 +563,14 @@
     </div>
     </p>
 
+    @if (isset($invoiceSetting->other_info))
+        <p>
+            <div style="margin-top: 10px;" class="f-11 line-height text-grey">
+                {!! nl2br($invoiceSetting->other_info) !!}
+            </div>
+        </p>
+    @endif
+
     {{-- Custom fields data --}}
     @if (isset($fields) && count($fields) > 0)
         <div class="page_break"></div>

@@ -67,8 +67,8 @@
             <div class="select-status">
                 <select class="form-control select-picker" name="view_type" id="view_type" data-live-search="true"
                     data-size="8">
-                    <option value="week">@lang('app.weekly') @lang('app.view')</option>
-                    <option value="month">@lang('app.monthly') @lang('app.view')</option>
+                    <option value="week">@lang('app.weeklyView')</option>
+                    <option value="month">@lang('app.monthlyView')</option>
                 </select>
             </div>
         </div>

@@ -58,6 +58,24 @@
             </x-forms.select>
         </div>
         <div class="col-lg-3">
+            <x-forms.select fieldId="datatable_row_limit" :fieldLabel="__('modules.accountSettings.datatableRowLimit')"
+                            fieldName="datatable_row_limit"  :popover="__('modules.accountSettings.datatableRowLimitPopover')">
+                <option {{ companyOrGlobalSetting()->datatable_row_limit == 10 ? 'selected' : '' }}value="10">10</option>
+                <option {{ companyOrGlobalSetting()->datatable_row_limit == 25 ? 'selected' : '' }} value="25">25</option>
+                <option {{ companyOrGlobalSetting()->datatable_row_limit == 50 ? 'selected' : '' }} value="50">50</option>
+                <option {{ companyOrGlobalSetting()->datatable_row_limit == 100 ? 'selected' : '' }} value="100">100</option>
+            </x-forms.select>
+        </div>
+        @if (company())
+            <div class="col-lg-3 mt-lg-5">
+                <x-forms.checkbox :checked="company()->employee_can_export_data"
+                                :fieldLabel="__('app.employeeCanExportData')"
+                                fieldName="employee_can_export_data"
+                                fieldId="employee_can_export_data"/>
+            </div>
+        @endif
+        @if(user()->is_superadmin)
+        <div class="col-lg-3">
             <x-forms.select fieldId="session_driver"
                             :fieldLabel="__('modules.accountSettings.sessionDriver')"
                             :popover="__('modules.accountSettings.sessionInfo')" fieldName="session_driver">
@@ -85,7 +103,7 @@
                               :popover="__('modules.accountSettings.updateEnableDisableTest')"
                               fieldId="system_update"/>
         </div>
-        <div class="col-lg-3 mt-lg-5">
+        <div class="col-lg-4 mt-lg-3">
             @php
                 $cleanCache = '';
             @endphp
@@ -98,23 +116,27 @@
             <x-forms.checkbox :checked="$cachedFile" :fieldLabel="__('app.enableCache')" fieldName="cache"
                               fieldId="cache" :fieldHelp="$cleanCache"/>
         </div>
-        <div class="col-lg-3">
-            <x-forms.select fieldId="datatable_row_limit" :fieldLabel="__('modules.accountSettings.datatableRowLimit')"
-                            fieldName="datatable_row_limit"  :popover="__('modules.accountSettings.datatableRowLimitPopover')">
-               <option {{ companyOrGlobalSetting()->datatable_row_limit == 10 ? 'selected' : '' }}value="10">10</option>
-               <option {{ companyOrGlobalSetting()->datatable_row_limit == 25 ? 'selected' : '' }} value="25">25</option>
-               <option {{ companyOrGlobalSetting()->datatable_row_limit == 50 ? 'selected' : '' }} value="50">50</option>
-               <option {{ companyOrGlobalSetting()->datatable_row_limit == 100 ? 'selected' : '' }} value="100">100</option>
-            </x-forms.select>
-        </div>
-        @if (company())
-            <div class="col-lg-3 mt-lg-5">
-                <x-forms.checkbox :checked="company()->employee_can_export_data"
-                                :fieldLabel="__('app.employeeCanExportData')"
-                                fieldName="employee_can_export_data"
-                                fieldId="employee_can_export_data"/>
+
+        {{-- WORKSUITESAAS --}}
+        @if (isWorksuiteSaas())
+            <div class="col-lg-4 mt-lg-3">
+                <x-forms.checkbox :checked="global_setting()->company_need_approval"
+                    :fieldLabel="__('superadmin.superadmin.needApproval')"
+                    fieldName="company_need_approval"
+                    :popover="__('superadmin.superadmin.needApprovalInfo')"
+                    fieldId="company_need_approval" />
+            </div>
+
+            <div class="col-lg-4 mt-lg-3">
+                <x-forms.checkbox :checked="global_setting()->email_verification"
+                    :fieldLabel="__('superadmin.emailVerification')"
+                    fieldName="email_verification"
+                    :popover="__('superadmin.emailVerificationEnableDisable')"
+                    fieldId="email_verification" />
             </div>
         @endif
+    @endif
+
 
     </div>
 </div>
@@ -132,7 +154,7 @@
 <script>
 
     $('body').on('click', '#save-app-settings-form', function () {
-        const url = "{{ route('app-settings.update', [company()->id]) }}?page=app-setting";
+        const url = "{{ route('app-settings.update', [companyOrGlobalSetting()->id]) }}?page=app-setting";
 
         $.easyAjax({
             url: url,

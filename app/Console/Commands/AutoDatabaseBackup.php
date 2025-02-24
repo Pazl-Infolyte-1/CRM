@@ -65,7 +65,7 @@ class AutoDatabaseBackup extends Command
 
         // Get the current time in the timezone set in the global setting
         $nowTimeWithTimeZone = now()->setTimezone(global_setting()->timezone)->format('H:i:s');
-        $settingHourOfDay = Carbon::createFromFormat('H:i:s', $backupSetting->hour_of_day)->format('H:i:s');
+        $settingHourOfDay = Carbon::createFromFormat('H:i:s', $backupSetting->hour_of_day, global_setting()->timezone)->format('H:i:s');
 
         // If the current time is equal or greater than the hour_of_day setting, create a backup
         if ($nowTimeWithTimeZone >= $settingHourOfDay) {

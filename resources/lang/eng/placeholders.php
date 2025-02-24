@@ -56,7 +56,8 @@ return array(
         'estimateNumberSeparator' => 'Estimate Number Separator',
         'credit_noteNumberSeparator' => 'Credit Note Number Separator',
         'contractNumberSeparator' => 'Contract Number Separator',
-        'contractPrefix' => 'Contract Prefix'
+        'contractPrefix' => 'Contract Prefix',
+        'otherInfo' => 'Enter Other Information',
     ),
 
     'currency' => array(

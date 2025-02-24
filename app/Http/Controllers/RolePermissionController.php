@@ -12,6 +12,7 @@ use App\Models\PermissionType;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserPermission;
+use App\Scopes\CompanyScope;
 use Illuminate\Http\Request;
 
 class RolePermissionController extends AccountBaseController
@@ -184,7 +185,9 @@ class RolePermissionController extends AccountBaseController
 
         }
         else {
-            $allPermissions = Permission::all();
+            $allPermissions = Permission::whereHas('module', function ($query) {
+                $query->withoutGlobalScopes()->where('is_superadmin', '0');
+            })->get();
             $role->perms()->sync([]);
             $role->attachPermissions($allPermissions);
         }
@@ -218,7 +221,9 @@ class RolePermissionController extends AccountBaseController
     public function resetPermissions()
     {
         $role = Role::with('roleuser', 'roleuser.user.roles')->findOrFail(request('roleId'));
-        $allPermissions = Permission::all();
+        $allPermissions = Permission::whereHas('module', function ($query) {
+            $query->withoutGlobalScopes()->where('is_superadmin', '0');
+        })->get();
 
         PermissionRole::where('role_id', $role->id)->delete();
 
@@ -235,7 +240,7 @@ class RolePermissionController extends AccountBaseController
             return Reply::error(__('messages.permissionDenied'));
         }
 
-        $this->permissionrole($allPermissions, $role->name, $role->company_id);
+        $this->permissionRole($allPermissions, $role->name, $role->company_id);
 
         $userIds = $role->roleuser->pluck('user_id');
 
@@ -358,7 +363,7 @@ class RolePermissionController extends AccountBaseController
 
     public function permissionRole($allPermissions, $type, $companyId)
     {
-        $role = Role::with('roleuser', 'roleuser.user.roles')
+        $role = Role::withoutGlobalScope(CompanyScope::class)->with('roleuser', 'roleuser.user.roles')
             ->where('name', $type)
             ->where('company_id', $companyId)
             ->first();

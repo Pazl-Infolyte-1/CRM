@@ -65,7 +65,7 @@ class CustomFieldGroup extends BaseModel
                 $customField->name => [
                     'data' => $customField->name,
                     'name' => $customField->name,
-                    'title' => $customField->label,
+                    'title' => str($customField->label)->__toString(),
                     'visible' => $customField['visible'],
                     'orderable' => false,
                 ]

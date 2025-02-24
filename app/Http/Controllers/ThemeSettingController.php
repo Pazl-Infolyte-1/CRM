@@ -7,6 +7,7 @@ use App\Helper\Reply;
 use App\Http\Requests\UpdateThemeSetting;
 use App\Models\GlobalSetting;
 use App\Models\ThemeSetting;
+use App\Scopes\CompanyScope;
 use Storage;
 
 class ThemeSettingController extends AccountBaseController
@@ -36,6 +37,10 @@ class ThemeSettingController extends AccountBaseController
         $this->employeeTheme = $themes['employee'][0];
         $this->clientTheme = $themes['client'][0];
 
+
+        // WORKSUITESAAS
+        $this->superAdminThemeSetting = ThemeSetting::withoutGlobalScope(CompanyScope::class)->where('panel', 'superadmin')->first();
+
         return view('theme-settings.index', $this->data);
     }
 
@@ -47,14 +52,19 @@ class ThemeSettingController extends AccountBaseController
     {
         $setting = $this->company;
 
-        $adminTheme = ThemeSetting::where('panel', 'admin')->first();
-        $this->themeUpdate($adminTheme, $request->theme_settings[1], $request->primary_color[0]);
+        // WORKSUITESAAS
+        $superAdminThemeSetting = ThemeSetting::withoutGlobalScope(CompanyScope::class)->where('panel', 'superadmin')->first();
 
-        $employeeTheme = ThemeSetting::where('panel', 'employee')->first();
-        $this->themeUpdate($employeeTheme, $request->theme_settings[3], $request->primary_color[1]);
+        if (!$superAdminThemeSetting->restrict_admin_theme_change){
+            $adminTheme = ThemeSetting::where('panel', 'admin')->first();
+            $this->themeUpdate($adminTheme, $request->theme_settings[1], $request->primary_color[0]);
 
-        $clientTheme = ThemeSetting::where('panel', 'client')->first();
-        $this->themeUpdate($clientTheme, $request->theme_settings[4], $request->primary_color[2]);
+            $employeeTheme = ThemeSetting::where('panel', 'employee')->first();
+            $this->themeUpdate($employeeTheme, $request->theme_settings[3], $request->primary_color[1]);
+
+            $clientTheme = ThemeSetting::where('panel', 'client')->first();
+            $this->themeUpdate($clientTheme, $request->theme_settings[4], $request->primary_color[2]);
+        }
 
         $setting->logo_background_color = $request->logo_background_color;
         $setting->auth_theme = $request->auth_theme;

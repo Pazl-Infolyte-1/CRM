@@ -19,7 +19,7 @@ $addProductPermission = user()->permission('add_product');
         <div class="bg-white rounded b-shadow-4 create-inv">
             <!-- HEADING START -->
             <div class="px-lg-4 px-md-4 px-3 py-3">
-                <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.menu.credit-note') @lang('app.details')
+                <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.creditNoteDetails')
                 </h4>
             </div>
             <!-- HEADING END -->
@@ -285,7 +285,7 @@ $addProductPermission = user()->permission('add_product');
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td>@lang('app.adjustment') @lang('app.amount')</td>
+                                                <td>@lang('app.adjustmentAmount')</td>
                                                 <td colspan="2" class="p-0 border-0">
                                                     <table width="100%" id="invoice-taxes">
                                                         <tr>

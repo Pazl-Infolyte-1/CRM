@@ -3,6 +3,7 @@ $addTaskCategoryPermission = user()->permission('add_task_category');
 $addEmployeePermission = user()->permission('add_employees');
 $addTaskFilePermission = user()->permission('add_task_files');
 $editTaskPermission = user()->permission('edit_tasks');
+$viewProjectPermission = user()->permission('view_projects');
 $viewTaskCategoryPermission = user()->permission('view_task_category');
 @endphp
 
@@ -56,11 +57,13 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                             <select class="form-control select-picker" name="project_id" id="project-id"
                                 data-live-search="true" data-size="8">
                                 <option value="">--</option>
+                                @if($viewProjectPermission != 'none' && in_array('employee', user_roles()))
                                 @foreach ($projects as $project)
                                     <option @if ($project->id == $task->project_id) selected @endif value="{{ $project->id }}">
                                         {{ $project->project_name }}
                                     </option>
                                 @endforeach
+                                @endif
                             </select>
                         </x-forms.input-group>
                     </div>
@@ -823,11 +826,4 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 </script>

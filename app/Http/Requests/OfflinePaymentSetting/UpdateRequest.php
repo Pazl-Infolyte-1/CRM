@@ -25,10 +25,18 @@ class UpdateRequest extends CoreRequest
      */
     public function rules()
     {
-        return [
-            'name' => 'required|unique:offline_payment_methods,name,'.$this->route('offline_payment_setting').',id,company_id,' . company()->id,
-            'description' => 'required'
+        $rules = [
+            'description' => 'required',
         ];
+
+        if (company()) {
+            $rules['name'] = 'required|unique:offline_payment_methods,name,'.$this->route('offline_payment_setting').',id,company_id,' . company()->id;
+        }
+        else{
+            $rules['name'] = 'required|unique:offline_payment_methods,name,'.$this->route('global_offline_payment_setting').',id,company_id,null';
+        }
+
+        return $rules;
     }
 
 }

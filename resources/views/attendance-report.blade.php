@@ -138,14 +138,14 @@
             <td><span style="color: #FCBD01">&bigstar;</span> &rightarrow; @lang('app.menu.holiday')</td>
         </tr>
         <tr>
-            <td>@lang('app.total') @lang('app.days'): {{ $daysInMonth }}</td>
+            <td>@lang('app.totalDays'): {{ $daysInMonth }}</td>
             <td>@lang('modules.attendance.daysPresent'): {{ $allPresent }}</td>
-            <td>@lang('app.total') @lang('modules.attendance.absent'): {{ $totalAbsent }}</td>
+            <td>@lang('app.totalAbsent'): {{ $totalAbsent }}</td>
         </tr>
         <tr>
-            <td>@lang('app.total') @lang('modules.attendance.leave'): {{ $totalLeaves }}</td>
-            <td>@lang('app.total') @lang('modules.attendance.halfDay')  @lang('app.leave'): {{ $totalHalfDay }}</td>
-            <td>@lang('app.total') @lang('modules.attendance.holiday'): {{ $totalHoliday }}</td>
+            <td>@lang('app.totalLeave') : {{ $totalLeaves }}</td>
+            <td>@lang('app.totalHalfDayLeave') : {{ $totalHalfDay }}</td>
+            <td>@lang('app.totalHoliday') : {{ $totalHoliday }}</td>
         </tr>
     </table>
 

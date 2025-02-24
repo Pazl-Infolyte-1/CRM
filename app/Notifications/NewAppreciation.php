@@ -69,11 +69,14 @@ class NewAppreciation extends BaseNotification
     {
         $build = parent::build();
         $content = __('email.newAppreciation.text', ['award' => $this->userAppreciation->award->title, 'award_at' => $this->userAppreciation->award_date->format($this->company->date_format)]);
+        $url = route('appreciations.show', $this->userAppreciation->id);
+        $url = getDomainSpecificUrl($url, $this->company);
 
         return $build
             ->subject(__('email.newAppreciation.subject'))
             ->markdown('mail.email', [
-                'url' => route('appreciations.show', $this->userAppreciation->id), 'content' => $content,
+                'url' => $url,
+                'content' => $content,
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.newAppreciation.action'),
                 'notifiableName' => $notifiable->name
@@ -108,12 +111,15 @@ class NewAppreciation extends BaseNotification
     {
         $slack = SlackSetting::setting();
 
+        $url = route('appreciations.show', $this->userAppreciation->id);
+        $url = getDomainSpecificUrl($url, $this->company);
+
         if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
             return (new SlackMessage())
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newAppreciation.subject') . '*' . "\n" . '<' . route('appreciations.show', $this->userAppreciation->id) . '|' . $this->userAppreciation->award->title . '>');
+                ->content('*' . __('email.newAppreciation.subject') . '*' . "\n" . '<' . $url . '|' . $this->userAppreciation->award->title . '>');
         }
 
         return (new SlackMessage())

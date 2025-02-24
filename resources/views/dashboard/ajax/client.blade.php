@@ -123,7 +123,7 @@
                     <x-slot name="thead">
                         <th class="pl-20">@lang('app.client')</th>
                         <th>@lang('app.email')</th>
-                        <th class="pr-20 text-right">@lang('app.last') @lang('app.login')</th>
+                        <th class="pr-20 text-right">@lang('app.lastLogin')</th>
                     </x-slot>
                     @forelse ($recentLoginActivities->users as $item)
                         <tr>

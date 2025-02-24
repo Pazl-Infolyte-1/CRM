@@ -66,8 +66,7 @@
                     data: $('#login-form').serialize(),
                     success: function(response) {
                         if (response.status == 'success') {
-                            var redirectUrl = "{{ route('checklist') }}";
-                            window.location.href = redirectUrl;
+                            window.location.href = "{{ route('checklist') }}";
                         }
                     }
                 })

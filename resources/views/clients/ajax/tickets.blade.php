@@ -4,7 +4,7 @@ $addTicketPermission = user()->permission('add_tickets');
 
  <!-- Add Task Export Buttons Start -->
  <div class="d-flex justify-content-between action-bar">
-    <div id="table-actions" class="flex-grow-1 align-items-center mt-3">
+    <div id="table-actions" class="flex-grow-1 align-items-center">
         @if ($addTicketPermission == 'all' || $addTicketPermission == 'added')
             <x-forms.link-primary :link="route('tickets.create').'?default_client='.$client->id" class="mr-3 openRightModal float-left"
                 icon="plus" data-redirect-url="{{ route('clients.show', $client->id) . '?tab=tickets' }}">

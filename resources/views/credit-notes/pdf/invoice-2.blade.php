@@ -371,7 +371,7 @@
         <section id="invoice-info">
             <table>
                 <tr>
-                    <td>@lang('app.menu.issues') @lang('app.date'):</td>
+                    <td>@lang('app.issuesDate'):</td>
                     <td>{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}</td>
                 </tr>
                 @if($invoiceNumber)
@@ -503,7 +503,7 @@
                     <td>{{ currency_format($creditNote->creditAmountUsed(), $creditNote->currency_id, false) }}</td>
                 </tr>
                 <tr>
-                    <td colspan="{{ $creditNoteSetting->hsn_sac_code_show ? '5': '4' }}">@lang('app.adjustment') @lang('app.amount'):</td>
+                    <td colspan="{{ $creditNoteSetting->hsn_sac_code_show ? '5': '4' }}">@lang('app.adjustmentAmount'):</td>
                     <td>{{ currency_format($creditNote->adjustment_amount, $creditNote->currency_id, false) }}</td>
                 </tr>
                 <tr>
@@ -523,6 +523,12 @@
             @endif
 
             <div class="word-break item-summary">{!! nl2br($creditNoteSetting->invoice_terms) !!}</div>
+
+            @if (isset($invoiceSetting->other_info))
+                <div class="word-break item-summary description">
+                    {!! nl2br($invoiceSetting->other_info) !!}
+                </div>
+            @endif
         </section>
 
 

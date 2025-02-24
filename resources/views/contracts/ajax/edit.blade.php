@@ -9,8 +9,7 @@ $addClientPermission = user()->permission('add_clients');
             @method('PUT')
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.menu.contract') @lang('app.details')</h4>
-
+                    @lang('app.contractDetails')</h4>
                 <div class="row p-20">
                                     <!-- CONTRACT NUMBER START -->
                 <div class="col-md-2">
@@ -174,14 +173,13 @@ $addClientPermission = user()->permission('add_clients');
                     <div class="col-md-6">
                         <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel="__('modules.contracts.alternateAddress')" fieldName="alternate_address"
-                            fieldId="alternate_address" :fieldPlaceholder="__('placeholders.address')">
-                            {{ $contract->alternate_address }}
+                            fieldId="alternate_address" :fieldPlaceholder="__('placeholders.address')"
+                            :fieldValue="$contract->alternate_address">
                         </x-forms.textarea>
                     </div>
                     <div class="col-md-6">
                         <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.contracts.notes')"
                             fieldName="note" fieldId="note" :fieldValue="$contract->contract_note">
-                            {{ $contract->contract_note ?? '' }}
                         </x-forms.textarea>
                     </div>
 

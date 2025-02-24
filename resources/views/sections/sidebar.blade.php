@@ -50,31 +50,42 @@
             <div class="dropdown-menu dropdown-menu-right sidebar-brand-dropdown ml-3"
                 aria-labelledby="dropdownMenuLink" tabindex="0">
                 <div class="d-flex justify-content-between align-items-center profile-box">
-                    <a @if(!in_array('client', user_roles())) href="{{ route('employees.show', user()->id) }}" @endif >
-                            <div class="profileInfo d-flex align-items-center mr-1 flex-wrap">
-                                <div class="profileImg mr-2">
-                                    <img class="h-100" src="{{ $user->image_url }}"
-                                        alt="{{ user()->name }}">
-                                </div>
-                                <div class="ProfileData">
-                                    <h3 class="f-15 f-w-500 text-dark" data-placement="bottom" data-toggle="tooltip"
-                                        data-original-title="{{ user()->name }}">{{ user()->name }}</h3>
-                                    <p class="mb-0 f-12 text-dark-grey">{{ user()->employeeDetail->designation->name ?? '' }}</p>
-                                </div>
+                    <a @if(in_array('client', user_roles())) href="{{ route('profile-settings.index') }}" @elseif (user()->is_superadmin) href="{{ route('superadmin.settings.super-admin-profile.index') }}" @else href="{{ route('employees.show', user()->id) }}" @endif >
+                        <div class="profileInfo d-flex align-items-center mr-1 flex-wrap">
+                            <div class="profileImg mr-2">
+                                <img class="h-100" src="{{ $user->image_url }}"
+                                    alt="{{ user()->name }}">
+                            </div>
+                            <div class="ProfileData">
+                                <h3 class="f-15 f-w-500 text-dark" data-placement="bottom" data-toggle="tooltip"
+                                    data-original-title="{{ user()->name }}">{{ user()->name }}</h3>
+                                <p class="mb-0 f-12 text-dark-grey">{{ user()->employeeDetail->designation->name ?? '' }}</p>
+                            </div>
                         </div>
                     </a>
-                    <a href="{{ route('profile-settings.index') }}" data-toggle="tooltip"
-                        data-original-title="{{ __('app.menu.profileSettings') }}">
-                            <i class="side-icon bi bi-pencil-square"></i>
-                    </a>
-                </div>
 
-                @if (!in_array('client', user_roles()) && ($sidebarUserPermissions['add_employees'] == 4 || $sidebarUserPermissions['add_employees'] == 1) && in_array('employees', user_modules()))
-                    <a class="dropdown-item d-flex justify-content-between align-items-center f-15 text-dark invite-member"
-                        href="javascript:;">
-                        <span>@lang('app.inviteMember') {{ $companyName }}</span>
-                        <i class="side-icon bi bi-person-plus"></i>
-                    </a>
+                    {{-- WORKSUITESAAS --}}
+                    @if(user()->is_superadmin)
+                        <a href="{{ route('superadmin.settings.super-admin-profile.index') }}"
+                           data-toggle="tooltip"
+                           data-original-title="{{ __('app.menu.profileSettings') }}">
+                            <i class="side-icon bi bi-pencil-square"></i>
+                        </a>
+                    @else
+                        <a href="{{ route('profile-settings.index') }}" data-toggle="tooltip"
+                           data-original-title="{{ __('app.menu.profileSettings') }}">
+                            <i class="side-icon bi bi-pencil-square"></i>
+                        </a>
+                    @endif
+                </div>
+                @if (checkCompanyCanAddMoreEmployees(user()->company_id))
+                    @if (!in_array('client', user_roles()) && ($sidebarUserPermissions['add_employees'] == 4 || $sidebarUserPermissions['add_employees'] == 1) && in_array('employees', user_modules()))
+                        <a class="dropdown-item d-flex justify-content-between align-items-center f-15 text-dark invite-member"
+                            href="javascript:;">
+                            <span>@lang('app.inviteMember') {{ ($companyName) }}</span>
+                            <i class="side-icon bi bi-person-plus"></i>
+                        </a>
+                    @endif
                 @endif
 
                 <a class="dropdown-item d-flex justify-content-between align-items-center f-15 text-dark"
@@ -92,13 +103,22 @@
                     @lang('app.logout')
                     <i class="side-icon bi bi-power"></i>
                 </a>
+
+                <!-- WORKSUITESAAS -->
+                @include('super-admin.sections.choose-company')
+
             </div>
         </div>
         <!-- SIDEBAR BRAND END -->
 
         <!-- SIDEBAR MENU START -->
         <div class="sidebar-menu {{ user()->dark_theme ? 'bg-dark' : '' }}" id="sideMenuScroll">
-            @include('sections.menu')
+            <!-- WORKSUITESAAS -->
+            @if(user()->is_superadmin)
+                @include('super-admin.sections.super-admin-menu')
+            @else()
+                @include('sections.menu')
+            @endif
         </div>
         <!-- SIDEBAR MENU END -->
     </div>
@@ -108,7 +128,19 @@
         class="text-center d-flex justify-content-between align-items-center position-fixed sidebarTogglerBox {{ user()->dark_theme ? 'bg-dark' : '' }}">
         <button class="border-0 d-lg-block d-none text-lightest font-weight-bold" id="sidebarToggle"></button>
 
-        <p class="mb-0 text-dark-grey px-1 py-0 rounded f-10">v{{ File::get('version.txt') }}</p>
+        <div class="d-flex align-items-center">
+            @if(isWorksuite() || user()->is_superadmin)
+            <p class="mb-0 text-dark-grey px-1 py-0 rounded f-10">v{{ File::get('version.txt') }}</p>
+            @endif
+            @if(isWorksuiteSaas())
+                @if (in_array('admin', user_roles()) )
+                    <p class="mb-0"><a href="{{ route('superadmin.faqs.index') }}" class="text-secondary ml-2 f-15" data-toggle="tooltip" data-original-title="{{__('superadmin.contactSupport')}}"><i class="fa fa-question-circle"></i></a></p>
+                @elseif(user()->is_superadmin && !global_setting()->frontend_disable)
+                    <p class="mb-0"><a target="_blank" data-toggle="tooltip" data-original-title="{{__('superadmin.VisitFrontWebsite')}}" href="{{ route('front.home') }}" class="text-secondary ml-2 f-15"><i class="fa fa-external-link-alt"></i></a></p>
+                 @endif
+             @endif
+
+        </div>
     </div>
     <!-- Sidebar Toggler -->
 </aside>

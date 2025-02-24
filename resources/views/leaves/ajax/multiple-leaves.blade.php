@@ -10,7 +10,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                 <div class="row">
                     <div class="col-lg-8 col-xs-4">
-                        <h3 class="heading-h1 mb-3">@lang('modules.leaves.multiple') @lang('app.details')</h3>
+                        <h3 class="heading-h1 mb-3">@lang('app.multipleDetails')</h3>
                     </div>
                     <div class="col-lg-4 col-xs-8 text-right">
                         @php

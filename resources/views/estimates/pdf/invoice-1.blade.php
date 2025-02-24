@@ -493,6 +493,12 @@
         {!! nl2br($invoiceSetting->invoice_terms) !!}
     </p>
 
+    @if (isset($invoiceSetting->other_info))
+        <p id="notes" class="word-break description">
+            {!! nl2br($invoiceSetting->other_info) !!}
+        </p>
+    @endif
+
     @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)
         <p class="text-dark-grey description">
             @if ($estimate->calculate_tax == 'after_discount')

@@ -29,7 +29,7 @@ trait CustomFieldsRequestTrait
                 }
             }
         }
-        
+
         return $rules;
     }
 
@@ -45,7 +45,7 @@ trait CustomFieldsRequestTrait
                 $customField = CustomField::findOrFail($id);
 
                 if ($customField->required == 'yes') {
-                    $attributes['custom_fields_data.'.$key] = $customField->label;
+                    $attributes['custom_fields_data.'.$key] = str($customField->label);
                 }
             }
         }

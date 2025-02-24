@@ -28,9 +28,9 @@ class ModuleSettingController extends AccountBaseController
         $tab = request('tab');
 
         $this->modulesData = match ($tab) {
-            'employee' => ModuleSetting::where('module_name', '<>', 'settings')->where('type', 'employee')->get(),
-            'client' => ModuleSetting::where('module_name', '<>', 'settings')->where('type', 'client')->get(),
-            default => ModuleSetting::where('module_name', '<>', 'settings')->where('type', 'admin')->get(),
+            'employee' => ModuleSetting::where('module_name', '<>', 'settings')->where('is_allowed', 1)->where('type', 'employee')->get(),
+            'client' => ModuleSetting::where('module_name', '<>', 'settings')->where('is_allowed', 1)->where('type', 'client')->get(),
+            default => ModuleSetting::where('module_name', '<>', 'settings')->where('is_allowed', 1)->where('type', 'admin')->get(),
         };
 
         $this->view = 'module-settings.ajax.modules';

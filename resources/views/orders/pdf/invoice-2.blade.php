@@ -529,6 +529,11 @@
             @if(!is_null($order->note))
                 <div class="word-break item-summary">{!! nl2br($order->note) !!}</div>
             @endif
+            @if (isset($invoiceSetting->other_info))
+                <div class="word-break item-summary description">
+                    {!! nl2br($invoiceSetting->other_info) !!}
+                </div>
+            @endif
         </section>
 
     </div>

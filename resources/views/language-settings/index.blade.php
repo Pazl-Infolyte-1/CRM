@@ -17,7 +17,7 @@
                 <div class="row">
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="add-language"
-                                                class="mb-2 mr-2"> @lang('app.addNew') @lang('app.language')
+                                                class="mb-2 mr-2"> @lang('app.addNewLanguage')
                         </x-forms.button-primary>
                         <x-forms.button-secondary icon="cog" id="translations"
                                                   class="mb-2 mr-2"> @lang('modules.languageSettings.translate')
@@ -53,8 +53,8 @@
 
                 <x-table class="table table-sm-responsive">
                     <x-slot name="thead">
-                        <th>@lang('app.language') @lang('app.name')</th>
-                        <th>@lang('app.language') @lang('app.code')</th>
+                        <th>@lang('app.languageName')</th>
+                        <th>@lang('app.languageCode')</th>
                         <th>@lang('app.status')</th>
                         <th width="50%" class="text-right">@lang('app.action')</th>
                     </x-slot>

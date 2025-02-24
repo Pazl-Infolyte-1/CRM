@@ -8,6 +8,7 @@ use App\Models\FileStorage;
 use App\Models\StorageSetting;
 use App\Helper\Files;
 use App\Http\Requests\Settings\StorageAwsFileUpload;
+use App\Models\GlobalSetting;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\File;
@@ -22,7 +23,7 @@ class StorageSettingController extends AccountBaseController
         $this->pageTitle = 'app.menu.storageSettings';
         $this->activeSettingMenu = 'storage_settings';
         $this->middleware(function ($request, $next) {
-            abort_403(!(user()->permission('manage_storage_setting') == 'all'));
+            abort_403(((user()->permission('manage_storage_setting') !== 'all')) && GlobalSetting::validateSuperAdmin('manage_superadmin_storage_settings'));
 
             return $next($request);
         });

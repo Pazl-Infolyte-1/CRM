@@ -31,32 +31,11 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                             <div class="col-lg-4 col-md-6">
                                 <x-forms.email fieldId="email" :fieldLabel="__('app.email')" fieldName="email"
                                     :popover="__('modules.client.emailNote')" :fieldPlaceholder="__('placeholders.email')"
-                                    :fieldValue="$client->email">
+                                    :fieldValue="$client->email" :fieldReadOnly="!is_null($client->email)" :popover="__('superadmin.emailCannotChange')">
                                 </x-forms.email>
                             </div>
+
                             <div class="col-lg-4 col-md-6">
-                                <x-forms.label class="mt-3" fieldId="password" :fieldLabel="__('app.password')"
-                                    :popover="__('messages.requiredForLogin')">
-                                </x-forms.label>
-                                <x-forms.input-group>
-                                    <input type="password" name="password" id="password" autocomplete="off"
-                                        class="form-control height-35 f-14">
-                                    <x-slot name="preappend">
-                                        <button type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('app.viewPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
-                                                class="fa fa-eye"></i></button>
-                                    </x-slot>
-                                    <x-slot name="append">
-                                        <button id="random_password" type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('modules.client.generateRandomPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35"><i
-                                                class="fa fa-random"></i></button>
-                                    </x-slot>
-                                </x-forms.input-group>
-                                <small class="form-text text-muted">@lang('modules.client.passwordUpdateNote')</small>
-                            </div>
-                            <div class="col-md-4">
                                 <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country"
                                 search="true">
                                 <option value="">--</option>
@@ -440,14 +419,6 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     @if (function_exists('sms_setting') && sms_setting()->telegram_status)
         var clipboard = new ClipboardJS('.btn-copy');

@@ -42,8 +42,7 @@
     }
 
 
-    $('body').on('click', '.delete-table-row', function() {
-        var id = $(this).data('proposal-id');
+    $('body').on('click', '.delete-proposal-table-row', function() {
         Swal.fire({
             title: "@lang('messages.sweetAlertTitle')",
             text: "@lang('messages.recoverRecord')",
@@ -62,7 +61,9 @@
             },
             buttonsStyling: false
         }).then((result) => {
+
             if (result.isConfirmed) {
+                var id = $(this).data('proposal-id');
                 var url = "{{ route('proposals.destroy', ':id') }}";
                 url = url.replace(':id', id);
 

@@ -21,7 +21,7 @@
                             <i class="fa fa-info-circle"></i> @lang('modules.twofactor.verifySmtp')
                         </div>
 
-                        @if (user()->permission('manage_notification_setting') == 'all')
+                        @if (user()->permission('manage_notification_setting') == 'all' || ( user()->is_superadmin && user()->permission('manage_superadmin_notification_settings') == 'all'))
                             <div>
                                 <x-forms.link-primary :link="route('notifications.index')">
                                     @lang('app.verify')
@@ -43,7 +43,7 @@
                             </div>
                             <div class="col-md-11">
                                 <h6>@lang('modules.twofactor.setupEmail')
-                                    @if (($user->two_fa_verify_via == 'email' || $user->two_fa_verify_via == 'both') && $user->two_factor_email_confirmed)
+                                    @if (($user->userAuth->two_fa_verify_via == 'email' || $user->userAuth->two_fa_verify_via == 'both') && $user->userAuth->two_factor_email_confirmed)
                                         <span class="badge badge-success ml-2">@lang('app.active')</span>
                                     @endif
 
@@ -52,7 +52,7 @@
                                     =>
                                     user()->email])</p>
                                 @if (($smtpSetting->mail_driver == 'smtp' && $smtpSetting->verified) || $smtpSetting->mail_driver == 'mail')
-                                    @if (($user->two_fa_verify_via == 'email' || $user->two_fa_verify_via == 'both') && $user->two_factor_email_confirmed)
+                                    @if (($user->userAuth->two_fa_verify_via == 'email' || $user->userAuth->two_fa_verify_via == 'both') && $user->userAuth->two_factor_email_confirmed)
                                         <x-forms.button-secondary class="change-2fa-status" data-method="email"
                                             data-status="disable">
                                             @lang('app.disable')
@@ -75,8 +75,8 @@
                             </div>
                             <div class="col-md-11">
                                 <h6>@lang('modules.twofactor.setupGoogleAuthenticator')
-                                    @if ($user->two_fa_verify_via == 'google_authenticator' || $user->two_fa_verify_via == 'both')
-                                        @if ($user->two_factor_confirmed)
+                                    @if ($user->userAuth->two_fa_verify_via == 'google_authenticator' || $user->userAuth->two_fa_verify_via == 'both')
+                                        @if ($user->userAuth->two_factor_confirmed)
                                             <span class="badge badge-success ml-2">@lang('app.active')</span>
                                         @else
                                             <span
@@ -89,10 +89,10 @@
                                     @lang('messages.enable2FAUsingAuthenticator')
                                 </p>
 
-                                @if ($user->two_factor_secret)
+                                @if ($user->userAuth->two_factor_secret)
                                     <p class="f-w-500">@lang('modules.twofactor.2faBarcode')</p>
                                     <span class="p-2 border rounded w-100 d-table-cell two-factor-bg">
-                                        {!! $user->twoFactorQrCodeSvg() !!}
+                                        {!! $user->userAuth->twoFactorQrCodeSvg() !!}
                                     </span>
                                     <div class="my-4 f-12 text-lightest">
                                         <span class="badge badge-primary">@lang('app.note')</span>
@@ -100,8 +100,8 @@
                                     </div>
                                 @endif
 
-                                @if ($user->two_fa_verify_via == 'google_authenticator' || $user->two_fa_verify_via == 'both')
-                                    @if ($user->two_factor_confirmed)
+                                @if ($user->userAuth->two_fa_verify_via == 'google_authenticator' || $user->userAuth->two_fa_verify_via == 'both')
+                                    @if ($user->userAuth->two_factor_confirmed)
                                         <x-forms.button-secondary class="change-2fa-status"
                                             data-method="google_authenticator" data-status="disable">
                                             @lang('app.disable')
@@ -109,11 +109,11 @@
 
                                         <x-forms.button-cancel class="ml-3"
                                             :link="route('2fa_codes_download')">
-                                            @lang('app.download') @lang('app.recoveryCode')
+                                            @lang('app.downloadRecoveryCode')
                                         </x-forms.button-cancel>
 
                                         <x-forms.button-cancel class="ml-3" id="regenerate-codes">
-                                            @lang('app.regenerate') @lang('app.recoveryCode')
+                                            @lang('app.regenerateRecoveryCode')
                                         </x-forms.button-cancel>
                                     @else
                                         <x-forms.button-primary class="validate-2fa">

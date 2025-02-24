@@ -36,26 +36,6 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-12 password-section d-none">
-                <x-forms.label class="mt-3" fieldId="password" :fieldLabel="__('app.password')"
-                    :popover="__('messages.requiredForLogin')">
-                </x-forms.label>
-                <x-forms.input-group>
-                    <input type="password" name="password" id="password" class="form-control height-35 f-14">
-                    <x-slot name="preappend">
-                        <button type="button" data-toggle="tooltip" data-original-title="@lang('app.viewPassword')"
-                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
-                                class="fa fa-eye"></i></button>
-                    </x-slot>
-                    <x-slot name="append">
-                        <button id="random_password" type="button" data-toggle="tooltip"
-                            data-original-title="@lang('modules.client.generateRandomPassword')"
-                            class="btn btn-outline-secondary border-grey height-35"><i
-                                class="fa fa-random"></i></button>
-                    </x-slot>
-                </x-forms.input-group>
-                <small class="form-text text-muted">@lang('placeholders.password')</small>
-            </div>
 
         </div>
     </div>
@@ -78,14 +58,6 @@
         const randPassword = Math.random().toString(36).substr(2, 8);
 
         $('#password').val(randPassword);
-    });
-
-    $('input[type=radio][name=login]').change(function() {
-        if (this.value == 'enable') {
-            $('.password-section').removeClass('d-none');
-        } else {
-            $('.password-section').addClass('d-none');
-        }
     });
 
     $('#save-category').click(function() {

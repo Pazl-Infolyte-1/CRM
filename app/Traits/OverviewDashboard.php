@@ -133,7 +133,7 @@ trait OverviewDashboard
      */
     public function earningChart($startDate, $endDate)
     {
-        $payments = Payment::join('currencies', 'currencies.id', '=', 'payments.currency_id')->where('status', 'complete');
+        $payments = Payment::join('currencies', 'currencies.id', '=', 'payments.currency_id')->where('payments.status', 'complete');
 
         $payments = $payments->whereBetween('payments.paid_on', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()]);
 

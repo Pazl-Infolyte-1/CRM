@@ -47,8 +47,8 @@
             </div>
 
 
-            <h4 class="mt-5 mb-3 f-21 text-capitalize font-weight-bold">@lang('app.client') @lang('app.unpaid')
-                @lang('app.menu.invoices')</h4>
+            <h4 class="mt-5 mb-3 f-21 text-capitalize font-weight-bold">@lang('app.clientUnpaidInvoices')
+               </h4>
 
             <x-cards.data padding="false">
                 <div class="table-responsive">

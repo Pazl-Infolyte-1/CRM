@@ -24,38 +24,7 @@ return new class extends Migration
     public function up(): void
     {
         // WithoutGlobalScopes
-        $files = [
-            [
-                'model' => Company::class,
-                'columns' => [
-                    [
-                        'name' => 'logo',
-                        'path' => 'app-logo',
-                    ],
-                    [
-                        'name' => 'light_logo',
-                        'path' => 'app-logo',
-                    ],
-                    [
-                        'name' => 'login_background',
-                        'path' => 'login-background',
-                    ],
-                    [
-                        'name' => 'favicon',
-                        'path' => 'favicon',
-                    ],
-                ],
-            ],
-            [
-                'model' => User::class,
-                'columns' => [
-                    [
-                        'name' => 'image',
-                        'path' => 'avatar',
-                    ],
-                ],
-            ]
-        ];
+        $files = [];
 
         foreach ($files as $file) {
             $model = $file['model'];

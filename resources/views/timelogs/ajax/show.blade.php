@@ -5,7 +5,7 @@
                 <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-md-10 col-10">
-                            <h3 class="heading-h1 mb-3">@lang('app.timeLog') @lang('app.details')</h3>
+                            <h3 class="heading-h1 mb-3">@lang('app.timeLogDetails')</h3>
                         </div>
                         <div class="col-lg-2 col-md-2 col-2 text-right">
                             @if (
@@ -145,22 +145,11 @@
 
 <script>
     $('body').on('click', '.stop-timer', function() {
-        var id = $(this).data('time-id');
-        var url = "{{ route('timelogs.stop_timer', ':id') }}";
-        url = url.replace(':id', id);
-        var token = '{{ csrf_token() }}';
-        $.easyAjax({
-            url: url,
-            type: "POST",
-            data: {
-                timeId: id,
-                _token: token
-            },
-            success: function(data) {
-                window.location.reload();
-            }
-        })
-
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
+            url = url.replace(':id', id);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
     });
 
     $('body').on('click', '.edit-time-break', function() {

@@ -31,8 +31,7 @@ $addTaskPermission = ($project->project_admin == user()->id) ? 'all' : user()->p
             @if (($addTaskPermission == 'all' || $addTaskPermission == 'added') && !$project->trashed())
                 <x-forms.link-primary :link="route('tasks.create').'?task_project_id='.$project->id"
                     class="mr-3 openRightModal float-left" icon="plus" data-redirect-url="{{ url()->full() }}">
-                    @lang('app.add')
-                    @lang('app.task')
+                    @lang('app.addTask')
                 </x-forms.link-primary>
             @endif
             @if (user()->permission('change_status') == 'all' && !$project->trashed())

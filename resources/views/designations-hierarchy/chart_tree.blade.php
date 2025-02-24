@@ -17,6 +17,6 @@
     @endforeach
     <ul id="pre-state"></ul>
     <ul id="drophere" ondragstart="return false;" ondrop="return false;">
-        <li ><span id="NewNode" class="node-cpe">@lang('app.new') @lang('app.hierarchy')</span></span></li>
+        <li ><span id="NewNode" class="node-cpe">@lang('app.newHierarchy')</span></span></li>
     </ul>
 </div>

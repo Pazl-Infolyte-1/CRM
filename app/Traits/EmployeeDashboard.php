@@ -420,7 +420,7 @@ trait EmployeeDashboard
         $this->weekShifts = $weekShifts;
         $this->showClockIn = $showClockIn->show_clock_in_button;
         $this->event_filter = explode(',', user()->employeeDetails->calendar_view);
-        $this->widgets = DashboardWidget::where('dashboard_type', 'private-dashboard')->get();
+        $this->widgets = DashboardWidget::where('dashboard_type', 'private-dashboard')->where('active', 1)->get();
         $this->activeWidgets = $this->widgets->filter(function ($value, $key) {
             return $value->status == '1';
         })->pluck('widget_name')->toArray();
@@ -663,7 +663,18 @@ trait EmployeeDashboard
                 $attendance->late = 'yes';
             }
 
-            $attendance->half_day = 'no'; // default halfday
+            $leave = Leave::where('leave_date', $attendance->clock_in_time->format('Y-m-d'))
+                ->where('user_id', $this->user->id)->first();
+
+            if(isset($leave) && !is_null($leave->half_day_type))
+            {
+                $attendance->half_day = 'yes';
+            }
+            else
+            {
+                $attendance->half_day = 'no';
+            }
+
 
             // Check day's first record and half day time
             if (

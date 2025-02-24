@@ -3,7 +3,7 @@
         <x-form id="save-notice-data-form">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('modules.notices.notice') @lang('app.details')</h4>
+                    @lang('app.noticeDetails')</h4>
                 <div class="row p-20">
                     <div class="col-lg-12">
                         <div class="row">

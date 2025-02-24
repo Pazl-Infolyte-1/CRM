@@ -8,8 +8,6 @@ use App\Models\User;
 use App\Models\CustomField;
 use App\Models\ClientDetails;
 use App\Models\CustomFieldGroup;
-use App\DataTables\BaseDataTable;
-use Illuminate\Database\Eloquent\Model;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
@@ -97,6 +95,10 @@ class ClientsDataTable extends BaseDataTable
                 ]);
             }
         );
+        $datatables->editColumn('id', function ($row) {
+            return $row->clientDetails?->id;
+        }
+        );
         $datatables->editColumn(
             'created_at',
             function ($row) {
@@ -109,9 +111,8 @@ class ClientsDataTable extends BaseDataTable
                 if ($row->status == 'active') {
                     return ' <i class="fa fa-circle mr-1 text-light-green f-10"></i>' . __('app.active');
                 }
-                else {
-                    return '<i class="fa fa-circle mr-1 text-red f-10"></i>' . __('app.inactive');
-                }
+
+                return '<i class="fa fa-circle mr-1 text-red f-10"></i>' . __('app.inactive');
             }
         );
         $datatables->addIndexColumn();

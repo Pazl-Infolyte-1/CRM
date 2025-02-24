@@ -2,9 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ClientDetails;
+use App\Models\UserAuth;
+use App\Models\Country;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use App\Models\UniversalSearch;
@@ -57,13 +60,24 @@ class ImportClientJob implements ShouldQueue
             else {
                 DB::beginTransaction();
                 try {
+
+                    $country = Country::where('name', $this->row[array_keys($this->columns, 'country_id')[0]])->first();
+
+                    $countryID = !is_null($country) ? $country->id : null;
+
                     $user = new User();
                     $user->company_id = $this->company?->id;
                     $user->name = $this->row[array_keys($this->columns, 'name')[0]];
                     $user->email = !empty(array_keys($this->columns, 'email')) && filter_var($this->row[array_keys($this->columns, 'email')[0]], FILTER_VALIDATE_EMAIL) ? $this->row[array_keys($this->columns, 'email')[0]] : null;
-                    $user->password = bcrypt(123456);
                     $user->mobile = !empty(array_keys($this->columns, 'mobile')) ? $this->row[array_keys($this->columns, 'mobile')[0]] : null;
                     $user->gender = !empty(array_keys($this->columns, 'gender')) ? strtolower($this->row[array_keys($this->columns, 'gender')[0]]) : null;
+
+                    if(!empty(array_keys($this->columns, 'email')) && filter_var($this->row[array_keys($this->columns, 'email')[0]], FILTER_VALIDATE_EMAIL)){
+                        $userAuth = UserAuth::createUserAuthCredentials(array_keys($this->columns, 'email')[0]);
+                        $user->user_auth_id = $userAuth->id;
+                    }
+
+                    $user->country_id = $countryID;
                     $user->save();
 
                     if ($user->id) {

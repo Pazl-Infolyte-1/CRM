@@ -25,9 +25,13 @@
                         <x-forms.button-primary icon="plus" id="addNewCurrency">
                             @lang('modules.currencySettings.addNewCurrency')
                         </x-forms.button-primary>
-                        <x-forms.button-secondary icon="key" id="addCurrencyExchangeKey">
-                            @lang('modules.accountSettings.currencyConverterKey')
-                        </x-forms.button-secondary>
+
+                        @if(user()->is_superadmin)
+                            <x-forms.button-secondary icon="key" id="addCurrencyExchangeKey">
+                                @lang('modules.accountSettings.currencyConverterKey')
+                            </x-forms.button-secondary>
+                        @endif
+
                     </div>
                 </div>
             </x-slot>

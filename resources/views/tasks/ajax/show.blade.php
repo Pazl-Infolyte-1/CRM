@@ -545,29 +545,6 @@ $viewProjectPermission = user()->permission('view_projects');
 
             });
 
-            $('#stop-task-timer').click(function() {
-                var id = $(this).data('time-id');
-                var url = "{{ route('timelogs.stop_timer', ':id') }}";
-                url = url.replace(':id', id);
-                var token = '{{ csrf_token() }}';
-
-                let currentUrl = $(this).data('url');
-
-                $.easyAjax({
-                    url: url,
-                    blockUI: true,
-                    type: "POST",
-                    data: {
-                        timeId: id,
-                        currentUrl: currentUrl,
-                        _token: token
-                    },
-                    success: function(data) {
-                        window.location.reload();
-                    }
-                })
-            });
-
             $('body').on('click', '#pinnedItem', function() {
                 var type = $('#pinnedItem').attr('data-pinned');
                 var id = '{{ $task->id }}';
@@ -1012,6 +989,15 @@ $viewProjectPermission = user()->permission('view_projects');
             });
 
             init(RIGHT_MODAL);
+
+        $('#stop-task-timer').on('click', function() {
+        var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+        var id = $(this).data('time-id');
+        url = url.replace(':id', id);
+        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_LG, url);
+        })
+
         });
     </script>
 </div>

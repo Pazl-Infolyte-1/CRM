@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Models\UserAuth;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Carbon;
@@ -47,6 +48,11 @@ class ImportEmployeeJob implements ShouldQueue, ShouldBeUnique
     {
         if (!empty(array_keys($this->columns, 'name')) && !empty(array_keys($this->columns, 'email')) && filter_var($this->row[array_keys($this->columns, 'email')[0]], FILTER_VALIDATE_EMAIL)) {
 
+            if (!checkCompanyCanAddMoreEmployees($this->company?->id)) {
+                $this->job->fail(__('superadmin.updatePlanNote'));
+                return;
+            }
+
             $user = User::where('email', $this->row[array_keys($this->columns, 'email')[0]])->first();
 
             if ($user) {
@@ -59,6 +65,7 @@ class ImportEmployeeJob implements ShouldQueue, ShouldBeUnique
             if ($employeeDetails) {
                 $this->job->fail(__('messages.duplicateEntryForEmployeeId') . $this->row[array_keys($this->columns, 'employee_id')[0]]);
             }
+
             else {
                 DB::beginTransaction();
                 try {
@@ -66,9 +73,21 @@ class ImportEmployeeJob implements ShouldQueue, ShouldBeUnique
                     $user->company_id = $this->company?->id;
                     $user->name = $this->row[array_keys($this->columns, 'name')[0]];
                     $user->email = $this->row[array_keys($this->columns, 'email')[0]];
-                    $user->password = bcrypt(123456);
+
+                    if (isWorksuite())
+                    {
+                        $user->password = bcrypt(123456);
+                    }
+
                     $user->mobile = !empty(array_keys($this->columns, 'mobile')) ? $this->row[array_keys($this->columns, 'mobile')[0]] : null;
                     $user->gender = !empty(array_keys($this->columns, 'gender')) ? strtolower($this->row[array_keys($this->columns, 'gender')[0]]) : null;
+
+                    if (isWorksuiteSaas())
+                    {
+                        $userAuth = UserAuth::createUserAuthCredentials($this->row[array_keys($this->columns, 'email')[0]], 123456);
+                        $user->user_auth_id = $userAuth->id;
+                    }
+
                     $user->save();
 
                     if ($user->id) {
@@ -85,7 +104,7 @@ class ImportEmployeeJob implements ShouldQueue, ShouldBeUnique
                     $employeeRole = Role::where('name', 'employee')->first();
                     $user->attachRole($employeeRole);
                     $user->assignUserRolePermission($employeeRole->id);
-                    $this->logSearchEntry($user->id, $user->name, 'employees.show', 'employee', $user->company_id);
+                    $this->logSearchEntry($user->id, $user->name, 'employees.show', 'employee');
                     DB::commit();
                 } catch (\Carbon\Exceptions\InvalidFormatException $e) {
                     DB::rollBack();

@@ -46,8 +46,7 @@ $viewLeadPermission = user()->permission('view_lead');
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addLeadPermission == 'all' || $addLeadPermission == 'added')
                     <x-forms.link-primary :link="route('leads.create')" class="mr-3 openRightModal float-left" icon="plus">
-                        @lang('app.add')
-                        @lang('app.lead')
+                        @lang('app.addLead')
                     </x-forms.link-primary>
                 @endif
                 @if (user()->permission('manage_lead_status') == 'all')

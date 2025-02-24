@@ -336,7 +336,7 @@
                 </tr>
 
                 <tr>
-                    <td class="heading-table-left">@lang('app.credit-note') @lang('app.date')</td>
+                    <td class="heading-table-left">@lang('app.creditNoteDate')</td>
                     <td class="heading-table-right">
                         {{ $creditNote->issue_date->translatedFormat(company()->date_format) }}
                     </td>
@@ -487,7 +487,7 @@
                     <td width="50%" class="subtotal">@lang('modules.credit-notes.creditAmountUsed')</td>
                 </tr>
                 <tr align="right" class="text-grey">
-                    <td width="50%" class="subtotal">@lang('app.adjustment') @lang('app.amount')</td>
+                    <td width="50%" class="subtotal">@lang('app.adjustmentAmount')</td>
                 </tr>
                 <tr align="right" class="balance text-black">
                     <td width="50%" class="balance-left">@lang('modules.credit-notes.creditAmountRemaining')</td>
@@ -563,6 +563,11 @@
     <tr class="text-grey">
         <td class="f-11 line-height">{!! nl2br($invoiceSetting->invoice_terms) !!}</td>
     </tr>
+    @if (isset($invoiceSetting->other_info))
+        <tr class="text-grey">
+            <td class="f-11 line-height">{!! nl2br($invoiceSetting->other_info) !!}</td>
+        </tr>
+    @endif
 
     @if ($creditNote->note != '')
         <tr>

@@ -28,10 +28,10 @@ class MessageSettingController extends AccountBaseController
         return view('message-settings.index', $this->data);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
 
-        $setting = MessageSetting::findOrFail($id);
+        $setting = message_setting();
 
         if ($request->allow_client_admin) {
             $setting->allow_client_admin = 'yes';

@@ -35,7 +35,7 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
 
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="addEmployeeShift" class="shift-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('modules.attendance.shift')
+                            @lang('app.addNewShift')
                         </x-forms.button-primary>
                     </div>
 

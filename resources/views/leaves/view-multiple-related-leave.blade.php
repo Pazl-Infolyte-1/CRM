@@ -7,7 +7,7 @@
     }
 </style>
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.total') @lang('app.leave') ( {{$multipleLeaves[0]->user->name}} )</h5>
+    <h5 class="modal-title">@lang('app.totalLeave') ( {{$multipleLeaves[0]->user->name}} )</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-0">
@@ -25,7 +25,7 @@
             }
         @endphp
 
-        @if ($pendingCountLeave > 0 && $approveRejectPermission == 'all')
+        @if ($pendingCountLeave > 0 && ($approveRejectPermission == 'all' || ($leaveSetting->manager_permission != 'cannot-approve' && user()->id == $multipleLeaves->first()->user->employeeDetails->reporting_to)))
             <a class="btn btn-secondary rounded f-14 p-2 leave-action-approved" data-leave-id="{{ $multipleLeaves->first()->unique_id }}"
                 data-leave-action="approved" data-type="approveAll" class="mr-3" icon="check" href="javascript:;">
                 <i class="fa fa-check mr-2"></i>{{$approveTitle}}</a>

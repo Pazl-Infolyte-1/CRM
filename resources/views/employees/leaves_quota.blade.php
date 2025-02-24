@@ -9,7 +9,7 @@
                                 <th>@lang('modules.leaves.leaveType')</th>
                                 <th>@lang('modules.leaves.noOfLeaves')</th>
                                 <th>@lang('modules.leaves.monthLimit')</th>
-                                <th class="text-right">@lang('app.total') @lang('modules.leaves.leavesTaken')</th>
+                                <th class="text-right">@lang('app.totalLeavesTaken')</th>
                             </x-slot>
 
                             <tr>

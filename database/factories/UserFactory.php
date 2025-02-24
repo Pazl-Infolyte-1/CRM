@@ -23,12 +23,16 @@ class UserFactory extends Factory
      */
     public function definition()
     {
+        $email = fake()->unique()->safeEmail;
+        $email_parts = explode('@', $email);
+        $random_letter = chr(mt_rand(97, 122)) . rand(0, 100);
+
+        $new_email = $email_parts[0] . $random_letter.'@' . $email_parts[1];
+
         return [
             'name' => fake()->name,
-            'email' => fake()->unique()->safeEmail . rand(0, 9), /* @phpstan-ignore-line */
-            'password' => bcrypt('123456'),
             'gender' => 'male',
-            'remember_token' => Str::random(10),
+            'email' => $new_email, /* @phpstan-ignore-line */
         ];
     }
 

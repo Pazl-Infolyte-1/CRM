@@ -143,15 +143,6 @@
                 </div>
             </div>
         </div>
-
-        <div id="sign-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog d-flex justify-content-center align-items-center modal-xl">
-                <div class="modal-content">
-                    @include('contracts.companysign.sign')
-                </div>
-            </div>
-        </div>
-
     </div>
     <!-- CARD BODY END -->
     <!-- CARD FOOTER START -->
@@ -174,14 +165,14 @@
                         <li>
                             <a class="dropdown-item openRightModal" href="{{ route('contracts.create') . '?id=' . $contract->id }}">
                                 <i class="fa fa-copy mr-2"></i>
-                                @lang('app.copy') @lang('app.menu.contract')
+                                @lang('app.copyContract')
                             </a>
                         </li>
                     @endif
                     @if (!$contract->company_sign && user()->company_id == $contract->company_id)
                     <li>
-                        <a class="dropdown-item f-14 text-dark" href="javascript:;" data-toggle="modal"
-                            data-target="#sign-modal">
+                        <a class="dropdown-item f-14 text-dark" href="javascript:;"
+                            id="company-signature">
                             <i class="fa fa-check f-w-500  mr-2 f-12"></i>
                             @lang('modules.estimates.companysignature')
                         </a>
@@ -255,6 +246,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
 <script>
+
+    $('#company-signature').click(function() {
+            const url = "{{ route('contracts.company_sig', $contract->id) }}";
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
+        });
     var canvas = document.getElementById('signature-pad');
 
     var signaturePad = new SignaturePad(canvas, {
@@ -425,27 +422,6 @@
                 });
                 return false;
             }
-
-            $.easyAjax({
-                url: "{{ route('companySign.sign', $contract->id) }}",
-                container: '#acceptEstimate',
-                type: "POST",
-                blockUI: true,
-                file: true,
-                disableButton: true,
-                buttonSelector : '#save-sign',
-                data: {
-                    signature: signature,
-                    image: image,
-                    signature_type: signature_type,
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function(response) {
-                    if (response.status == 'success') {
-                        window.location.reload();
-                    }
-                }
-            })
         });
 
 </script>

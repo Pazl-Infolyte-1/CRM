@@ -501,6 +501,18 @@
                                     </table>
                                 </td>
                             </tr>
+                            @if (isset($invoiceSetting->other_info))
+                                <tr>
+                                    <td align="vertical-align: text-top">
+                                        <table>
+                                            <tr>
+                                                <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                                </p>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            @endif
                         </table>
                     </div>
                 </div>
@@ -578,7 +590,7 @@
                                         <li>
                                             <a class="dropdown-item f-14 text-dark" href="javascript:void(0);"
                                                id="payfastModal">
-                                                <img style="height: 15px;" src="{{ asset('img/payfast-logo.png') }}">
+                                                <img style="height: 15px;" src="{{ asset('img/payfast.png') }}">
                                                 @lang('modules.invoices.payPayfast')</a>
                                         </li>
                                     @endif

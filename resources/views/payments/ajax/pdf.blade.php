@@ -223,7 +223,7 @@
 </head>
 
 <body class="content-wrapper">
-    <h3 class="text-center">@lang('app.payment') @lang('app.receipt')</h3>
+    <h3 class="text-center">@lang('app.paymentReceipt')</h3>
     <table class="bg-white" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
         <tbody>
             <!-- Table Row Start -->

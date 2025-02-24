@@ -49,7 +49,7 @@
                     <div class="row">
                         <div class="col-sm-12 mt-4">
                             <x-alert type="primary" icon="info-circle">
-                                @lang('messages.databasebackup.info', ['time' => \Carbon\Carbon::createFromFormat('H:i:s', $backupSetting->hour_of_day)->translatedFormat(company()->time_format), 'everyDayCount' => $backupSetting->backup_after_days, 'olderDayCount' => $backupSetting->delete_backup_after_days])
+                                @lang('messages.databasebackup.info', ['time' => \Carbon\Carbon::createFromFormat('H:i:s', $backupSetting->hour_of_day)->translatedFormat(companyOrGlobalSetting()->time_format), 'everyDayCount' => $backupSetting->backup_after_days, 'olderDayCount' => $backupSetting->delete_backup_after_days])
                             </x-alert>
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                                         <td>{{ $backup['file_name'] }}</td>
                                         <td>{{ \App\Http\Controllers\DatabaseBackupSettingController::humanFilesize($backup['file_size']) }}</td>
                                         <td>
-                                            {{ \Carbon\Carbon::parse($backup['last_modified'])->timezone(company()->timezone)->translatedFormat(company()->date_format . ', ' . company()->time_format) }}
+                                            {{ \Carbon\Carbon::parse($backup['last_modified'])->timezone(companyOrGlobalSetting()->timezone)->translatedFormat(companyOrGlobalSetting()->date_format . ', ' . companyOrGlobalSetting()->time_format) }}
                                         </td>
                                         <td class="text-right">
                                             <div class="task_view">

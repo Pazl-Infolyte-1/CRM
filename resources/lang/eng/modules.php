@@ -596,6 +596,7 @@ return array(
         'break' => 'Break',
         'thisWeek' => 'This Week',
         'editBreak' => 'Edit Break',
+        'totalTime' => 'Total Time',
     ),
     'taskCalendar' => array(
         'note' => 'Calendar shows the due tasks on their due dates.',
@@ -769,6 +770,8 @@ return array(
         'discussion-reply' => 'Discussion Replies',
         'mailConnection' => 'Enable Email Queue',
         'mailConnectionInfo' => '<p>To speed up the emailing process, the system will add the emails in queue and will send them via cron job.</p>  <p> Choose <u>No</u> to send email immediately <strong>(Slower)</strong>.</p><p>Choose <u>Yes</u> to send emails in background <strong>(Faster)</strong>.</p><p><em>*Make sure the cron job is configured properly to use email queueing.</em></p>',
+        'emailVerified' => 'Email Verified',
+        'emailVerifiedInfo' => "Emails from companies are sent from the company's email address. In the case of <strong>AWS SES, ZOHO, and OFFICE365</strong>, emails are not sent from unverified senders. Therefore, to enable emails to be sent directly from the Mail From Email address, you need to select <strong>Yes</strong> here.",
     ),
     'moduleSettings' => array(
         'employeeModuleTitle' => 'Modules',
@@ -1080,6 +1083,7 @@ return array(
         'syncInfo' => 'It is only One-Way Sync. If you create an invoice or payment here then an invoice or payment will be created on Quickbooks too.',
         'quickbooksRedirectUrl' => 'Quickbooks Redirect URL',
         'addQuickbooksRedirectUrl' => 'Add this callback url in your quickbooks app settings.',
+        'otherInfo' => 'Other information',
     ),
     'mobile' => array(
         'camera' => 'Camera',
@@ -1103,7 +1107,7 @@ return array(
         'updateDatabaseButton' => 'Click to update database',
         'newUpdate' => 'New update available',
         'updateNow' => 'Update Now',
-        'updateAlternate' => 'If the <b>Update Now</b> button does not work then follow the <b> manual update</b> instructions as mentioned in the documentation.',
+        'updateAlternate' => 'If the <b>Update Now</b> button does not work then follow the <b> <a href="https://froiden.freshdesk.com/support/solutions/articles/43000554421-update-application-manually" target="_blank">Manual update</a></b> instructions as mentioned in the documentation.',
         'updateManual' => 'Update Alternate Method',
         'updateFiles' => 'Update Files',
         'install' => 'Install',
@@ -1684,6 +1688,7 @@ return array(
         'purchase' => 'Purchase',
         'webhooks' => 'Webhooks',
         'letter' => 'Letter',
+        'custom_domain' => 'Custom Domain',
     ),
     'projectSettings' => array(
         'sendNotificationsTo' => 'Send Reminder To',

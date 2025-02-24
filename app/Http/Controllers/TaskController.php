@@ -228,7 +228,7 @@ class TaskController extends AccountBaseController
         $this->selectedLabel = TaskLabel::where('task_id', request()['duplicate_task'])->get()->pluck('label_id')->toArray();
         $this->projectMember = TaskUser::where('task_id', request()['duplicate_task'])->get()->pluck('user_id')->toArray();
 
-        $this->projects = Project::where('status', '!=', 'finished')->get();
+        $this->projects = Project::allProjects();
         $this->taskLabels = TaskLabelList::where('project_id', null)->get();
         $this->projectID = request()->task_project_id;
 
@@ -548,9 +548,9 @@ class TaskController extends AccountBaseController
             $this->fields = $this->task->getCustomFieldGroupsWithFields()->fields;
         }
 
-        $this->pageTitle = __('app.update') . ' ' . __('app.task');
+        $this->pageTitle = __('modules.tasks.updateTask');
         $this->labelIds = $this->task->label->pluck('label_id')->toArray();
-        $this->projects = Project::where('status', '!=', 'finished')->get();
+        $this->projects = Project::allProjects();
         $this->categories = TaskCategory::all();
         $projectId = $this->task->project_id;
         $this->taskLabels = TaskLabelList::where('project_id', $projectId)->orWhere('project_id', null)->get();

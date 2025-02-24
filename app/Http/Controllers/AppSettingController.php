@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SuperAdmin\GlobalCurrency;
 use DateTimeZone;
 use App\Helper\Reply;
 use App\Models\Company;
 use App\Models\Session;
 use App\Models\Currency;
+use App\Models\User;
 use App\Models\GlobalSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -25,8 +27,7 @@ class AppSettingController extends AccountBaseController
         $this->activeSettingMenu = 'app_settings';
 
         $this->middleware(function ($request, $next) {
-
-            abort_403(user()->permission('manage_app_setting') !== 'all');
+            abort_403(user()->permission('manage_app_setting') !== 'all' && GlobalSetting::validateSuperAdmin('manage_superadmin_app_settings'));
 
             return $next($request);
         });
@@ -39,16 +40,36 @@ class AppSettingController extends AccountBaseController
     {
         $tab = request('tab');
 
-        $this->view = match ($tab) {
-            'file-upload-setting' => 'app-settings.ajax.file-upload-setting',
-            'client-signup-setting' => 'app-settings.ajax.client-signup-setting',
-            'google-map-setting' => 'app-settings.ajax.map-setting',
-            default => 'app-settings.ajax.app-setting',
-        };
+        switch ($tab) {
+
+        case 'file-upload-setting':
+            abort_403(GlobalSetting::validateSuperAdmin('manage_superadmin_app_settings'));
+
+            $this->view = 'app-settings.ajax.file-upload-setting';
+            break;
+        case 'client-signup-setting':
+            abort_403(user()->permission('manage_app_setting') !== 'all');
+            $this->view = 'app-settings.ajax.client-signup-setting';
+            break;
+        case 'google-map-setting':
+            abort_403(GlobalSetting::validateSuperAdmin('manage_superadmin_app_settings'));
+
+            $this->view = 'app-settings.ajax.map-setting';
+            break;
+        default:
+            $this->view = 'app-settings.ajax.app-setting';
+            break;
+        }
 
         $this->dateFormat = array_keys(Company::DATE_FORMATS);
         $this->timezones = DateTimeZone::listIdentifiers();
         $this->currencies = Currency::all();
+
+        // ISWORKSUITESAAS
+        if(user()->is_superadmin){
+            $this->currencies = GlobalCurrency::all();
+        }
+
         $this->dateObject = now();
         $this->cachedFile = File::exists(base_path('bootstrap/cache/config.php'));
 
@@ -80,13 +101,13 @@ class AppSettingController extends AccountBaseController
 
         switch ($tab) {
         case 'file-upload-setting':
-            $this->updateFileUploadSetting($request);
+            isWorksuiteSaas() ? $this->updateFileUploadSetting($request) : '';
             break;
         case 'client-signup-setting':
             $this->updateClientSignupSetting($request);
             break;
         case 'google-map-setting':
-            $this->updateGoogleMapSetting($request);
+            isWorksuiteSaas() ? $this->updateGoogleMapSetting($request) : '';
             break;
         default:
             $this->updateAppSetting($request);
@@ -103,29 +124,45 @@ class AppSettingController extends AccountBaseController
     public function globalSettingSave($request)
     {
         $globalSetting = GlobalSetting::first();
+
+        $globalSetting->currency_id = $request->currency_id;
+        $globalSetting->moment_format = $this->momentFormat($globalSetting->date_format);
+
         $globalSetting->app_debug = $request->has('app_debug') && $request->app_debug == 'on' ? 1 : 0;
         $globalSetting->system_update = $request->has('system_update') && $request->system_update == 'on' ? 1 : 0;
         $globalSetting->session_driver = $request->session_driver;
+        $globalSetting->timezone = $request->timezone;
         $globalSetting->locale = $request->locale;
         $globalSetting->date_format = $request->date_format;
         $globalSetting->time_format = $request->time_format;
+
+        // WORKSUITESAAS
+        if (user()->is_superadmin) {
+            $globalSetting->company_need_approval = $request->company_need_approval == 'on' ? 1 : 0;
+            $globalSetting->currency_id = $request->currency_id;
+            $globalSetting->email_verification = $request->email_verification == 'on' ? 1 : 0;
+        }
+
         $globalSetting->datatable_row_limit = $request->datatable_row_limit;
         $globalSetting->save();
     }
 
     public function updateAppSetting($request)
     {
-        $setting = \company();
-        $setting->currency_id = $request->currency_id;
-        $setting->timezone = $request->timezone;
-        $setting->locale = $request->locale;
-        $setting->date_format = $request->date_format;
-        $setting->time_format = $request->time_format;
-        $setting->moment_format = $this->momentFormat($setting->date_format);
-        $setting->dashboard_clock = $request->has('dashboard_clock') && $request->dashboard_clock == 'on' ? 1 : 0;
-        $setting->employee_can_export_data = $request->has('employee_can_export_data') && $request->employee_can_export_data == 'on' ? 1 : 0;
-        $setting->datatable_row_limit = $request->datatable_row_limit;
-        $setting->save();
+        // WORKSUITESAAS
+        if(!user()->is_superadmin){
+            $setting = company();
+            $setting->currency_id = $request->currency_id;
+            $setting->timezone = $request->timezone;
+            $setting->locale = $request->locale;
+            $setting->date_format = $request->date_format;
+            $setting->time_format = $request->time_format;
+            $setting->moment_format = $this->momentFormat($setting->date_format);
+            $setting->dashboard_clock = $request->has('dashboard_clock') && $request->dashboard_clock == 'on' ? 1 : 0;
+            $setting->employee_can_export_data = $request->has('employee_can_export_data') && $request->employee_can_export_data == 'on' ? 1 : 0;
+            $setting->datatable_row_limit = $request->datatable_row_limit;
+            $setting->save();
+        }
 
         // Doing this is going to change the locale for self profile also. So as customer do not have to visit
         // Profile to change the locale
@@ -134,13 +171,20 @@ class AppSettingController extends AccountBaseController
         $user->saveQuietly();
 
         \session()->forget('user');
-
-        if ($request->currency_id) {
-            \session()->forget('currency_format_setting');
-            currency_format_setting($setting->currency_id);
+        // WORKSUITESAAS
+        if(!user()->is_superadmin){
+            if ($request->currency_id) {
+                \session()->forget('currency_format_setting');
+                currency_format_setting($setting->currency_id);
+            }
         }
 
-        $this->globalSettingSave($request);
+        // WORKSUITESAAS
+        if(user()->is_superadmin){
+            $this->globalSettingSave($request);
+        }
+
+        \session(['user' => User::find($user->id)]);
 
         $this->resetCache();
     }

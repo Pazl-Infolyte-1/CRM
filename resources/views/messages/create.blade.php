@@ -101,11 +101,12 @@
                     <x-forms.label :fieldLabel="__('app.message')" fieldRequired="true" fieldId="description">
                     </x-forms.label>
                     <div id="message-new"></div>
+                    <input type="hidden" name="types" value="modal" />
                     <textarea name="message" id="new-message-text" class="d-none"></textarea>
                 </div>
             </div>
 
-            <div class="col-md-12 my-4">
+            <div class="col-md-12 my-5">
                 <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2"
                     :fieldLabel="__('app.menu.addFile')" fieldName="file"
                     fieldId="message-file-upload-dropzone" />
@@ -222,25 +223,23 @@
             type: "POST",
             data: $('#createConversationForm').serialize(),
             success: function(response) {
+                    $('#user_list').val(response.user_list);
+                    $('#message_list').val(response.message_list);
+                    $('#receiver_id').val(response.receiver_id);
+                    $('.message-user').html(response.userName);
 
-                $('#user_list').val(response.user_list);
-                $('#message_list').val(response.message_list);
-                $('#receiver_id').val(response.receiver_id);
-                $('.message-user').html(response.userName);
+                    if (taskDropzone1.getQueuedFiles().length > 0) {
+                        message_id = response.message_id;
+                        $('#message_id').val(response.message_id);
+                        taskDropzone1.processQueue();
+                    } else {
+                        setContent();
+                    }
 
-                if (taskDropzone1.getQueuedFiles().length > 0) {
-                    message_id = response.message_id;
-                    $('#message_id').val(response.message_id);
-                    taskDropzone1.processQueue();
-                } else {
-                    setContent();
-                }
-
-                $('.show-user-messages').removeClass('active');
-                $('#user-no-'+response.receiver_id+' a').addClass('active');
-                let receiverId = $('#chatBox').data('chat-for-user');
-                $('#user-no-'+receiverId+' a').addClass('active');
-
+                    $('.show-user-messages').removeClass('active');
+                    $('#user-no-'+response.receiver_id+' a').addClass('active');
+                    let receiverId = $('#chatBox').data('chat-for-user');
+                    $('#user-no-'+receiverId+' a').addClass('active');
             }
         })
     });

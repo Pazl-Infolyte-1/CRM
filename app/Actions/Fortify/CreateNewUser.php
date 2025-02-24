@@ -25,8 +25,8 @@ class CreateNewUser implements CreatesNewUsers
     /**
      * Validate and create a newly registered user.
      *
-     * @param array $input
-     * @return \App\Models\User
+     * @param  array  $input
+     * @return \App\Models\UserAuth
      */
     public function create(array $input)
     {
@@ -66,9 +66,12 @@ class CreateNewUser implements CreatesNewUsers
             'company_id' => $company->id,
             'name' => $input['name'],
             'email' => $input['email'],
-            'password' => Hash::make($input['password']),
             'admin_approval' => !$company->admin_client_signup_approval,
         ]);
+
+        $userAuth = $user->userAuth()->create(['email' => $input['email'], 'password' => bcrypt($input['password'])]);
+        $user->user_auth_id = $userAuth->id;
+        $user->saveQuietly();
 
         $data = $input;
         $data['email_notifications'] = 1;
@@ -94,7 +97,7 @@ class CreateNewUser implements CreatesNewUsers
 
         Notification::send(User::allAdmins($user->company->id), new NewCustomer($user));
 
-        return $user;
+        return $userAuth;
 
     }
 

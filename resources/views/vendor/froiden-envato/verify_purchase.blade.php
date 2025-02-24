@@ -41,6 +41,10 @@
                 <div class="form-body">
                     {{ csrf_field() }}
                     <div class="row">
+                        <div class="col-md-12">
+                            <div id="alert"></div>
+                        </div>
+
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="control-label">Enter your Purchase code / License Code</label>

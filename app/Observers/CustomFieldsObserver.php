@@ -38,7 +38,7 @@ class CustomFieldsObserver
                 $leadField->required = 0;
             }
 
-            $leadField->field_display_name = $customField->label;
+            $leadField->field_display_name = str($customField->label);
             $leadField->custom_fields_id = $customField->id;
             $leadField->field_name = $customField->name;
             $leadField->field_order = LeadCustomForm::max('field_order');
@@ -62,7 +62,7 @@ class CustomFieldsObserver
                 $ticketField->required = 0;
             }
 
-            $ticketField->field_display_name = $customField->label;
+            $ticketField->field_display_name = str($customField->label);
             $ticketField->custom_fields_id = $customField->id;
             $ticketField->field_name = $customField->name;
             $ticketField->field_type = $customField->type;
@@ -87,7 +87,7 @@ class CustomFieldsObserver
                 $leadField->required = 0;
             }
 
-            $leadField->field_display_name = $customField->label;
+            $leadField->field_display_name = str($customField->label);
             $leadField->field_name = $customField->name;
             $leadField->save();
         }
@@ -106,7 +106,7 @@ class CustomFieldsObserver
                 $ticketField->required = 0;
             }
 
-            $ticketField->field_display_name = $customField->label;
+            $ticketField->field_display_name = str($customField->label);
             $ticketField->custom_fields_id = $customField->id;
             $ticketField->field_name = $customField->name;
             $ticketField->field_type = $customField->type;

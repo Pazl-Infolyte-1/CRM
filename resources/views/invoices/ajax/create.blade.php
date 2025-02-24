@@ -16,7 +16,7 @@ $addProductPermission = user()->permission('add_product');
 
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoice') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoiceDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -275,7 +275,7 @@ $addProductPermission = user()->permission('add_product');
         </div>
         <!-- CLIENT, PROJECT, GST, BILLING, SHIPPING ADDRESS END -->
 
-            <x-forms.custom-field :fields="$fields"></x-forms.custom-field>
+         <x-forms.custom-field :fields="$fields"></x-forms.custom-field>
 
         <hr class="m-0 border-top-grey">
 
@@ -300,9 +300,9 @@ $addProductPermission = user()->permission('add_product');
                     <x-forms.input-group>
                         <select class="form-control select-picker" data-live-search="true" data-size="8"
                             id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                            @if (module_enabled('Purchase'))
+                            @if (in_array('purchase', user_modules()))
                                 @foreach ($products as $item)
-                                    @if(($item->track_inventory==1 && $item->inventory[0]->net_quantity > 0) || (($item->track_inventory==0)))
+                                    @if ($item->track_inventory==1 && $item->inventory[0]->net_quantity > 0)
                                         <option data-content="{{ $item->name }}" value="{{ $item->id }}">
                                             {{ $item->name }}</option>
                                     @endif
@@ -906,6 +906,7 @@ $addProductPermission = user()->permission('add_product');
 <!-- CREATE INVOICE END -->
 <script>
     $(document).ready(function() {
+
         let defaultImage = '';
         let lastIndex = 0;
 
@@ -1405,14 +1406,6 @@ $addProductPermission = user()->permission('add_product');
             });
             return str;
         }
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     $('#currency_id').change(function() {
         var curId = $(this).val();

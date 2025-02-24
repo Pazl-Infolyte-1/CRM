@@ -255,6 +255,7 @@ class InvoiceController extends AccountBaseController
         $invoice->save();
 
         // To add custom fields data
+
         if ($request->custom_fields_data) {
             $invoice->updateCustomFieldData($request->custom_fields_data);
         }

@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-colorpicker.css') }}" />
 
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.addNew') @lang('modules.leaves.leaveType')</h5>
+    <h5 class="modal-title">@lang('app.addNewLeaveType')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 <div class="modal-body">
@@ -20,35 +20,35 @@
 
                         <input type="hidden" value="true" name="page_reload" id="page_reload">
                         <h3 class="heading-h3 mt-4">@lang('app.general')</h3>
-                        
+
                         <div class="row">
-            
+
                             <div class="col-lg-4">
                                 <x-forms.text :fieldLabel="__('modules.leaves.leaveType')"
                                     :fieldPlaceholder="__('placeholders.leaveType')" fieldName="type_name" fieldId="type_name"
                                     fieldValue="" :fieldRequired="true" />
                             </div>
-            
+
                             <div class="col-lg-4">
                                 <x-forms.select fieldId="paid" :fieldLabel="__('modules.leaves.leavePaidStatus')" fieldName="paid" search="true" :popover="__('messages.leave.paidStatus')">
                                     <option value="1">@lang('app.paid')</option>
                                     <option value="0">@lang('app.unpaid')</option>
                                 </x-forms.select>
                             </div>
-            
+
                             <div class="col-lg-4">
                                 <x-forms.number :fieldLabel="__('modules.leaves.noOfLeaves')"
                                     fieldName="leave_number" fieldId="leave_number" fieldValue="0" fieldRequired="true" minValue="0" :popover="__('messages.leave.noOfLeaves')"/>
                             </div>
-            
-            
+
+
                             <div class="col-lg-4">
                                 <x-forms.number :fieldLabel="__('modules.leaves.monthLimit')"
                                     fieldName="monthly_limit" fieldId="monthly_limit" fieldValue="0"
                                     fieldRequired="true" :fieldHelp="__('modules.leaves.monthLimitInfo')" minValue="0"
                                     :popover="__('messages.leave.monthlyLimit')"/>
                             </div>
-            
+
                             <div class="col-lg-4">
                                 <div class="form-group my-3">
                                     <x-forms.label fieldId="colorselector" fieldRequired="true"
@@ -57,7 +57,7 @@
                                     <x-forms.input-group id="colorpicker">
                                         <input type="text" class="form-control height-35 f-14"
                                             placeholder="{{ __('placeholders.colorPicker') }}" name="color" id="colorselector">
-            
+
                                         <x-slot name="append">
                                             <span class="input-group-text height-35 colorpicker-input-addon"><i></i></span>
                                         </x-slot>
@@ -65,12 +65,12 @@
                                 </div>
                             </div>
                         </div>
-                    
-                        
+
+
                     </div>
                     <div class="tab-pane" id="promotion">
                         <h3 class="heading-h3 mt-4">@lang('modules.leaves.entitlement')</h3>
-                        
+
                         <div class="row">
                             <div class="col-lg-6">
                                 <div class="form-group my-3">
@@ -133,7 +133,7 @@
                     </div>
                     <div class="tab-pane" id="vacation">
                         <h3 class="heading-h3 mt-4">@lang('modules.leaves.applicability')</h3>
-               
+
                         <div class="row">
                             <div class="col-lg-4">
                                 <div class="form-group my-3">
@@ -209,7 +209,7 @@
 
             </div>
         </x-form>
-       
+
     </div>
 </div>
 <div class="modal-footer">

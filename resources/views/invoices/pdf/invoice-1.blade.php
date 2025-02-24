@@ -538,7 +538,7 @@
                                 </td>
                             @endif
                             <td class="qty text-green">
-                                <h3>{{ $item->quantity }}<br><span class="item-summary" style="color:#555555;">{{ $item->unit->unit_type }}</h3>
+                                <h3>{{ $item->quantity }}@if(($item->unit))<br><span class="item-summary" style="color:#555555;">{{ $item->unit->unit_type }}</span>@endif</h3>
                             </td>
                             <td class="qty text-green">
                                 <h3>{{ currency_format($item->unit_price, $invoice->currency_id, false) }}</h3>
@@ -602,14 +602,14 @@
                 @endif
                 <tr dontbreak="true">
                     <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">
-                        @lang('modules.invoices.total') @lang('modules.invoices.paid')</td>
+                        @lang('app.totalPaid')</td>
                     <td style="text-align: center; border-bottom: 1px solid #e7e9eb;">{{ currency_format($invoice->getPaidAmount(), $invoice->currency_id, false) }}
                     </td>
                 </tr>
                 @if ($invoice->amountDue())
                 <tr dontbreak="true">
                     <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">
-                        @lang('modules.invoices.total') @lang('modules.invoices.due')</td>
+                        @lang('app.totalDue')</td>
                     <td style="text-align: center; border-bottom: 1px solid #e7e9eb;">{{ currency_format($invoice->amountDue(), $invoice->currency_id, false) }}
                         {{ $invoice->currency->currency_code }}</td>
                 </tr>
@@ -637,6 +637,12 @@
                 <b>@lang('modules.invoiceSettings.invoiceTerms')</b><br>{!! nl2br($invoiceSetting->invoice_terms) !!}
             </div>
         </p>
+
+        @if (isset($invoiceSetting->other_info))
+            <p class="description">
+                {!! nl2br($invoiceSetting->other_info) !!}
+            </p>
+        @endif
 
         @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)
             <p class="description">

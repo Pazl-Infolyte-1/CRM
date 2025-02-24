@@ -32,61 +32,7 @@
     <div class="col-sm-12">
         @php($envatoUpdateCompanySetting = \Froiden\Envato\Functions\EnvatoUpdate::companySetting())
 
-        @if (!is_null($envatoUpdateCompanySetting->supported_until))
-            <div id="support-div ">
-                @if (\Carbon\Carbon::parse($envatoUpdateCompanySetting->supported_until)->isPast())
-                    <div class=" alert alert-danger">
-                        <div class="row">
-                            <div class="col-md-6" style="line-height: 35px;">
-                                Your support has been expired on <b><span
-                                        id="support-date">{{ \Carbon\Carbon::parse($envatoUpdateCompanySetting->supported_until)->translatedFormat('dS M, Y') }}</span></b>
-                            </div>
-                            <div class="col-md-6 text-right">
-
-
-                                <x-forms.link-primary class="mr-1"
-                                                      :link="config('froiden_envato.envato_product_url')"
-                                                      icon="shopping-cart"
-                                                      target="_blank"
-                                >Renew support now
-                                </x-forms.link-primary>
-                                <x-forms.link-secondary  link="javascript:;" onclick="getPurchaseData();"
-                                                        icon="sync-alt">Refresh
-                                </x-forms.link-secondary>
-
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <div class="alert alert-info">
-                        <div class="row">
-                            <div class="col-md-6" style="line-height: 35px;">
-                                Your support will expire on <b><span
-                                        id="support-date">{{ \Carbon\Carbon::parse($envatoUpdateCompanySetting->supported_until)->translatedFormat('d M, Y') }}</span></b>
-                            </div>
-
-                            @if (\Carbon\Carbon::parse($envatoUpdateCompanySetting->supported_until)->diffInDays() < 30)
-                                <div class="col-md-6 text-right">
-                                    <x-forms.link-primary class="mr-3"
-                                                          :link="config('froiden_envato.envato_product_url')"
-                                                          icon="shopping-cart">Extend
-                                        Now
-                                    </x-forms.link-primary>
-
-                                    <x-forms.link-secondary link="javascript:;" onclick="getPurchaseData();"
-                                                            icon="sync-alt">Refresh
-                                    </x-forms.link-secondary>
-
-                                </div>
-                            @endif
-
-                        </div>
-
-                    </div>
-
-                @endif
-            </div>
-        @endif
+        @include('vendor.froiden-envato.update.support-extend-renewal')
 
         @if (isset($updateVersionInfo['lastVersion']))
 

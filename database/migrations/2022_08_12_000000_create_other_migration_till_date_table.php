@@ -2,10 +2,17 @@
 
 use App\Models\Company;
 use App\Models\CustomFieldGroup;
+use App\Models\DashboardWidget;
+use App\Models\EmployeeDetails;
+use App\Models\EmployeeShiftSchedule;
+use App\Models\Invoice;
+use App\Models\ModuleSetting;
 use App\Models\Permission;
 use App\Models\PermissionType;
+use App\Models\Project;
 use App\Models\RoleUser;
 use App\Models\UserPermission;
+use Carbon\Carbon;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -22,8 +29,8 @@ return new class extends Migration {
     public function up()
     {
 
-        if ( \Illuminate\Support\Facades\File::get(public_path('version.txt')) < '5.1.7') {
-            $message = 'Please contact the author for upgradation. You are not allowed to upgrade the application if your application is below 5.1.7';
+        if (\Illuminate\Support\Facades\File::get(public_path('version.txt')) < '5.1.7') {
+            $message = 'Please contact the author for gradation. You are not allowed to upgrade the application if your application is below 5.1.7';
             throw new \Exception($message);
         }
 
@@ -179,16 +186,22 @@ return new class extends Migration {
         ];
 
         foreach ($employeeCustomPermisisons as $permission) {
-            $perm = Permission::create([
-                'name' => $permission,
-                'display_name' => ucwords(str_replace('_', ' ', $permission)),
-                'is_custom' => 1,
-                'module_id' => $module->id,
-                'allowed_permissions' => Permission::ALL_NONE
-            ]);
+            try {
+
+                $perm = Permission::firstOrCreate([
+                    'name' => $permission,
+                    'display_name' => ucwords(str_replace('_', ' ', $permission)),
+                    'is_custom' => 1,
+                    'module_id' => $module->id,
+                    'allowed_permissions' => Permission::ALL_NONE
+                ]);
+                // @codingStandardsIgnoreLine
+            } catch (\Exception $e) {
+
+            }
 
             foreach ($admins as $item) {
-                UserPermission::create(
+                UserPermission::firstOrCreate(
                     [
                         'user_id' => $item->user_id,
                         'permission_id' => $perm->id,
@@ -302,7 +315,7 @@ return new class extends Migration {
         ];
 
         foreach ($widgets as $widget) {
-            \App\Models\DashboardWidget::create($widget);
+            DashboardWidget::create($widget);
         }
 
         Schema::table('project_milestones', function (Blueprint $table) {
@@ -327,13 +340,13 @@ return new class extends Migration {
             $table->dateTime('shift_end_time')->nullable();
         });
 
-        $existingSchedules = \App\Models\EmployeeShiftSchedule::whereDate('date', '>=', now()->subDay()->toDateString())->get();
+        $existingSchedules = EmployeeShiftSchedule::whereDate('date', '>=', now()->subDay()->toDateString())->get();
 
         if ($existingSchedules) {
             foreach ($existingSchedules as $item) {
                 $item->shift_start_time = $item->date->toDateString() . ' ' . $item->shift->office_start_time;
 
-                if (\Carbon\Carbon::parse($item->shift->office_start_time)->gt(\Carbon\Carbon::parse($item->shift->office_end_time))) {
+                if (Carbon::parse($item->shift->office_start_time)->gt(Carbon::parse($item->shift->office_end_time))) {
                     $item->shift_end_time = $item->date->addDay()->toDateString() . ' ' . $item->shift->office_end_time;
 
                 }
@@ -345,7 +358,7 @@ return new class extends Migration {
             }
         }
 
-        $employees = \App\Models\EmployeeDetails::all();
+        $employees = EmployeeDetails::all();
 
         foreach ($employees as $employee) {
             $employee->calendar_view = 'task,events,holiday,tickets,leaves';
@@ -364,23 +377,21 @@ return new class extends Migration {
     // phpcs:ignore
     private function version5_1_8_to_5_1_9()
     {
-        $companySettings = Company::first();
+        $companyCount = Company::count();
 
         if (!Schema::hasColumn('companies', 'app_name')) {
             Schema::table('companies', function (Blueprint $table) {
                 $table->string('app_name')->nullable()->after('company_name');
             });
 
-
-            if ($companySettings) {
-                $companySettings->app_name = $companySettings->company_name;
-                $companySettings->saveQuietly();
+            if ($companyCount > 0) {
+                DB::statement('UPDATE `companies` SET app_name=company_name');
             }
 
             $this->dateFormatChange();
         }
 
-        if ($companySettings) {
+        if ($companyCount > 0) {
 
             $log = CustomFieldGroup::where('model', 'App\Models\ProjectTimeLog')->first();
 
@@ -416,21 +427,21 @@ return new class extends Migration {
                 $table->string('custom_invoice_number')->nullable();
             });
 
-            $invoices = \App\Models\Invoice::select('id', 'invoice_number')->get();
+            $invoices = Invoice::select('id', 'invoice_number')->get();
 
             if ($invoices->count() > 0) {
                 foreach ($invoices as $invoice) {
-                    \App\Models\Invoice::where('id', $invoice->id)->update(['custom_invoice_number' => $invoice->invoice_number]);
+                    Invoice::where('id', $invoice->id)->update(['custom_invoice_number' => $invoice->invoice_number]);
                 }
             }
 
-            \App\Models\ModuleSetting::where('module_name', 'dashboards')->where('type', 'employee')->delete();
+            ModuleSetting::where('module_name', 'dashboards')->where('type', 'employee')->delete();
             $widgets = [
                 ['widget_name' => 'week_timelog', 'status' => 1, 'dashboard_type' => 'private-dashboard'],
             ];
 
             foreach ($widgets as $widget) {
-                \App\Models\DashboardWidget::create($widget);
+                DashboardWidget::create($widget);
             }
 
         }
@@ -438,7 +449,7 @@ return new class extends Migration {
 
         if (!Schema::hasColumn('companies', 'license_type')) {
             Schema::table('companies', function (Blueprint $table) {
-                $table->string('license_type', 20)->after('purchase_code')->nullable();
+                $table->string('license_type', 20)->nullable();
             });
         }
 
@@ -452,9 +463,9 @@ return new class extends Migration {
                 $table->softDeletes();
             });
 
-            $deletedProjects = \App\Models\Project::onlyTrashed()->get();
+            $deletedProjects = Project::onlyTrashed()->get();
 
-            foreach ($deletedProjects as $key => $project) {
+            foreach ($deletedProjects as $project) {
                 $project->tasks()->delete();
             }
 
@@ -463,7 +474,7 @@ return new class extends Migration {
             ];
 
             foreach ($widgets as $widget) {
-                \App\Models\DashboardWidget::create($widget);
+                DashboardWidget::create($widget);
             }
         }
 
@@ -480,7 +491,11 @@ return new class extends Migration {
         // NEW VERSION
         if (!Schema::hasColumn('employee_details', 'about_me')) {
 
-            $this->addIndexes();
+            try {
+                $this->addIndexes();
+            } catch (\Exception $exception) {
+                echo 'Ignore';
+            }
 
             Schema::table('employee_details', function (Blueprint $table) {
                 $table->text('about_me')->nullable();

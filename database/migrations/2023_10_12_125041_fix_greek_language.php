@@ -4,8 +4,7 @@ use App\Models\LanguageSetting;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\File;
 
-return new class extends Migration
-{
+return new class extends Migration {
 
     /**
      * Run the migrations.
@@ -16,12 +15,12 @@ return new class extends Migration
             ->where('language_code', '<>', 'el')
             ->update(['language_code' => 'el']); // Greek language code is el, not gr
 
-        if(File::isDirectory(lang_path('gr'))) {
+        if (File::isDirectory(lang_path('gr'))) {
             // Rename the directory to el
             try {
                 File::move(lang_path('gr'), lang_path('el'));
-            }catch (\Exception $e){
-
+            } catch (\Exception $e) {
+                echo $e->getMessage();
             }
 
         }

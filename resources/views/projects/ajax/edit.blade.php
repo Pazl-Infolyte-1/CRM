@@ -85,7 +85,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                                     data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($teams as $team)
-                                        <option @if ($project->team_id === $team->id) selected @endif value="{{ $team->id }}">
+                                        <option @if ($project->team_id == $team->id) selected @endif value="{{ $team->id }}">
                                             {{ $team->team_name }}
                                         </option>
                                     @endforeach
@@ -536,14 +536,6 @@ $createPublicProjectPermission = user()->permission('create_public_project');
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 
     $('#save-project-data-form').on('change', '#employee_department', function () {
             let id = $(this).val();

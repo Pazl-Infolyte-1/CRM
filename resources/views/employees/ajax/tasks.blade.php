@@ -51,8 +51,7 @@ $addTaskPermission = user()->permission('add_tasks');
                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
                     <x-forms.link-primary :link="route('tasks.create').'?default_assign='.$employee->id"
                         class="mr-3 openRightModal float-left" data-redirect-url="{{ url()->full() }}" icon="plus">
-                        @lang('app.add')
-                        @lang('app.task')
+                        @lang('app.addTask')
                     </x-forms.link-primary>
                 @endif
             </div>

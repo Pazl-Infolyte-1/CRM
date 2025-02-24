@@ -61,8 +61,8 @@ $changeStatusPermission = user()->permission('change_status');
 
                                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
                                     <a class="dropdown-item openRightModal"
-                                        href="{{ route('tasks.create') }}?column_id={{ $column->id }}">@lang('app.add')
-                                        @lang('app.task')</a>
+                                        href="{{ route('tasks.create') }}?column_id={{ $column->id }}">@lang('app.addTask')
+                                        </a>
                                 @endif
 
                                 @if ($addStatusPermission == 'all')

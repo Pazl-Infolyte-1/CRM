@@ -57,7 +57,7 @@
                             @endif
                             <tr>
                                 <td class="bg-light-grey border-right-0 f-w-500">
-                                    @lang('app.credit-note') @lang('app.date')</td>
+                                    @lang('app.creditNoteDate')</td>
                                 <td class="border-left-0">{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}
                                 </td>
                             </tr>
@@ -168,7 +168,7 @@
                                         @endforeach
                                         <tr class=" text-dark-grey " align="right">
                                             <td class="w-50 border-bottom-0 border-left-0">
-                                                @lang('app.adjustment') @lang('app.amount')</td>
+                                                @lang('app.adjustmentAmount')</td>
                                         </tr>
                                         <tr class=" text-dark-grey font-weight-bold" align="right">
                                             <td class="w-50 border-bottom-0 border-left-0">
@@ -347,6 +347,18 @@
                         </table>
                     </td>
                 </tr>
+                @if (isset($invoiceSetting->other_info))
+                    <tr>
+                        <td align="vertical-align: text-top">
+                            <table>
+                                <tr>
+                                    <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                    </p>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                @endif
             </table>
         </div>
     </div>

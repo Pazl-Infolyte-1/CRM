@@ -75,8 +75,7 @@ class CustomField extends BaseModel
         $customFields = collect();
 
         if ($customFieldsGroupsId) {
-            $customFields = CustomField::where('custom_field_group_id', $customFieldsGroupsId->id)->where(function ($q)
-            {
+            $customFields = CustomField::where('custom_field_group_id', $customFieldsGroupsId->id)->where(function ($q) {
                 return $q->where('export', 1)->orWhere('visible', 'true');
             })->get();
         }
@@ -105,15 +104,15 @@ class CustomField extends BaseModel
                     return $finalData ? (($finalData->value >= 0 && $finalData->value != null) ? $data[$finalData->value] : '--') : '--';
                 }
 
-                if($customField->type == 'file') {
-                    return $finalData ? '<a href="'.asset_url_local_s3('custom_fields/' .$finalData->value).'" target="__blank" class="text-dark-grey">'.__('app.storageSetting.viewFile').'</a>' : '--';
+                if ($customField->type == 'file') {
+                    return $finalData ? '<a href="' . asset_url_local_s3('custom_fields/' . $finalData->value) . '" target="__blank" class="text-dark-grey">' . __('app.storageSetting.viewFile') . '</a>' : '--';
                 }
 
                 return $finalData ? $finalData->value : '--';
             });
 
             // This will use for datatable raw column
-            if($customField->type == 'file') {
+            if ($customField->type == 'file') {
                 $customFieldNames[] = $customField->name;
             }
 

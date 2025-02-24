@@ -11,11 +11,9 @@ $addProjectPermission = user()->permission('add_projects');
                 <x-forms.link-primary :link="route('projects.create').'?default_client='.$client->id"
                     class="mr-3 openRightModal" icon="plus"
                     data-redirect-url="{{ route('clients.show', $client->id) . '?tab=projects' }}">
-                    @lang('app.add')
-                    @lang('app.project')
+                    @lang('app.addProject')
                 </x-forms.link-primary>
             @endif
-
         </div>
         <!-- Add Task Export Buttons End -->
         <!-- Task Box Start -->

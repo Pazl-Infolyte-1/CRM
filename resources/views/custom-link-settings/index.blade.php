@@ -40,7 +40,7 @@
     <script>
 
         $('body').on('click', '.delete-table-row', function () {
-            var id = $(this).data('custom_link-id');
+            const id = $(this).data('custom_link-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
                 text: "@lang('messages.recoverRecord')",
@@ -84,21 +84,21 @@
         });
 
         $('#addNewCustomLink').click(function () {
-        const url = "{{ route('custom-link-settings.create') }}";
+            const url = "{{ route('custom-link-settings.create') }}";
 
-        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-        $.ajaxModal(MODAL_LG, url);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
         });
 
         $("body").on("click", ".edit-channel", function () {
-        var custom_linkId = $(this).data('custom_link-id');
-        var url = "{{ route('custom-link-settings.edit', ':id') }}";
+            const custom_linkId = $(this).data('custom_link-id');
+            let url = "{{ route('custom-link-settings.edit', ':id') }}";
 
-        url = url.replace(':id', custom_linkId);
-        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-        $.ajaxModal(MODAL_LG, url);
+            url = url.replace(':id', custom_linkId);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
         });
 
     </script>
-    
+
 @endpush

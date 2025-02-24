@@ -33,6 +33,11 @@ class SmtpConfigProvider extends ServiceProvider
                     Config::set('mail.mailers.smtp.username', $smtpSetting->mail_username);
                     Config::set('mail.mailers.smtp.password', $smtpSetting->mail_password);
                     Config::set('mail.mailers.smtp.encryption', $smtpSetting->mail_encryption);
+
+                    if (isWorksuiteSaas()) {
+                        Config::set('mail.verified', $smtpSetting->email_verified ? true : false);
+                    }
+
                     Config::set('queue.default', $smtpSetting->mail_connection);
                 }
 

@@ -40,27 +40,8 @@ $addDesignationPermission = user()->permission('add_designation');
                                 </x-forms.text>
                             </div>
                             <div class="col-lg-4 col-md-6">
-                                <x-forms.label class="mt-3" fieldId="password"
-                                    :fieldLabel="__('app.password')" fieldRequired="true">
-                                </x-forms.label>
-                                <x-forms.input-group>
-
-                                    <input type="password" name="password" id="password"
-                                        class="form-control height-35 f-14">
-                                    <x-slot name="preappend">
-                                        <button type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('app.viewPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
-                                                class="fa fa-eye"></i></button>
-                                    </x-slot>
-                                    <x-slot name="append">
-                                        <button id="random_password" type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('modules.client.generateRandomPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35"><i
-                                                class="fa fa-random"></i></button>
-                                    </x-slot>
-                                </x-forms.input-group>
-                                <small class="form-text text-muted">@lang('placeholders.password')</small>
+                                <x-forms.datepicker fieldId="date_of_birth" :fieldLabel="__('modules.employees.dateOfBirth')"
+                                    fieldName="date_of_birth" :fieldPlaceholder="__('placeholders.date')" />
                             </div>
                             <div class="col-lg-4 col-md-6">
                                 <x-forms.label class="my-3" fieldId="category_id"
@@ -74,13 +55,6 @@ $addDesignationPermission = user()->permission('add_designation');
                                             <option value="{{ $designation->id }}">{{ $designation->name }}</option>
                                         @endforeach
                                     </select>
-
-                                    {{-- @if ($addDesignationPermission == 'all' || $addDesignationPermission == 'added')
-                                        <x-slot name="append">
-                                            <button id="designation-setting-add" type="button"
-                                                class="btn btn-outline-secondary border-grey">@lang('app.add')</button>
-                                        </x-slot>
-                                    @endif --}}
                                 </x-forms.input-group>
                             </div>
                             <div class="col-lg-4 col-md-6">
@@ -147,10 +121,6 @@ $addDesignationPermission = user()->permission('add_designation');
                         <x-forms.datepicker fieldId="joining_date" :fieldLabel="__('modules.employees.joiningDate')"
                             fieldName="joining_date" :fieldPlaceholder="__('placeholders.date')" fieldRequired="true"
                             :fieldValue="now(company()->timezone)->format(company()->date_format)" />
-                    </div>
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.datepicker fieldId="date_of_birth" :fieldLabel="__('modules.employees.dateOfBirth')"
-                            fieldName="date_of_birth" :fieldPlaceholder="__('placeholders.date')" />
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.select fieldId="reporting_to" :fieldLabel="__('modules.employees.reportingTo')"
@@ -528,14 +498,6 @@ $addDesignationPermission = user()->permission('add_designation');
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     $('.cropper').on('dropify.fileReady', function(e) {
         var inputId = $(this).find('input').attr('id');

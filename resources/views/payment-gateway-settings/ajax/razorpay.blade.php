@@ -11,7 +11,11 @@
 
 
     <div class="row @if ($credentials->razorpay_status == 'inactive') d-none @endif" id="razorpay_details">
-
+        @if(user()->is_superadmin)
+        <div class="col-lg-12">
+            <x-alert type="info" icon="info-circle"> @lang('superadmin.razorpayPackageMessage')</x-alert>
+        </div>
+    @endif
         <div class="col-lg-12">
             <x-forms.select fieldId="razorpay_mode" :fieldLabel="__('app.selectEnvironment')" fieldName="razorpay_mode">
                 <option value="test"

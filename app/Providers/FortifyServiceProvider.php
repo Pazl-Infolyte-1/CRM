@@ -2,29 +2,42 @@
 
 namespace App\Providers;
 
-use App\Actions\Fortify\AttemptToAuthenticate;
-use App\Actions\Fortify\CreateNewUser;
-use App\Actions\Fortify\RedirectIfTwoFactorConfirmed;
-use App\Actions\Fortify\ResetUserPassword;
-use App\Actions\Fortify\UpdateUserPassword;
-use App\Actions\Fortify\UpdateUserProfileInformation;
+use Str;
+use Exception;
+use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Company;
+use App\Models\UserAuth;
+use App\Scopes\ActiveScope;
+use Illuminate\Http\Request;
+use Laravel\Fortify\Fortify;
 use App\Models\GlobalSetting;
+use Laravel\Fortify\Features;
 use App\Models\LanguageSetting;
 use App\Models\SocialAuthSetting;
-use App\Models\User;
-use App\Scopes\ActiveScope;
-use Carbon\Carbon;
 use Froiden\Envato\Traits\AppBoot;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\App;
+use App\Models\SuperAdmin\FrontMenu;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Models\SuperAdmin\FooterMenu;
+use App\Actions\Fortify\CreateNewUser;
+use App\Models\SuperAdmin\FrontDetail;
+use App\Models\SuperAdmin\FrontWidget;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\ServiceProvider;
+use App\Actions\Fortify\ResetUserPassword;
+use App\Actions\Fortify\UpdateUserPassword;
+use Laravel\Fortify\Contracts\LoginResponse;
+use App\Actions\Fortify\AttemptToAuthenticate;
 use Illuminate\Validation\ValidationException;
-use Laravel\Fortify\Fortify;
+use App\Actions\Fortify\RedirectIfTwoFactorConfirmed;
+use App\Actions\Fortify\UpdateUserProfileInformation;
+use Laravel\Fortify\Contracts\TwoFactorLoginResponse;
+use Modules\Subdomain\Http\Middleware\SubdomainCheck;
 use Laravel\Fortify\Actions\EnsureLoginIsNotThrottled;
 use Laravel\Fortify\Actions\PrepareAuthenticatedSession;
-use Laravel\Fortify\Features;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -36,9 +49,61 @@ class FortifyServiceProvider extends ServiceProvider
      *
      * @return void
      */
+    // WORKSUITESAAS
     public function register()
     {
-        //
+
+        $this->app->instance(LoginResponse::class, new class implements LoginResponse {
+
+            public function toResponse($request)
+            {
+                session(['user' => User::find(user()->id)]);
+
+                if (auth()->user() && auth()->user()->user->is_superadmin) {
+                    return redirect(RouteServiceProvider::SUPER_ADMIN_HOME);
+                }
+
+                $emailCountInCompanies = DB::table('users')->where('email', user()->email)->count();
+                session()->forget('user_company_count');
+
+                if ($emailCountInCompanies > 1) {
+                    if (module_enabled('Subdomain')) {
+                        UserAuth::multipleUserLoginSubdomain();
+                    }
+                    else {
+                        session(['user_company_count' => $emailCountInCompanies]);
+
+                        return redirect(route('superadmin.superadmin.workspaces'));
+                    }
+
+                }
+
+                return redirect(session()->has('url.intended') ? session()->get('url.intended') : RouteServiceProvider::HOME);
+            }
+
+        });
+
+        $this->app->instance(TwoFactorLoginResponse::class, new class implements TwoFactorLoginResponse {
+
+            public function toResponse($request)
+            {
+                session(['user' => User::find(user()->id)]);
+
+                if (auth()->user() && auth()->user()->user->is_superadmin) {
+                    return redirect(RouteServiceProvider::SUPER_ADMIN_HOME);
+                }
+
+                $emailCountInCompanies = DB::table('users')->where('email', user()->email)->count();
+                session(['user_company_count' => $emailCountInCompanies]);
+
+                if ($emailCountInCompanies > 1) {
+                    return redirect(route('superadmin.superadmin.workspaces'));
+                }
+
+                return redirect(session()->has('url.intended') ? session()->get('url.intended') : RouteServiceProvider::HOME);
+            }
+
+        });
     }
 
     /**
@@ -70,26 +135,14 @@ class FortifyServiceProvider extends ServiceProvider
 
             $request->validate($rules);
 
-            $user = User::withoutGlobalScope(ActiveScope::class)
-                ->where('email', $request->email)
-                ->first();
+            $userAuth = UserAuth::where('email', $request->email)->first();
 
+            if ($userAuth && Hash::check($request->password, $userAuth->password)) {
 
-            if ($user && Hash::check($request->password, $user->password)) {
+                // Added for validation of account login in company
+                UserAuth::validateLoginActiveDisabled($userAuth);
 
-                if ($user->status === 'deactive') {
-                    throw ValidationException::withMessages([
-                        'email' => __('auth.failedBlocked')
-                    ]);
-                }
-
-                if ($user->login === 'disable') {
-                    throw ValidationException::withMessages([
-                        'email' => __('auth.failedLoginDisabled')
-                    ]);
-                }
-
-                return $user;
+                return $userAuth;
             }
         });
 
@@ -99,8 +152,12 @@ class FortifyServiceProvider extends ServiceProvider
             App::setLocale($globalSetting->locale);
             Carbon::setLocale($globalSetting->locale);
             setlocale(LC_TIME, $globalSetting->locale . '_' . mb_strtoupper($globalSetting->locale));
+            $frontWidgets = FrontWidget::all();
 
-            return view('auth.passwords.forget', ['globalSetting' => $globalSetting]);
+            return view('auth.passwords.forget', [
+                'globalSetting' => $globalSetting,
+                'frontWidgets' => $frontWidgets,
+            ]);
         });
 
         Fortify::loginView(function () {
@@ -112,8 +169,18 @@ class FortifyServiceProvider extends ServiceProvider
             // Is worksuite
             $company = Company::first();
 
+
             if (!$this->isLegal()) {
-                return redirect('verify-purchase');
+
+                if (!module_enabled('Subdomain')){
+                    return redirect('verify-purchase');
+                }
+
+                // We will only show verify page for super-admin-login
+                // We will check it's opened on main or not
+                if (Str::contains(request()->url(), 'super-admin-login')) {
+                    return redirect('verify-purchase');
+                }
             }
 
             App::setLocale($globalSetting->locale);
@@ -123,18 +190,60 @@ class FortifyServiceProvider extends ServiceProvider
             $userTotal = User::count();
 
             if ($userTotal == 0) {
-                return view('auth.account_setup', ['global' => $globalSetting, 'setting' => $globalSetting]);
+                $accountSetupBlade = 'auth.account_setup';
+                // WORKSUITESAAS
+                if (isWorksuiteSaas()){
+                    $accountSetupBlade = 'super-admin.account_setup';
+                }
+
+                return view($accountSetupBlade, ['global' => $globalSetting, 'setting' => $globalSetting]);
             }
 
             $socialAuthSettings = SocialAuthSetting::first();
 
             $languages = language_setting();
+            $frontWidgets = FrontWidget::all();
+
+            if ($globalSetting->front_design == 1 && $globalSetting->login_ui == 1 && !module_enabled('Subdomain')) {
+                $localeLanguage = LanguageSetting::where('language_code', App::getLocale())->first();
+
+                $frontMenuCount = FrontMenu::select('id', 'language_setting_id')->where('language_setting_id', $localeLanguage?->id)->count();
+                $frontDetail = FrontDetail::first();
+                $frontMenu = FrontMenu::where('language_setting_id', $frontMenuCount > 0 ? ($localeLanguage?->id) : null)->first();
+                $footerMenuCount = FooterMenu::select('id', 'language_setting_id')->where('language_setting_id', $localeLanguage?->id)->count();
+                $footerSettings = FooterMenu::whereNotNull('slug')->where('language_setting_id', $footerMenuCount > 0 ? ($localeLanguage?->id) : null)->get();
+
+                if (session()->has('language')) {
+                    $locale = session('language');
+                }
+                else {
+                    $locale = $frontDetail->locale;
+                }
+
+
+
+                return view('super-admin.saas.login',
+                    [
+                        'setting' => $globalSetting,
+                        'socialAuthSettings' => $socialAuthSettings,
+                        'company' => $company,
+                        'global' => $globalSetting,
+                        'frontMenu' => $frontMenu,
+                        'footerSettings' => $footerSettings,
+                        'locale' => $locale,
+                        'frontDetail' => $frontDetail,
+                        'languages' => $languages,
+                        'frontWidgets' => $frontWidgets,
+                    ]
+                );
+            }
 
             return view('auth.login', [
                 'globalSetting' => $globalSetting,
                 'socialAuthSettings' => $socialAuthSettings,
                 'company' => $company,
                 'languages' => $languages,
+                'frontWidgets' => $frontWidgets,
             ]);
 
         });
@@ -144,8 +253,12 @@ class FortifyServiceProvider extends ServiceProvider
             App::setLocale($globalSetting->locale);
             Carbon::setLocale($globalSetting->locale);
             setlocale(LC_TIME, $globalSetting->locale . '_' . mb_strtoupper($globalSetting->locale));
-
-            return view('auth.passwords.reset-password', ['request' => $request, 'globalSetting' => $globalSetting]);
+            $frontWidgets = FrontWidget::all();
+            return view('auth.passwords.reset-password', [
+                'request' => $request,
+                'globalSetting' => $globalSetting,
+                'frontWidgets' => $frontWidgets,
+            ]);
         });
 
         Fortify::confirmPasswordView(function ($request) {
@@ -162,8 +275,12 @@ class FortifyServiceProvider extends ServiceProvider
             App::setLocale($globalSetting->locale);
             Carbon::setLocale($globalSetting->locale);
             setlocale(LC_TIME, $globalSetting->locale . '_' . mb_strtoupper($globalSetting->locale));
+            $frontWidgets = FrontWidget::all();
 
-            return view('auth.two-factor-challenge', ['globalSetting' => $globalSetting]);
+            return view('auth.two-factor-challenge', [
+                'globalSetting' => $globalSetting,
+                'frontWidgets' => $frontWidgets,
+            ]);
         });
 
         Fortify::registerView(function () {
@@ -179,10 +296,29 @@ class FortifyServiceProvider extends ServiceProvider
             App::setLocale($globalSetting->locale);
             Carbon::setLocale($globalSetting->locale);
             setlocale(LC_TIME, $globalSetting->locale . '_' . mb_strtoupper($globalSetting->locale));
+            $frontWidgets = FrontWidget::all();
 
-            return view('auth.register', ['globalSetting' => $globalSetting]);
+            return view('auth.register', [
+                'globalSetting' => $globalSetting,
+                'frontWidgets' => $frontWidgets,
+            ]);
 
         });
+
+        Fortify::verifyEmailView(function () {
+            $userAuth = UserAuth::find(user()->user_auth_id);
+
+            if ((!is_null($userAuth->email_code_expires_at) && $userAuth->email_code_expires_at->isPast()) || is_null($userAuth->email_code_expires_at)) {
+                $userAuth->sendEmailVerificationNotification();
+            }
+
+            $frontWidgets = FrontWidget::all();
+
+            return view('auth.verify-email', [
+                'frontWidgets' => $frontWidgets,
+            ]);
+        });
+
 
     }
 

@@ -9,6 +9,14 @@ use App\DataTables\TasksDataTable;
 use App\DataTables\TicketDataTable;
 use App\DataTables\TimeLogsDataTable;
 use App\Enums\Salutation;
+use App\Models\Company;
+use App\Scopes\ActiveScope;
+use App\Scopes\CompanyScope;
+use Carbon\Carbon;
+use App\Models\Role;
+use App\Models\Task;
+use App\Models\Team;
+use App\Models\User;
 use App\Helper\Files;
 use App\Helper\Reply;
 use App\Http\Requests\Admin\Employee\ImportProcessRequest;
@@ -32,24 +40,20 @@ use App\Models\Notification;
 use App\Models\Passport;
 use App\Models\ProjectTimeLog;
 use App\Models\ProjectTimeLogBreak;
-use App\Models\Role;
 use App\Models\RoleUser;
 use App\Models\Skill;
-use App\Models\Task;
 use App\Models\TaskboardColumn;
-use App\Models\Team;
 use App\Models\Ticket;
 use App\Models\UniversalSearch;
-use App\Models\User;
 use App\Models\UserActivity;
 use App\Models\UserInvitation;
 use App\Models\VisaDetail;
-use App\Scopes\ActiveScope;
 use App\Traits\ImportExcel;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\UserAuth;
 use Symfony\Component\Mailer\Exception\TransportException;
+use App\Models\PackageUpdateNotify;
 
 class EmployeeController extends AccountBaseController
 {
@@ -179,18 +183,28 @@ class EmployeeController extends AccountBaseController
         $addPermission = user()->permission('add_employees');
         abort_403(!in_array($addPermission, ['all', 'added']));
 
+        // WORKSUITESAAS
+        $company = company();
+
+        if (!is_null($company->employees) && $company->employees->count() >= $company->package->max_employees) {
+            return Reply::error(__('superadmin.maxEmployeesLimitReached'));
+        }
+
         DB::beginTransaction();
         try {
+
+            $userAuth = UserAuth::createUserAuthCredentials($request->email);
+
             $user = new User();
             $user->name = $request->name;
             $user->email = $request->email;
-            $user->password = bcrypt($request->password);
             $user->mobile = $request->mobile;
             $user->country_id = $request->country;
             $user->salutation = $request->salutation;
             $user->country_phonecode = $request->country_phonecode;
             $user->gender = $request->gender;
             $user->locale = $request->locale;
+            $user->user_auth_id = $userAuth->id;
 
             if ($request->has('login')) {
                 $user->login = $request->login;
@@ -246,11 +260,14 @@ class EmployeeController extends AccountBaseController
                 $user->attachRole($otherRole);
             }
 
-            $user->assignUserRolePermission($request->role);
+            $user->assignUserRolePermission($employeeRole->id);
             $this->logSearchEntry($user->id, $user->name, 'employees.show', 'employee');
 
             // Commit Transaction
             DB::commit();
+
+            // WORKSUITESAAS
+            session()->forget('company');
 
         } catch (TransportException $e) {
             // Rollback Transaction
@@ -284,9 +301,18 @@ class EmployeeController extends AccountBaseController
         switch ($request->action_type) {
         case 'delete':
             $this->deleteRecords($request);
-
+            // WORKSUITESAAS
+            session()->forget('company');
             return Reply::success(__('messages.deleteSuccess'));
         case 'change-status':
+            $company = Company::with(['package', 'employees'])->where('id', user()->company_id)->first();
+
+            $updateIds = explode(',', str_replace('on,', '', $request->row_ids));
+
+            if ($request->status == 'active' && !is_null($company->employees) && ($company->employees->count() + count($updateIds)) > $company->package->max_employees) {
+                return Reply::error(__('superadmin.maxEmployeesLimitReached'));
+            }
+
             $this->changeStatus($request);
 
             return Reply::success(__('messages.updateSuccess'));
@@ -330,6 +356,7 @@ class EmployeeController extends AccountBaseController
         $users->each(function ($user) {
             $this->deleteEmployee($user);
         });
+
     }
 
     protected function changeStatus($request)
@@ -337,6 +364,7 @@ class EmployeeController extends AccountBaseController
         abort_403(user()->permission('edit_employees') != 'all');
 
         User::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->update(['status' => $request->status]);
+        clearCompanyValidPackageCache(user()->company_id);
     }
 
     /**
@@ -348,6 +376,10 @@ class EmployeeController extends AccountBaseController
     public function edit($id)
     {
         $this->employee = User::withoutGlobalScope(ActiveScope::class)->with('employeeDetail', 'reportingTeam')->findOrFail($id);
+        $this->emailCountInCompanies = User::withoutGlobalScopes([ActiveScope::class, CompanyScope::class])
+            ->where('email', $this->employee->email)
+            ->whereNotNull('email')
+            ->count();
 
         $this->editPermission = user()->permission('edit_employees');
 
@@ -409,14 +441,9 @@ class EmployeeController extends AccountBaseController
      */
     public function update(UpdateRequest $request, $id)
     {
-
         $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
-        $user->name = $request->name;
-        $user->email = $request->email;
 
-        if ($request->password != '') {
-            $user->password = bcrypt($request->password);
-        }
+        $user->name = $request->name;
 
         $user->mobile = $request->mobile;
         $user->country_id = $request->country;
@@ -426,7 +453,13 @@ class EmployeeController extends AccountBaseController
         $user->locale = $request->locale;
 
         if (request()->has('status')) {
+
+            if (request()->status == 'active' && !checkCompanyCanAddMoreEmployees(user()->company_id) && $user->status != 'active') {
+                return Reply::error(__('superadmin.maxEmployeesLimitReached'));
+            }
+
             $user->status = $request->status;
+            PackageUpdateNotify::where('company_id', user()->company_id)->where('user_id', $user->id)->delete();
         }
 
         if ($id != user()->id) {
@@ -541,7 +574,13 @@ class EmployeeController extends AccountBaseController
             return Reply::error(__('messages.adminCannotDelete'));
         }
 
+        PackageUpdateNotify::where('company_id', $user->company_id)->where('user_id', $user->id)->delete();
+
         $this->deleteEmployee($user);
+
+        // WORKSUITESAAS
+
+        session()->forget('company');
 
         return Reply::success(__('messages.deleteSuccess'));
 

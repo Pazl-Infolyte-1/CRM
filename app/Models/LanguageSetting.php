@@ -25,9 +25,11 @@ namespace App\Models;
  * @method static \Illuminate\Database\Eloquent\Builder|LanguageSetting whereFlagCode($value)
  * @property-read mixed $label
  * @mixin \Eloquent
+ * @property-read mixed $label
  */
 class LanguageSetting extends BaseModel
 {
+
     const LANGUAGES_TRANS = [
         'en' => 'English',
         'ar' => 'عربي',
@@ -45,6 +47,7 @@ class LanguageSetting extends BaseModel
         'ro' => 'Română',
         'ru' => 'Русский',
         'tr' => 'Türk',
+        'ja' => '日本語',
         'zh-CN' => '中国人',
         'zh-TW' => '中國人'
     ];
@@ -116,6 +119,13 @@ class LanguageSetting extends BaseModel
             'language_code' => 'fr',
             'flag_code' => 'fr',
             'language_name' => 'French',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'ja',
+            'flag_code' => 'jp',
+            'language_name' => 'Japanese',
             'status' => 'disabled',
 
         ],
@@ -197,6 +207,13 @@ class LanguageSetting extends BaseModel
 
         ],
         [
+            'language_code' => 'vi',
+            'flag_code' => 'vn',
+            'language_name' => 'Vietnamese',
+            'status' => 'disabled',
+
+        ],
+        [
             'language_code' => 'zh-CN',
             'flag_code' => 'cn',
             'language_name' => 'Chinese (S)',
@@ -207,6 +224,13 @@ class LanguageSetting extends BaseModel
             'language_code' => 'zh-TW',
             'flag_code' => 'cn',
             'language_name' => 'Chinese (T)',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'sq',
+            'flag_code' => 'al',
+            'language_name' => 'Albanian',
             'status' => 'disabled',
 
         ],

@@ -28,8 +28,30 @@
             <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4 ">
                 <h4 class="f-21 font-weight-normal text-capitalize ">
                     @lang('modules.moduleSettings.step1')</h4>
+
+
                 <div class="row">
                     <div class="col-sm-12">
+
+                        @php
+                            $uploadMaxFilesize = \App\Helper\Files::getUploadMaxFilesize();
+                            $postMaxSize = \App\Helper\Files::getPostMaxSize();
+                        @endphp
+
+                        @if(!$uploadMaxFilesize)
+                            <span class="text-danger">
+                                    Your Server upload_max_filesize = {{\App\Helper\Files::getUploadMaxFilesize()['size']}}.
+                                    Please change to min <strong>{{\App\Helper\Files::REQUIRED_FILE_UPLOAD_SIZE}}MB</strong>
+                                    to upload big modules
+                            </span>
+                        @elseif(!$postMaxSize)
+                            <span class="text-danger">
+                                    Your Server post_max_size = {{\App\Helper\Files::getUploadMaxFilesize()['size']}}.
+                                    Please change to min <strong>{{\App\Helper\Files::REQUIRED_FILE_UPLOAD_SIZE}}MB</strong> to
+                                    upload big modules
+                            </span>
+                        @endif
+
                         <x-forms.file-multiple
                             class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel=" __('messages.downloadFilefromCodecanyon') " fieldName="file"
@@ -57,7 +79,7 @@
                                     </div>
 
                                     <div class="col-lg-4 py-1 text-center f-12">
-                                        @lang('app.upload') @lang('app.date'):
+                                        @lang('app.uploadDate'):
                                         {{ \Carbon\Carbon::parse(\Illuminate\Support\Facades\File::lastModified($filename))->timezone(global_setting()->timezone)->translatedFormat('jS M, Y g:i A') }}
                                     </div>
 

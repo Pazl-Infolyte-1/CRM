@@ -114,14 +114,22 @@ class TicketAgentController extends AccountBaseController
 
     public function agentGroups()
     {
+
         $ticketAgentGroup = TicketAgentGroups::where('agent_id', request()->agent_id)->pluck('group_id')->toArray();
 
         if(!empty($ticketAgentGroup))
         {
+
             $ticketGroup = TicketGroup::whereNotIn('id', $ticketAgentGroup)->get();
 
             return Reply::dataOnly(['data' => $ticketGroup]);
 
+        }
+        else
+        {
+            $ticketGroup = TicketGroup::all();
+
+            return Reply::dataOnly(['data' => $ticketGroup]);
         }
     }
 

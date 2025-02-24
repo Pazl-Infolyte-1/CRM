@@ -55,7 +55,7 @@
                 <p class="mb-0 text-dark-grey f-14">
                     @if (!is_null($payment->bill))
                         <a target="_blank" class="text-dark-grey"
-                            href="{{ $payment->file_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.view') @lang('app.receipt')</u></a>
+                            href="{{ $payment->file_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.viewReceipt')</u></a>
                     @else
                         --
                     @endif

@@ -40,6 +40,9 @@ class DashboardController extends AccountBaseController
         parent::__construct();
         $this->pageTitle = 'app.menu.dashboard';
         $this->middleware(function ($request, $next) {
+            // WORKSUITESAAS
+            abort_403(user()->is_superadmin);
+
             $this->viewOverviewDashboard = user()->permission('view_overview_dashboard');
             $this->viewProjectDashboard = user()->permission('view_project_dashboard');
             $this->viewClientDashboard = user()->permission('view_client_dashboard');
@@ -57,7 +60,6 @@ class DashboardController extends AccountBaseController
      */
     public function index()
     {
-        $this->isCheckScript();
 
         if (in_array('employee', user_roles())) {
             return $this->employeeDashboard();
@@ -84,7 +86,6 @@ class DashboardController extends AccountBaseController
     public function checklist()
     {
         if (in_array('admin', user_roles())) {
-            $this->isCheckScript();
 
             return view('dashboard.checklist', $this->data);
         }

@@ -26,7 +26,7 @@ class StartTimer extends CoreRequest
     {
         return [
             'task_id' => 'required_without:create_task',
-            'memo' => 'required'
+            'memo' => 'required_without:task_id'
         ];
     }
 

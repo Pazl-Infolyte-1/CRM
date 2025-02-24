@@ -5,7 +5,7 @@ data-original-title="@lang('app.menu.timeLogs')"><i class="side-icon bi bi-list-
 data-original-title="@lang('app.menu.calendar')"><i class="side-icon bi bi-calendar"></i></a>
 
 <a href="{{ route('timelogs.by_employee') }}" class="btn btn-secondary f-14 @if($timelogMenuType == 'byEmployee') btn-active @endif" data-toggle="tooltip"
-data-original-title="@lang('app.employee') @lang('app.menu.timeLogs')"><i
+data-original-title="@lang('app.employeeTimeLogs')"><i
      class="side-icon bi bi-person"></i></a>
 
 <a href="javascript:;" class="img-lightbox btn btn-secondary f-14"

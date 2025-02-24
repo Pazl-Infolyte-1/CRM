@@ -28,7 +28,7 @@
 
                         @if (in_array($role->name, ['employee', 'client']))
                             <x-forms.button-secondary class="reset-permission ml-2" data-role-id="{{ $role->id }}" icon="sync">
-                                @lang('app.reset') @lang('modules.permission.permissions')
+                                @lang('app.resetPermissions')
                             </x-forms.button-secondary>
                         @endif
                     @endif

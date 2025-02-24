@@ -3,14 +3,12 @@
 namespace App\Actions\Fortify;
 
 use App\Helper\Reply;
-use App\Http\Requests\ClockIn\ClockInRequest;
 use App\Models\Attendance;
 use App\Models\AttendanceSetting;
 use App\Models\EmployeeShiftSchedule;
 use App\Models\GlobalSetting;
 use App\Models\Holiday;
 use App\Models\Leave;
-use App\Models\Company;
 use App\Models\CompanyAddress;
 use App\Models\User;
 use App\Scopes\ActiveScope;
@@ -22,7 +20,6 @@ use Laravel\Fortify\Fortify;
 use Laravel\Fortify\LoginRateLimiter;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class AttemptToAuthenticate
 {
@@ -68,11 +65,14 @@ class AttemptToAuthenticate
         $authUser = User::withoutGlobalScope(ActiveScope::class)
             ->where('email', $request->email)
             ->first();
-        $attendanceSetting = $authUser->company->attendanceSetting;
-        $checkAutoClockinConditions = $this->checkAutoClockinConditions($authUser);
 
-        if ($attendanceSetting->auto_clock_in == 'yes' && $checkAutoClockinConditions) {
-            $this->storeClockIn($request, $authUser->id);
+        if($authUser->company){
+            $attendanceSetting = $authUser->company->attendanceSetting;
+            $checkAutoClockinConditions = $this->checkAutoClockinConditions($authUser);
+
+            if ($attendanceSetting->auto_clock_in == 'yes' && $checkAutoClockinConditions) {
+                $this->storeClockIn($request, $authUser->id);
+            }
         }
 
         if ($globalSetting->google_recaptcha_status == 'active') {
@@ -388,6 +388,7 @@ class AttemptToAuthenticate
 
         $this->guard->login($user, $request->filled('remember'));
 
+        event(new \App\Events\UserLoginEvent($user, $request->ip()));
         return $next($request);
     }
 

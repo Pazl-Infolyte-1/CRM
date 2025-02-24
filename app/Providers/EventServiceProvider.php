@@ -428,6 +428,10 @@ use App\Observers\UserPermissionObserver;
 use App\Observers\UserTaskboardSettingObserver;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use App\Models\PackageUpdateNotify;
+use App\Listeners\SuperAdmin\PackageUpdateNotifyListener;
+use App\Observers\SuperAdmin\PackageUpdateNotifyObserver;
+use App\Events\SuperAdmin\PackageUpdateNotifyEvent;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -505,7 +509,7 @@ class EventServiceProvider extends ServiceProvider
         HolidayEvent::class => [HolidayListener::class],
         EstimateAcceptedEvent::class => [EstimateAcceptedListener::class],
         EventInviteMentionEvent::class => [EventInviteMentionListener::class],
-
+        PackageUpdateNotifyEvent::class => [PackageUpdateNotifyListener::class],
 
     ];
 
@@ -655,7 +659,7 @@ class EventServiceProvider extends ServiceProvider
         LanguageSetting::class => [LanguageSettingObserver::class],
         GlobalSetting::class => [GlobalSettingObserver::class],
         CustomLinkSetting::class => [CustomLinkSettingObserver::class],
-
+        PackageUpdateNotify::class => [PackageUpdateNotifyObserver::class],
     ];
 
 }

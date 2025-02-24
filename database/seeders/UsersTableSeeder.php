@@ -9,6 +9,7 @@ use App\Models\UniversalSearch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use App\Models\User;
+use App\Models\UserAuth;
 use Illuminate\Support\Facades\Hash;
 
 class UsersTableSeeder extends Seeder
@@ -38,9 +39,12 @@ class UsersTableSeeder extends Seeder
 
         if ($companyId === 1) {
             $user->email = 'admin@example.com';
-            $user->password = Hash::make('123456');
             $user->gender = 'male';
             $user->save();
+
+            $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+            $user->user_auth_id = $userAuth->id;
+            $user->saveQuietly();
 
             $this->addEmployeeDetails($user, $employeeRole, $companyId);
             $user->roles()->attach($adminRole->id); // id only
@@ -49,9 +53,12 @@ class UsersTableSeeder extends Seeder
             $user->name = $faker->name;
             $user->company_id = $companyId;
             $user->email = 'employee@example.com';
-            $user->password = Hash::make('123456');
             $user->gender = 'male';
             $user->save();
+
+            $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+            $user->user_auth_id = $userAuth->id;
+            $user->saveQuietly();
 
             $this->addEmployeeDetails($user, $employeeRole, $companyId);
 
@@ -63,9 +70,12 @@ class UsersTableSeeder extends Seeder
         }
         else {
             $user->email = 'admin' . $companyId . '@example.com';
-            $user->password = Hash::make('123456');
             $user->gender = 'male';
             $user->save();
+
+            $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+            $user->user_auth_id = $userAuth->id;
+            $user->saveQuietly();
 
             $this->addEmployeeDetails($user, $employeeRole, $companyId);
             $user->roles()->attach($adminRole->id); // id only
@@ -74,9 +84,12 @@ class UsersTableSeeder extends Seeder
             $user->name = $faker->name;
             $user->company_id = $companyId;
             $user->email = 'employee' . $companyId . '@example.com';
-            $user->password = Hash::make('123456');
             $user->gender = 'male';
             $user->save();
+
+            $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+            $user->user_auth_id = $userAuth->id;
+            $user->saveQuietly();
 
             $this->addEmployeeDetails($user, $employeeRole, $companyId);
 
@@ -88,8 +101,12 @@ class UsersTableSeeder extends Seeder
 
         }
 
-        $user->password = Hash::make('123456');
         $user->save();
+
+        $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+        $user->user_auth_id = $userAuth->id;
+        $user->saveQuietly();
+
         $this->addClientDetails($user, $clientRole, $companyId);
 
 
@@ -98,6 +115,11 @@ class UsersTableSeeder extends Seeder
             ->each(function (User $user) use ($clientRole, $companyId) {
                 $user->company_id = $companyId;
                 $user->save();
+
+                $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+                $user->user_auth_id = $userAuth->id;
+                $user->saveQuietly();
+
                 $this->addClientDetails($user, $clientRole, $companyId);
             });
 
@@ -106,6 +128,11 @@ class UsersTableSeeder extends Seeder
             ->each(function (User $user) use ($employeeRole, $companyId) {
                 $user->company_id = $companyId;
                 $user->save();
+
+                $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+                $user->user_auth_id = $userAuth->id;
+                $user->saveQuietly();
+
                 $this->addEmployeeDetails($user, $employeeRole, $companyId);
             });
     }

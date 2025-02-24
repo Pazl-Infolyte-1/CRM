@@ -133,7 +133,7 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
                 @if ($addInvoicesPermission == 'all')
                     <x-forms.link-secondary class="mr-3 float-left mb-2 mb-lg-0 mb-md-0" icon="plus"
                         :link="route('invoices.create', ['type' => 'timelog'])">
-                        @lang('app.create') @lang('app.timeLog') @lang('app.invoice')
+                        @lang('app.createTimeLogInvoice')
                     </x-forms.link-secondary>
                 @endif
 
@@ -165,25 +165,26 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
     <script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
     <script>
         $(function() {
-        var clipboard = new ClipboardJS('.btn-copy');
+            var clipboard = new ClipboardJS('.btn-copy');
 
-        clipboard.on('success', function(e) {
-            Swal.fire({
-                icon: 'success',
-                text: '@lang("app.copied")',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                customClass: {
-                    confirmButton: 'btn btn-primary',
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-            })
+            clipboard.on('success', function(e) {
+                Swal.fire({
+                    icon: 'success',
+                    text: '@lang("app.copied")',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    customClass: {
+                        confirmButton: 'btn btn-primary',
+                    },
+                    showClass: {
+                        popup: 'swal2-noanimation',
+                        backdrop: 'swal2-noanimation'
+                    },
+                })
+            });
         });
 
         $('#invoices-table').on('preXhr.dt', function(e, settings, data) {
@@ -537,6 +538,6 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
             $('#datatableRange').data('daterangepicker').setEndDate("{{ request('end') }}");
             showTable();
         @endif
-    });
+
     </script>
 @endpush

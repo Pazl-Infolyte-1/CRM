@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\Role;
 use App\Models\User;
+use App\Models\Permission;
+use App\Scopes\CompanyScope;
+use App\Models\PermissionRole;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Database\Schema\Blueprint;
@@ -14,6 +18,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+
+        // WORKSUITESAAS
+        $this->resetSuperAdminRolePermission();
+
         User::withoutGlobalScopes()->where('customised_permissions', 0)->update(['permission_sync' => 0]);
 
         Artisan::call('sync-user-permissions', ['all' => true]);
@@ -25,6 +33,37 @@ return new class extends Migration
     public function down(): void
     {
         //
+    }
+
+    public function resetSuperAdminRolePermission()
+    {
+        $role = Role::withoutGlobalScopes([CompanyScope::class])->whereNull('company_id')->where('name', 'superadmin')->first();
+
+        if($role)
+        {
+            PermissionRole::where('role_id', $role->id)->delete();
+
+            $permissions = Permission::whereHas('module', function ($query) {
+                $query->withoutGlobalScopes()->where('is_superadmin', '1');
+            })->get();
+
+            // Delete all permission role of superadmin except superadmin
+            PermissionRole::where('role_id', '!=', $role->id)->whereIn('permission_id', $permissions->pluck('id'))->delete();
+
+            $permissionRole = [];
+
+            foreach ($permissions as $permission) {
+                $permissionRole[] = [
+                    'permission_id' => $permission->id,
+                    'role_id' => $role->id,
+                    'permission_type_id' => 4,
+                ];
+            }
+
+            foreach (array_chunk($permissionRole, 200) as $permissionRoleChunk) {
+                PermissionRole::insert($permissionRoleChunk);
+            }
+        }
     }
 
 };

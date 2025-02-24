@@ -17,6 +17,10 @@ class SettingsController extends AccountBaseController
         $this->pageTitle = 'app.menu.accountSettings';
         $this->activeSettingMenu = 'company_settings';
         $this->middleware(function ($request, $next) {
+            if(user()->is_superadmin){
+                return redirect(route('app-settings.index'));
+            }
+
             return user()->permission('manage_company_setting') !== 'all' ? redirect()->route('profile-settings.index') : $next($request);
         });
     }

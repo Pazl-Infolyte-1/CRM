@@ -31,10 +31,9 @@ class SecuritySettingController extends AccountBaseController
      */
     public function index()
     {
-
-        $this->user = user();
+        $this->user = User::with('userAuth')->find(user()->id);
         $this->smtpSetting = smtp_setting();
-        $this->setting = company();
+        $this->setting = companyOrGlobalSetting();
 
         $this->view = 'security-settings.ajax.google-recaptcha';
 
@@ -42,7 +41,7 @@ class SecuritySettingController extends AccountBaseController
 
         switch ($tab) {
         case 'recaptcha':
-            abort_403(user()->permission('manage_security_setting') !== 'all');
+            abort_403(user()->permission('manage_superadmin_security_settings') != 'all' && !user()->is_superadmin);
             $this->view = 'security-settings.ajax.google-recaptcha';
                 break;
         default:

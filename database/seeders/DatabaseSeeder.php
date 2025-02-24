@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 
 class DatabaseSeeder extends Seeder
 {
+
     /**
      * Run the database seeds.
      *
@@ -26,15 +27,28 @@ class DatabaseSeeder extends Seeder
         $this->call(CountriesTableSeeder::class);
         $this->call(SmtpSettingsSeeder::class);
         $this->call(CoreDatabaseSeeder::class);
+        // WORKSUITESAAS
+        $this->call(CoreSuperAdminDatabaseSeeder::class);
         $this->call(ModulePermissionSeeder::class);
 
         $this->call(OrganisationSettingsTableSeeder::class);
 
-        $companies = Company::select('id')->get();
+        $this->call(PackageTableSeeder::class);
+        $this->call(FrontSeeder::class);
+        $this->call(GlobalCurrencyFormatSetting::class);
 
-        foreach ($companies as $company) {
+        // WORKSUITESAAS
+        $this->call(SuperAdminRoleTableSeeder::class);
 
-            if (!App::environment('codecanyon')) {
+        if (!App::environment('codecanyon')) {
+
+            // WORKSUITESAAS
+            $this->call(SuperAdminUsersTableSeeder::class);
+
+            $companies = Company::select('id')->get();
+
+            foreach ($companies as $company) {
+                $this->command->info('Seeding company: ' . ($company->id));
                 $this->call(DepartmentTableSeeder::class, false, ['companyId' => $company->id]);
                 $this->call(UsersTableSeeder::class, false, ['companyId' => $company->id]);
                 $this->call(BankAccountSeeder::class, false, ['companyId' => $company->id]);
@@ -57,9 +71,10 @@ class DatabaseSeeder extends Seeder
                 $this->call(ShiftSeeder::class, false, ['companyId' => $company->id]);
                 $this->call(AttendanceTableSeeder::class, false, ['companyId' => $company->id]);
                 $this->call(AppreciationSeeder::class, false, ['companyId' => $company->id]);
+
+                $this->call(EmployeePermissionSeeder::class, false, ['companyId' => $company->id]);
             }
 
-            $this->call(EmployeePermissionSeeder::class, false, ['companyId' => $company->id]);
         }
 
         if (!App::environment('codecanyon')) {

@@ -32,6 +32,7 @@
 return [
 
     'key' => env('MOLLIE_KEY', 'test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'),
+    'api' => env('MOLLIE_KEY', 'test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'),
 
 /*     If you intend on using Mollie Connect, place the following in the 'config/services.php'
     'mollie' => [

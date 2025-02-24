@@ -14,8 +14,10 @@ return [
     */
 
     'failed' => 'These credentials do not match our records.',
+    'companyAccountDisabled' => 'Your company account is disabled.',
     'failedLoginDisabled' => 'Login has been disabled by your administrator',
     'failedBlocked' => 'Your account is disabled!. Please contact your administrator to enable it.',
+    'failedCompanyUnapproved' => 'Your company is not approved yet!. Please wait for the company approval.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     'recaptchaFailed' => 'Recaptcha not validated.',
     'sociaLoginFail' => 'Your account does not exist. Please sign up',

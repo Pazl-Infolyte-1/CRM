@@ -70,7 +70,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                     <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                         <option value="">@lang('app.selectAction')</option>
                         @if ($manageAppreciationTypePermission == 'all')
-                            <option value="change-leave-status">@lang('app.change') @lang('app.status')</option>
+                            <option value="change-leave-status">@lang('app.changeStatus')</option>
                         @endif
                         <option value="delete">@lang('app.delete')</option>
                     </select>

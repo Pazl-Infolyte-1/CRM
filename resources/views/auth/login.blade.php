@@ -1,3 +1,13 @@
+@push('styles')
+    @foreach ($frontWidgets as $item)
+    @if(!is_null($item->header_script))
+        {!! $item->header_script !!}
+    @endif
+
+    @endforeach
+@endpush
+
+
 <x-auth>
     <form id="login-form" action="{{ route('login') }}" class="ajax-form" method="POST">
         {{ csrf_field() }}
@@ -63,23 +73,32 @@
                         class="btn-primary f-w-500 rounded w-100 height-50 f-18 ">@lang('auth.next') <i
                         class="fa fa-arrow-right pl-1"></i></button>
 
-                @if ($company->allow_client_signup)
-                    <a href="{{ route('register') }}" id="signup-client-next"
-                        class="btn-secondary f-w-500 rounded w-100 height-50 f-15 mt-3">
-                        @lang('app.signUpAsClient')
-                    </a>
-                @endif
-
+            @if ($company->allow_client_signup)
+                <a href="{{ route('register') }}" id="signup-client-next"
+                   class="btn-secondary f-w-500 rounded w-100 height-50 f-15 mt-3">
+                    @lang('app.signUpAsClient')
+                </a>
             @endif
 
-            <div id="password-section"
-                 @if ($socialAuthSettings->social_auth_enable && !$errors->has('g-recaptcha-response')) class="d-none" @endif>
-                <div class="form-group text-left">
-                    <label for="password">@lang('app.password')</label>
-                    <x-forms.input-group>
-                        <input type="password" name="password" id="password"
-                               placeholder="@lang('placeholders.password')" tabindex="3"
-                               class="form-control height-50 f-15 light_text @error('password') is-invalid @enderror">
+            @if (isWorksuiteSaas() && !module_enabled('Subdomain'))
+                @if ($globalSetting->enable_register == true)
+                    <a href="{{ route('front.signup.index') }}" id="signup-customer"
+                       class="btn-secondary f-w-500 rounded w-100 height-50 f-15 mt-3">
+                        @lang('app.signUp')
+                    </a>
+                @endif
+            @endif
+
+        @endif
+
+        <div id="password-section"
+             @if ($socialAuthSettings->social_auth_enable && !$errors->has('g-recaptcha-response')) class="d-none" @endif>
+            <div class="form-group text-left">
+                <label for="password">@lang('app.password')</label>
+                <x-forms.input-group>
+                    <input type="password" name="password" id="password"
+                           placeholder="@lang('placeholders.password')" tabindex="3"
+                           class="form-control height-50 f-15 light_text @error('password') is-invalid @enderror">
 
                         <x-slot name="append">
                             <button type="button" data-toggle="tooltip"
@@ -115,19 +134,44 @@
                     </div>
                 @endif
 
-                <button type="submit" id="submit-login"
-                        class="btn-primary f-w-500 rounded w-100 height-50 f-18">
-                    @lang('app.login') <i class="fa fa-arrow-right pl-1"></i>
-                </button>
+            <button type="submit" id="submit-login"
+                    class="btn-primary f-w-500 rounded w-100 height-50 f-18">
+                @lang('app.login') <i class="fa fa-arrow-right pl-1"></i>
+            </button>
+            {{-- WORKSUITESAAS --}}
+            @if ($company?->allow_client_signup && isWorksuite())
+                <a href="{{ route('register') }}"
+                   class="btn-secondary f-w-500 rounded w-100 height-50 f-15 mt-3">
+                    @lang('app.signUpAsClient')
+                </a>
+            @endif
+        </div>
 
-                @if ($company->allow_client_signup)
-                    <a href="{{ route('register') }}"
-                       class="btn-secondary f-w-500 rounded w-100 height-50 f-15 mt-3">
-                        @lang('app.signUpAsClient')
-                    </a>
+        <x-slot name="outsideLoginBox">
+            @if (isWorksuiteSaas())
+                @php
+                    $redirect = route('front.home');
+                    $signup = route('front.signup.index');
+                    if(module_enabled('Subdomain')){
+                        $redirect = (!is_null(config('app.main_application_subdomain')) && config('app.main_application_subdomain') !=='')?'//'.config('app.main_application_subdomain'):'//'.getDomain();
+                        $signup = $redirect.'/signup';
+                    }
+                @endphp
+
+                @if(!$globalSetting->frontend_disable)
+                    <p class="my-2 f-12"><a
+                            href="{{ $redirect }}"
+                            class="text-dark-grey">@lang('superadmin.goToWebsite')</a>
+                    </p>
                 @endif
-            </div>
-
+                @if ($globalSetting->enable_register)
+                    <p class="my-2 f-12">@lang('superadmin.dontHaveAccount') <a
+                            href="{{ $signup }}"
+                            class="text-dark-grey">@lang('app.signUp') </a>
+                    </p>
+                @endif
+            @endif
+        </x-slot>
 
 
     </form>
@@ -199,7 +243,7 @@
                         data: $('#login-form').serialize(),
                         success: function (response) {
                             if (response.status === 'success') {
-                                $('#submit-next, #signup-client-next').remove();
+                                $('#submit-next, #signup-client-next, #signup-customer').remove();
                                 $('#password-section').removeClass('d-none');
                                 $("#password").focus();
                                 document.removeEventListener('click', handleFormSubmit);
@@ -225,6 +269,13 @@
 
             });
         </script>
+
+        @foreach ($frontWidgets as $item)
+        @if(!is_null($item->footer_script))
+            {!! $item->footer_script !!}
+        @endif
+
+        @endforeach
     </x-slot>
 
 </x-auth>

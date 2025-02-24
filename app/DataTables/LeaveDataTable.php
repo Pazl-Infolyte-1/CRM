@@ -178,8 +178,10 @@ class LeaveDataTable extends BaseDataTable
 
                     if ($this->reportingPermission == 'approved' && $row->manager_status_permission == '')
                     {
-                        $actions .= '<a class="dropdown-item leave-action-approved" data-leave-id=' . $row->id . '
-                                 data-leave-action="approved" data-user-id="' . $row->user_id . '" data-leave-type-id="' . $row->leave_type_id . '" href="javascript:;">
+                        $approveAll = $row->duration == 'multiple' ? 'approveAll' : 'single';
+                        $leaveID = $row->duration == 'multiple' ? $row->unique_id : $row->id;
+                        $actions .= '<a class="dropdown-item leave-action-approved" data-leave-id=' . $leaveID . '
+                                 data-leave-action="approved" data-type="'. $approveAll .'" data-user-id="' . $row->user_id . '" data-leave-type-id="' . $row->leave_type_id . '" href="javascript:;">
                                     <i class="fa fa-check mr-2"></i>
                                     ' . __('app.approve') . '
                             </a>';

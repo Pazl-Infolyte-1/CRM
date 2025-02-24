@@ -20,7 +20,7 @@ class DatabaseBackupSettingController extends AccountBaseController
         $this->pageTitle = __('app.menu.databaseBackupSetting');
         $this->activeSettingMenu = 'database_backup_settings';
         $this->middleware(function ($request, $next) {
-            abort_403(!in_array('admin', user_roles()));
+            abort_403(GlobalSetting::validateSuperAdmin('manage_superadmin_database_backup_settings'));
             return $next($request);
         });
     }
@@ -44,7 +44,7 @@ class DatabaseBackupSettingController extends AccountBaseController
         $backups = [];
 
         foreach ($files as $file) {
-            if (substr($file, -4) == '.zip' && $disk->exists($file)) {
+            if (str_ends_with($file, '.zip') && $disk->exists($file)) {
                 $backups[] = [
                     'file_path' => $file,
                     'file_name' => str_replace(config('laravel-backup.backup.name') . 'backup/', '', $file),
@@ -84,6 +84,7 @@ class DatabaseBackupSettingController extends AccountBaseController
             /* Only database backup */
             Artisan::queue('backup:run', ['--only-db' => true, '--disable-notifications' => true]);
             sleep(3);
+
             return Reply::success(__('messages.databasebackup.backedupSuccessful'));
         } catch (Exception $e) {
             return Reply::error(__('messages.databasebackup.databaseError') . ' =>' . $e->getMessage());

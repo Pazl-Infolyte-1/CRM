@@ -6,7 +6,9 @@
         @if ($approveRejectPermission == 'all' || ($deleteLeavePermission == 'all'
                                 || ($deleteLeavePermission == 'added' && user()->id == $leave->added_by)
                                 || ($deleteLeavePermission == 'owned' && user()->id == $leave->user_id)
-                                || ($deleteLeavePermission == 'both' && (user()->id == $leave->user_id || user()->id == $leave->added_by))))
+                                || ($deleteLeavePermission == 'both' && (user()->id == $leave->user_id || user()->id == $leave->added_by))
+                                || ($leaveSetting->manager_permission != 'cannot-approve' && user()->id == $multipleLeaves->first()->user->employeeDetails->reporting_to)
+                                ))
             <th class="text-right pr-20">@lang('app.action')</th>
         @endif
     </x-slot>
@@ -37,13 +39,16 @@
 
                 <i class="fa fa-circle mr-1 {{$class}} f-10"></i> {{$status}}
             </td>
+{{--            @dd($leaveSetting->manager_permission != 'cannot-approve', user()->id == $leave->user->employeeDetails->reporting_to)--}}
             @if ($approveRejectPermission == 'all' || ($deleteLeavePermission == 'all'
                                 || ($deleteLeavePermission == 'added' && user()->id == $leave->added_by)
                                 || ($deleteLeavePermission == 'owned' && user()->id == $leave->user_id)
-                                || ($deleteLeavePermission == 'both' && (user()->id == $leave->user_id || user()->id == $leave->added_by))))
+                                || ($deleteLeavePermission == 'both' && (user()->id == $leave->user_id || user()->id == $leave->added_by))
+                                ) || ($leaveSetting->manager_permission != 'cannot-approve' && user()->id == $leave->user->employeeDetails->reporting_to)
+                                )
                 @if($viewType == 'model')
                     <td class="text-right">
-                        @if ($leave->status == 'pending' && $approveRejectPermission == 'all')
+                        @if ($leave->status == 'pending' && ($approveRejectPermission == 'all' || ($leaveSetting->manager_permission != 'cannot-approve' && user()->id == $leave->user->employeeDetails->reporting_to)))
                             <div class="task_view">
                                 <a class="dropdown-item leave-action-approved action-hover" data-leave-id={{ $leave->id }}
                                     data-leave-action="approved" data-toggle="tooltip" data-original-title="@lang('app.approve')" data-leave-type-id="{{ $leave->leave_type_id }}" href="javascript:;">

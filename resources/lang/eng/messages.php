@@ -125,7 +125,6 @@ return array(
     'clientFinanceCount' => 'This client have :projectCount :project, :invoiceCount :invoice, :estimateCount :estimate, :paymentCount :payment . ',
     'signatureAdded' => 'Signature Added Successfully',
     'endTimeAfterOrEqual'=> 'The end time must be a time after or equal to the start time.',
-
     'enterText' => 'Enter Text Here',
     'selectOfflineMethod' => 'Offline method is required if you select offline.',
     'invoicePaymentError' => 'Please enter amount.',
@@ -138,6 +137,9 @@ return array(
     'atleastOneRole' => 'Select at least 1 role.',
     'selectOccassion' => 'If occassion not select then checked day name will be Occassion name',
     'clientFilterVerification' => 'Client filter according verification',
+    'fileMessage' => 'The Message field is requried',
+    'halfDayAlreadyApplied' => 'Half day leave already applied on this date, do you want to reject it?',
+    'rejectIt' => 'Yes, Reject it!',
     'welcome' => array(
         'message' => 'Welcome to the setup wizard',
         'title' => 'Welcome to the installer',
@@ -460,4 +462,5 @@ return array(
     'signUpUrlRequired' => 'The terms link field is required when sign up terms is enabled.',
     'adminPermissionsCantChange' => 'Admin permissions can not be changed',
     'customModuleInstalled' => 'Module installed successfully. You will be redirected to the custom module page. Activate the module to use it.',
+    'currencyConvertKeyUpdated' => 'The Currency Converter Key Updated'
 );

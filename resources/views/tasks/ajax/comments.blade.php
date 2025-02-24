@@ -42,8 +42,8 @@
         <div class="row p-20">
             <div class="col-md-12">
                 <a class="f-15 f-w-500" href="javascript:;" id="add-comment"><i
-                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                    @lang('modules.tasks.comment')</a>
+                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('modules.contracts.addComment')
+                </a>
             </div>
         </div>
         <x-form id="save-comment-data-form" class="d-none">

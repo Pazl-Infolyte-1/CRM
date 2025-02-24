@@ -869,7 +869,7 @@
                                 @if ($invoiceSetting->hsn_sac_code_show)
                                     <td>{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                                 @endif
-                                <td style="text-align: right;">{{ $item->quantity }} <br><span class="item-summary">{{ $item->unit->unit_type }}</td>
+                                <td align="right" width="10%" class="border-bottom-0">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                                 <td>{{ currency_format($item->unit_price, $invoice->currency_id, false) }}</td>
                                 <td>{{ $item->tax_list }}</td>
                                 <td>{{ currency_format($item->amount, $invoice->currency_id, false) }}</td>
@@ -914,12 +914,12 @@
                         </tr>
                     @endif
                     <tr>
-                        <th>@lang('modules.invoices.total') @lang('modules.invoices.paid'):</th>
+                        <th>@lang('app.totalPaid') :</th>
                         <td> {{ currency_format($invoice->getPaidAmount(), $invoice->currency_id, false) }}</td>
                     </tr>
                     @if ($invoice->amountDue())
                     <tr>
-                        <th>@lang('modules.invoices.total') @lang('modules.invoices.due'):</th>
+                        <th>@lang('app.totalDue'):</th>
                         <td> {{ currency_format($invoice->amountDue(), $invoice->currency_id, false) }}</td>
                     </tr>
                     @endif
@@ -945,6 +945,9 @@
                         <b>@lang('app.note')</b> <br>{!! nl2br($invoice->note) !!}<br>
                     @endif
                     <br><br><b>@lang('modules.invoiceSettings.invoiceTerms')</b><br>{!! nl2br($invoiceSetting->invoice_terms) !!}
+                    @if (isset($invoiceSetting->other_info))
+                        <br><br>{!! nl2br($invoiceSetting->other_info) !!}
+                    @endif
                 </div>
 
             </section>

@@ -279,7 +279,8 @@ class CreditNoteController extends AccountBaseController
         $pdf = $pdfOption['pdf'];
         $filename = $pdfOption['fileName'];
 
-        return $pdf->download($filename . '.pdf');
+        return request()->view ? $pdf->stream($filename . '.pdf') : $pdf->download($filename . '.pdf');
+
     }
 
     public function domPdfObjectForDownload($id)

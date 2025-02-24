@@ -10,7 +10,12 @@ trait HasMaskImage
     private function generateMaskedImageAppUrl($path): string
     {
         $filePath = FileController::encryptDecrypt($path) . '_masked.png';
-        return route('file.getFile', ['type' => 'image', 'path' => $filePath]);
+        try {
+            return route('file.getFile', ['type' => 'image', 'path' => $filePath]);
+        }
+        catch (\Exception $exception) {
+            return config('app.url') . '/file/image/' . $filePath;
+        }
     }
 
 }

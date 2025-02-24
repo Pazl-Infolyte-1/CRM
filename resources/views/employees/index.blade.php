@@ -144,14 +144,14 @@
         <div class="d-flex justify-content-between action-bar">
 
             <div id="table-actions" class="d-block d-lg-flex align-items-center">
+                @if (checkCompanyCanAddMoreEmployees(user()->company_id))
                 @if ($addEmployeePermission == 'all')
                     <x-forms.link-primary :link="route('employees.create')" class="mr-3 openRightModal" icon="plus">
-                        @lang('app.add')
-                        @lang('app.employee')
+                        @lang('app.addEmployee')
                     </x-forms.link-primary>
 
                     <x-forms.button-secondary class="mr-3 invite-member mb-2 mb-lg-0" icon="plus">
-                        @lang('app.invite') @lang('app.employee')
+                        @lang('app.inviteEmployee')
                     </x-forms.button-secondary>
                 @endif
 
@@ -160,6 +160,7 @@
                                             icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
+                @endif
                 @endif
             </div>
 

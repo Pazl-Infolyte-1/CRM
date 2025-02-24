@@ -503,7 +503,7 @@
                         {{ currency_format($creditNote->creditAmountUsed(), $creditNote->currency_id, false) }}</td>
                 </tr>
                 <tr dontbreak="true">
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">@lang('app.adjustment') @lang('app.amount')</td>
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">@lang('app.adjustmentAmount')</td>
                     <td style="text-align: center">
                         {{ currency_format($creditNote->adjustment_amount, $creditNote->currency_id, false) }}</td>
                 </tr>
@@ -519,7 +519,11 @@
             @if (!is_null($creditNote->note))
                 {!! nl2br($creditNote->note) !!}<br>
             @endif
-            {!! nl2br($creditNoteSetting->invoice_terms) !!}
+            {!! nl2br($creditNoteSetting->invoice_terms) !!}<br>
+
+            @if (isset($invoiceSetting->other_info))
+                <br>{!! nl2br($invoiceSetting->other_info) !!}
+            @endif
         </p>
 
     </main>

@@ -3,7 +3,7 @@
         <x-form id="save-project-note-data-form" method="PUT">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.project') @lang('app.note') @lang('app.details')</h4>
+                    @lang('app.projectNoteDetails')</h4>
 
                 <input type="hidden" name="project_id" value="{{ $projectId }}">
 

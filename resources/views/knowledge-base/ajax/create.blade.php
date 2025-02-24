@@ -194,4 +194,8 @@
 
         init(RIGHT_MODAL);
     });
+
+    $('#close-settings').click(function() {
+        closeTaskDetail()
+    });
 </script>

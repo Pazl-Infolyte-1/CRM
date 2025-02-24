@@ -46,7 +46,7 @@
     </div>
     <div class="card-footer bg-white border-0">
         <div class="d-flex justify-content-between">
-            <div class="text-lightest">{{ $stickyNote->created_at->translatedFormat(company()->date_format) }}</div>
+            <div class="text-lightest">{{ $stickyNote->created_at->translatedFormat(companyOrGlobalSetting()->date_format) }}</div>
             <div class="text-{{ $colour }}"><i class="fa fa-circle"></i></div>
         </div>
     </div>

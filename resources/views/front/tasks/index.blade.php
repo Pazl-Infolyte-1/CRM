@@ -175,8 +175,7 @@ $addTaskPermission = user()->permission('add_tasks');
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
                     <x-forms.link-primary :link="route('tasks.create')" class="mr-3 openRightModal float-left" icon="plus">
-                        @lang('app.add')
-                        @lang('app.task')
+                        @lang('app.addTask')
                     </x-forms.link-primary>
                 @endif
             </div>

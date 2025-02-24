@@ -11,8 +11,8 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                 <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-md-10 col-10">
-                            <h3 class="heading-h1">@lang('app.menu.leaves') @lang('app.details')</h3>
-                            <div class="f-10 text-lightest">@lang('app.apply')  @lang('app.date') - {{ $leave->created_at->timezone(company()->timezone)->translatedFormat(company()->date_format .' ' . company()->time_format) }}</div>
+                            <h3 class="heading-h1">@lang('app.leavesDetails')</h3>
+                            <div class="f-10 text-lightest">@lang('app.applyDate') - {{ $leave->created_at->timezone(company()->timezone)->translatedFormat(company()->date_format .' ' . company()->time_format) }}</div>
                         </div>
                         <div class="col-md-2 col-2 text-right">
                             <div class="dropdown">

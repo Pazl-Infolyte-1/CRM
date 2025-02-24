@@ -40,23 +40,23 @@ $addLeadCategoryPermission = user()->permission('add_lead_category');
                     <div class="col-md-12 mb-2">
                         @if ($addLeadAgentPermission != 'none')
                             <x-forms.button-primary icon="plus" id="addAgent" class="agent-btn mb-2 d-none actionBtn">
-                                @lang('app.addNew') @lang('modules.lead.leadAgent')
+                                @lang('app.addNewLeadAgent')
                             </x-forms.button-primary>
                         @endif
 
                         @if ($addLeadSourcesPermission != 'none')
                             <x-forms.button-primary icon="plus" id="addSource" class="source-btn mb-2 d-none actionBtn">
-                                @lang('app.addNew') @lang('app.menu.leadSource')
+                                @lang('app.addNewLeadSource')
                             </x-forms.button-primary>
                         @endif
 
                         <x-forms.button-primary icon="plus" id="addStatus" class="status-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('app.menu.leadStatus')
+                            @lang('app.addNewLeadStatus')
                         </x-forms.button-primary>
 
                         @if ($addLeadCategoryPermission != 'none')
                             <x-forms.button-primary icon="plus" id="addCategory" class="category-btn mb-2 d-none actionBtn">
-                                @lang('app.addNew') @lang('modules.lead.leadCategory')
+                                @lang('app.addNewLeadCategory')
                             </x-forms.button-primary>
                         @endif
                     </div>

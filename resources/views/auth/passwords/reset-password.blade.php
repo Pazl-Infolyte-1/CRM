@@ -1,3 +1,11 @@
+@push('styles')
+    @foreach ($frontWidgets as $item)
+    @if(!is_null($item->header_script))
+        {!! $item->header_script !!}
+    @endif
+
+    @endforeach
+@endpush
 <x-auth>
     <form id="reset-password-form" action="{{ route('password.update') }}" class="ajax-form" method="POST">
         {{ csrf_field() }}
@@ -65,6 +73,12 @@
             });
 
         </script>
+        @foreach ($frontWidgets as $item)
+        @if(!is_null($item->footer_script))
+            {!! $item->footer_script !!}
+        @endif
+
+        @endforeach
     </x-slot>
 
 </x-auth>

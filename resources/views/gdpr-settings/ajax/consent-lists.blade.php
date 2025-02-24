@@ -3,8 +3,8 @@
     <!-- Add Task Export Buttons Start -->
     <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar">
         <div id="table-actions" class="flex-grow-1 align-items-center">
-            <x-forms.button-primary id="add-consent" icon="plus" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0">@lang('app.add')
-                @lang('app.menu.consent')</x-forms.button-primary>
+            <x-forms.button-primary id="add-consent" icon="plus" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0">
+                @lang('app.menu.addConsent')</x-forms.button-primary>
         </div>
 
         <x-datatable.actions>

@@ -21,7 +21,7 @@ class EventTableSeeder extends Seeder
             $event->company_id = $companyId;
             $event->save();
             try {
-                $randomEmployeeArray = $faker->randomElements($employees, $faker->numberBetween(1, 10));
+                $randomEmployeeArray = $faker->randomElements($employees, $faker->numberBetween(1, count($employees)));
 
                 foreach ($randomEmployeeArray as $employee) {
                     \App\Models\EventAttendee::create([

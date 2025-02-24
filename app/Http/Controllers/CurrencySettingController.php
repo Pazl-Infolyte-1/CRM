@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Currency\UpdateCurrency;
 use App\Models\Currency;
+use App\Models\GlobalSetting;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use App\Helper\Reply;
@@ -25,7 +26,7 @@ class CurrencySettingController extends AccountBaseController
         $this->pageTitle = 'app.menu.currencySettings';
         $this->activeSettingMenu = 'currency_settings';
         $this->middleware(function ($request, $next) {
-            abort_403(user()->permission('manage_currency_setting') !== 'all');
+            abort_403((user()->permission('manage_currency_setting') !== 'all'));
 
             return $next($request);
         });
@@ -196,6 +197,7 @@ class CurrencySettingController extends AccountBaseController
      */
     public function currencyExchangeKey()
     {
+        abort_403(GlobalSetting::validateSuperAdmin());
         return view('currency-settings.currency-exchange-modal', $this->data);
     }
 
@@ -205,6 +207,7 @@ class CurrencySettingController extends AccountBaseController
      */
     public function currencyExchangeKeyStore(StoreCurrencyExchangeKey $request)
     {
+        abort_403(GlobalSetting::validateSuperAdmin());
         $this->global->currency_converter_key = $request->currency_converter_key;
         $this->global->currency_key_version = $request->currency_key_version;
         $this->global->save();

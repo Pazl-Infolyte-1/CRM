@@ -5,7 +5,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 @endphp
 
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('app.menu.attendance') @lang('app.details')</h5>
+    <h5 class="modal-title" id="modelHeading">@lang('app.attendanceDetails')</h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
 </div>
@@ -61,7 +61,6 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
         <div class="col-md-6">
 
             <x-cards.data :title="__('modules.employees.activity')">
-
                 @if ($addAttendancePermission == 'all' && $maxClockIn)
                     <x-slot name="action">
                         <a class="btn-primary rounded f-12 py-1 px-2" href="javascript:;" onclick="addAttendance({{ $attendance->user->id }})" data-attendance-id="{{ $attendance->user->id }}">@lang('app.add')</a>

@@ -5,7 +5,12 @@
     <!-- SETTINGS START -->
     <div class="w-100 d-flex ">
 
-        <x-setting-sidebar :activeMenu="$activeSettingMenu"></x-setting-sidebar>
+        {{-- WORKSUITESAAS --}}
+        @if(user()->is_superadmin)
+            <x-super-admin.setting-sidebar :activeMenu="$activeSettingMenu"/>
+        @else
+            <x-setting-sidebar :activeMenu="$activeSettingMenu"/>
+        @endif
 
         <x-setting-card>
             <x-slot name="header">

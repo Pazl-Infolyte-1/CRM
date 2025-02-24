@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\SuperAdmin\Package;
+use App\Scopes\ActiveScope;
+use App\Scopes\CompanyScope;
+use App\Traits\CustomFieldsTrait;
 use App\Traits\HasMaskImage;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Cashier\Billable;
 
 /**
  * App\Models\Company
@@ -65,6 +70,7 @@ use Illuminate\Support\Facades\Schema;
  * @property-read mixed $favicon_url
  * @property-read mixed $icon
  * @property-read mixed $light_logo_url
+  * @property-read mixed $masked_default_logo
  * @property-read mixed $login_background_url
  * @property-read mixed $logo_url
  * @property-read mixed $moment_date_format
@@ -194,23 +200,34 @@ use Illuminate\Support\Facades\Schema;
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\ModuleSetting[] $moduleSetting
  * @property-read int|null $module_setting_count
  * @method static \Illuminate\Database\Eloquent\Builder|Company whereHash($value)
- * @property string $year_starts_from
+ * @property int|null $package_id
+ * @property string $package_type
+ * @property string|null $stripe_id
+ * @property string|null $card_brand
+ * @property string|null $card_last_four
+ * @property string|null $trial_ends_at
+ * @property string|null $licence_expire_on
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\User[] $clients
  * @property-read int|null $clients_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Contract[] $contracts
  * @property-read int|null $contracts_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Currency[] $currencies
  * @property-read int|null $currencies_count
+ * @property-read \App\Models\CompanyAddress|null $defaultAddress
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\User[] $employees
+ * @property-read int|null $employees_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Estimate[] $estimates
  * @property-read int|null $estimates_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\FileStorage[] $fileStorage
  * @property-read int|null $file_storage_count
+ * @property-read mixed $extras
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Invoice[] $invoices
  * @property-read int|null $invoices_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Lead[] $leads
  * @property-read int|null $leads_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Order[] $orders
  * @property-read int|null $orders_count
+ * @property-read Package|null $package
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Project[] $projects
  * @property-read int|null $projects_count
  * @property-read \App\Models\SlackSetting|null $slackSetting
@@ -233,16 +250,36 @@ use Illuminate\Support\Facades\Schema;
  * @property string $auth_theme_text
  * @method static \Illuminate\Database\Eloquent\Builder|Company whereAuthThemeText($value)
  * @mixin \Eloquent
+ * @property-read \App\Models\User|null $user
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\User[] $users
+ * @property-read int|null $users_count
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereCardBrand($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereCardLastFour($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereLicenceExpireOn($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company wherePackageId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company wherePackageType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereStripeId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereTrialEndsAt($value)
  */
 class Company extends BaseModel
 {
 
     use HasFactory;
     use HasMaskImage;
+    const CUSTOM_FIELD_MODEL = 'App\Models\Company';
+
+    use CustomFieldsTrait, Billable;
+
+    // WORKSUITESAAS
+    protected $with = ['package'];
 
     protected $table = 'companies';
 
-    public $dates = ['last_login'];
+    public $dates = [
+        'last_login',
+        'subscription_updated_at', // WORKSUITESAAS
+        'licence_expire_on' // WORKSUITESAAS
+    ];
 
     protected $casts = [
         'google_calendar_status' => 'string'
@@ -259,6 +296,33 @@ class Company extends BaseModel
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_id');
+    }
+
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(Package::class, 'package_id');
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class)->withoutGlobalScope(CompanyScope::class)->withoutGlobalScope('active');
+    }
+
+    public function user()
+    {
+        return $this->hasOne(User::class)->withoutGlobalScopes([CompanyScope::class, ActiveScope::class])->setEagerLoads([]);
+    }
+
+    public static function firstActiveAdmin($company)
+    {
+        $admins = Role::with('users')->where('name', 'admin')->where('company_id', $company->id)->first();
+
+        return $admins->users->first();
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(User::class)->whereHas('employeeDetail');
     }
 
     public function getLogoUrlAttribute()
@@ -599,6 +663,17 @@ class Company extends BaseModel
     public function contracts()
     {
         return $this->hasMany(Contract::class);
+    }
+
+    // WORKSUITESAAS
+    public function approvalBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
     }
 
 }
