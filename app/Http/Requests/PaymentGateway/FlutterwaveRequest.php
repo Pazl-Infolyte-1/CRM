@@ -26,7 +26,7 @@ class FlutterwaveRequest extends FormRequest
     {
         return [
             'name' => 'required',
-            'email' => 'required|email',
+            'email' => 'required|email:rfc,strict',
         ];
     }
 

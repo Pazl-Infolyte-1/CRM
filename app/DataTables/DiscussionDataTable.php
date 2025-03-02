@@ -2,7 +2,6 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\Discussion;
 use App\Scopes\ActiveScope;
 
@@ -124,7 +123,7 @@ class DiscussionDataTable extends BaseDataTable
             $model->where('discussion_category_id', $request->category_id);
         }
 
-        $model->orderBy('id', 'desc');
+        $model->orderByDesc('id');
 
         return $model;
     }

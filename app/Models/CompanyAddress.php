@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $longitude
  * @method static \Illuminate\Database\Eloquent\Builder|CompanyAddress whereLatitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder|CompanyAddress whereLongitude($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|CompanyAddress whereCountryId($value)
  * @mixin \Eloquent
  */
 class CompanyAddress extends BaseModel
@@ -44,7 +45,7 @@ class CompanyAddress extends BaseModel
 
     use HasFactory, HasCompany;
 
-    protected $fillable = ['address', 'is_default', 'location', 'tax_number', 'tax_name', 'longitude', 'latitude'];
+    protected $fillable = ['country_id', 'address', 'is_default', 'location', 'tax_number', 'tax_name', 'longitude', 'latitude'];
 
     public static function defaultAddress()
     {

@@ -3,13 +3,14 @@
 namespace App\DataTables;
 
 use Carbon\CarbonInterval;
-use Carbon\Carbon;
 use App\Models\CustomField;
 use App\Models\ProjectTimeLog;
 use App\Models\CustomFieldGroup;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
+use App\Models\ProjectMember;
 
 class TimeLogsDataTable extends BaseDataTable
 {
@@ -19,8 +20,9 @@ class TimeLogsDataTable extends BaseDataTable
     private $viewTimelogPermission;
     private $approveTimelogPermission;
     private $viewTimelogEarningsPermission;
+    private $ignoreDeletedAtCondition;
 
-    public function __construct()
+    public function __construct($ignoreDeletedAtCondition = false)
     {
         parent::__construct();
         $this->editTimelogPermission = user()->permission('edit_timelogs');
@@ -28,6 +30,7 @@ class TimeLogsDataTable extends BaseDataTable
         $this->viewTimelogPermission = user()->permission('view_timelogs');
         $this->approveTimelogPermission = user()->permission('approve_timelogs');
         $this->viewTimelogEarningsPermission = user()->permission('view_timelog_earnings');
+        $this->ignoreDeletedAtCondition = $ignoreDeletedAtCondition;
     }
 
     /**
@@ -39,9 +42,7 @@ class TimeLogsDataTable extends BaseDataTable
 
         $datatables = datatables()->eloquent($query);
         $datatables->addIndexColumn();
-        $datatables->addColumn('check', function ($row) {
-            return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-        });
+        $datatables->addColumn('check', fn($row) => $this->checkBox($row));
         $datatables->addColumn('action', function ($row) {
             $action = '<div class="task_view">
 
@@ -73,10 +74,12 @@ class TimeLogsDataTable extends BaseDataTable
                     )
                     || ($this->editTimelogPermission == 'both' && (($row->project && $row->project->client_id == user()->id) || $row->user_id == user()->id || $row->added_by == user()->id))
                 ) {
-                    $action .= '<a class="dropdown-item openRightModal" href="' . route('timelogs.edit', [$row->id]) . '">
+                    if(is_null($row->project_id) || ($row->project && is_null($row->project->deleted_at))) {
+                        $action .= '<a class="dropdown-item openRightModal" href="' . route('timelogs.edit', [$row->id]) . '">
                                 <i class="fa fa-edit mr-2"></i>
                                 ' . trans('app.edit') . '
                             </a>';
+                    }
                 }
 
                 if ($this->deleteTimelogPermission == 'all'
@@ -107,58 +110,59 @@ class TimeLogsDataTable extends BaseDataTable
 
             return $action;
         });
-        $datatables->addColumn('employee_name', function ($row) {
-            return $row->user->name;
-        });
-
-
-        $datatables->editColumn('name', function ($row) {
-            return view('components.employee', [
-                'user' => $row->user
-            ]);
-        });
-        $datatables->editColumn('start_time', function ($row) {
-            return $row->start_time->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format);
-        });
+        $datatables->addColumn('employee_name', fn($row) => $row->user->name);
+        $datatables->editColumn('name', fn($row) => view('components.employee', ['user' => $row->user]));
+        $datatables->editColumn('start_time', fn($row) => $row->start_time->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format));
         $datatables->editColumn('end_time', function ($row) {
             if (!is_null($row->end_time)) {
                 return $row->end_time->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format);
-
             }
-            elseif (!is_null($row->activeBreak)) {
+
+            if (!is_null($row->activeBreak)) {
                 return "<span class='badge badge-secondary'><i class='fa fa-pause-circle'></i> " . __('modules.timeLogs.paused') . '</span>';
             }
-            else {
-                return "<span class='badge badge-primary'><i class='fa fa-clock'></i> " . __('app.active') . '</span>';
-            }
+
+            return "<span class='badge badge-primary'><i class='fa fa-clock'></i> " . __('app.active') . '</span>';
         });
         $datatables->editColumn('total_hours', function ($row) {
+            // Determine total minutes based on end_time
+            $totalMinutes = is_null($row->end_time)
+                ? (($row->activeBreak) ? $row->activeBreak->start_time->diffInMinutes($row->start_time) : now()->diffInMinutes($row->start_time)) - $row->breaks->sum('total_minutes')
+                : $row->total_minutes - $row->breaks->sum('total_minutes');
+
+            // Convert total minutes to hours and minutes
+            $hours = intdiv($totalMinutes, 60);
+            $minutes = $totalMinutes % 60;
+
+            // Format output based on hours and minutes
+            $formattedTime = $hours > 0
+                ? $hours . 'h' . ($minutes > 0 ? ' ' . sprintf('%02dm', $minutes) : '')
+                : ($minutes > 0 ? sprintf('%dm', $minutes) : '0s');
+
+            // Build timeLog with conditional icons
+            $timeLog = '<span data-trigger="hover" data-toggle="popover" data-content="' . $row->memo . '">' . $formattedTime . '</span>';
             if (is_null($row->end_time)) {
-
-                $totalMinutes = (($row->activeBreak) ? $row->activeBreak->start_time->diffInMinutes($row->start_time) : now()->diffInMinutes($row->start_time)) - $row->breaks->sum('total_minutes');
-
-                $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . '</span>'; /** @phpstan-ignore-line */
-
-                $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.active') . '" class="fa fa-hourglass-start" ></i>';
-            }
-            else {
-                $totalMinutes = $row->total_minutes - $row->breaks->sum('total_minutes');
-                $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . ' ' . '</span>'; /** @phpstan-ignore-line */
-
-                if ($row->approved) {
-                    $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.approved') . '" class="fa fa-check-circle text-primary"></i>';
-                }
+                $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.active') . '" class="fa fa-hourglass-start"></i>';
+            } elseif ($row->approved) {
+                $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.approved') . '" class="fa fa-check-circle text-primary"></i>';
             }
 
             return $timeLog;
         });
         $datatables->editColumn('earnings', function ($row) {
-            if (is_null($row->hourly_rate)) {
-                return '--';
-            }
 
-            return currency_format($row->earnings, company()->currency_id);
+            $memberHoursRate = ProjectMember::where('user_id', $row->user_id)->where('project_id', $row->project_id)->first();
+
+            $totalMinutes = is_null($row->end_time)
+                ? (($row->activeBreak) ? $row->activeBreak->start_time->diffInMinutes($row->start_time) : now()->diffInMinutes($row->start_time)) - $row->breaks->sum('total_minutes')
+                : $row->total_minutes - $row->breaks->sum('total_minutes');
+
+            $userData = (!empty($memberHoursRate->hourly_rate) && $memberHoursRate->hourly_rate !== 0) ? $memberHoursRate->hourly_rate : $row->user_hour_rate;
+            $amount = ($userData/60) * $totalMinutes;
+
+            return currency_format($amount, company()->currency_id);
         });
+
         $datatables->editColumn('project_name', function ($row) {
             $name = '';
 
@@ -174,24 +178,11 @@ class TimeLogsDataTable extends BaseDataTable
 
             return $name;
         });
-        $datatables->addColumn('task_name', function ($row) {
-            return !is_null($row->task_id) ? $row->task->heading : '--';
-        });
-        $datatables->addColumn('task_project_name', function ($row) {
-            return !is_null($row->project_id) ? $row->project->project_name : '--';
-        });
-        $datatables->addColumn('short_code', function ($row) {
-            if (!is_null($row->project)) {
-                return $row->project->project_short_code;
-            }
-            else {
-                return '--';
-            }
-        });
+        $datatables->addColumn('task_name', fn($row) => $row->task?->heading ?? '--');
+        $datatables->addColumn('task_project_name', fn($row) => $row->project?->project_name ?? '--');
+        $datatables->addColumn('short_code', fn($row) => $row->project?->project_short_code ?? '--');
         $datatables->addIndexColumn();
-        $datatables->setRowId(function ($row) {
-            return 'row-' . $row->id;
-        });
+        $datatables->setRowId(fn($row) => 'row-' . $row->id);
         $datatables->orderColumn('project_name', 'tasks.heading $1');
         $datatables->removeColumn('project_id');
         $datatables->removeColumn('total_minutes');
@@ -234,25 +225,16 @@ class TimeLogsDataTable extends BaseDataTable
             ->leftJoin('tasks', 'tasks.id', '=', 'project_time_logs.task_id')
             ->leftJoin('projects', 'projects.id', '=', 'tasks.project_id');
 
-        $model = $model->select('project_time_logs.id', 'project_time_logs.start_time', 'project_time_logs.end_time', 'project_time_logs.total_hours', 'project_time_logs.total_minutes', 'project_time_logs.memo', 'project_time_logs.user_id', 'tasks.project_id', 'project_time_logs.task_id', 'users.name', 'users.image', 'project_time_logs.hourly_rate', 'project_time_logs.earnings', 'project_time_logs.approved', 'tasks.heading', 'projects.project_name', 'designations.name as designation_name', 'project_time_logs.added_by', 'projects.project_admin');
+        $model = $model->select('project_time_logs.id', 'project_time_logs.start_time', 'project_time_logs.end_time', 'project_time_logs.total_hours', 'project_time_logs.total_minutes', 'project_time_logs.memo', 'project_time_logs.user_id', 'tasks.project_id', 'project_time_logs.task_id', 'users.name', 'users.image', 'project_time_logs.hourly_rate', 'project_time_logs.earnings', 'project_time_logs.approved', 'tasks.heading', 'projects.project_name', 'designations.name as designation_name', 'project_time_logs.added_by', 'projects.project_admin', 'employee_details.hourly_rate as user_hour_rate');
 
 
-        if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+        if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '' &&
+        $request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
 
-            if (!is_null($startDate)) {
-                $model->where(DB::raw('DATE(project_time_logs.`start_time`)'), '>=', $startDate);
-            }
-        }
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->startOfDay(); // Assuming $startDate is already in a specific timezone
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->endOfDay(); // Assuming $endDate is already in a specific timezone
 
-        if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
-
-            if (!is_null($endDate)) {
-                $model->where(function ($query) use ($endDate) {
-                    $query->where(DB::raw('DATE(project_time_logs.`end_time`)'), '<=', $endDate);
-                });
-            }
+            $model->whereBetween(DB::raw('CONVERT_TZ(project_time_logs.`start_time`, \'+00:00\', @@session.time_zone)'), [$startDate, $endDate]);
         }
 
         if (!is_null($employee) && $employee !== 'all') {
@@ -328,7 +310,9 @@ class TimeLogsDataTable extends BaseDataTable
             }
         }
 
-        $model->whereNull('tasks.deleted_at');
+        if (!$this->ignoreDeletedAtCondition) {
+            $model->whereNull('tasks.deleted_at');
+        }
 
         return $model;
     }
@@ -380,10 +364,10 @@ class TimeLogsDataTable extends BaseDataTable
                 'orderable' => false,
                 'searchable' => false
             ],
-            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId()],
+            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId(), 'title' => '#'],
             __('app.id') => ['data' => 'id', 'name' => 'id', 'title' => __('app.id'), 'visible' => showId()],
             __('modules.taskCode') => ['data' => 'short_code', 'name' => 'project_short_code', 'title' => __('modules.taskCode')],
-            __('app.task') => ['data' => 'project_name', 'name' => 'tasks.heading','exportable' => false, 'width' => '200', 'title' => __('app.task')],
+            __('app.task') => ['data' => 'project_name', 'name' => 'tasks.heading', 'exportable' => false, 'width' => '200', 'title' => __('app.task')],
             __('app.tasks') => ['data' => 'task_name', 'visible' => false, 'name' => 'task_name', 'title' => __('app.tasks')],
             __('app.project') => ['data' => 'task_project_name', 'visible' => false, 'name' => 'task_project_name', 'title' => __('app.project')],
             __('app.employee') => ['data' => 'name', 'name' => 'users.name', 'exportable' => false, 'title' => __('app.employee')],

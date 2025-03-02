@@ -44,7 +44,7 @@
         data['recurringID'] = recurringID;
     });
     const showTable = () => {
-        window.LaravelDataTables["expenses-table"].draw(false);
+        window.LaravelDataTables["expenses-table"].draw(true);
     }
 
     $('#quick-action-type').change(function() {

@@ -24,16 +24,21 @@ class UpdateSmtpSetting extends CoreRequest
      */
     public function rules()
     {
+
+        // WORKSUITESAAS
+        if (!user()->is_superadmin) {
+            return [];
+        }
+
         return [
             'mail_driver' => 'required',
             'mail_host' => 'required',
             'mail_port' => 'required',
             'mail_username' => 'required',
-            'mail_password' => 'required',
+            'mail_password' => 'required_if:mail_driver,smtp|min:1',
             'mail_from_name' => 'required',
-            'mail_from_email' => 'required|email:rfc',
+            'mail_from_email' => 'required|email:rfc,strict',
             'mail_encryption' => 'required'
         ];
     }
-
 }

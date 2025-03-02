@@ -15,7 +15,6 @@ use Carbon\Carbon;
 use App\Models\TaskboardColumn;
 use App\Models\TaskUser;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ProjectSeeder extends Seeder
 {
@@ -71,7 +70,7 @@ class ProjectSeeder extends Seeder
             }
 
             // Create tasks
-            for ($i = 1; $i <= 11; $i++) {
+            for ($i = 1; $i <= 5; $i++) {
                 $this->createTask($faker, $project, $companyId);
             }
 
@@ -166,7 +165,7 @@ class ProjectSeeder extends Seeder
             ->where('project_id', $project->id)
             ->first();
 
-        $boards = TaskboardColumn::all()->where('company_id', $companyId)->pluck('id')->toArray();
+        $boards = TaskboardColumn::all()->where('company_id', $companyId)->where('slug', '!=', 'waiting_approval')->pluck('id')->toArray();
 
         $startDate = $faker->randomElement([$faker->dateTimeThisMonth($max = 'now'), $faker->dateTimeThisYear($max = 'now')]);
 
@@ -213,7 +212,7 @@ class ProjectSeeder extends Seeder
         $amount = [$cost_per_item[0] * $quantity[0], $cost_per_item[1] * $quantity[1]];
         $type = ['item', 'item'];
 
-        $unit = UnitType::select('id')->where('.company_id', $companyId)->first();
+        $unit = UnitType::select('id')->where('company_id', $companyId)->first();
         $companyAddress = CompanyAddress::where('is_default', 1)->firstOrFail();
         $bankAccountId = BankAccount::where('company_id', $companyId)->inRandomOrder()->first()->id;
 
@@ -306,6 +305,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Project Initiation',
                 'summary' => 'Define project objectives, scope, and stakeholders. Obtain project approval and secure necessary resources.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->subDays(30)->format('Y-m-d'),
                 'end_date' => now()->subDays(20)->format('Y-m-d'),
@@ -316,6 +316,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Project Planning',
                 'summary' => 'Develop a detailed project plan, including tasks, timelines, and resources. Identify and analyze potential risks.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->subDays(19)->format('Y-m-d'),
                 'end_date' => now()->subDays(10)->format('Y-m-d'),
@@ -326,6 +327,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Kickoff Meeting',
                 'summary' => 'Officially launch the project with a meeting to communicate goals, roles, and expectations. Distribute project documentation.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->subDays(9)->format('Y-m-d'),
                 'end_date' => now()->subDays(0)->format('Y-m-d'),
@@ -336,6 +338,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Completion of Project Design',
                 'summary' => 'Complete the detailed design of the project deliverables. Ensure that the design aligns with project requirements.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->addDays(0)->format('Y-m-d'),
                 'end_date' => now()->addDays(10)->format('Y-m-d'),
@@ -346,6 +349,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Start of Execution/Implementation',
                 'summary' => 'Begin the execution phase according to the project plan. Monitor and manage project activities.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->addDays(11)->format('Y-m-d'),
                 'end_date' => now()->addDays(20)->format('Y-m-d'),
@@ -356,6 +360,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Mid-Project Review',
                 'summary' => 'Conduct a review to assess project progress against the plan. Adjust the plan as needed based on the review.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->addDays(21)->format('Y-m-d'),
                 'end_date' => now()->addDays(30)->format('Y-m-d'),
@@ -366,6 +371,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Completion of Testing Phase',
                 'summary' => 'Complete testing of project deliverables to ensure quality. Address and resolve any issues identified during testing.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->addDays(31)->format('Y-m-d'),
                 'end_date' => now()->addDays(40)->format('Y-m-d'),
@@ -376,6 +382,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Client or Stakeholder Review',
                 'summary' => 'Present project progress to clients or stakeholders. Gather feedback and make necessary adjustments.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->addDays(41)->format('Y-m-d'),
                 'end_date' => now()->addDays(50)->format('Y-m-d'),
@@ -386,6 +393,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Finalization and Delivery',
                 'summary' => 'Complete all remaining tasks and finalize project deliverables. Deliver the completed project to the client or end-users.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->addDays(51)->format('Y-m-d'),
                 'end_date' => now()->addDays(55)->format('Y-m-d'),
@@ -396,6 +404,7 @@ class ProjectSeeder extends Seeder
                 'milestone_title' => 'Project Closure',
                 'summary' => 'Conduct a project review to evaluate overall success and lessons learned. Document and archive project information. Celebrate project completion with the project team.',
                 'project_id' => $project->id,
+                'company_id' => $project->company_id,
                 'currency_id' => $project->currency_id,
                 'start_date' => now()->addDays(56)->format('Y-m-d'),
                 'end_date' => now()->addDays(60)->format('Y-m-d'),

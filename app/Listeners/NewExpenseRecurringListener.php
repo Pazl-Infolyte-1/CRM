@@ -2,13 +2,9 @@
 
 namespace App\Listeners;
 
-use App\Events\NewExpenseEvent;
 use App\Events\NewExpenseRecurringEvent;
 use App\Notifications\ExpenseRecurringStatus;
-use App\Notifications\NewExpenseAdmin;
-use App\Notifications\NewExpenseMember;
 use App\Notifications\NewExpenseRecurringMember;
-use App\Notifications\NewExpenseStatus;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
 

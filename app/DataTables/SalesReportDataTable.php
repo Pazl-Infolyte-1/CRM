@@ -2,10 +2,7 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\Invoice;
-use App\Models\InvoiceItems;
-use App\Models\Payment;
 use App\Models\Tax;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -141,9 +138,7 @@ class SalesReportDataTable extends BaseDataTable
         }
 
         $datatable->addIndexColumn()
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            });
+            ->setRowId(fn($row) => 'row-' . $row->id);
         $rawColumns = $taxes->pluck('tax_name')->toArray();
         $rawColumns[] = array_push($rawColumns, 'client_name', 'paid_on');
         $datatable->orderColumn('client_name', 'client_id $1');
@@ -172,7 +167,7 @@ class SalesReportDataTable extends BaseDataTable
             ->whereNotNull('payments.invoice_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
 
             if (!is_null($startDate)) {
                 $model = $model->where(DB::raw('DATE(payments.`created_at`)'), '>=', $startDate);
@@ -180,7 +175,7 @@ class SalesReportDataTable extends BaseDataTable
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
 
             if (!is_null($endDate)) {
                 $model = $model->where(function ($query) use ($endDate) {

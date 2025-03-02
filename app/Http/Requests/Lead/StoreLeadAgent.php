@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Lead;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLeadAgent extends CoreRequest
 {

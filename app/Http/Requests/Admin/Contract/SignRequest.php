@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests\Admin\Contract;
 
-use App\Helper\Reply;
-use App\Models\Contract;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SignRequest extends FormRequest
@@ -30,7 +28,7 @@ class SignRequest extends FormRequest
             'first_name' => 'required',
             'last_name' => 'required',
             'place' => 'required',
-            'email' => 'required|email:rfc',
+            'email' => 'required|email:rfc,strict',
         ];
 
         if(request('signature_type') == 'upload'){

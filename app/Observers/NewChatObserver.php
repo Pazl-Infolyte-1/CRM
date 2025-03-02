@@ -19,11 +19,12 @@ class NewChatObserver
 
             if ((request()->user_id == request()->mention_user_id) && request()->mention_user_id != null && request()->mention_user_id != '') {
                 $userChat->mentionUser()->sync(request()->mention_user_id);
-                $mentionUserIds = explode(',', request()->mention_user_id   );
+                $mentionUserIds = explode(',', request()->mention_user_id);
                 $mentionUser = User::whereIn('id', $mentionUserIds)->get();
                 event(new NewMentionChatEvent($userChat, $mentionUser));
 
-            } else {
+            }
+            else {
                 event(new NewChatEvent($userChat));
 
             }
@@ -46,7 +47,7 @@ class NewChatObserver
     {
         $notifyData = ['App\Notifications\NewChat'];
 
-        \App\Models\Notification::deleteNotification($notifyData, $userChat->id);
+        Notification::deleteNotification($notifyData, $userChat->id);
 
     }
 

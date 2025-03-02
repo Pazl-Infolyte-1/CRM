@@ -6,7 +6,7 @@
                 :value="__('app.' . $expense->rotation)" />
 
             <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                     @lang('modules.expensesRecurring.completedTotalExpense')</p>
                 <p class="mb-0 text-dark-grey f-14 ">
                     @if(!is_null($expense->billing_cycle))
@@ -28,7 +28,7 @@
             :value="$expense->next_expense_date ? $expense->next_expense_date->translatedFormat(company()->date_format) : '---'" />
 
             <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                <p class="mb-0 text-lightest f-14 w-30 text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 ">
                     @lang('app.status')</p>
                 <p class="mb-0 text-dark-grey f-14">
                     @if ($expense->status == 'active')
@@ -52,7 +52,7 @@
                 :value="(!is_null($expense->project_id) ? $expense->project->project_name : '--')" />
 
             <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                <p class="mb-0 text-lightest f-14 w-30 text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 ">
                     @lang('app.bill')</p>
                 <p class="mb-0 text-dark-grey f-14">
                     @if (!is_null($expense->bill))
@@ -68,12 +68,15 @@
                 :value="(!is_null($expense->bank) ? $expense->bank->bank_name : '--')" />
 
             <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                <p class="mb-0 text-lightest f-14 w-30 text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 ">
                     @lang('app.employee')</p>
                 <p class="mb-0 text-dark-grey f-14">
                     <x-employee :user="$expense->user" />
                 </p>
             </div>
+
+            <x-forms.custom-field-show :fields="$fields" :model="$exp"></x-forms.custom-field-show>
+
         </x-cards.data>
 
     </div>

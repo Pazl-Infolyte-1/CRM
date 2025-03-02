@@ -5,7 +5,7 @@
     <div class="col-sm-12">
         <x-form id="save-event-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.events.addEvent')</h4>
                 <div class="row p-20">
 
@@ -49,7 +49,7 @@
                     <div class="col-lg-3 col-md-6">
                         <x-forms.datepicker fieldId="start_date" fieldRequired="true"
                             :fieldLabel="__('modules.events.startOnDate')" fieldName="start_date"
-                            :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                            :fieldValue="now(company()->timezone)->format(company()->date_format)"
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
 
@@ -64,7 +64,7 @@
                     <div class="col-lg-3 col-md-6">
                         <x-forms.datepicker fieldId="end_date" fieldRequired="true"
                             :fieldLabel="__('modules.events.endOnDate')" fieldName="end_date"
-                            :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                            :fieldValue="now(company()->timezone)->format(company()->date_format)"
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
 
@@ -74,6 +74,21 @@
                                 :fieldPlaceholder="__('placeholders.hours')" fieldName="end_time" fieldId="end_time"
                                 fieldRequired="true" />
                         </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <x-forms.label class="my-3" fieldId="department" :fieldLabel="__('app.department')">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control multiple-users emp-event-department" multiple name="team_id[]" id="employee_department"
+                                    data-live-search="true">
+                                @foreach ($teams as $team)
+                                    <option
+                                    data-content="<span class='p-2 border badge badge-pill badge-light'>{{ $team->team_name }}</span>"
+                                    value="{{ $team->id }}">{{ $team->team_name }}</option>
+                                @endforeach
+                            </select>
+                        </x-forms.input-group>
                     </div>
 
                     <div class="{{!in_array('client',user_roles()) ? 'col-md-6' : 'col-md-12'}}">
@@ -91,7 +106,7 @@
                             </x-forms.input-group>
                         </div>
                     </div>
-                @if(!in_array('client', user_roles()))
+                @if(!in_array('client', user_roles()) && in_array('clients', user_modules()))
                     <div class="col-md-6">
                         <div class="form-group my-3">
                             <x-forms.label fieldId="selectAssignee" fieldRequired="true"
@@ -109,6 +124,37 @@
                     </div>
                 @endif
 
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <x-forms.label fieldId="host" fieldRequired="false"
+                                :fieldLabel="__('app.host')">
+                            </x-forms.label>
+                            <x-forms.input-group>
+                                <select class="form-control multiple-users" name="host"
+                                    id="selectHost" data-live-search="true" data-size="8">
+                                    <option value="">--</option>
+                                    @foreach ($employees as $item)
+                                        <x-user-option :user="$item" :pill="true"/>
+                                    @endforeach
+                                </select>
+                            </x-forms.input-group>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group c-inv-select mb-4">
+                            <x-forms.label fieldId="status" :fieldLabel="__('app.status')">
+                            </x-forms.label>
+                            <div class="select-others height-35 rounded">
+                                <select class="form-control select-picker" data-size="8"
+                                    name="status" id="status">
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-yellow'></i> @lang('app.pending')" value="pending"></option>
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-light-green'></i> @lang('app.completed')" value="completed"></option>
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-red'></i> @lang('app.cancelled')" value="cancelled"></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="col-lg-2 my-3">
                         <x-forms.checkbox :fieldLabel="__('modules.events.repeat')" fieldName="repeat"
@@ -187,9 +233,38 @@
     </div>
 </div>
 
-<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
-
 <script>
+
+    $('body').on('change', '#employee_department', function () {
+
+        let departmentIds = $(this).val();
+        if (departmentIds === '' || departmentIds.length === 0) {
+            departmentIds = 0;
+        }
+        let userId = @json($projectTemplateMembers ?? []);
+        let url = "{{ route('departments.members', ':id') }}";
+        if (userId.length > 0) {
+            url += "?userId=" + userId.join(",");
+        }
+        url = url.replace(':id', departmentIds);
+
+        $.easyAjax({
+            url: url,
+            type: "GET",
+            container: '#save-project-data-form',
+            blockUI: true,
+            redirect: true,
+            success: function (data) {
+                if (data.data && data.data.length > 0) {
+                $('#selectAssignee').html(data.data);
+                } else {
+                    $('#selectAssignee').html('<option>No employees found</option>');
+                }
+                $('#selectAssignee').selectpicker('refresh');
+            }
+        });
+    });
+
     function monthlyOn() {
         let ele = $('#monthlyOn');
         let url = '{{ route('events.monthly_on') }}';
@@ -204,9 +279,6 @@
                 success: function(response) {
                     @if (App::environment('development'))
                         $('#event_name').val(response.message);
-                        $('#where').val(response.message);
-                        $('#selectAssignee').val({{ user()->id }});
-                        $('#selectAssignee').selectpicker('refresh');
                     @endif
                     ele.html(response.message);
                     $('#repeat_type').selectpicker('refresh');
@@ -290,7 +362,7 @@
             "color": "#ff0000"
         });
 
-        $("#selectAssignee, #selectAssignee2").selectpicker({
+        $("#selectAssignee, #selectAssignee2, #selectHost, .multiple-users").selectpicker({
             actionsBox: true,
             selectAllText: "{{ __('modules.permission.selectAll') }}",
             deselectAllText: "{{ __('modules.permission.deselectAll') }}",

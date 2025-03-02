@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\UserInvitation;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\App;
 
 class InvitationEmail extends BaseNotification
 {
@@ -45,13 +46,15 @@ class InvitationEmail extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('invitation', $this->invite->invitation_code);
         $url = getDomainSpecificUrl($url, $this->company);
 
+        App::setLocale($notifiable->locale ?? $this->company->locale ?? 'en');
+
         $content = $this->invite->user->name . ' ' . __('email.invitation.subject') . config('app.name') . '.'  . '<br>' . $this->invite->message;
 
-        return $build
+        $build
             ->subject($this->invite->user->name . ' ' . __('email.invitation.subject') . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -59,6 +62,10 @@ class InvitationEmail extends BaseNotification
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.invitation.action')
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

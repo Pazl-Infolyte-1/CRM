@@ -41,14 +41,14 @@
             <div class="col-md-6">
                 <x-forms.datepicker fieldId="start_date"
                     :fieldLabel="__('modules.timeLogs.startDate')" fieldName="start_date"
-                    :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                    :fieldValue="now(company()->timezone)->format(company()->date_format)"
                     :fieldPlaceholder="__('placeholders.date')" />
             </div>
 
             <div class="col-md-6">
                 <x-forms.datepicker fieldId="end_date"
                     :fieldLabel="__('modules.timeLogs.endDate')" fieldName="end_date"
-                    :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                    :fieldValue="now(company()->timezone)->format(company()->date_format)"
                     :fieldPlaceholder="__('placeholders.date')" />
             </div>
 

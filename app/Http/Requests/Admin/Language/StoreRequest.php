@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin\Language;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRequest extends CoreRequest
 {
@@ -30,6 +29,7 @@ class StoreRequest extends CoreRequest
             'language_code' => 'required|unique:language_settings,language_code|max:10',
             'flag' => 'required',
             'status' => 'required|max:100',
+            'is_rtl' => 'required',
         ];
     }
 

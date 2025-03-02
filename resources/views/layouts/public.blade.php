@@ -57,6 +57,10 @@
             margin-top: 0;
         }
 
+        .rtl .preloader-container {
+            margin-right: 0;
+        }
+
         .fc a[data-navlink] {
             color: #99a5b5;
         }
@@ -84,11 +88,11 @@
 </head>
 
 
-<body id="body">
+<body id="body" class="{{ isRtl('rtl') }}">
 
 
 <!-- BODY WRAPPER START -->
-<div class="body-wrapper clearfix">
+<div class="clearfix body-wrapper">
 
     <!-- MAIN CONTAINER START -->
     <section class="bg-additional-grey" id="fullscreen">
@@ -98,14 +102,14 @@
         </div>
 
 
-        <x-app-title class="d-block d-lg-none" :pageTitle="__($pageTitle)"></x-app-title>
+        <x-app-title class="d-block d-lg-none" :pageTitle="$pageTitle"></x-app-title>
 
         <!-- CONTENT WRAPPER START -->
         <div class="content-wrapper">
 
             <div class="row">
-                <div class="col-12 mb-4">
-                    <img src="{{ isset($company)?$company->light_logo_url:global_setting()->light_logo_url }}" class="height-35 rounded">
+                <div class="mb-4 col-12">
+                    <img src="{{ isset($company)?$company->light_logo_url:global_setting()->light_logo_url }}" class="rounded height-35">
                     <div class="mt-2 f-12 text-dark-grey">{{  isset($company)?$company->company_name:global_setting()->global_app_name }}</div>
                 </div>
             </div>
@@ -141,8 +145,8 @@
                 {{__('app.loading')}}
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-cancel rounded mr-3" data-dismiss="modal">Close</button>
-                <button type="button" class="btn-primary rounded">Save changes</button>
+                <button type="button" class="mr-3 rounded btn-cancel" data-dismiss="modal">Close</button>
+                <button type="button" class="rounded btn-primary">Save changes</button>
             </div>
         </div>
     </div>

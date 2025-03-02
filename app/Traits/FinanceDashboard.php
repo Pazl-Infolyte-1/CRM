@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
  */
 trait FinanceDashboard
 {
+
     use CurrencyExchange, ClientDashboard;
 
     /**
@@ -24,9 +25,10 @@ trait FinanceDashboard
      */
     public function financeDashboard()
     {
+        $this->viewFinanceDashboard = user()->permission('view_finance_dashboard');
         abort_403($this->viewFinanceDashboard !== 'all');
 
-        $this->startDate  = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
+        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
         $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
         $startDate = $this->startDate->toDateString();
         $endDate = $this->endDate->toDateString();
@@ -47,7 +49,7 @@ trait FinanceDashboard
                 ->orWhere('status', 'partial');
         })
             ->whereBetween(DB::raw('DATE(`issue_date`)'), [$startDate, $endDate])
-             ->select('id')
+            ->select('id')
             ->count();
 
         // Total Expense
@@ -56,6 +58,7 @@ trait FinanceDashboard
             ->select(
                 'expenses.id',
                 'expenses.price',
+                'expenses.exchange_rate as expenseExchangeRate',
                 'currencies.currency_code',
                 'currencies.is_cryptocurrency',
                 'currencies.usd_price',
@@ -68,24 +71,12 @@ trait FinanceDashboard
 
         foreach ($expenses as $expense) {
 
-            if (isset($expense->currency) && $expense->currency->currency_code != $this->company->currency->currency_code && $expense->exchange_rate != 0) {
-
-                if ($expense->currency->is_cryptocurrency == 'yes') {
-                    $usdTotal = ($expense->price * $expense->currency->usd_price);
-                    $totalExpenses += floor(floatval($usdTotal) / floatval($expense->exchange_rate));
-                }
-                else {
-                    $totalExpenses += floor($expense->price / $expense->currency->exchange_rate);
-                }
-
-            }
-            else {
-                $totalExpenses += round($expense->price, 2);
-            }
+            $defaultPrice = floatval($expense->price) * floatval($expense->expenseExchangeRate);
+            $totalExpenses += $defaultPrice;
 
         }
 
-        $this->totalExpenses = $totalExpenses;
+        $this->totalExpenses = round($totalExpenses, 2);
 
         // Total Earning
         $paymentsModal = Payment::whereBetween(DB::raw('DATE(payments.`paid_on`)'), [$startDate, $endDate]);
@@ -95,11 +86,13 @@ trait FinanceDashboard
         $payments = $payments->join('currencies', 'currencies.id', '=', 'payments.currency_id')
             ->where('payments.status', 'complete')
             ->select(
-                DB::raw('sum(payments.amount) as total'),
+                DB::raw('(payments.amount) as total'),
                 'currencies.currency_code',
                 'currencies.is_cryptocurrency',
                 'currencies.usd_price',
-                'currencies.exchange_rate'
+                'currencies.exchange_rate',
+                'currencies.id as currency_id',
+                'payments.exchange_rate',
             )
             ->get();
 
@@ -111,20 +104,20 @@ trait FinanceDashboard
 
                 if ($payment->currency->is_cryptocurrency == 'yes') {
                     $usdTotal = (floatval($payment->total) * floatval($payment->currency->usd_price));
-                    $totalEarnings += floor(floatval($usdTotal) / floatval($payment->currency->exchange_rate));
+                    $totalEarnings += floor(floatval($usdTotal) * floatval($payment->currency->exchange_rate));
                 }
                 else {
-                    $totalEarnings += floor(floatval($payment->total) / floatval($payment->currency->exchange_rate));
+                    $totalEarnings += floatval($payment->total) * floatval($payment->exchange_rate);
                 }
 
             }
             else {
-                $totalEarnings += round($payment->total, 2);
+                $totalEarnings += $payment->total;
             }
 
         }
 
-        $this->totalEarnings = $totalEarnings;
+        $this->totalEarnings = round($totalEarnings, 2);
 
         // Total Pending amount
         $invoices = Invoice::whereBetween(DB::raw('DATE(invoices.`issue_date`)'), [$startDate, $endDate])
@@ -148,18 +141,19 @@ trait FinanceDashboard
             if ($invoice->currency->currency_code != $this->company->currency->currency_code && $invoice->currency->exchange_rate != 0) {
                 if ($invoice->currency->is_cryptocurrency == 'yes') {
                     $usdTotal = ($invoice->due_amount * $invoice->currency->usd_price);
-                    $totalPendingAmount += floor($usdTotal / $invoice->currency->exchange_rate);
+                    $totalPendingAmount += floor(floatval($usdTotal) * floatval($invoice->currency->exchange_rate));
 
-                } else {
-                    $totalPendingAmount += floor($invoice->due_amount / $invoice->currency->exchange_rate);
+                }
+                else {
+                    $totalPendingAmount += floatval($invoice->due_amount) * floatval($invoice->currency->exchange_rate);
                 }
             }
             else {
-                $totalPendingAmount += round($invoice->due_amount, 2);
+                $totalPendingAmount += $invoice->due_amount;
             }
         }
 
-        $this->totalPendingAmount = $totalPendingAmount;
+        $this->totalPendingAmount = round($totalPendingAmount, 2);
         $this->invoiceOverviewChartData = $this->invoiceOverviewChartData($startDate, $endDate);
         $this->estimateOverviewChartData = $this->estimateOverviewChartData($startDate, $endDate);
         $this->proposalOverviewChartData = $this->proposalOverviewChartData($startDate, $endDate);
@@ -303,10 +297,10 @@ trait FinanceDashboard
             ->orderBy('payments.paid_on', 'ASC')
             ->select(
                 'payments.amount as total',
-                'currencies.currency_code',
-                'currencies.is_cryptocurrency',
-                'currencies.usd_price',
-                'currencies.exchange_rate',
+                'payments.exchange_rate as exchange_rate',
+                'currencies.currency_code as currency_code',
+                'currencies.is_cryptocurrency as is_cryptocurrency',
+                'currencies.usd_price as usd_price',
                 'projects.project_name'
             );
 
@@ -318,31 +312,33 @@ trait FinanceDashboard
             ->orderBy('payments.paid_on', 'ASC')
             ->select(
                 'payments.amount as total',
-                'currencies.currency_code',
-                'currencies.is_cryptocurrency',
-                'currencies.usd_price',
-                'currencies.exchange_rate',
+                'payments.exchange_rate as exchange_rate',
+                'currencies.currency_code as currency_code',
+                'currencies.is_cryptocurrency as is_cryptocurrency',
+                'currencies.usd_price as usd_price',
                 'projects.project_name as project_name'
             )
-            ->union($projects)->get();
+            ->union($projects)
+            ->get();
 
         $earningsByProjects = array();
-
 
         foreach ($invoices as $invoice) {
             if (!array_key_exists($invoice->project_name, $earningsByProjects)) {
                 $earningsByProjects[$invoice->project_name] = 0;
             }
 
-            if (isset($invoice->currency) && $invoice->currency->currency_code != $this->company->currency->currency_code && $invoice->currency->exchange_rate != 0) {
-                if ($invoice->currency->is_cryptocurrency == 'yes') {
-                    $usdTotal = (floatval($invoice->total) * floatval($invoice->currency->usd_price));
-                    $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + floor($usdTotal / $invoice->currency->exchange_rate);
+            if ($invoice->currency_code != $this->company->currency->currency_code && $invoice->exchange_rate != 0) {
+                if ($invoice->is_cryptocurrency == 'yes') {
+                    $usdTotal = ($invoice->total * $invoice->usd_price);
+                    $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + round(floor(floatval($usdTotal) * floatval($invoice->exchange_rate)), 2);
 
-                } else {
-                    $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + floor(floatval($invoice->total) / floatval($invoice->currency->exchange_rate));
                 }
-            } else {
+                else {
+                    $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + round((floatval($invoice->total) * floatval($invoice->exchange_rate)), 2);
+                }
+            }
+            else {
                 $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + round($invoice->total, 2);
             }
         }

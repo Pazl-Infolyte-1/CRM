@@ -11,7 +11,7 @@ class TwoFactorCodeListener
     /**
      * Handle the event.
      *
-     * @param \App\Events\TwoFactorCodeEvent $event
+     * @param TwoFactorCodeEvent $event
      * @return void
      */
     public function handle(TwoFactorCodeEvent $event)

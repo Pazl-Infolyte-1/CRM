@@ -7,7 +7,7 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
     <div class="col-sm-12">
         <x-form id="save-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.employees.accountDetails')</h4>
 
                 <div class="row p-20">
@@ -31,39 +31,18 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                             <div class="col-lg-4 col-md-6">
                                 <x-forms.email fieldId="email" :fieldLabel="__('app.email')" fieldName="email"
                                     :popover="__('modules.client.emailNote')" :fieldPlaceholder="__('placeholders.email')"
-                                    :fieldValue="$client->email">
+                                    :fieldValue="$client->email" :fieldReadOnly="!is_null($client->email)" :popover="__('superadmin.emailCannotChange')">
                                 </x-forms.email>
                             </div>
+
                             <div class="col-lg-4 col-md-6">
-                                <x-forms.label class="mt-3" fieldId="password" :fieldLabel="__('app.password')"
-                                    :popover="__('messages.requiredForLogin')">
-                                </x-forms.label>
-                                <x-forms.input-group>
-                                    <input type="password" name="password" id="password" autocomplete="off"
-                                        class="form-control height-35 f-14">
-                                    <x-slot name="preappend">
-                                        <button type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('app.viewPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
-                                                class="fa fa-eye"></i></button>
-                                    </x-slot>
-                                    <x-slot name="append">
-                                        <button id="random_password" type="button" data-toggle="tooltip"
-                                            data-original-title="@lang('modules.client.generateRandomPassword')"
-                                            class="btn btn-outline-secondary border-grey height-35"><i
-                                                class="fa fa-random"></i></button>
-                                    </x-slot>
-                                </x-forms.input-group>
-                                <small class="form-text text-muted">@lang('modules.client.passwordUpdateNote')</small>
-                            </div>
-                            <div class="col-md-4">
                                 <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country"
                                 search="true">
                                 <option value="">--</option>
                                 @foreach ($countries as $item)
-                                    <option @if ($client->country_id == $item->id) selected @endif data-mobile="{{ $client->mobile }}" data-tokens="{{ $item->iso3 }}" data-phonecode="{{ $item->phonecode }}" data-content="<span
+                                    <option @selected($client->country_id == $item->id) data-mobile="{{ $client->mobile }}" data-tokens="{{ $item->iso3 }}" data-phonecode="{{ $item->phonecode }}" data-content="<span
                                         class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span>
-                                        {{ $item->nicename }}" value="{{ $item->id }}">{{ $item->nicename }}</option>
+                                        {{ $item->nicename }}" data-iso="{{ $item->iso }}" value="{{ $item->id }}">{{ $item->nicename }}</option>
                                 @endforeach
                             </x-forms.select>
                         </div>
@@ -74,10 +53,10 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                                 <x-forms.select fieldId="country_phonecode" fieldName="country_phonecode"
                                     search="true">
                                     @foreach ($countries as $item)
-                                        <option @selected($client->country_phonecode == $item->phonecode)
-                                                data-tokens="{{ $item->name }}"
+                                        <option @selected($client->country_phonecode == $item->phonecode && !is_null($item->numcode))
+                                                data-tokens="{{ $item->name }}" data-country-iso="{{ $item->iso }}"
                                                 data-content="{{$item->flagSpanCountryCode()}}"
-                                                value="{{ $item->phonecode }}">{{ $item->phonecode }}
+                                                value="{{ $item->phonecode }}">
                                         </option>
                                     @endforeach
                                 </x-forms.select>
@@ -88,12 +67,10 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                         </div>
                     </div>
                     <div class="col-lg-3">
-                        @php
-                            $userImage = $client->hasGravatar($client->email) ? str_replace('?s=200&d=mp', '', $client->image_url) : asset('img/avatar.png');
-                        @endphp
+
                         <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
                             :fieldLabel="__('modules.profile.profilePicture')"
-                            :fieldValue="($client->image ? $client->image_url : $userImage)" fieldName="image"
+                            :fieldValue="$client->image_url" fieldName="image"
                             fieldId="image" fieldHeight="119" :popover="__('messages.fileFormat.ImageFile')" />
                     </div>
                     <div class="col-lg-3 col-md-6">
@@ -112,7 +89,7 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                         <x-forms.select fieldId="locale" :fieldLabel="__('modules.accountSettings.changeLanguage')"
                             fieldName="locale" search="true">
                             @foreach ($languages as $language)
-                                <option @if ($client->locale == $language->language_code) selected @endif
+                                <option @selected($client->locale == $language->language_code)
                                 data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}"
                                 value="{{ $language->language_code }}">{{ $language->language_name }}</option>
                             @endforeach
@@ -128,7 +105,7 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach($categories as $category)
-                                    <option @if ($client->clientDetails->category_id == $category->id) selected @endif value="{{ $category->id }}">
+                                    <option @selected($client->clientDetails->category_id == $category->id) value="{{ $category->id }}">
                                         {{ $category->category_name }}</option>
                                 @endforeach
                             </select>
@@ -149,8 +126,9 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                         <x-forms.input-group>
                             <select class="form-control select-picker" name="sub_category_id" id="sub_category_id"
                                 data-live-search="true">
+                                <option value="">--</option>
                                 @forelse($subcategories as $subcategory)
-                                    <option @if ($client->clientDetails->sub_category_id == $subcategory->id) selected @endif value="{{ $subcategory->id }}">
+                                    <option  @selected($client->clientDetails->sub_category_id == $subcategory->id) value="{{ $subcategory->id }}">
                                         {{ $subcategory->category_name }}</option>
                                 @empty
                                     <option value="">@lang('messages.noCategoryAdded')</option>
@@ -214,23 +192,28 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-top-grey">
                     @lang('modules.client.companyDetails')</h4>
                 <div class="row p-20">
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="company_name"
                             :fieldLabel="__('modules.client.companyName')" fieldName="company_name"
                             :fieldValue="$client->clientDetails->company_name" :fieldPlaceholder="__('placeholders.company')">
                         </x-forms.text>
                     </div>
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="website"
                             :fieldLabel="__('modules.client.website')" fieldName="website"
                             :fieldValue="$client->clientDetails->website"
                             :fieldPlaceholder="__('placeholders.website')">
                         </x-forms.text>
                     </div>
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
+                        <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="tax_name"
+                            :fieldLabel="__('app.taxName')" :fieldValue="$client->clientDetails->tax_name"
+                            fieldName="tax_name" :fieldPlaceholder="__('placeholders.gst/vat')"></x-forms.text>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="gst_number"
                             :fieldLabel="__('app.gstNumber')" :fieldValue="$client->clientDetails->gst_number"
                             fieldName="gst_number" :fieldPlaceholder="__('placeholders.gstNumber')"></x-forms.text>
@@ -302,7 +285,9 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                                 fieldName="added_by">
                                 <option value="">--</option>
                                 @foreach ($employees as $item)
-                                    <x-user-option :user="$item" :selected="$client->clientDetails->added_by == $item->id" />
+                                    @if($item->status == 'active' || $client->clientDetails->added_by == $item->id)
+                                        <x-user-option :user="$item" :selected="$client->clientDetails->added_by == $item->id" />
+                                    @endif
                                 @endforeach
                             </x-forms.select>
                         </div>
@@ -367,15 +352,34 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
             });
         });
 
+        function updatePhoneCode() {
+            var selectedCountry = $('#country').find(':selected');
+            var phonecode = selectedCountry.data('phonecode');
+            var iso = selectedCountry.data('iso');
+
+            $('#country_phonecode').find('option').each(function() {
+                if ($(this).data('country-iso') === iso) {
+                    $(this).val(phonecode);
+                    $(this).prop('selected', true); // Set the option as selected
+                }
+            });
+        }
+        updatePhoneCode();
+
         $('#country').change(function(){
-            var phonecode = $(this).find(':selected').data('phonecode');
-            $('#country_phonecode').val(phonecode);
+            updatePhoneCode();
             $('.select-picker').selectpicker('refresh');
         });
 
-        $('#category_id').change(function(e) {
 
-            let categoryId = $(this).val();
+        // Function to load subcategories based on selected category
+        function loadSubCategories(categoryId, selectedSubCategoryId = null) {
+
+            if (categoryId === '') {
+                $('#sub_category_id').html('<option value="">--</option>');
+                $('#sub_category_id').selectpicker('refresh');
+                return; // Stop further execution if no category is selected
+            }
 
             var url = "{{ route('get_client_sub_categories', ':id') }}";
             url = url.replace(':id', categoryId);
@@ -386,23 +390,32 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                 success: function(response) {
                     if (response.status == 'success') {
                         var options = [];
-                        var rData = [];
-                        rData = response.data;
+                        var rData = response.data;
+
                         $.each(rData, function(index, value) {
-                            var selectData = '';
-                            selectData = '<option value="' + value.id + '">' + value
-                                .category_name + '</option>';
+                            var isSelected = selectedSubCategoryId && selectedSubCategoryId == value.id ? 'selected' : '';
+                            var selectData = '<option value="' + value.id + '" ' + isSelected + '>' + value.category_name + '</option>';
                             options.push(selectData);
                         });
 
-                        $('#sub_category_id').html('<option value="">--</option>' +
-                            options);
+                        $('#sub_category_id').html('<option value="">--</option>' + options);
                         $('#sub_category_id').selectpicker('refresh');
                     }
                 }
-            })
+            });
+        }
 
+        // On change of category, fetch subcategories
+        $('#category_id').change(function() {
+            var categoryId = $(this).val();
+            loadSubCategories(categoryId);
         });
+
+        // Pre-load subcategories in the edit form
+        var selectedCategoryId = "{{ $client->clientDetails->category_id }}";
+        var selectedSubCategoryId = "{{ $client->clientDetails->sub_category_id }}";
+
+        loadSubCategories(selectedCategoryId, selectedSubCategoryId);
 
 
         $('#save-form').click(function() {
@@ -440,14 +453,6 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     @if (function_exists('sms_setting') && sms_setting()->telegram_status)
         var clipboard = new ClipboardJS('.btn-copy');

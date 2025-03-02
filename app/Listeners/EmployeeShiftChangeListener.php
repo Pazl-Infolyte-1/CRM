@@ -3,8 +3,6 @@
 namespace App\Listeners;
 
 use App\Events\EmployeeShiftChangeEvent;
-use App\Events\EmployeeShiftScheduleEvent;
-use App\Models\EmployeeShiftChangeRequest;
 use App\Models\Permission;
 use App\Models\PermissionType;
 use App\Models\User;
@@ -19,7 +17,7 @@ class EmployeeShiftChangeListener
     /**
      * Handle the event.
      *
-     * @param \App\Events\EmployeeShiftChangeEvent $event
+     * @param EmployeeShiftChangeEvent $event
      * @return void
      */
     public function handle(EmployeeShiftChangeEvent $event)

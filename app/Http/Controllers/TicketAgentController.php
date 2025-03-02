@@ -29,7 +29,7 @@ class TicketAgentController extends AccountBaseController
     {
         $this->employees = User::join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.created_at')
+            ->select('users.id', 'users.name', 'users.email', 'users.created_at', 'users.image', 'users.salutation')
             ->where('roles.name', 'employee')
             ->get();
         $this->groups = TicketGroup::all();
@@ -114,14 +114,22 @@ class TicketAgentController extends AccountBaseController
 
     public function agentGroups()
     {
+
         $ticketAgentGroup = TicketAgentGroups::where('agent_id', request()->agent_id)->pluck('group_id')->toArray();
 
         if(!empty($ticketAgentGroup))
         {
+
             $ticketGroup = TicketGroup::whereNotIn('id', $ticketAgentGroup)->get();
 
             return Reply::dataOnly(['data' => $ticketGroup]);
 
+        }
+        else
+        {
+            $ticketGroup = TicketGroup::all();
+
+            return Reply::dataOnly(['data' => $ticketGroup]);
         }
     }
 

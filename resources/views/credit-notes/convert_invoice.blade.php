@@ -16,7 +16,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.menu.credit-note') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.creditNoteDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -29,7 +29,7 @@
             <!-- INVOICE NUMBER START -->
             <div class="col-md-3">
                 <div class="form-group mb-lg-0 mb-md-0 mb-4">
-                    <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                    <label class="f-14 text-dark-grey mb-12 "
                         for="usr">@lang('app.credit-note') #</label>
                     <div class="input-group">
                         <div class="input-group-prepend  height-35 ">
@@ -102,7 +102,7 @@
                     <x-forms.label fieldId="client_id" :fieldLabel="__('app.client')">
                     </x-forms.label>
                     <p>
-                        {{ $creditNote->client->name }}
+                        {{ $creditNote->client->name_salutation }}
                     </p>
                 </div>
             </div>
@@ -224,7 +224,7 @@
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14 text-capitalize">
+            <table width="100%" class="text-right f-14 ">
                 <tbody>
                     <tr>
                         <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -294,13 +294,13 @@
         <!-- NOTE AND TERMS AND CONDITIONS START -->
         <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
             <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
+                <label class="f-14 text-dark-grey mb-12  w-100"
                     for="usr">@lang('modules.invoices.note')</label>
                 <textarea class="form-control" name="note" id="note" rows="4"
                     placeholder="@lang('placeholders.invoices.note')"></textarea>
             </div>
             <div class="col-md-6 col-sm-12 p-0 c-inv-note-terms">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
+                <label class="f-14 text-dark-grey mb-12  w-100"
                     for="usr">@lang('modules.invoiceSettings.invoiceTerms')</label>
                 {!! nl2br($invoiceSetting->invoice_terms) !!}
             </div>
@@ -348,11 +348,15 @@
 
         function addProduct(id) {
             var currencyId = $('#currency_id').val();
-
+            var exchangeRate = $('#exchange_rate').val();
             $.easyAjax({
                 url:"{{ route('invoices.add_item') }}",
                 type: "GET",
-                data: { id: id, currencyId: currencyId },
+                data: {
+                    id: id,
+                    currencyId: currencyId,
+                    exchangeRate: exchangeRate
+                },
                 success: function(response) {
                     if($('input[name="item_name[]"]').val() == ''){
                         $("#sortable .item-row").remove();

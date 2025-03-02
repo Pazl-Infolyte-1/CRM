@@ -2,7 +2,7 @@
     <div class="col-sm-12">
         <x-form id="save-bankaccount-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.bankaccount.updateBankAccount')</h4>
                     <div class="row p-20">
 
@@ -45,7 +45,7 @@
                                 search="true">
                                 <option value="saving" @if ($bankAccount->account_type == 'saving') selected @endif>@lang('modules.bankaccount.saving')</option>
                                 <option value="current" @if ($bankAccount->account_type == 'current') selected @endif>@lang('modules.bankaccount.current')</option>
-                                <option value="credit card" @if ($bankAccount->account_type == 'credit card') selected @endif>@lang('modules.bankaccount.creditCard')</option>
+                                <option value="credit-card" @if ($bankAccount->account_type == 'credit-card') selected @endif>@lang('modules.bankaccount.credit-card')</option>
                                 <option value="loan" @if ($bankAccount->account_type == 'loan') selected @endif>@lang('modules.bankaccount.loan')</option>
                                 <option value="overdraft" @if ($bankAccount->account_type == 'overdraft') selected @endif>@lang('modules.bankaccount.overdraft')</option>
                             </x-forms.select>

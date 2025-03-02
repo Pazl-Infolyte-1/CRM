@@ -52,7 +52,7 @@ class KnowledgeBase extends BaseModel
 
     public function files(): HasMany
     {
-        return $this->hasMany(KnowledgeBaseFile::class, 'knowledge_base_id')->orderBy('id', 'desc');
+        return $this->hasMany(KnowledgeBaseFile::class, 'knowledge_base_id')->orderByDesc('id');
     }
 
 }

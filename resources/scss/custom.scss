@@ -191,6 +191,7 @@ body.dark-theme {
 .rtl .preloader-container {
     margin-right: 240px;
     margin-left: 0px;
+    width: calc(100% - 60px);
 }
 
 .rtl.sidebar-toggled .preloader-container {
@@ -282,6 +283,10 @@ table h5 a {
 
 .w-15 {
     width: 15px;
+}
+
+.w-20 {
+    width: 20px;
 }
 
 .more-filters {
@@ -545,7 +550,7 @@ ul.thumbnails.image_picker_selector li .thumbnail.selected {
 }
 
 .settings-box {
-    padding: 20px 28px;
+    padding: 18px 20px;
 }
 
 .sticky-note {
@@ -606,6 +611,10 @@ ul.thumbnails.image_picker_selector li .thumbnail.selected {
 
     .sidebar-brand-name h1 {
         color: $dark_text;
+    }
+
+    .sidebar-brand-logo {
+        color: #28313c;
     }
 }
 
@@ -886,7 +895,7 @@ input[type="number"] {
 .importBox{
     min-height: 280px !important;
     width: 250px !important;
-    margin: 2px !important;
+    margin: 5px 0 !important;
 }
 
 .importOptions {

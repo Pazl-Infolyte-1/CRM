@@ -13,8 +13,8 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
             <div class="row">
                 <div class="col-md-12">
                     <a class="f-15 f-w-500" href="javascript:;" id="add-comment"><i
-                            class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                        @lang('modules.tasks.comment')</a>
+                            class="icons icon-plus font-weight-bold mr-1"></i>
+                        @lang('modules.contracts.addComment')</a>
                 </div>
             </div>
 
@@ -35,7 +35,7 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                         <x-forms.button-cancel id="cancel-comment" class="border-0 mr-3">@lang('app.cancel')
                         </x-forms.button-cancel>
                         <x-forms.button-primary id="submit-comment" icon="location-arrow">@lang('app.submit')
-                            </x-button-primary>
+                            </x-forms.button-primary>
                     </div>
 
                 </div>
@@ -63,7 +63,7 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                                     </p>
                                     <div class="dropdown ml-auto comment-action">
                                         <button
-                                            class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                                            class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                                             type="button" data-toggle="dropdown" aria-haspopup="true"
                                             aria-expanded="false">
                                             <i class="fa fa-ellipsis-h"></i>

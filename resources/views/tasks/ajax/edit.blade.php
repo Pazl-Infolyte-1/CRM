@@ -3,7 +3,9 @@ $addTaskCategoryPermission = user()->permission('add_task_category');
 $addEmployeePermission = user()->permission('add_employees');
 $addTaskFilePermission = user()->permission('add_task_files');
 $editTaskPermission = user()->permission('edit_tasks');
+$viewProjectPermission = user()->permission('view_projects');
 $viewTaskCategoryPermission = user()->permission('view_task_category');
+$editMilestonePermission = user()->permission('edit_project_milestones');
 @endphp
 
 <link rel="stylesheet" href="{{ asset('vendor/css/dropzone.min.css') }}">
@@ -12,7 +14,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
     <div class="col-sm-12">
         <x-form id="save-task-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.tasks.taskInfo')</h4>
                 <div class="row p-20">
 
@@ -32,7 +34,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 <option value="">--</option>
                                 @if ($viewTaskCategoryPermission == 'all' || $viewTaskCategoryPermission == 'added')
                                     @foreach ($categories as $category)
-                                        <option @if ($task->task_category_id == $category->id) selected @endif value="{{ $category->id }}">
+                                        <option @selected($task->task_category_id == $category->id) value="{{ $category->id }}">
                                             {{ $category->category_name }}
                                         </option>
                                     @endforeach
@@ -49,34 +51,40 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                         </x-forms.input-group>
                     </div>
 
+                @if (in_array('projects', user_modules()))
                     <div class="col-md-12 col-lg-6">
                         <x-forms.label class="my-3" fieldId="project-id" :fieldLabel="__('app.project')">
                         </x-forms.label>
                         <x-forms.input-group>
                             <select class="form-control select-picker" name="project_id" id="project-id"
+                                    data-toggle="tooltip"
+                                    title="@lang('modules.tasks.notFinishedProjects')"
                                 data-live-search="true" data-size="8">
                                 <option value="">--</option>
+                                @if($viewProjectPermission != 'none' && (in_array('employee', user_roles()) || in_array('client', user_roles())))
                                 @foreach ($projects as $project)
-                                    <option @if ($project->id == $task->project_id) selected @endif value="{{ $project->id }}">
-                                        {{ $project->project_name }}
+                                    <option @selected($project->id == $task->project_id) value="{{ $project->id }}"
+                                            data-content="{!! '<strong>'.$project->project_short_code."</strong> ".$project->project_name !!}"
+                                    >
                                     </option>
                                 @endforeach
+                                @endif
                             </select>
                         </x-forms.input-group>
                     </div>
 
                     <div class="col-md-4 col-lg-6 pt-5" id='clientDetails' >
                     </div>
+                @endif
 
-
-                    <div class="col-md-5 col-lg-4">
+                    <div class="col-md-5 col-lg-3">
                         <x-forms.datepicker fieldId="task_start_date" fieldRequired="true"
                             :fieldLabel="__('modules.projects.startDate')" fieldName="start_date"
                             :fieldValue="(($task->start_date) ? $task->start_date->format(company()->date_format) : '')"
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
 
-                    <div class="col-md-5 col-lg-4 dueDateBox" @if(is_null($task->due_date)) style="display: none" @endif>
+                    <div class="col-md-5 col-lg-3 dueDateBox" @if(is_null($task->due_date)) style="display: none" @endif>
                         <x-forms.datepicker fieldId="due_date" fieldRequired="true" :fieldLabel="__('app.dueDate')"
                                             fieldName="due_date" :fieldPlaceholder="__('placeholders.date')"
                                             :fieldValue="(($task->due_date) ? $task->due_date->format(company()->date_format) : '')"  />
@@ -87,10 +95,61 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                           fieldName="without_duedate" fieldId="without_duedate" fieldValue="yes" />
                     </div>
 
+                    @if ($changeStatusPermission == 'all'
+                    || ($changeStatusPermission == 'added' && $task->added_by == user()->id)
+                    || ($changeStatusPermission == 'owned' && in_array(user()->id, $taskUsers))
+                    || ($changeStatusPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id || $task->project->project_admin == user()->id))
+                    )
+                        <div class="col-lg-3 col-md-6">
+                            @if ($task->board_column_id === $waitingApprovalTaskBoardColumn->id)
+                                @foreach ($taskboardColumns as $item)
+                                    @if($item->id == $waitingApprovalTaskBoardColumn->id)
+                                        <label class="f-14 text-dark-grey mb-12 mt-3">@lang('app.status')</label>
+                                        <x-forms.input-group>
+                                            <input type="text" name="board_column_id" id="board_column_id"
+                                                class="form-control height-35 f-15 readonly-background" disabled
+                                                value="{{ $item->column_name }}">
+                                        </x-forms.input-group>
+                                    @endif
+                                @endforeach
+                            @else
+                            <x-forms.select fieldId="board_column_id" :fieldLabel="__('app.status')"
+                                fieldName="board_column_id" search="true" :disabled="$task->board_column_id === $waitingApprovalTaskBoardColumn->id ? 'disabled' : ''">
+                                @foreach ($taskboardColumns as $item)
+                                    @php
+                                        if ($item->slug == 'completed' || $item->slug == 'incomplete') {
+                                            if ($item->slug == 'completed') {
+                                                $icon = "<i class='fa fa-circle mr-2 text-dark-green'></i>".__('app.' . $item->slug);
+                                            }
+                                            elseif($item->slug == 'incomplete'){
+                                                $icon = "<i class='fa fa-circle mr-2 text-red'></i>".__('app.' . $item->slug);
+                                            }
+                                        }
+                                        else {
+                                            if ($item->slug == 'to_do') {
+                                                $icon = "<i class='fa fa-circle mr-2 text-yellow'></i>".$item->column_name;
+                                            }
+                                            elseif($item->slug == 'doing'){
+                                                $icon = "<i class='fa fa-circle mr-2 text-blue'></i>".$item->column_name;
+                                            }
+                                            else {
+                                                $icon = "<i class='fa fa-circle mr-2' style='color: " . ($item->label_color ?? '#000000') . "'></i>". $item->column_name;
+                                            }
+                                        }
+                                    @endphp
+                                    @if ($item->id !== $waitingApprovalTaskBoardColumn->id)
+                                        <option @selected($task->board_column_id == $item->id) value="{{ $item->id }}" data-item="{{ $item->column_name }}" data-content = "{{$icon}}">
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </x-forms.select>
+                            @endif
+                        </div>
+                    @endif
                     <div class="col-md-12 col-lg-12">
                     </div>
 
-                    <div class="col-md-12 col-lg-6">
+                    <div class="col-md-12 col-lg-8">
                         <div class="form-group my-3">
                             <x-forms.label fieldId="selectAssignee" :fieldLabel="__('modules.tasks.assignTo')">
                             </x-forms.label>
@@ -100,16 +159,21 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                     @foreach ($employees as $employee)
                                         @php
                                             $selected = '';
+                                            $isMember = false;
                                         @endphp
 
                                         @foreach ($task->users as $item)
                                             @if ($item->id == $employee->id)
                                                 @php
                                                     $selected = 'selected';
+                                                    $isMember = true;
                                                 @endphp
                                             @endif
                                         @endforeach
-                                        <x-user-option :user="$employee" :pill=true :selected="$selected"/>
+
+                                        @if ($employee->status === 'active' || $isMember)
+                                            <x-user-option :user="$employee" :pill=true :selected="$selected"/>
+                                        @endif
                                     @endforeach
                                 </select>
 
@@ -141,7 +205,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-top-grey">
                     @lang('modules.client.clientOtherDetails')
                 </h4>
 
@@ -185,68 +249,73 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 </div>
                             </div>
 
+                            @php
+                                $showDropdown = (($editTaskPermission == 'all'
+                                                    || ($editTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
+                                                    || ($editTaskPermission == 'added' && $task->added_by == user()->id)
+                                                    || ($task->project && ($task->project->project_admin == user()->id))
+                                                    || ($editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
+                                                    || ($editTaskPermission == 'owned' && (in_array('client', user_roles()) && $task->project && ($task->project->client_id == user()->id)))
+                                                    || ($editTaskPermission == 'both' && (in_array('client', user_roles()) && ($task->project && ($task->project->client_id == user()->id)) || $task->added_by == user()->id))
+                                                    ) &&(
+                                                        $editMilestonePermission == 'all'
+                                                        || ($editMilestonePermission == 'added' && $task->added_by == user()->id)
+                                                        || ($editMilestonePermission == 'owned' && in_array(user()->id, $taskUsers))
+                                                        || ($editMilestonePermission == 'owned' && (in_array('client', user_roles()) && $task->project && ($task->project->client_id == user()->id)))
+                                                    ));
+
+                                $selectedMilestone = '--';
+                                if ($task->project && count($task->project->incompleteMilestones) > 0) {
+                                    foreach ($task->project->incompleteMilestones as $milestone) {
+                                        if ($milestone->id == $task->milestone_id) {
+                                            $selectedMilestone = $milestone->milestone_title;
+                                            break;
+                                        }
+                                    }
+                                }
+                            @endphp
                             <div class="col-md-12 col-lg-4">
-                                <x-forms.select fieldName="milestone_id" fieldId="milestone-id"
-                                    :fieldLabel="__('modules.projects.milestones')">
-                                    <option value="">--</option>
-                                    @if ($task->project && count($task->project->incompleteMilestones) > 0)
-                                        @foreach ($task->project->incompleteMilestones as $milestone)
-                                            <option @if ($milestone->id == $task->milestone_id) selected @endif value="{{ $milestone->id }}">
-                                                {{ $milestone->milestone_title }}</option>
-                                        @endforeach
-                                    @endif
-                                </x-forms.select>
-                            </div>
+                                @if($showDropdown)
+                                    <x-forms.select fieldName="milestone_id" fieldId="milestone-id"
+                                        :fieldLabel="__('modules.projects.milestones')">
+                                        <option value="">--</option>
 
+                                        @if ($task->project && count($task->project->completedMilestones) > 0)
+                                            @foreach ($task->project->completedMilestones as $milestone)
+                                                @if($milestone->id == $task->milestone_id)
+                                                    <option @selected($milestone->id == $task->milestone_id) value="{{ $milestone->id }}">{{ $milestone->milestone_title }}</option>
+                                                @endif
+                                            @endforeach
+                                        @endif
 
-                            @if ($changeStatusPermission == 'all'
-                            || ($changeStatusPermission == 'added' && $task->added_by == user()->id)
-                            || ($changeStatusPermission == 'owned' && in_array(user()->id, $taskUsers))
-                            || ($changeStatusPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
-                            )
-                                <div class="col-lg-3 col-md-6">
-                                    <x-forms.select fieldId="board_column_id" :fieldLabel="__('app.status')"
-                                        fieldName="board_column_id" search="true">
-                                        @foreach ($taskboardColumns as $item)
-                                        @php
-                                                if ($item->slug == 'completed' || $item->slug == 'incomplete') {
-                                                    if ($item->slug == 'completed') {
-                                                        $icon = "<i class='fa fa-circle mr-2 text-dark-green'></i>".__('app.' . $item->slug);
-                                                    }
-                                                    elseif($item->slug == 'incomplete'){
-                                                        $icon = "<i class='fa fa-circle mr-2 text-red'></i>".__('app.' . $item->slug);
-                                                    }
-                                                }
-                                                else {
-                                                    if ($item->slug == 'to_do') {
-                                                        $icon = "<i class='fa fa-circle mr-2 text-yellow'></i>".$item->column_name;
-                                                    }
-                                                    elseif($item->slug == 'doing'){
-                                                        $icon = "<i class='fa fa-circle mr-2 text-blue'></i>".$item->column_name;
-                                                    }
-                                                    else {
-                                                        $icon = "<i class='fa fa-circle mr-2 text-black'></i>". $item->column_name;
-                                                    }
-                                                }
-                                            @endphp
-                                            <option @if ($task->board_column_id == $item->id) selected @endif value="{{ $item->id }}" data-content = "{{$icon}}">
-                                            </option>
-                                        @endforeach
+                                        @if ($task->project && count($task->project->incompleteMilestones) > 0)
+                                            @foreach ($task->project->incompleteMilestones as $milestone)
+                                                <option @selected($milestone->id == $task->milestone_id) value="{{ $milestone->id }}">
+                                                    {{ $milestone->milestone_title }}</option>
+                                            @endforeach
+                                        @endif
                                     </x-forms.select>
-                                </div>
-                            @endif
+                                @else
+                                    <label class="f-14 text-dark-grey mb-12 mt-3">@lang('modules.projects.milestones')</label>
+                                    <x-forms.input-group>
+                                        <input type="text" name="milestone_id" id="milestone-id"
+                                            class="form-control height-35 f-15 readonly-background" disabled
+                                            value="{{ $selectedMilestone }}">
+                                    </x-forms.input-group>
+                                @endif
+                            </div>
 
                             <div class="col-lg-3 col-md-6">
                                 <x-forms.select fieldId="priority" :fieldLabel="__('modules.tasks.priority')"
                                     fieldName="priority">
-                                    <option @if ($task->priority == 'high') selected @endif
+                                    <option @selected($task->priority == 'high')
                                         data-content="<i class='fa fa-circle mr-2' style='color: #dd0000'></i> @lang('modules.tasks.high')"
                                         value="high">@lang('modules.tasks.high')</option>
-                                    <option @if ($task->priority == 'medium') selected @endif
+                                    <option @selected($task->priority == 'medium')
                                         data-content="<i class='fa fa-circle mr-2' style='color: #ffc202'></i> @lang('modules.tasks.medium')"
                                         value="medium">
                                         @lang('modules.tasks.medium')</option>
-                                    <option @if ($task->priority == 'low') selected @endif
+                                    <option @selected($task->priority == 'low')
                                         data-content="<i class='fa fa-circle mr-2' style='color: #0a8a1f'></i> @lang('modules.tasks.low')"
                                         value="low">@lang('modules.tasks.low')</option>
                                 </x-forms.select>
@@ -318,13 +387,13 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
 
                                         <x-slot name="append">
                                             <select name="repeat_type" class="select-picker form-control">
-                                                <option @if ($task->repeat_type == 'day') selected @endif value="day">
+                                                <option @selected($task->repeat_type == 'day') value="day">
                                                     @lang('app.day')</option>
-                                                <option @if ($task->repeat_type == 'week') selected @endif value="week">
+                                                <option @selected($task->repeat_type == 'week') value="week">
                                                     @lang('app.week')</option>
-                                                <option @if ($task->repeat_type == 'month') selected @endif value="month">
+                                                <option @selected($task->repeat_type == 'month') value="month">
                                                     @lang('app.month')</option>
-                                                <option @if ($task->repeat_type == 'year') selected @endif value="year">
+                                                <option @selected($task->repeat_type == 'year') value="year">
                                                     @lang('app.year')</option>
                                             </select>
                                         </x-slot>
@@ -344,7 +413,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                         <div class="form-group my-3">
                             <div class="d-flex">
                                 <x-forms.checkbox :fieldLabel="__('modules.tasks.dependent')" fieldName="dependent"
-                                    fieldId="dependent-task" :checked="$task->dependent_task_id" />
+                                    fieldId="dependent-task" :checked="$task->dependent_task_id" :popover="__('modules.tasks.dependentTaskInfo')"/>
                             </div>
                         </div>
 
@@ -353,7 +422,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 fieldName="dependent_task_id" search="true">
                                 <option value="">--</option>
                                 @foreach ($allTasks as $item)
-                                    <option @if ($item->id == $task->dependent_task_id) selected @endif value="{{ $item->id }}">
+                                    <option @selected($item->id == $task->dependent_task_id) value="{{ $item->id }}">
                                         {{ $item->heading }}
                                         (@lang('app.dueDate'):
                                         @if(!is_null($item->due_date))
@@ -398,9 +467,94 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
 
     $(document).ready(function() {
 
-        let projectId = document.getElementById('project-id').value;
+        $('#board_column_id').selectpicker();
 
-        (projectId != 'all' && projectId != '') ? projectClient(projectId) : '';
+        document.querySelectorAll('input[name="estimate_hours"], input[name="estimate_minutes"]').forEach(input => {
+            input.addEventListener('input', function() {
+                this.value = this.value.replace(/^0+(?!$)/, ''); // Remove leading zeros
+            });
+        });
+
+        // Remove title attribute from selectpicker button
+        $('#board_column_id').on('loaded.bs.select', function () {
+            // Find the button element and remove the title attribute
+            $(this).siblings('button').removeAttr('title');
+        });
+
+        var rolesJson = `{!! addslashes(json_encode(user()->roles)) !!}`;
+        var roles = JSON.parse(rolesJson); // Parse JSON string to JavaScript object
+
+        function isAdmin() {
+            for (var i = 0; i < roles.length; i++) {
+                if (roles[i].name === 'admin') {
+                    return true;
+                }
+            }
+        }
+
+        $('#board_column_id').on('change', function() {
+
+            var select = $(this);
+            var selectedOption = select.find('option:selected');
+            var newValue = selectedOption.attr('data-item');
+            handleChangeStatus(select, newValue); // Pass the select element to handleChangeStatus
+
+        });
+
+        function handleChangeStatus(select, newValue) {
+
+            var needApproval = "{{ optional($task->project)->need_approval_by_admin ?? 0 }}";
+            var projectAdmin = "{{ optional($task->project)->project_admin ?? null }}";
+            var loggedUser = "{{ user()->id }}";
+
+            if(!isAdmin() && needApproval == 1 && newValue == 'Completed' && projectAdmin != loggedUser){
+                Swal.fire({
+                    title: "@lang('messages.sweetAlertTitle')",
+                    text: "@lang('messages.approvalmsgsent')",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    focusConfirm: false,
+                    confirmButtonText: "@lang('app.yes')",
+                    cancelButtonText: "@lang('app.no')",
+                    customClass: {
+                        confirmButton: 'btn btn-primary mr-3',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    showClass: {
+                        popup: 'swal2-noanimation',
+                        backdrop: 'swal2-noanimation'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        updateStatus(select);
+                    }else{
+                        select.selectpicker('val', '{{$task->board_column_id}}');
+                    }
+                });
+            }
+        }
+
+        function updateStatus(select) {
+            changeToInput(select);
+        }
+
+        function changeToInput(select) {
+            var divToHide = $('[data-id="board_column_id"]');
+            if (divToHide.length > 0) {
+                divToHide.hide();
+            }
+
+            var inputElement = $('<input>').attr({
+                type: 'text',
+                name: 'select_value',
+                id: 'board_column_id',
+                class: 'form-control height-35 f-15',
+                value: 'Waiting Approval',
+                autocomplete: 'off'
+            });
+            select.replaceWith(inputElement);
+        }
 
         $(".select-picker").selectpicker();
 
@@ -640,8 +794,13 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                         taskDropzone.processQueue();
                     } else if ($(RIGHT_MODAL).hasClass('in')) {
                         document.getElementById('close-task-detail').click();
-                        if ($('#allTasks-table').length) {
-                            window.LaravelDataTables["allTasks-table"].draw(false);
+                        if($('#unassigned-task').length) {
+                            @if(isset($task->project->id))
+                                window.location.href = "{{ route('projects.show', $task->project->id)}}" + "?tab=tasks";
+                            @endif
+                        }
+                        else if ($('#allTasks-table').length) {
+                            window.LaravelDataTables["allTasks-table"].draw(true);
                         } else {
                             window.location.href = response.redirectUrl;
                         }
@@ -773,9 +932,12 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
             })
         });
 
+        let projectId = document.getElementById('project-id').value;
+
+        (projectId != 'all' && projectId != '') ? projectClient(projectId) : '';
 
         $('#createTaskLabel').click(function() {
-            const url = "{{ route('task-label.create') }}?task_id={{$task->id}}";
+            const url = "{{ route('task-label.create') }}?task_id={{$task ? $task->id : ''}}&project_id=" + projectId;
             $(MODAL_XL + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_XL, url);
         });
@@ -823,11 +985,4 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 </script>

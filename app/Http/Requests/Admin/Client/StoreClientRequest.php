@@ -26,10 +26,16 @@ class StoreClientRequest extends CoreRequest
      */
     public function rules()
     {
+        \Illuminate\Support\Facades\Validator::extend('check_superadmin', function ($attribute, $value, $parameters, $validator) {
+            return !\App\Models\User::withoutGlobalScopes([\App\Scopes\ActiveScope::class, \App\Scopes\CompanyScope::class])
+                ->where('email', $value)
+                ->where('is_superadmin', 1)
+                ->exists();
+        });
+
         $rules = [
             'name' => 'required',
-            'email' => 'nullable|email|required_if:login,enable|email:rfc|unique:users,email,null,id,company_id,' . company()->id,
-            'password' => 'nullable|required_if:login,enable|min:8',
+            'email' => 'nullable|email:rfc,strict|required_if:login,enable|unique:users,email,null,id,company_id,' . company()->id.'|check_superadmin',
             'slack_username' => 'nullable',
             'website' => 'nullable|url',
             'country' => 'required_with:mobile',
@@ -44,6 +50,7 @@ class StoreClientRequest extends CoreRequest
     public function messages()
     {
         return [
+            'email.check_superadmin' => __('superadmin.emailAlreadyExist'),
             'website.url' => 'The website format is invalid. Add https:// or http to url'
         ];
     }

@@ -29,7 +29,7 @@
                             <span class='badge badge-primary'>{{ __('app.active') }}</span>
                         @endif
                     </td>
-                    <td>{{ $item->memo }}</td>
+                    <td>{!! $item->memo !!}</td>
                     <td class="text-right">
                         {{ $item->hours }}
                     </td>

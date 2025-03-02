@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
 use App\Models\Task;
-use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
 
@@ -42,11 +41,17 @@ class TaskReminder extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
-        if ($this->emailSetting->send_push == 'yes') {
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
             array_push($via, OneSignalChannel::class);
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.reminder.subject'), $this->task->heading);
         }
 
         return $via;
@@ -60,7 +65,7 @@ class TaskReminder extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('front.task_detail', [$this->task->hash]);
 
         $url = getDomainSpecificUrl($url, $this->company);
@@ -72,7 +77,7 @@ class TaskReminder extends BaseNotification
             </p>';
         }
 
-        return $build
+        $build
             ->subject(__('email.reminder.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
             ->greeting(__('email.hello') . ' ' . $notifiable->name . ',')
             ->markdown('mail.task.reminder', [
@@ -80,6 +85,10 @@ class TaskReminder extends BaseNotification
                 'content' => $content,
                 'themeColor' => $this->company->header_color
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**
@@ -102,22 +111,16 @@ class TaskReminder extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return SlackMessage
+     * @return \Illuminate\Notifications\Messages\SlackMessage
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
         $dueDate = (!is_null($this->task->due_date)) ? $this->task->due_date->format($this->company->date_format) : null;
 
-        $message = (new SlackMessage())->from(config('app.name'))->image($slack->slack_logo_url);
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.reminder.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return $message->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.reminder.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate);
-        }
-
-        return $message->content('*' . __('email.reminder.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

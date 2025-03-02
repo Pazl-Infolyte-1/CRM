@@ -36,9 +36,14 @@ class TicketGroup extends BaseModel
 
     use HasFactory, HasCompany;
 
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class, 'group_id');
+    }
+
     public function enabledAgents(): HasMany
     {
-        return $this->hasMany(TicketAgentGroups::class, 'group_id')->where('status', '=', 'enabled');
+        return $this->hasMany(TicketAgentGroups::class, 'group_id')->where('status', '=', 'enabled')->whereHas('user')->groupBy('agent_id');
     }
 
 }

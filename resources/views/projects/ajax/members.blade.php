@@ -67,7 +67,7 @@ $viewProjectHourlyRatePermission = user()->permission('view_project_hourly_rates
                                 && $editProjectMemberPermission == 'all')
                                     <x-forms.button-secondary data-row-id="{{ $member->id }}" icon="times"
                                         class="remove-admin">
-                                        @lang('app.remove') @lang('app.projectAdmin')</x-forms.button-secondary>
+                                        @lang('app.removeProjectAdmin')</x-forms.button-secondary>
                                 @endif
 
                                 @if ($deleteProjectMemberPermission == 'all')

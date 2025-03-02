@@ -1,11 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-
+    @includeIf('sections.2fa-css')
     <!-- SETTINGS START -->
     <div class="w-100 d-flex ">
 
-        <x-setting-sidebar :activeMenu="$activeSettingMenu" />
+        {{-- SAAS --}}
+        @if(user()->is_superadmin)
+            <x-super-admin.setting-sidebar :activeMenu="$activeSettingMenu"/>
+        @else
+            <x-setting-sidebar :activeMenu="$activeSettingMenu"/>
+        @endif
 
         <x-setting-card>
             <x-slot name="header">
@@ -16,9 +21,9 @@
                             <a class="nav-item nav-link f-15 active 2fa" data-toggle="tab"
                                 href="{{ route('security-settings.index') }}" role="tab" aria-controls="nav-2fa"
                                 aria-selected="true">@lang('app.menu.twoFactorAuthentication') <i
-                                    class="fa fa-circle ml-1 {{ ($user->two_fa_verify_via != '' && ($user->two_factor_confirmed || $user->two_factor_email_confirmed)) ? 'text-light-green' : 'text-red' }}"></i></a>
+                                    class="fa fa-circle ml-1 {{ ($user->userAuth->two_fa_verify_via != '' && ($user->userAuth->two_factor_confirmed || $user->userAuth->two_factor_email_confirmed)) ? 'text-light-green' : 'text-red' }}"></i></a>
 
-                            @if (user()->permission('manage_security_setting') == 'all')
+                            @if(user()->permission('manage_superadmin_security_settings') == 'all' && user()->is_superadmin)
                                 <a class="nav-item nav-link f-15 recaptcha" data-toggle="tab"
                                     href="{{ route('security-settings.index') }}?tab=recaptcha" role="tab"
                                     aria-controls="nav-recaptcha"

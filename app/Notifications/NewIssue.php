@@ -45,18 +45,22 @@ class NewIssue extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('login');
         $url = getDomainSpecificUrl($url, $this->company);
         $content = __('email.notificationIntro');
 
-        return $build
+        $build
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.notificationAction')
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

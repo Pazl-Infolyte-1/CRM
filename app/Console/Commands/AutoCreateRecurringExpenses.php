@@ -2,10 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Events\NewExpenseEvent;
 use App\Models\Company;
 use App\Models\Expense;
 use App\Models\ExpenseRecurring;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class AutoCreateRecurringExpenses extends Command
 {
@@ -32,43 +35,52 @@ class AutoCreateRecurringExpenses extends Command
 
     public function handle()
     {
-        $companies = Company::select('id', 'timezone')->get();
 
-        foreach ($companies as $company) {
-            $this->createRecurringExpenses($company);
-        }
+        Company::active()
+            ->select([
+                'companies.id as id',
+                'timezone',
+                'expenses_recurring.id as rid',
+                'expenses_recurring.*',
+                DB::raw('count(expenses.id) as expense_count')
+            ])
+            ->rightJoin('expenses_recurring', 'expenses_recurring.company_id', '=', 'companies.id')
+            ->leftJoin('expenses', function ($join) {
+                $join->on('expenses.expenses_recurring_id', '=', 'expenses_recurring.id')
+                    ->where('expenses_recurring.status', 'active');
+            })
+            ->groupBy('companies.id', 'timezone', 'expenses_recurring.id')
+            ->whereNotNull('next_expense_date')
+            ->chunk(50, function ($companies) {
+                foreach ($companies as $company) {
+                    $this->createRecurringExpenses($company);
+                }
+            });
+
+
+        return Command::SUCCESS;
     }
 
-    private function createRecurringExpenses($company)
+    private function createRecurringExpenses($company): void
     {
-        $recurringExpenses = ExpenseRecurring::with('recurrings')
-            ->where('company_id', $company->id)
-            ->where('status', 'active')
-            ->get();
+        $totalExistingCount = $company->expense_count;
 
-        foreach ($recurringExpenses as $recurring) {
+        if ($company->unlimited_recurring == 1 || ($totalExistingCount < $company->billing_cycle)) {
 
-            if (is_null($recurring->next_expense_date)) {
-                continue;
-            }
-
-            $totalExistingCount = $recurring->recurrings->count();
-
-            if ($recurring->unlimited_recurring == 1 || ($totalExistingCount < $recurring->billing_cycle)) {
-
-                if ($recurring->next_expense_date->timezone($company->timezone)->isToday()) {
-                    $this->makeExpense($recurring);
-                    $this->saveNextInvoiceDate($recurring);
-                }
+            if ((Carbon::parse($company->issue_date, $company->timezone)->isToday() && $totalExistingCount == 0) || (Carbon::parse($company->next_expense_date, $company->timezone)->isToday())) {
+                $this->info('Running for recurring expense:' . $company->id);
+                $this->makeExpense($company);
+                $this->saveNextInvoiceDate($company);
             }
         }
+
     }
 
     private function makeExpense($recurring)
     {
         $expense = new Expense();
         $expense->company_id = $recurring->company_id;
-        $expense->expenses_recurring_id = $recurring->id;
+        $expense->expenses_recurring_id = $recurring->rid;
         $expense->category_id = $recurring->category_id;
         $expense->project_id = $recurring->project_id;
         $expense->currency_id = $recurring->currency_id;
@@ -80,9 +92,14 @@ class AutoCreateRecurringExpenses extends Command
         $expense->purchase_from = $recurring->purchase_from;
         $expense->added_by = $recurring->added_by;
         $expense->bank_account_id = $recurring->bank_account_id;
-        $expense->purchase_date = now()->format('Y-m-d');
+        $expense->purchase_date = now($recurring->timezone)->format('Y-m-d');
         $expense->status = 'approved';
         $expense->save();
+
+        if ($expense->user_id != '') {
+            event(new NewExpenseEvent($expense, 'member'));
+            event(new NewExpenseEvent($expense, 'admin'));
+        }
     }
 
     private function saveNextInvoiceDate($recurring)
@@ -97,9 +114,10 @@ class AutoCreateRecurringExpenses extends Command
             'annually' => now()->addYear(),
             default => now()->addDay(),
         };
+        $totalExistingCount = $recurring->expense_count + 1;
 
-        $recurring->next_expense_date = $days->format('Y-m-d');
-        $recurring->save();
+        $days = ($totalExistingCount === $recurring->billing_cycle) ? null : $days->setTimezone($recurring->timezone)->format('Y-m-d');
+        ExpenseRecurring::where('id', $recurring->rid)->update(['next_expense_date' => $days]);
     }
 
 }

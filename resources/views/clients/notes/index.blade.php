@@ -86,7 +86,7 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["client-notes-table"].draw(false);
+            window.LaravelDataTables["client-notes-table"].draw(true);
         }
 
         $('#search-text-field').on('change keyup', function() {

@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\GlobalSetting;
+use App\Models\SuperAdmin\GlobalCurrency;
+use App\Models\SuperAdmin\Package;
 use Illuminate\Database\Seeder;
 use App\Models\Company;
 use Illuminate\Support\Facades\App;
@@ -22,6 +24,7 @@ class OrganisationSettingsTableSeeder extends Seeder
 
         $appName = 'Worksuite';
 
+
         $globalSetting = new GlobalSetting();
         $globalSetting->global_app_name = $appName;
         $globalSetting->locale = 'en';
@@ -29,6 +32,11 @@ class OrganisationSettingsTableSeeder extends Seeder
         $globalSetting->google_recaptcha_v2_status = 'deactive';
         $globalSetting->google_recaptcha_v3_status = 'deactive';
         $globalSetting->app_debug = false;
+
+        // SAAS
+        $globalCurrency = GlobalCurrency::first();
+        $globalSetting->currency_id = $globalCurrency->id;
+
         $globalSetting->rtl = false;
         $globalSetting->hide_cron_message = 0;
         $globalSetting->system_update = 1;
@@ -37,6 +45,7 @@ class OrganisationSettingsTableSeeder extends Seeder
         $globalSetting->session_driver = $defaultDriver;
         $globalSetting->allowed_file_size = 10;
         $globalSetting->moment_format = 'DD-MM-YYYY';
+        $globalSetting->sidebar_logo_style = 'square';
         $globalSetting->allowed_file_types = 'image/*,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed, application/x-compressed, multipart/x-zip,.xlsx,video/x-flv,video/mp4,application/x-mpegURL,video/MP2T,video/3gpp,video/quicktime,video/x-msvideo,video/x-ms-wmv,application/sla,.stl';
         $globalSetting->show_update_popup = 1;
         $globalSetting->hash = md5(microtime());
@@ -53,6 +62,7 @@ class OrganisationSettingsTableSeeder extends Seeder
 
         $setting->save();
 
+        Package::where('name', 'Trial')->whereNull('currency_id')->update(['currency_id' => $globalSetting->currency_id]);
 
         if (!App::environment('codecanyon')) {
             $seedCount = config('app.extra_company_seed_count');

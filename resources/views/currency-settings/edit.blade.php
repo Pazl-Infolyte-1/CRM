@@ -66,7 +66,7 @@
                                     :fieldLabel="__('modules.currencySettings.exchangeRate')"
                                     :fieldPlaceholder="__('placeholders.price')" fieldName="exchange_rate" fieldId="exchange_rate"
                                     :fieldValue="$currency->exchange_rate" fieldRequired="true"
-                                    fieldHelp="( {{company()->currency->currency_code}} {{__('app.to')}} {{$currency->currency_code}} )"></x-forms.number>
+                                    fieldHelp="( {{$currency->currency_code}} {{__('app.to')}} {{companyOrGlobalSetting()->currency->currency_code}} )"></x-forms.number>
 
                     @if(global_setting()->currency_converter_key !=='')
                         <a href="javascript:;" class="fetch-exchange-rate" icon="key"><i class="fa fa-key"></i>
@@ -79,7 +79,7 @@
 
             </div>
             <div class="col-12 p-0 mt-4">
-                <h5 class="mb-0 pt-3 text-capitalize border-top-grey">@lang('modules.accountSettings.currencyFormatSetting')</h5>
+                <h5 class="mb-0 pt-3  border-top-grey">@lang('modules.accountSettings.currencyFormatSetting')</h5>
             </div>
             <div class="row pt-3">
                 <div class="col-lg-6">
@@ -223,7 +223,7 @@
                 $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+companyCurrencyName+' )');
             }
             else {
-                $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
+                $('#exchange_rateHelp').html('( '+currentCurrencyName+' @lang('app.to') '+companyCurrencyName+' )');
             }
             let formatted_currency = number_format(number, no_of_decimal, decimal_separator, thousand_separator, currency_position);
             $('#formatted_currency').html(formatted_currency);

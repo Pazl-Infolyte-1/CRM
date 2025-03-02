@@ -57,7 +57,7 @@
 
         <!-- Add Task Export Buttons End -->
         <!-- Task Box Start -->
-        <div class="d-flex flex-column w-tables rounded mt-4 bg-white">
+        <div class="d-flex flex-column w-tables rounded mt-4 bg-white table-responsive">
 
             {!! $dataTable->table(['class' => 'table table-hover border-0 w-100']) !!}
 
@@ -117,7 +117,7 @@
             data['clientID'] = clientID;
         });
         const showTable = () => {
-            window.LaravelDataTables["sales-report-table"].draw(false);
+            window.LaravelDataTables["sales-report-table"].draw(true);
         }
 
         $('#clientID').on('change keyup',
@@ -133,7 +133,7 @@
 
         $('#reset-filters').click(function() {
             $('#filter-form')[0].reset();
-            getDate()
+            // getDate()
 
             $('.filter-box .select-picker').selectpicker("refresh");
             $('#reset-filters').addClass('d-none');

@@ -5,7 +5,7 @@
             @foreach ($modulesData->customPermissions as $permission)
                 <tr>
                     <td>
-                        <h6 class="heading-h6">{{ $permission->display_name }}</h6>
+                        <h6 class="heading-h6">@lang('permissions.'.$permission->name)</h6>
                     </td>
                     @php
                         $permissionType = $employee->permissionTypeId($permission->name);

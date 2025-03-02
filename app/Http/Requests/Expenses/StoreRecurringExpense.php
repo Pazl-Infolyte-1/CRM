@@ -26,10 +26,10 @@ class StoreRecurringExpense extends CoreRequest
     public function rules()
     {
         $rotation = $this->get('rotation');
+        $setting = company();
 
         $rules = [
             'item_name' => 'required',
-            'user_id' => 'required',
             'price' => 'required|numeric',
             'billing_cycle' => 'required',
         ];
@@ -39,6 +39,12 @@ class StoreRecurringExpense extends CoreRequest
             $bankBalance = BankAccount::findOrFail(request('bank_account_id'));
 
             $rules['price'] = 'required|numeric|max:'.$bankBalance->bank_balance;
+        }
+
+        $issueDate = $this->get('hidden_issue_date', $this->get('issue_date'));
+
+        if (!$this->has('immediate_expense') && !$this->has('hidden_issue_date')) {
+            $rules['issue_date'] = 'required|date_format:"' . $setting->date_format . '"|after:'.now()->format($setting->date_format);
         }
 
         return $rules;

@@ -3,7 +3,7 @@
         <x-form id="rightToAccess">
             @method('put')
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">@lang('app.menu.profileSettings')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">@lang('app.menu.profileSettings')</h4>
 
                 <div class="p-20">
                     <div class="row">
@@ -11,11 +11,8 @@
                         <input type="hidden" id="redirect_url" name="redirect_url" value="{{ \Request::fullUrl() }}">
 
                         <div class="col-lg-12">
-                            @php
-                            $userImage = $user->hasGravatar($user->email) ? str_replace('?s=200&d=mp', '', $user->image_url) : asset('img/avatar.png');
-                            @endphp
                             <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.profile.profilePicture')"
-                                :fieldValue="($user->image ? $user->image_url : $userImage)" fieldName="image"
+                                :fieldValue="$user->image_url" fieldName="image"
                                 fieldId="profile-image" :popover="__('modules.themeSettings.logoSize')" :popover="__('messages.fileFormat.ImageFile')">
                             </x-forms.file>
                         </div>

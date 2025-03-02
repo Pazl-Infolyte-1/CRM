@@ -3,7 +3,6 @@
 namespace App\Http\Requests\ProjectMembers;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class SaveGroupMembers extends CoreRequest
 {

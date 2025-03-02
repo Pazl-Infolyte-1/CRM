@@ -49,14 +49,14 @@ class TaskCompletedClient extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('tasks.show', $this->task->id);
         $url = getDomainSpecificUrl($url, $this->company);
-
+        $taskShortCode = (!is_null($this->task->task_short_code)) ? '#' . $this->task->task_short_code : ' ';
         $content = $this->task->heading . ' ' . __('email.taskComplete.subject') . ' #' . $this->task->task_short_code;
 
-        return $build
-            ->subject(__('email.taskComplete.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
+        $build
+            ->subject(__('email.taskComplete.subject') . $taskShortCode . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -64,6 +64,10 @@ class TaskCompletedClient extends BaseNotification
                 'actionText' => __('email.taskComplete.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**
@@ -77,7 +81,7 @@ class TaskCompletedClient extends BaseNotification
             'id' => $this->task->id,
             'created_at' => $this->task->created_at->format('Y-m-d H:i:s'),
             'heading' => $this->task->heading,
-            'completed_on' => $this->task->completed_on->format('Y-m-d H:i:s')
+            'completed_on' => $this->task->completed_on ? $this->task->completed_on->format('Y-m-d H:i:s') : null
         ];
     }
 

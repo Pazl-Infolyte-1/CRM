@@ -45,7 +45,7 @@ class EventFileController extends Controller
 
         EventFile::destroy($id);
 
-        $this->files = EventFile::where('event_id', $file->event_id)->orderBy('id', 'desc')->get();
+        $this->files = EventFile::where('event_id', $file->event_id)->orderByDesc('id')->get();
         $view = view('event-calendar.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.deleteSuccess'), ['view' => $view]);

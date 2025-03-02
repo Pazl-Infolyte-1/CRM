@@ -13,7 +13,6 @@ use App\Models\Expense;
 use App\Models\ExpenseRecurring;
 use App\Models\Project;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class RecurringExpenseController extends AccountBaseController
@@ -69,6 +68,12 @@ class RecurringExpenseController extends AccountBaseController
             $this->employees = User::allEmployees();
         }
 
+        $expense = new Expense();
+        $getCustomFieldGroupsWithFields = $expense->getCustomFieldGroupsWithFields();
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
+
         $this->linkExpensePermission = user()->permission('link_expense_bank_account');
         $this->viewBankAccountPermission = user()->permission('view_bankaccount');
 
@@ -111,7 +116,7 @@ class RecurringExpenseController extends AccountBaseController
         $expenseRecurring->description         = trim_editor($request->description);
         $expenseRecurring->created_by          = $this->user->id;
         $expenseRecurring->purchase_from = $request->purchase_from;
-        $expenseRecurring->issue_date = !is_null($request->issue_date) ? Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d') : Carbon::now()->format('Y-m-d');
+        $expenseRecurring->issue_date = !is_null($request->issue_date) ? companyToYmd($request->issue_date) : now()->format('Y-m-d');
 
         if ($request->project_id > 0) {
             $expenseRecurring->project_id = $request->project_id;
@@ -128,6 +133,9 @@ class RecurringExpenseController extends AccountBaseController
         $expenseRecurring->save();
 
         if($request->immediate_expense){
+
+            $currency = Currency::where('id', $request->currency_id)->first();
+
             $expense = new Expense();
             $expense->expenses_recurring_id = $expenseRecurring->id;
             $expense->category_id = $request->category_id;
@@ -138,11 +146,17 @@ class RecurringExpenseController extends AccountBaseController
             $expense->item_name = $request->item_name;
             $expense->description = $request->description;
             $expense->price = $request->price;
+            $expense->default_currency_id = company()->currency_id;
+            $expense->exchange_rate = $currency->exchange_rate;
             $expense->purchase_from = $request->purchase_from;
             $expense->purchase_date = now()->format('Y-m-d');
             $expense->bank_account_id = $expenseRecurring->bank_account_id;
             $expense->status = 'approved';
             $expense->save();
+
+            if ($request->custom_fields_data) {
+                $expense->updateCustomFieldData($request->custom_fields_data);
+            }
         }
 
         $redirectUrl = urldecode($request->redirect_url);
@@ -164,6 +178,12 @@ class RecurringExpenseController extends AccountBaseController
     {
         $this->expense = ExpenseRecurring::with('recurrings')->findOrFail($id);
 
+        $this->exp = Expense::where('expenses_recurring_id', $id)->first()->withCustomFields();
+        $getCustomFieldGroupsWithFields = $this->exp->getCustomFieldGroupsWithFields();
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
+
         $this->daysOfWeek = [
             '1' => 'sunday',
             '2' => 'monday',
@@ -184,10 +204,8 @@ class RecurringExpenseController extends AccountBaseController
             break;
         }
 
-
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         $this->activeTab = $tab ?: 'overview';
@@ -215,6 +233,12 @@ class RecurringExpenseController extends AccountBaseController
 
         $this->linkExpensePermission = user()->permission('link_expense_bank_account');
         $this->viewBankAccountPermission = user()->permission('view_bankaccount');
+
+        $this->exp = Expense::where('expenses_recurring_id', $id)->first()->withCustomFields();
+        $getCustomFieldGroupsWithFields = $this->exp->getCustomFieldGroupsWithFields();
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
 
         $bankAccounts = BankAccount::where('status', 1)->where('currency_id', $this->expense->currency_id);
 
@@ -244,12 +268,12 @@ class RecurringExpenseController extends AccountBaseController
             $this->employees = User::allEmployees();
         }
 
+        $this->view = 'recurring-expenses.ajax.edit';
+
         if (request()->ajax()) {
-            $html = view('recurring-expenses.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'recurring-expenses.ajax.edit';
         return view('expenses.show', $this->data);
     }
 
@@ -278,6 +302,10 @@ class RecurringExpenseController extends AccountBaseController
             $expense->purchase_from       = $request->purchase_from;
             $expense->bank_account_id     = $request->bank_account_id;
 
+            if(!is_null($request->issue_date)){
+                $expense->issue_date =  companyToYmd($request->issue_date);
+            }
+
             if ($request->project_id > 0) {
                 $expense->project_id = $request->project_id;
             }
@@ -296,6 +324,11 @@ class RecurringExpenseController extends AccountBaseController
             }
 
             $expense->save();
+        }
+
+        $exp = Expense::where('expenses_recurring_id', $id)->first()->withCustomFields();
+        if ($request->custom_fields_data) {
+            $exp->updateCustomFieldData($request->custom_fields_data);
         }
 
         $redirectUrl = urldecode($request->redirect_url);

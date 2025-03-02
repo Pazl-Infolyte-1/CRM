@@ -16,6 +16,10 @@ class NoticeObserver
     {
         if (!isRunningInConsoleOrSeeding()) {
             $notice->last_updated_by = user()->id;
+
+            if (request()->_method == 'PUT') {
+                $this->sendNotification($notice, 'update');
+            }
         }
     }
 
@@ -37,13 +41,6 @@ class NoticeObserver
         }
     }
 
-    public function updated(Notice $notice)
-    {
-        if (!isRunningInConsoleOrSeeding()) {
-            $this->sendNotification($notice, 'update');
-        }
-    }
-
     public function deleting(Notice $notice)
     {
         $universalSearches = UniversalSearch::where('searchable_id', $notice->id)->where('module_type', 'notice')->get();
@@ -55,22 +52,15 @@ class NoticeObserver
         }
 
         $notifyData = ['App\Notifications\NewNotice', 'App\Notifications\NoticeUpdate'];
-        \App\Models\Notification::deleteNotification($notifyData, $notice->id);
+        Notification::deleteNotification($notifyData, $notice->id);
 
     }
 
     public function sendNotification($notice, $action = 'create')
     {
         if ($notice->to == 'employee') {
-            if (request()->team_id != '') {
-                $users = User::join('employee_details', 'employee_details.user_id', '=', 'users.id')
-                    ->where('employee_details.department_id', request()->team_id)
-                    ->select('users.id', 'users.name', 'users.email', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id')
-                    ->get();
-            }
-            else {
-                $users = User::allEmployees(null, true);
-            }
+            $empIds = request()->employees;
+            $users = $users = User::whereIn('id', $empIds)->where('status', 'active')->get();
 
             foreach ($users as $userData) {
                 NoticeView::updateOrCreate(array(
@@ -83,7 +73,8 @@ class NoticeObserver
         }
 
         if ($notice->to == 'client') {
-            $users = User::allClients();
+            $clientIds = request()->clients;
+            $users = $users = User::whereIn('id', $clientIds)->where('status', 'active')->get();
 
             foreach ($users as $userData) {
                 NoticeView::updateOrCreate(array(

@@ -5,17 +5,17 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-10">
-                            <h3 class="heading-h1">@lang('modules.appreciations.appreciationType') @lang('app.details')</h3>
+                            <h3 class="heading-h1">@lang('app.appreciationTypeDetails')</h3>
                         </div>
                         <div class="col-lg-2 col-2 text-right">
 
                             @if ($manageAppreciationTypePermission == 'all')
                                 <div class="dropdown">
                                     <button
-                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>
                                     </button>
@@ -37,7 +37,7 @@
                 <div class="card-body">
                     <x-cards.data-row :label="__('app.title')" :value="$appreciationType->title" />
                     <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                        <p class="mb-0 text-lightest f-14 w-30 text-capitalize">@lang('modules.appreciations.icon')</p>
+                        <p class="mb-0 text-lightest f-14 w-30 ">@lang('modules.appreciations.icon')</p>
                         <div class="mb-0 text-dark-grey f-14 w-70 text-wrap p-0">
                             <x-award-icon :award="$appreciationType" />
                         </div>

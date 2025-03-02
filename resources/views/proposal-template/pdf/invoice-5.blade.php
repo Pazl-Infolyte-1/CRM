@@ -8,7 +8,7 @@
     <!-- Template CSS -->
     <title>@lang('modules.lead.proposalTemplate') - {{ $proposalTemplate->id }}</title>
     <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="{{ global_setting()->favicon_url }}">
+    <meta name="msapplication-TileImage" content="{{ $invoiceSetting->company->favicon_url }}">
     <meta name="theme-color" content="#ffffff">
 
     @if (invoice_setting()->locale == 'ru')
@@ -87,7 +87,7 @@
             text-transform: uppercase;
         }
 
-        .text-capitalize {
+        . {
             text-transform: capitalize;
         }
 
@@ -236,7 +236,6 @@
         }
 
         .word-break {
-            max-width: 175px;
             word-wrap: break-word;
             word-break: break-all;
         }
@@ -270,7 +269,7 @@
         <tbody>
             <!-- Table Row Start -->
             <tr>
-                <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ global_setting(->company_name) }}"
+                <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ $invoiceSetting->company->company_name }}"
                         id="logo" /></td>
                 <td align="right" class="f-21 text-black font-weight-700 text-uppercase">@lang('modules.lead.proposalTemplate')
                 </td>
@@ -280,10 +279,10 @@
             <tr>
                 <td>
                     <p class="line-height mt-1 mb-0 f-14 text-black">
-                        {{ global_setting()->company_name }}<br>
+                        {{ $invoiceSetting->company->company_name }}<br>
                         @if (!is_null($settings))
                             {!! nl2br(default_address()->address) !!}<br>
-                            {{ global_setting()->company_phone }}
+                            {{ $invoiceSetting->company->company_phone }}
                         @endif
                         @if ($invoiceSetting->show_gst == 'yes' && !is_null($invoiceSetting->gst_number))
                             <br>@lang('app.gstIn'): {{ $invoiceSetting->gst_number }}
@@ -318,7 +317,7 @@
 
     <table width="100%" class="f-14 b-collapse">
         <tr>
-            <td height="10" colspan="2"></td>
+            <td height="10" colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}"></td>
         </tr>
         <!-- Table Row Start -->
         <tr class="main-table-heading text-grey">
@@ -337,7 +336,7 @@
             @if ($item->type == 'item')
                 <!-- Table Row Start -->
                 <tr class="main-table-items text-black f-14">
-                    <td width="40%" class="border-bottom-0">{{ $item->item_name }}</td>
+                    <td width="40%" class="border-bottom-0 word-break">{{ $item->item_name }}</td>
                     @if ($invoiceSetting->hsn_sac_code_show)
                         <td align="right" class="border-bottom-0" width="10%">{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                     @endif
@@ -348,7 +347,7 @@
                 </tr>
                 @if ($item->item_summary != '' || $item->proposalTemplateItemImage)
                     </table>
-                    <div class="f-13 summary text-black border-bottom-0">
+                    <div class="f-13 summary text-black border-bottom-0 word-break">
                         {!! nl2br(pdfStripTags($item->item_summary)) !!}
                         @if ($item->proposalTemplateItemImage)
                             <p class="mt-2">
@@ -435,18 +434,26 @@
     <table class="bg-white" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
         <tbody>
             <!-- Table Row Start -->
-            <tr>
-                <td height="10"></td>
-            </tr>
-            <tr>
-                <td class="f-11">
-                    @lang('modules.invoiceSettings.invoiceTerms')</td>
-            </tr>
+                <tr>
+                    <td height="10">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td class="f-11">@lang('app.note')</td>
+                </tr>
+                <!-- Table Row End -->
+                <!-- Table Row Start -->
+                <tr class="text-grey">
+                    <td class="f-11 line-height word-break note-text"></td>
+                </tr>
+                @if ($invoiceSetting->other_info)
+                    <tr class="text-grey">
+                        <td class="f-11 line-height word-break note-text">
+                            <br>{!! nl2br($invoiceSetting->other_info) !!}
+                        </td>
+                    </tr>
+                @endif
+
             <!-- Table Row End -->
-            <!-- Table Row Start -->
-            <tr class="text-grey">
-                <td class="f-11 line-height">{!! nl2br($invoiceSetting->invoice_terms) !!}</td>
-            </tr>
         </tbody>
     </table>
 

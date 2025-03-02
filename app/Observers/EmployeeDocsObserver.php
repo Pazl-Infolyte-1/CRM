@@ -2,7 +2,6 @@
 
 namespace App\Observers;
 
-use App\Helper\Files;
 use App\Models\EmployeeDocument;
 
 class EmployeeDocsObserver

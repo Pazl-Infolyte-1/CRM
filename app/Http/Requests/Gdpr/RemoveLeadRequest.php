@@ -1,11 +1,7 @@
 <?php
 namespace App\Http\Requests\Gdpr;
 
-use App\Holiday;
 use App\Http\Requests\CoreRequest;
-use Carbon\Carbon;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Validator;
 
 /**
  * Class CreateRequest

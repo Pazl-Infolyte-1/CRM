@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helper\Files;
 use App\Helper\Reply;
 use App\Http\Requests\OfflinePaymentSetting\StoreRequest;
 use App\Http\Requests\OfflinePaymentSetting\UpdateRequest;
@@ -48,6 +49,11 @@ class OfflinePaymentSettingController extends AccountBaseController
         $method = new OfflinePaymentMethod();
         $method->name = $request->name;
         $method->description = trim_editor($request->description);
+
+        if ($request->hasFile('image')) {
+            $method->image = Files::uploadLocalOrS3($request->image, 'offline-method', 300);
+        }
+
         $method->save();
 
         return Reply::success(__('messages.recordSaved'));
@@ -78,6 +84,17 @@ class OfflinePaymentSettingController extends AccountBaseController
         $method->name = $request->name;
         $method->description = trim_editor($request->description);
         $method->status = $request->status;
+
+        if ($request->image_delete == 'yes') {
+            Files::deleteFile($request->image, 'offline-method');
+            $method->image = null;
+        }
+
+        if ($request->hasFile('image')) {
+            Files::deleteFile($method->image, 'offline-method');
+            $method->image = Files::uploadLocalOrS3($request->image, 'offline-method', 300);
+        }
+
         $method->save();
 
         return Reply::redirect(route('offline-payment-setting.index'), __('messages.updateSuccess'));

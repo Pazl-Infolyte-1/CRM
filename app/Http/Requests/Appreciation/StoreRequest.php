@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Appreciation;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRequest extends CoreRequest
 {

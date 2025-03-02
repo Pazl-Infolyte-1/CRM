@@ -4,9 +4,11 @@ namespace App\Notifications;
 
 use App\Http\Controllers\InvoiceController;
 use App\Models\EmailNotificationSetting;
+use App\Models\GlobalSetting;
 use App\Models\Invoice;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
+use Illuminate\Support\Facades\App;
 
 class InvoiceUpdated extends BaseNotification
 {
@@ -36,8 +38,14 @@ class InvoiceUpdated extends BaseNotification
     {
         $via = ($this->emailSetting->send_email == 'yes' && $notifiable->email_notifications && $notifiable->email != '') ? ['mail', 'database'] : ['database'];
 
-        if ($this->emailSetting->send_push == 'yes') {
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
             array_push($via, OneSignalChannel::class);
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.invoice.updateSubject'), $this->invoice->invoice_number);
         }
 
         return $via;
@@ -51,17 +59,21 @@ class InvoiceUpdated extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $invoiceUpdate = parent::build();
+        $invoiceUpdate = parent::build($notifiable);
 
         if (($this->invoice->project && !is_null($this->invoice->project->client)) || !is_null($this->invoice->client_id)) {
             // For Sending pdf to email
             $invoiceController = new InvoiceController();
 
             if ($pdfOption = $invoiceController->domPdfObjectForDownload($this->invoice->id)) {
+
                 $pdf = $pdfOption['pdf'];
                 $filename = $pdfOption['fileName'];
+                $invoiceUpdate->attachData($pdf->output(), $filename . '.pdf');
 
-                $url = route('front.invoice', $this->invoice->hash);
+                App::setLocale($notifiable->locale ?? $this->company->locale ?? 'en');
+
+                $url = url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->invoice->hash);
                 $url = getDomainSpecificUrl($url, $this->company);
 
                 $content = __('email.invoice.updateText');
@@ -74,8 +86,6 @@ class InvoiceUpdated extends BaseNotification
                         'actionText' => __('email.viewInvoice'),
                         'notifiableName' => $notifiable->name
                     ]);
-
-                $invoiceUpdate->attachData($pdf->output(), $filename . '.pdf');
 
                 return $invoiceUpdate;
             }

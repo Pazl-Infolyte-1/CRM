@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property int|null $added_by
  * @property int|null $last_updated_by
  * @property string|null $hsn_sac_code
+ * @property string|null $sku
  * @property-read mixed $icon
  * @property-read mixed $total_amount
  * @property-read \App\Models\Tax $tax
@@ -70,7 +71,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read int|null $leads_count
  * @property-read \App\Models\UnitType|null $unit
  * @method static \Illuminate\Database\Eloquent\Builder|Product whereUnitId($value)
-
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderItems> $orderItem
  * @property-read int|null $order_item_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
@@ -97,6 +97,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder|Product whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Product whereTrackInventory($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Product whereType($value)
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, PurchaseStockAdjustment> $inventory
+ * @property-read int|null $inventory_count
  * @mixin \Eloquent
  */
 class Product extends BaseModel
@@ -146,7 +148,7 @@ class Product extends BaseModel
 
     public function leads(): BelongsToMany
     {
-        return $this->belongsToMany(Lead::class, 'lead_products');
+        return $this->belongsToMany(Deal::class, 'lead_products');
     }
 
     public static function taxbyid($id)
@@ -181,7 +183,7 @@ class Product extends BaseModel
 
     public function files(): HasMany
     {
-        return $this->hasMany(ProductFiles::class, 'product_id')->orderBy('id', 'desc');
+        return $this->hasMany(ProductFiles::class, 'product_id')->orderByDesc('id');
     }
 
     public function getTaxListAttribute()

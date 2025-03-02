@@ -4,6 +4,8 @@ namespace App\Jobs;
 
 use App\Models\User;
 use App\Models\Project;
+use Carbon\Exceptions\InvalidFormatException;
+use Exception;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Carbon;
@@ -14,11 +16,13 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use App\Models\ProjectActivity;
+use App\Traits\ExcelImportable;
 
 class ImportProjectJob implements ShouldQueue
 {
 
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels, UniversalSearchTrait;
+    use ExcelImportable;
 
     private $row;
     private $columns;
@@ -43,12 +47,12 @@ class ImportProjectJob implements ShouldQueue
      */
     public function handle()
     {
-        if (!empty(array_keys($this->columns, 'project_name')) && !empty(array_keys($this->columns, 'start_date'))) {
+        if ($this->isColumnExists('project_name') && $this->isColumnExists('start_date')) {
             $client = null;
 
-            if (!empty(!empty(array_keys($this->columns, 'client_email')))) {
+            if (!empty($this->isColumnExists('client_email'))) {
                 // user that have client role
-                $client = User::where('email', $this->row[array_keys($this->columns, 'client_email')[0]])->whereHas('roles', function ($q) {
+                $client = User::where('email', $this->getColumnValue('client_email'))->whereHas('roles', function ($q) {
                     $q->where('name', 'client');
                 })->first();
             }
@@ -57,42 +61,41 @@ class ImportProjectJob implements ShouldQueue
             try {
                 $project = new Project();
                 $project->company_id = $this->company?->id;
-                $project->project_name = $this->row[array_keys($this->columns, 'project_name')[0]];
+                $project->project_name = $this->getColumnValue('project_name');
 
-                $project->project_summary = !empty(array_keys($this->columns, 'project_summary')) ? $this->row[array_keys($this->columns, 'project_summary')[0]] : null;
+                $project->project_summary = $this->isColumnExists('project_summary') ? $this->getColumnValue('project_summary') : null;
 
-                $project->start_date = Carbon::createFromFormat('Y-m-d', $this->row[array_keys($this->columns, 'start_date')[0]])->format('Y-m-d');
-                $project->deadline = !empty(array_keys($this->columns, 'deadline')) ? (!empty(trim($this->row[array_keys($this->columns, 'deadline')[0]])) ? Carbon::createFromFormat('Y-m-d', $this->row[array_keys($this->columns, 'deadline')[0]])->format('Y-m-d') : null) : null;
+                $project->start_date = Carbon::createFromFormat('Y-m-d', $this->getColumnValue('start_date'))->format('Y-m-d');
+                $project->deadline = $this->isColumnExists('deadline') ? (!empty(trim($this->getColumnValue('deadline'))) ? Carbon::createFromFormat('Y-m-d', $this->getColumnValue('deadline'))->format('Y-m-d') : null) : null;
 
-                if (!empty(array_keys($this->columns, 'notes'))) {
-                    $project->notes = $this->row[array_keys($this->columns, 'notes')[0]];
+                if ($this->isColumnExists('notes')) {
+                    $project->notes = $this->getColumnValue('notes');
                 }
 
                 $project->client_id = $client ? $client->id : null;
 
-                $project->project_budget = !empty(array_keys($this->columns, 'project_budget')) ? $this->row[array_keys($this->columns, 'project_budget')[0]] : null;
+                $project->project_budget = $this->isColumnExists('project_budget') ? $this->getColumnValue('project_budget') : null;
 
                 $project->currency_id = $this->company?->currency_id;
 
-                $project->status = !empty(array_keys($this->columns, 'status')) ? strtolower(trim($this->row[array_keys($this->columns, 'status')[0]])) : 'not started';
+                $project->status = $this->isColumnExists('status') ? strtolower(trim($this->getColumnValue('status'))) : 'not started';
 
                 $project->save();
 
                 $this->logSearchEntry($project->id, $project->project_name, 'projects.show', 'project', $project->company_id);
                 $this->logProjectActivity($project->id, 'messages.updateSuccess');
                 DB::commit();
-            } catch (\Carbon\Exceptions\InvalidFormatException $e) {
+            } catch (InvalidFormatException $e) {
                 DB::rollBack();
-                $this->job->fail(__('messages.invalidDate') . json_encode($this->row, true));
-            }
-            catch (\Exception $e) {
+                $this->failJob(__('messages.invalidDate'));
+            } catch (Exception $e) {
                 DB::rollBack();
-                $this->job->fail($e->getMessage());
+                $this->failJobWithMessage($e->getMessage());
             }
 
         }
         else {
-            $this->job->fail(__('messages.invalidData') . json_encode($this->row, true));
+            $this->failJob(__('messages.invalidData'));
         }
     }
 

@@ -28,7 +28,7 @@
 
                         @if (in_array($role->name, ['employee', 'client']))
                             <x-forms.button-secondary class="reset-permission ml-2" data-role-id="{{ $role->id }}" icon="sync">
-                                @lang('app.reset') @lang('modules.permission.permissions')
+                                @lang('app.resetPermissions')
                             </x-forms.button-secondary>
                         @endif
                     @endif
@@ -50,7 +50,9 @@
                 <x-forms.select fieldId="import_from_role" :fieldLabel="__('modules.permission.importFromRole')" fieldName="import_from_role">
                     <option value="">--</option>
                     @foreach ($roles as $item)
-                        <option value="{{ $item->id }}">{{ $item->display_name }}</option>
+                        @if($item->name != 'client')
+                            <option value="{{ $item->id }}">{{ $item->display_name }}</option>
+                        @endif
                     @endforeach
                 </x-forms.select>
             </div>
@@ -119,6 +121,7 @@
 
                             $('#sub_category_id').html('<option value="">--</option>');
                             $('#sub_category_id').selectpicker('refresh');
+                            window.location.reload();
                         }
                     }
                 });

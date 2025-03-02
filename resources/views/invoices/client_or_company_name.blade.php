@@ -1,7 +1,7 @@
 @if($projectID == '')
     <select class="form-control select-picker" name="client_id" id="client_company_id" data-style="form-control">
         @foreach($clients as $client)
-            <option value="{{ $client->id }}">{{ $client->name }}
+            <option value="{{ $client->id }}">{{ $client->name_salutation }}
                 @if($client->company_name != '') {{ '('.$client->company_name.')' }} @endif</option>
         @endforeach
     </select>

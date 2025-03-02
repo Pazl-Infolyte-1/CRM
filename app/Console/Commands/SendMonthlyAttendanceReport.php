@@ -2,13 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Mail\MonthlyAttendance;
-use App\Models\AttendanceSetting;
+use App\Events\MonthlyAttendanceEvent;
 use App\Models\Company;
 use App\Models\Role;
-use App\Notifications\BaseNotification;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Mail;
 
 class SendMonthlyAttendanceReport extends Command
 {
@@ -29,25 +26,36 @@ class SendMonthlyAttendanceReport extends Command
 
     public function handle()
     {
-        $companies = Company::select('id', 'logo', 'company_name')->get();
 
-        foreach ($companies as $company) {
-            $attendanceSetting = AttendanceSetting::where('company_id', $company->id)->first();
+        Company::active()
+            ->select('companies.id as id', 'logo', 'company_name', 'monthly_report_roles')
+            ->join('attendance_settings', 'attendance_settings.company_id', '=', 'companies.id')
+            ->where('monthly_report', 1)->chunk(50, function ($companies) {
+                foreach ($companies as $company) {
 
-            if (!$attendanceSetting->monthly_report) {
-                continue;
-            }
+                    $roles = Role::with('users')
+                    ->whereIn('id', json_decode($company->monthly_report_roles))
+                    ->get();
 
-            $roles = Role::with('users')
-                ->whereIn('id', json_decode($attendanceSetting->monthly_report_roles))
-                ->get();
+                    $uniqueUsers = collect();
 
-            foreach ($roles as $role) {
-                foreach ($role->users as $user) {
-                    Mail::to($user->email)->send(new MonthlyAttendance($company));
+                    // Collect unique users based on email or ID
+                    foreach ($roles as $role) {
+                        foreach ($role->users as $user) {
+                            $uniqueUsers[$user->id] = $user; // Use ID to prevent duplicates
+                        }
+                    }
+
+                    // Now send emails only once per user
+                    foreach ($uniqueUsers as $user) {
+                        $this->info('Email sent: ' . $user->email);
+                        event(new MonthlyAttendanceEvent($user, $company));
+                    }
+
                 }
-            }
-        }
+            });
+
+        return Command::SUCCESS;
 
     }
 

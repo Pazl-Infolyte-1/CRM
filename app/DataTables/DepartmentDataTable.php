@@ -3,7 +3,6 @@
 namespace App\DataTables;
 
 use App\Models\Team;
-use App\DataTables\BaseDataTable;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 
@@ -31,9 +30,7 @@ class DepartmentDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
@@ -79,15 +76,12 @@ class DepartmentDataTable extends BaseDataTable
                 if ($parent) {
                     return $parent->team_name;
                 }
-                else {
-                    return '-';
-                }
+
+                return '-';
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'name', 'check']);
     }
 

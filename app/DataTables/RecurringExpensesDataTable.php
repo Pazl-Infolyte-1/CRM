@@ -2,10 +2,7 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\ExpenseRecurring;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 
@@ -71,12 +68,11 @@ class RecurringExpensesDataTable extends BaseDataTable
             ->editColumn(
                 'next_expense_date',
                 function ($row) {
-                    $rotation = '<span class="px-1"><label class="badge badge-' . ExpenseRecurring::ROTATION_COLOR[$row->rotation] . '">' . $row->rotation . '</label></span';
-
                     if (is_null($row->next_expense_date)) {
-                        return $rotation;
+                        return '--';
                     }
 
+                    $rotation = '<span class="px-1"><label class="badge badge-' . ExpenseRecurring::ROTATION_COLOR[$row->rotation] . '">' . $row->rotation . '</label></span';
                     $date = $row->next_expense_date->timezone($this->company->timezone)->translatedFormat($this->company->date_format);
 
                     return $date . $rotation;

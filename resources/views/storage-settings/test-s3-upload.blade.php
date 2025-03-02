@@ -9,6 +9,8 @@
             @lang('app.storageSetting.testDigitaloceanSetting')
         @elseif($type=='wasabi')
             @lang('app.storageSetting.testwasabiSetting')
+        @elseif($type=='minio')
+            @lang('app.storageSetting.testMinioSetting')
         @else
             @lang('app.storageSetting.testAWSSetting')
         @endif

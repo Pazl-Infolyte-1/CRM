@@ -32,6 +32,8 @@ class UserPermissionController extends AccountBaseController
             User::where('id', $id)->update(['customised_permissions' => 1]);
         }
 
+        cache()->forget('sidebar_user_perms_' . $id);
+
         return Reply::dataOnly(['status' => 'success']);
     }
 
@@ -45,6 +47,7 @@ class UserPermissionController extends AccountBaseController
         $this->modulesData = Module::with('customPermissions')->findOrFail($request->moduleId);
 
         $html = view('employees.ajax.custom_permissions', $this->data)->render();
+
         return Reply::dataOnly(['status' => 'success', 'html' => $html]);
     }
 
@@ -53,13 +56,11 @@ class UserPermissionController extends AccountBaseController
         $user = User::with('roles')->findOrFail($userId);
         $userRoles = $user->roles;
 
-        $role = null;
 
         if (count($userRoles) > 1) {
             $role = $userRoles->where('name', '!=', 'employee')->first();
         }
-        else
-        {
+        else {
             $role = $userRoles->first();
         }
 
@@ -70,6 +71,8 @@ class UserPermissionController extends AccountBaseController
         $user->assignUserRolePermission($role->id);
 
         User::where('id', $userId)->update(['customised_permissions' => 0]);
+
+        cache()->forget('sidebar_user_perms_' . $userId);
 
         return Reply::dataOnly(['status' => 'success']);
 

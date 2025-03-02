@@ -271,6 +271,10 @@
             max-width: 150px !important;
         }
 
+        .word-break {
+            word-wrap: break-word;
+            word-break: break-all;
+        }
     </style>
 </head>
 
@@ -286,7 +290,7 @@
                             <small>@lang('modules.invoices.billedTo'):</small>
 
                             @if ($invoice->project->client->name && $invoiceSetting->show_client_name == 'yes')
-                                <h3 class="name">{{ $invoice->project->client->name }}</h3>
+                                <h3 class="name">{{ $invoice->project->client->name_salutation }}</h3>
                             @endif
 
                             @if ($invoice->project->client->email && $invoiceSetting->show_client_email == 'yes')
@@ -297,7 +301,7 @@
 
                             @if ($invoice->project->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                                 <div>
-                                    <span class="">{{ $invoice->project->client->mobile }}</span>
+                                    <span class="">{{ $invoice->project->client->mobile_with_phonecode }}</span>
                                 </div>
                             @endif
                             @if ($invoice->project->client->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
@@ -327,7 +331,7 @@
                             <small>@lang('modules.invoices.billedTo'):</small>
 
                             @if ($invoice->client->name && $invoiceSetting->show_client_name == 'yes')
-                                <h3 class="name">{{ $invoice->client->name }}</h3>
+                                <h3 class="name">{{ $invoice->client->name_salutation }}</h3>
                             @endif
 
                             @if ($invoice->client->email && $invoiceSetting->show_client_email == 'yes')
@@ -338,7 +342,7 @@
 
                             @if ($invoice->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                                 <div>
-                                    <span class="">{{ $invoice->client->mobile }}</span>
+                                    <span class="">{{ $invoice->client->mobile_with_phonecode }}</span>
                                 </div>
                             @endif
 
@@ -368,7 +372,7 @@
                         @if (is_null($invoice->project) && $invoice->estimate && $invoice->estimate->client && $invoice->estimate->client->clientDetails && ($invoiceSetting->show_client_name == 'yes' || $invoiceSetting->show_client_email == 'yes' || $invoiceSetting->show_client_phone == 'yes' || $invoiceSetting->show_client_company_name == 'yes' || $invoiceSetting->show_client_company_address == 'yes'))
                             <small>@lang('modules.invoices.billedTo'):</small>
                             @if ($invoice->estimate->client->name && $invoiceSetting->show_client_name == 'yes')
-                                <h3 class="name">{{ $invoice->estimate->client->name }}</h3>
+                                <h3 class="name">{{ $invoice->estimate->client->name_salutation }}</h3>
                             @endif
 
                             @if ($invoice->estimate->client->email && $invoiceSetting->show_client_email == 'yes')
@@ -379,7 +383,7 @@
 
                             @if ($invoice->estimate->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                                 <div>
-                                    <span class="">{{ $invoice->estimate->client->mobile }}</span>
+                                    <span class="">{{ $invoice->estimate->client->mobile_with_phonecode }}</span>
                                 </div>
                             @endif
 
@@ -440,7 +444,7 @@
                 @if ($creditNote)
                     <div class="">@lang('app.credit-note'): {{ $creditNote->cn_number }}</div>
                 @endif
-                <div class="date">@lang('app.menu.issues') @lang('app.date'):
+                <div class="date">@lang('app.issuesDate'):
                     {{ $invoice->issue_date->translatedFormat($company->date_format) }}</div>
                 @if ($invoice->status === 'unpaid')
                     <div class="date">@lang('app.dueDate'):
@@ -467,9 +471,9 @@
                         <tr style="page-break-inside: avoid;">
                             <td class="no">{{ ++$count }}</td>
                             <td class="desc">
-                                <h3>{{ $item->item_name }}</h3>
+                                <h3 class="word-break">{{ $item->item_name }}</h3>
                                 @if (!is_null($item->item_summary))
-                                    <p class="item-summary">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                    <p class="item-summary word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                 @endif
                             </td>
                             <td class="qty">
@@ -494,7 +498,13 @@
                         <td class="no">&nbsp;</td>
                         <td class="qty">&nbsp;</td>
                         <td class="qty">&nbsp;</td>
-                        <td class="desc">@lang('modules.invoices.discount')</td>
+                        <td class="desc">@lang('modules.invoices.discount'):
+                            @if($invoice->discount_type == 'percent')
+                                {{$invoice->discount}}%
+                            @else
+                                {{ currency_format($invoice->discount, $invoice->currency_id) }}
+                            @endif
+                        </td>
                         <td class="unit">{{ number_format((float) $discount, 2, '.', '') }}</td>
                     </tr>
                 @endif
@@ -521,17 +531,20 @@
                     </tr>
                 @endif
                 <tr dontbreak="true">
-                    <td colspan="4">@lang('modules.invoices.total') @lang('modules.invoices.paid')</td>
+                    <td colspan="4">@lang('app.totalPaid')</td>
                     <td style="text-align: center">{{ number_format((float) $invoice->getPaidAmount(), 2, '.', '') }}
                     </td>
                 </tr>
                 <tr dontbreak="true">
-                    <td colspan="4">@lang('modules.invoices.total') @lang('modules.invoices.due')</td>
+                    <td colspan="4">@lang('app.totalDue')</td>
                     <td style="text-align: center">{{ number_format((float) $invoice->amountDue(), 2, '.', '') }}
                     </td>
                 </tr>
             </tfoot>
         </table>
+
+        @includeIf('invoices.payment_details')
+
         <p>&nbsp;</p>
         <hr>
         <p id="notes">
@@ -541,7 +554,9 @@
             @if ($invoice->status == 'unpaid')
                 @lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}
             @endif
-
+            @if (isset($invoiceSetting->other_info))
+                <br>{!! nl2br($invoiceSetting->other_info) !!}
+            @endif
         </p>
 
     </main>

@@ -54,6 +54,7 @@
         q, blockquote {
             quotes: none;
         }
+
         q:before, q:after, blockquote:before, blockquote:after {
             content: "";
             content: none;
@@ -112,26 +113,32 @@
             float: left;
             margin-right: 20px;
         }
+
         #memo .logo img {
             height: 50px;
         }
+
         #memo .company-info {
             /*float: right;*/
             text-align: right;
         }
+
         #memo .company-info .company-name {
             font-size: 20px;
             text-align: right;
         }
+
         #memo .company-info .spacer {
             height: 15px;
             display: block;
         }
+
         #memo .company-info div {
             font-size: 12px;
             text-align: right;
             line-height: 18px;
         }
+
         #memo:after {
             content: '';
             display: block;
@@ -144,12 +151,14 @@
             line-height: 18px;
         }
 
-        #invoice-info table{
+        #invoice-info table {
             width: 30%;
         }
+
         #invoice-info > div {
             float: left;
         }
+
         #invoice-info > div > span {
             display: block;
             min-width: 100px;
@@ -168,12 +177,15 @@
             min-width: 220px;
             line-height: 18px;
         }
+
         #client-info > div {
             margin-bottom: 3px;
         }
+
         #client-info span {
             display: block;
         }
+
         #client-info > span {
             margin-bottom: 3px;
         }
@@ -181,9 +193,11 @@
         #invoice-title-number {
             margin-top: 30px;
         }
+
         #invoice-title-number #title {
             font-size: 35px;
         }
+
         #invoice-title-number #number {
             text-align: left;
             font-size: 20px;
@@ -192,6 +206,7 @@
         table {
             table-layout: fixed;
         }
+
         table th, table td {
             vertical-align: top;
             word-break: keep-all;
@@ -202,35 +217,43 @@
             width: 18px;
             text-align: right;
         }
+
         #items table {
             border-collapse: collapse;
             width: 100%;
             border: 1px solid #000000
         }
+
         #items table th {
             font-weight: bold;
             padding: 12px 10px;
             text-align: right;
             border-bottom: 1px solid #444;
         }
+
         #items table th:nth-child(2) {
             width: 30%;
             text-align: left;
         }
+
         #items table th:last-child {
             text-align: right;
         }
+
         #items table td {
             border-right: 1px solid #b6b6b6;
             padding: 7px 10px;
             text-align: right;
         }
+
         #items table td:first-child {
             text-align: left;
         }
+
         #items table td:nth-child(2) {
             text-align: left;
         }
+
         #items table td:last-child {
             border-right: none !important;
         }
@@ -243,6 +266,7 @@
             color: #707070;
             font-size: 12px;
         }
+
         .payment-info div {
             display: inline-block;
             min-width: 10px;
@@ -253,7 +277,7 @@
             border-color: #F8ED31 !important;
         }
 
-        .item-summary{
+        .item-summary {
             font-size: 11px;
             margin-top: 10px;
             margin-bottom: 10px;
@@ -271,17 +295,19 @@
             /* Here goes your print styles */
         }
 
-        .page_break { page-break-before: always; }
+        .page_break {
+            page-break-before: always;
+        }
 
         .h3-border {
             border-bottom: 1px solid #AAAAAA;
         }
-        table td.text-center
-        {
+
+        table td.text-center {
             text-align: center;
         }
-        table td.text-right
-        {
+
+        table td.text-right {
             text-align: right;
         }
 
@@ -289,10 +315,12 @@
             width: 18px;
             text-align: right;
         }
+
         #itemsPayment table {
             border-collapse: separate;
             width: 100%;
         }
+
         #itemsPayment table th {
             font-weight: bold;
             padding: 12px 10px;
@@ -300,32 +328,40 @@
             border-bottom: 1px solid #444;
             text-transform: uppercase;
         }
+
         #itemsPayment table th:nth-child(2) {
             width: 30%;
             text-align: left;
         }
+
         #itemsPayment table th:last-child {
             text-align: right;
         }
+
         #itemsPayment table td {
             border-right: 1px solid #b6b6b6;
             padding: 15px 10px;
             text-align: right;
         }
+
         #itemsPayment table td:first-child {
             text-align: left;
             /*border-right: none !important;*/
         }
+
         #itemsPayment table td:nth-child(2) {
             text-align: left;
         }
+
         #itemsPayment table td:last-child {
             border-right: none !important;
         }
 
         .word-break {
-            word-wrap:break-word;
+            word-wrap: break-word;
+            word-break: break-all;
         }
+
         .description {
             line-height: 12px;
         }
@@ -335,13 +371,12 @@
             table td {
             font-weight: bold !important;
             font-size: 20px !important;
-            }
+        }
 
-            .descriptionFont
-            {
-                font-weight: bold !important;
-                font-size: 16px !important;
-            }
+        .descriptionFont {
+            font-weight: bold !important;
+            font-size: 16px !important;
+        }
         @endif
     </style>
 </head>
@@ -350,7 +385,7 @@
     <div class="invoice-top">
         <section id="memo">
             <div class="logo">
-                <img src="{{ $invoiceSetting->logo_url }}" />
+                <img src="{{ $invoiceSetting->logo_url }}" alt="{{ $company->company_name }}"/>
 
             </div>
 
@@ -377,12 +412,8 @@
 
         </section>
 
-        <section id="invoice-info"  class="descriptionFont">
-            <table  class="descriptionFont">
-                <tr>
-                    <td>@lang('modules.lead.proposal'):</td>
-                    <td>#{{ $proposal->id }}</td>
-                </tr>
+        <section id="invoice-info" class="descriptionFont">
+            <table class="descriptionFont">
                 <tr>
                     <td>@lang('app.status'):</td>
                     <td>{{ $proposal->status }}</td>
@@ -391,6 +422,10 @@
                     <td>@lang('modules.estimates.validTill'):</td>
                     <td>{{ $proposal->valid_till->translatedFormat($company->date_format) }}</td>
                 </tr>
+                <tr>
+                    <td>@lang('app.date'):</td>
+                    <td>{{ $proposal->created_at->translatedFormat($company->date_format) }}</td>
+                </tr>
             </table>
 
 
@@ -398,32 +433,35 @@
 
             <section id="invoice-title-number">
 
-                <span id="number">@lang('modules.lead.proposal')#{{ $proposal->id }}</span>
+                <span id="number">{{ $proposal->proposal_number }}</span>
 
             </section>
         </section>
 
-        @if ($proposal->lead && ($proposal->lead->client_name || $proposal->lead->client_email || $proposal->lead->mobile || $proposal->lead->company_name || $proposal->lead->address) && ($invoiceSetting->show_client_name == 'yes' || $invoiceSetting->show_client_email == 'yes' || $invoiceSetting->show_client_phone == 'yes' || $invoiceSetting->show_client_company_name == 'yes' || $invoiceSetting->show_client_company_address == 'yes'))
-        <section id="client-info">
-            <span  class="descriptionFont">@lang('modules.invoices.billedTo')</span>
-            <div  class="descriptionFont">
-                @if ($proposal->lead && $proposal->lead->client_name && $invoiceSetting->show_client_name == 'yes')
-                    <span class="bold descriptionFont">{{ $proposal->lead->client_name }}</span>
-                @endif
-                @if ($proposal->lead && $proposal->lead->client_email && $invoiceSetting->show_client_email == 'yes')
-                    <div class="descriptionFont">{{ $proposal->lead->client_email }}</div>
-                @endif
-                @if ($proposal->lead && $proposal->lead->mobile && $invoiceSetting->show_client_phone == 'yes')
-                    <div class="descriptionFont">{{ $proposal->lead->mobile }}</div>
-                @endif
-                @if ($proposal->lead && $proposal->lead->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                    <div class="descriptionFont">{{ $proposal->lead->company_name }}</div>
-                @endif
-                @if ($proposal->lead && $proposal->lead->address && $invoiceSetting->show_client_company_address == 'yes')
-                    <div class="descriptionFont">{!! nl2br($proposal->lead->address) !!}</div>
-                @endif
-            </div>
-        </section>
+        @if ($proposal->lead->contact && ($proposal->lead->contact->client_name || $proposal->lead->contact->client_email || $proposal->lead->contact->mobile || $proposal->lead->contact->company_name || $proposal->lead->contact->address) && ($invoiceSetting->show_client_name == 'yes' || $invoiceSetting->show_client_email == 'yes' || $invoiceSetting->show_client_phone == 'yes' || $invoiceSetting->show_client_company_name == 'yes' || $invoiceSetting->show_client_company_address == 'yes'))
+            <section id="client-info">
+                <span class="descriptionFont">@lang('modules.invoices.billedTo')</span>
+                <div class="descriptionFont">
+                    @if ($proposal->deal && !empty($proposal->deal->name))
+                        <div class="descriptionFont">{{ $proposal->deal->name }}</div>
+                    @endif
+                    @if ($proposal->lead->contact && $proposal->lead->contact->client_name && $invoiceSetting->show_client_name == 'yes')
+                        <span class="bold descriptionFont">{{ $proposal->lead->contact->client_name_salutation }}</span>
+                    @endif
+                    @if ($proposal->lead->contact && $proposal->lead->email && $invoiceSetting->show_client_email == 'yes')
+                        <div class="descriptionFont">{{ $proposal->lead->contact->client_email }}</div>
+                    @endif
+                    @if ($proposal->lead->contact && $proposal->lead->contact->mobile && $invoiceSetting->show_client_phone == 'yes')
+                        <div class="descriptionFont">{{ $proposal->lead->contact->mobile }}</div>
+                    @endif
+                    @if ($proposal->lead->contact && $proposal->lead->contact->company_name && $invoiceSetting->show_client_company_name == 'yes')
+                        <div class="descriptionFont">{{ $proposal->lead->contact->company_name }}</div>
+                    @endif
+                    @if ($proposal->lead->contact && $proposal->lead->contact->address && $invoiceSetting->show_client_company_address == 'yes')
+                        <div class="descriptionFont">{!! nl2br($proposal->lead->contact->address) !!}</div>
+                    @endif
+                </div>
+            </section>
         @endif
 
         <div class="clearfix"></div>
@@ -450,29 +488,35 @@
                         <th class="descriptionFont">@lang('modules.invoices.qty')</th>
                         <th class="descriptionFont">@lang("modules.invoices.unitPrice")</th>
                         <th class="descriptionFont">@lang("modules.invoices.tax")</th>
-                        <th class="descriptionFont">@lang("modules.invoices.price") ({!! htmlentities($proposal->currency->currency_code)  !!})</th>
+                        <th class="descriptionFont">@lang("modules.invoices.price")
+                            ({!! htmlentities($proposal->currency->currency_code)  !!})
+                        </th>
                     </tr>
 
-                    <?php $count = 0; ?>
-                    @foreach($proposal->items as $item)
+                        <?php $count = 0; ?>
+                    @foreach($proposal->items->sortBy('field_order') as $item)
                         @if($item->type == 'item')
                             <tr data-iterate="item">
-                                <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
-                                <td>
+                                <td>{{ ++$count }}</td>
+                                <!-- Don't remove this column as it's needed for the row commands -->
+                                <td class="word-break">
                                     {{ $item->item_name }}
                                     @if(!is_null($item->item_summary))
-                                        <p class="item-summary descriptionFont">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                        <p class="item-summary descriptionFont word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                     @endif
                                     @if ($item->proposalItemImage)
                                         <p class="mt-2">
-                                            <img src="{{ $item->proposalItemImage->file_url }}" width="60" height="60" class="img-thumbnail">
+                                            <img src="{{ $item->proposalItemImage->file_url }}" width="60" height="60"
+                                                 class="img-thumbnail">
                                         </p>
                                     @endif
                                 </td>
                                 @if ($invoiceSetting->hsn_sac_code_show)
                                     <td>{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                                 @endif
-                                <td>{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
+                                <td>{{ $item->quantity }}@if($item->unit)
+                                        <br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>
+                                    @endif</td>
                                 <td>{{ currency_format($item->unit_price, $proposal->currency_id, false) }}</td>
                                 <td>{{ $item->tax_list }}</td>
                                 <td>{{ currency_format($item->amount, $proposal->currency_id, false) }}</td>
@@ -484,27 +528,35 @@
 
                 <table cellpadding="0" cellspacing="0">
                     <tr>
-                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5' : '4' }}">@lang("modules.invoices.subTotal"):</td>
+                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5' : '4' }}">@lang("modules.invoices.subTotal")
+                            :
+                        </td>
                         <td>{{ currency_format($proposal->sub_total, $proposal->currency_id, false) }}</td>
                     </tr>
                     @if($discount != 0 && $discount != '')
-                    <tr data-iterate="tax">
-                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">@lang("modules.invoices.discount"):</td>
-                        <td>-{{ currency_format($discount, $proposal->currency_id, false) }}</td>
-                    </tr>
+                        <tr data-iterate="tax">
+                            <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">@lang("modules.invoices.discount"):
+                                @if($proposal->discount_type == 'percent')
+                                    {{$proposal->discount}}%
+                                @else
+                                    {{ currency_format($proposal->discount, $proposal->currency_id) }}
+                                @endif
+                            </td>
+                            <td>-{{ currency_format($discount, $proposal->currency_id, false) }}</td>
+                        </tr>
                     @endif
                     @foreach($taxes as $key=>$tax)
-                    <tr data-iterate="tax">
-                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">{{ $key }}:</td>
-                        <td>{{ currency_format($tax, $proposal->currency_id, false) }}</td>
-                    </tr>
+                        <tr data-iterate="tax">
+                            <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">{{ $key }}:</td>
+                            <td>{{ currency_format($tax, $proposal->currency_id, false) }}</td>
+                        </tr>
                     @endforeach
                     <tr class="amount-total">
                         <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">
                             @lang("modules.invoices.total"):
                         </td>
                         <td>
-                            {{ currency_format($proposal->total, $proposal->currency_id, false) }} {!! htmlentities($proposal->currency->currency_code) !!}
+                            {{ currency_format($proposal->total, $proposal->currency_id, false) }}
                         </td>
                     </tr>
                 </table>
@@ -520,8 +572,14 @@
                 <div class="word-break item-summary">@lang('app.note') <br>{!! nl2br($proposal->note) !!}</div>
             @endif
 
-            <div class="word-break item-summary">@lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}</div>
+            <div class="word-break item-summary">@lang('modules.invoiceSettings.invoiceTerms')
+                <br>{!! nl2br($invoiceSetting->invoice_terms) !!}</div>
 
+            @if (isset($invoiceSetting->other_info))
+                <div class="word-break item-summary description">
+                    {!! nl2br($invoiceSetting->other_info) !!}
+                </div>
+            @endif
         </section>
 
         @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)

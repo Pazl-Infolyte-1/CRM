@@ -13,88 +13,101 @@
         <x-form id="save-ticket-data-form">
             <input type="hidden" id="replyID">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.tickets.ticketDetail')</h4>
                 <div class="row p-20">
-                    @if (!in_array('client', user_roles()))
-                        @if ($addPermission == 'all')
-                            @if (!(isset($client)) && !(isset($employee)) && in_array('clients', user_modules()) && in_array('employees', user_modules()))
-                                <div class="col-md-4">
-                                    <div class="form-group my-3">
-                                        <x-forms.label fieldId="requester-client"
-                                                       :fieldLabel="__('modules.tickets.requester')"/>
-                                        <div class="d-flex">
-                                            <x-forms.radio fieldId="requester-client" :fieldLabel="__('app.client')"
-                                                           fieldName="requester_type" fieldValue="client"
-                                                           checked="true">
-                                            </x-forms.radio>
-                                            <x-forms.radio fieldId="requester-employee" :fieldLabel="__('app.employee')"
-                                                           fieldValue="employee"
-                                                           fieldName="requester_type"></x-forms.radio>
+                    @if(!isset($defaultAssign))
+                        @if (!in_array('client', user_roles()))
+                            @if ($addPermission == 'all')
+                                @if (!(isset($client)) && !(isset($employee)) && in_array('clients', user_modules()) && in_array('employees', user_modules()))
+                                    <div class="col-md-4">
+                                        <div class="form-group my-3">
+                                            <x-forms.label fieldId="requester-client"
+                                                        :fieldLabel="__('modules.tickets.requester')"/>
+                                            <div class="d-flex">
+                                                <x-forms.radio fieldId="requester-client" :fieldLabel="__('app.client')"
+                                                            fieldName="requester_type" fieldValue="client"
+                                                            checked="true">
+                                                </x-forms.radio>
+                                                <x-forms.radio fieldId="requester-employee" :fieldLabel="__('app.employee')"
+                                                            fieldValue="employee"
+                                                            fieldName="requester_type"></x-forms.radio>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            @elseif(!in_array('employees', user_modules()))
-                                <input type="hidden" name="requester_type" id="requester_type" value="client">
-                            @elseif(!in_array('clients', user_modules()))
-                                <input type="hidden" name="requester_type" id="requester_type" value="employee">
-                            @endif
-                            <input type = "hidden" name = "mention_user_ids" id = "mentionUserId" class ="mention_user_ids">
-
-                            <div class="col-md-4  @if (isset($employee) || !in_array('clients', user_modules())) d-none @endif " id="client-requester">
-                                @if (isset($client) && !is_null($client))
-                                    <x-forms.label fieldId="requester-client" class="mt-3"
-                                                   :fieldLabel="__('modules.tickets.requesterName')"/>
+                                @elseif(!in_array('employees', user_modules()))
                                     <input type="hidden" name="requester_type" id="requester_type" value="client">
-                                    <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                                    <input type="text" value="{{ $client->name }}"
-                                           class="form-control height-35 f-15 readonly-background" readonly>
-                                @else
-                                    <x-forms.select fieldId="client_id"
-                                                    :fieldLabel="__('modules.tickets.requesterName')"
-                                                    fieldName="client_id"
-                                                    search="true" alignRight="true" fieldRequired="true">
-                                        <option value="">--</option>
-                                        @foreach ($clients as $client)
-                                            <x-user-option :user="$client" :additionalText="$client->clientDetails->company_name" />
-                                        @endforeach
-                                    </x-forms.select>
-                                @endif
-                            </div>
-
-                            <div class="col-md-4 @if (!(isset($employee)) && in_array('clients', user_modules())) d-none @endif" id="employee-requester">
-                                @if(isset($employee) && !is_null($employee))
-                                    <x-forms.label class="my-3" fieldId="requestuser_id"
-                                                   :fieldLabel="__('modules.tickets.requesterName')"
-                                                   fieldRequired="true">
-                                    </x-forms.label>
+                                @elseif(!in_array('clients', user_modules()))
                                     <input type="hidden" name="requester_type" id="requester_type" value="employee">
-                                    <input type="hidden" name="user_id" id="user_id" value="{{ $employee->id }}">
-                                    <input type="text" value="{{ $employee->name }}"
-                                           class="form-control height-35 f-15 readonly-background" readonly>
-                                @else
-                                    <x-forms.label class="my-3" fieldId="requestuser_id"
-                                                   :fieldLabel="__('modules.tickets.requesterName')"
-                                                   fieldRequired="true">
-                                    </x-forms.label>
-                                    <x-forms.input-group>
-                                        <select class="form-control select-picker" name="user_id" id="user_id"
-                                                data-live-search="true" data-size="8">
-                                            <option value="">--</option>
-                                            @foreach ($employees as $employee)
-                                                <x-user-option :user="$employee" />
-                                            @endforeach
-                                        </select>
-                                    </x-forms.input-group>
                                 @endif
-                            </div>
+                                <input type = "hidden" name = "mention_user_ids" id = "mentionUserId" class ="mention_user_ids">
+
+                                <div class="col-md-4  @if (isset($employee) || !in_array('clients', user_modules())) d-none @endif " id="client-requester">
+                                    @if (isset($client) && !is_null($client))
+                                        <x-forms.label fieldId="requester-client" class="mt-3"
+                                                    :fieldLabel="__('modules.tickets.requesterName')"/>
+                                        <input type="hidden" name="requester_type" id="requester_type" value="client">
+                                        <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
+                                        <input type="text" value="{{ $client->name_salutation }}"
+                                            class="form-control height-35 f-15 readonly-background" readonly>
+                                    @else
+                                        <x-forms.select fieldId="client_id"
+                                                        :fieldLabel="__('modules.tickets.requesterName')"
+                                                        fieldName="client_id"
+                                                        search="true" alignRight="true" fieldRequired="true">
+                                            <option value="">--</option>
+                                            @foreach ($clients as $client)
+                                                <x-user-option :user="$client" :additionalText="$client->clientDetails->company_name" />
+                                            @endforeach
+                                        </x-forms.select>
+                                    @endif
+                                </div>
+
+                                <div class="col-md-4 @if (!(isset($employee)) && in_array('clients', user_modules())) d-none @endif" id="employee-requester">
+                                    @if(isset($employee) && !is_null($employee))
+                                        <x-forms.label class="my-3" fieldId="requestuser_id"
+                                                    :fieldLabel="__('modules.tickets.requesterName')"
+                                                    fieldRequired="true">
+                                        </x-forms.label>
+                                        <input type="hidden" name="requester_type" id="requester_type" value="employee">
+                                        <input type="hidden" name="user_id" id="user_id" value="{{ $employee->id }}">
+                                        <input type="text" value="{{ $employee->name }}"
+                                            class="form-control height-35 f-15 readonly-background" readonly>
+                                    @else
+                                        <x-forms.label class="my-3" fieldId="requestuser_id"
+                                                    :fieldLabel="__('modules.tickets.requesterName')"
+                                                    fieldRequired="true">
+                                        </x-forms.label>
+                                        <x-forms.input-group>
+                                            <select class="form-control select-picker" name="user_id" id="user_id"
+                                                    data-live-search="true" data-size="8">
+                                                <option value="">--</option>
+                                                @foreach ($employees as $employee)
+                                                    <x-user-option :user="$employee" />
+                                                @endforeach
+                                            </select>
+                                        </x-forms.input-group>
+                                    @endif
+                                </div>
+                            @else
+                                <input type="hidden" name="requester_type" value="employee">
+                                <input type="hidden" id="user_id" name="user_id" value="{{ user()->id }}">
+                            @endif
                         @else
-                            <input type="hidden" name="requester_type" value="employee">
-                            <input type="hidden" id="user_id" name="user_id" value="{{ user()->id }}">
+                            <input type="hidden" name="requester_type" value="client">
+                            <input type="hidden" id="client_id" name="client_id" value="{{ user()->id }}">
                         @endif
                     @else
-                        <input type="hidden" name="requester_type" value="client">
-                        <input type="hidden" id="client_id" name="client_id" value="{{ user()->id }}">
+                        <div class="col-md-4" id="employee-requester">
+                            <x-forms.label class="my-3" fieldId="requestuser_id"
+                                        :fieldLabel="__('modules.tickets.requesterName')"
+                                        fieldRequired="true">
+                            </x-forms.label>
+                            <input type="hidden" name="requester_type" id="requester_type" value="employee">
+                            <input type="hidden" name="user_id" id="user_id" value="{{ $defaultAssign->id }}">
+                            <input type="text" value="{{ $defaultAssign->name }}"
+                                class="form-control height-35 f-15 readonly-background" readonly>
+                        </div>
                     @endif
                     <div class="col-md-4 assign_group">
                         <x-forms.label class="mt-3" fieldId="ticket_group" fieldRequired="true"
@@ -154,6 +167,28 @@
                             <option value="">--</option>
                         </x-forms.select>
                     </div>
+
+                    <div class="col-md-6 col-lg-4">
+                        <x-forms.label class="my-3" fieldId="ticket_type_id" :fieldLabel="__('modules.invoices.type')">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker" name="type_id" id="ticket_type_id"
+                                    data-live-search="true" data-size="8">
+                                <option value="">--</option>
+                                @foreach ($types as $type)
+                                    <option value="{{ $type->id }}">{{ $type->type }}</option>
+                                @endforeach
+                            </select>
+                            @if ($manageTypePermission == 'all')
+                                <x-slot name="append">
+                                    <button id="add-type" type="button"
+                                            class="btn btn-outline-secondary border-grey"
+                                            data-toggle="tooltip" data-original-title="{{ __('app.addNew').' '.__('modules.tickets.ticketType') }}">@lang('app.add')</button>
+                                </x-slot>
+                            @endif
+                        </x-forms.input-group>
+                    </div>
+
                     <div class="col-md-12">
                         <x-forms.text :fieldLabel="__('modules.tickets.ticketSubject')" fieldName="subject"
                                       fieldRequired="true" fieldId="subject"/>
@@ -185,7 +220,7 @@
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-top-grey">
                     <a href="javascript:;" class="text-dark toggle-other-details"><i class="fa fa-chevron-down"></i>
                         @lang('modules.client.clientOtherDetails')</a>
                 </h4>
@@ -204,27 +239,6 @@
                             <option data-content="<i class='fa fa-circle mr-2 text-red'></i> {{ __('app.urgent')}}"
                                 value="urgent">@lang('app.urgent')</option>
                         </x-forms.select>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <x-forms.label class="my-3" fieldId="ticket_type_id" :fieldLabel="__('modules.invoices.type')">
-                        </x-forms.label>
-                        <x-forms.input-group>
-                            <select class="form-control select-picker" name="type_id" id="ticket_type_id"
-                                    data-live-search="true" data-size="8">
-                                <option value="">--</option>
-                                @foreach ($types as $type)
-                                    <option value="{{ $type->id }}">{{ $type->type }}</option>
-                                @endforeach
-                            </select>
-                            @if ($manageTypePermission == 'all')
-                                <x-slot name="append">
-                                    <button id="add-type" type="button"
-                                            class="btn btn-outline-secondary border-grey"
-                                            data-toggle="tooltip" data-original-title="{{ __('app.addNew').' '.__('modules.tickets.ticketType') }}">@lang('app.add')</button>
-                                </x-slot>
-                            @endif
-                        </x-forms.input-group>
                     </div>
 
                     <div class="col-md-6 col-lg-4">
@@ -284,9 +298,11 @@
 
         getAgents($('#ticket_group').val());
 
-        function getAgents(groupId){
-            var url = "{{ route('tickets.agent_group', ':id')}}";
+        function getAgents(groupId, exceptThis = null){
+            var url = "{{ route('tickets.agent_group', [':id', ':exceptThis'])}}";
             url = url.replace(':id', groupId);
+            url = url.replace(':exceptThis', exceptThis);
+
             $.easyAjax({
                 url: url,
                 type: "GET",
@@ -318,7 +334,20 @@
 
         $('#ticket_group').change(function(){
             var id = $(this).val();
-            getAgents(id)
+            let requesterName = $('#user_id').val() || $('#client_id').val();
+            getAgents(id, requesterName)
+        })
+
+        $('#user_id').change(function(){
+            let id = $('#ticket_group').val();
+            let requesterName =  $('#user_id').val();
+            getAgents(id, requesterName)
+        })
+
+        $('#client_id').change(function(){
+            let id = $('#ticket_group').val();
+            let requesterName =  $('#client_id').val();
+            getAgents(id, requesterName)
         })
 
         //Dropzone class
@@ -529,8 +558,12 @@
             $.ajaxModal(MODAL_LG, url);
         });
 
+        let isProjectModuleEnabled = {{ in_array('projects', user_modules()) ? 'true' : 'false' }};
+
         $('body').on('change', "input[name=requester_type], #client_id, #user_id", function () {
-            getProjects();
+            if (isProjectModuleEnabled) {
+                getProjects();
+            }
         });
 
         function getProjects() {
@@ -574,7 +607,10 @@
 
         }
 
-        getProjects();
+        if (isProjectModuleEnabled) {
+            getProjects();
+        }
+
         init(RIGHT_MODAL);
     });
 </script>

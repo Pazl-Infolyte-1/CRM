@@ -17,7 +17,7 @@ class NewProjectEvent
     public $notifyUser;
     public $notificationName;
 
-    public function __construct(Project $project, $notifyUser, $notificationName, $projectStatus=null)
+    public function __construct(Project $project, $notifyUser, $notificationName, $projectStatus = null)
     {
 
         $this->project = $project;

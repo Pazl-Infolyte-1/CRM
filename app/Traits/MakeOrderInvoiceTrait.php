@@ -4,10 +4,8 @@ namespace App\Traits;
 
 use App\Models\Order;
 use App\Models\Invoice;
-use App\Models\Payment;
 use App\Models\OrderItems;
 use App\Models\InvoiceItems;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
 trait MakeOrderInvoiceTrait
@@ -16,8 +14,8 @@ trait MakeOrderInvoiceTrait
     /**
      * makeOrderInvoice to generate order's invoice and return invoice.
      *
-     * @param  Order|Collection $order
-     * @param  string $status
+     * @param Order|Collection $order
+     * @param string $status
      * @return Invoice $invoice
      */
 
@@ -27,11 +25,11 @@ trait MakeOrderInvoiceTrait
         $order->status = $status;
         $order->save();
 
-        if($order->invoice)
-        {
+        if ($order->invoice) {
             /** @phpstan-ignore-next-line */
             $order->invoice->status = $status == 'completed' ? 'paid' : 'unpaid';
             $order->push();
+
             return $order->invoice;
         }
 
@@ -56,17 +54,17 @@ trait MakeOrderInvoiceTrait
         /* Make invoice items */
         $orderItems = OrderItems::where('order_id', $order->id)->get();
 
-        foreach ($orderItems as $item){
+        foreach ($orderItems as $item) {
             InvoiceItems::create(
                 [
-                    'invoice_id'   => $invoice->id,
-                    'item_name'    => $item->item_name,
+                    'invoice_id' => $invoice->id,
+                    'item_name' => $item->item_name,
                     'item_summary' => $item->item_summary,
-                    'type'         => 'item',
-                    'quantity'     => $item->quantity,
-                    'unit_price'   => $item->unit_price,
-                    'amount'       => $item->amount,
-                    'taxes'        => $item->taxes,
+                    'type' => 'item',
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'amount' => $item->amount,
+                    'taxes' => $item->taxes,
                     'product_id' => $item->product_id,
                     'unit_id' => $item->unit_id
                 ]

@@ -80,7 +80,7 @@ class ProjectTemplate extends BaseModel
 
     public function tasks(): HasMany
     {
-        return $this->hasMany(ProjectTemplateTask::class, 'project_template_id')->orderBy('id', 'desc');
+        return $this->hasMany(ProjectTemplateTask::class, 'project_template_id')->orderByDesc('id');
     }
 
     /**

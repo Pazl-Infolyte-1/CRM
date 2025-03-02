@@ -19,6 +19,21 @@ $addTimelogPermission = user()->permission('add_timelogs');
 
             <form action="" class="flex-grow-1 " id="filter-form">
                 <div class="d-block d-lg-flex d-md-flex my-3">
+                    <!-- Employees START -->
+                    <div class="select-box py-2 px-0 mr-3">
+                        <x-forms.label :fieldLabel="__('app.employee')" fieldId="employee" />
+                            <select class="form-control select-picker" name="employee" id="employee" data-live-search="true"
+                                    data-size="8">
+                                @if ($employees->count() > 1 || in_array('admin', user_roles()))
+                                    <option value="all">@lang('app.all')</option>
+                                @endif
+                                @foreach ($employees as $employee)
+                                        <x-user-option :user="$employee" :selected="request('assignee') == 'me' && $employee->id == user()->id"/>
+                                @endforeach
+                            </select>
+                    </div>
+                    <!-- Employees END -->
+
                     <!-- STATUS START -->
                     <div class="select-box py-2 px-0 mr-3">
                         <x-forms.label :fieldLabel="__('app.status')" fieldId="status" />
@@ -105,21 +120,26 @@ $addTimelogPermission = user()->permission('add_timelogs');
         var projectID = "{{ $project->id }}";
         var approved = $('#status').val();
         var invoice = $('#invoice_generate').val();
+        var employee = $('#employee').val();
         var searchText = $('#search-text-field').val();
 
         data['projectId'] = projectID;
         data['approved'] = approved;
         data['invoice'] = invoice;
+        data['employee'] = employee;
         data['searchText'] = searchText;
         data['project_admin'] = "{{ ($project->project_admin == user()->id) ? 1 : 0 }}";
     });
     const showTable = () => {
-        window.LaravelDataTables["timelogs-table"].draw(false);
+        window.LaravelDataTables["timelogs-table"].draw(true);
     }
 
     $('#project_id, #employee, #status, #invoice_generate').on('change keyup',
         function() {
             if ($('#status').val() != "all") {
+                $('#reset-filters').removeClass('d-none');
+                showTable();
+            }  else if ($('#employee').val() != "all") {
                 $('#reset-filters').removeClass('d-none');
                 showTable();
             } else if ($('#invoice_generate').val() != "all") {

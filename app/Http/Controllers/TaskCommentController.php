@@ -46,7 +46,7 @@ class TaskCommentController extends AccountBaseController
         $comment->user_id = user()->id;
         $comment->save();
 
-        $this->comments = TaskComment::with('user', 'task', 'like', 'dislike', 'likeUsers', 'dislikeUsers')->where('task_id', $request->taskId)->orderBy('id', 'desc')->get();
+        $this->comments = TaskComment::with('user', 'task', 'like', 'dislike', 'likeUsers', 'dislikeUsers')->where('task_id', $request->taskId)->orderByDesc('id')->get();
 
         $view = view('tasks.comments.show', $this->data)->render();
 
@@ -69,7 +69,7 @@ class TaskCommentController extends AccountBaseController
         $comment_task_id = $comment->task_id;
         $comment->delete();
 
-        $this->comments = TaskComment::with('user', 'task', 'like', 'dislike', 'likeUsers', 'dislikeUsers')->where('task_id', $comment_task_id)->orderBy('id', 'desc')->get();
+        $this->comments = TaskComment::with('user', 'task', 'like', 'dislike', 'likeUsers', 'dislikeUsers')->where('task_id', $comment_task_id)->orderByDesc('id')->get();
 
         $view = view('tasks.comments.show', $this->data)->render();
 
@@ -113,7 +113,7 @@ class TaskCommentController extends AccountBaseController
         $comment->comment = $request->comment;
         $comment->save();
 
-        $this->comments = TaskComment::with('user', 'task', 'like', 'dislike', 'likeUsers', 'dislikeUsers')->where('task_id', $comment->task_id)->orderBy('id', 'desc')->get();
+        $this->comments = TaskComment::with('user', 'task', 'like', 'dislike', 'likeUsers', 'dislikeUsers')->where('task_id', $comment->task_id)->orderByDesc('id')->get();
 
         $view = view('tasks.comments.show', $this->data)->render();
 

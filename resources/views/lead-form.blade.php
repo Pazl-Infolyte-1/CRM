@@ -52,7 +52,7 @@
         }
 
         img {
-            width: 50px;
+            height: 50px;
             margin-top: 20px;
         }
 
@@ -75,13 +75,13 @@
 <![endif]-->
 
 
-<body><!-- change dark theme class according to application dark theme setting -->
+<body class="{{ isRtl('rtl') }}"><!-- change dark theme class according to application dark theme setting -->
 
 <div class="box">
 
     <div class="@if($styled == 1) col-md-6 @else col-md-12 @endif">
         @if($withLogo == 1)
-            <div class="text-center">
+            <div class="mb-2 text-center">
                 <img src="{{ $company->logo_url }}" alt="{{ $company->company_name }}"
                      class="text-center" height="50px"/>
             </div>
@@ -109,7 +109,7 @@
                                         @endif
                                     </div>
 
-                                    @elseif ($item->field_name == 'country')
+                                @elseif ($item->field_name == 'country')
                                     <div class="col-md-6">
                                         <x-forms.select fieldId="country"
                                                         :fieldLabel="__('modules.leads.'.$item->field_name)"
@@ -124,7 +124,7 @@
                                             @endforeach
                                         </x-forms.select>
                                     </div>
-                                    @elseif($item->field_name == 'source')
+                                @elseif($item->field_name == 'source')
                                     <div class="col-md-6">
                                         <x-forms.select fieldId="source"
                                                         :fieldLabel="__('modules.lead.'.$item->field_name)"
@@ -134,7 +134,7 @@
                                             <option value="">--</option>
                                             @foreach ($sources as $source)
                                                 <option
-                                                        value="{{ $source->id }}">{{ $source->type }}</option>
+                                                    value="{{ $source->id }}">{{ $source->type }}</option>
                                             @endforeach
                                         </x-forms.select>
                                     </div>
@@ -157,7 +157,7 @@
                                     </div>
                                 @endif
                             @else
-                            @if(isset($item->customField->type) && $item->customField->type == 'text')
+                                @if(isset($item->customField->type) && $item->customField->type == 'text')
                                     <div class="col-md-6">
                                         <x-forms.text
                                             fieldId="custom_fields_data[{{ $item->field_name . '_' . $item->customField->id }}]"
@@ -196,7 +196,7 @@
                                     </div>
                                 @elseif($item->customField->type == 'radio')
                                     <div class="col-md-6">
-                                        <div class="form-group my-3">
+                                        <div class="my-3 form-group">
                                             <x-forms.label
                                                 fieldId="custom_fields_data[{{ $item->field_name . '_' . $item->customField->id }}]"
                                                 :fieldLabel="$item->field_display_name"
@@ -215,7 +215,7 @@
                                     </div>
                                 @elseif($item->customField->type == 'select')
                                     <div class="col-md-6">
-                                        <div class="form-group my-3">
+                                        <div class="my-3 form-group">
                                             <x-forms.select
                                                 fieldId="custom_fields_data[{{ $item->field_name . '_' . $item->customField->id }}]"
                                                 :fieldLabel="$item->field_display_name"
@@ -241,7 +241,7 @@
                                     </div>
                                 @elseif($item->customField->type == 'checkbox')
                                     <div class="col-md-6">
-                                        <div class="form-group my-3">
+                                        <div class="my-3 form-group">
                                             <x-forms.label
                                                 fieldId="custom_fields_data[{{ $item->field_name . '_' . $item->customField->id }}]"
                                                 :fieldLabel="$item->field_display_name"
@@ -265,7 +265,8 @@
                                     </div>
                                 @elseif ($item->customField->type == 'file')
                                     <div class="col-md-6">
-                                        <input type="hidden" name="custom_fields_data[{{$item->field_name.'_'.$item->customField->id}}]" >
+                                        <input type="hidden"
+                                               name="custom_fields_data[{{$item->field_name.'_'.$item->customField->id}}]">
                                         <x-forms.file
                                             :fieldLabel="$item->field_display_name"
                                             :fieldRequired="($item->required === 1) ? true : false"
@@ -279,7 +280,7 @@
                         @endforeach
 
                         @if($globalSetting->google_recaptcha_status == 'active' && $globalSetting->google_recaptcha_v2_status == 'active')
-                            <div class="col-md-12 col-lg-12 mt-2 mb-2" id="captcha_container"></div>
+                            <div class="mt-2 mb-2 col-md-12 col-lg-12" id="captcha_container"></div>
                         @endif
 
                         {{-- This is used for google captcha v3 --}}
@@ -293,10 +294,11 @@
                 </div>
                 <br><br>
                 <input type="hidden" name="company_id" value="{{ $company->id }}">
+                <input type="hidden" name="category_id" value="{{ $category->id }}">
                 <div class="form-actions">
                     <button type="button" id="save-form" class="btn btn-primary"><i
                             class="fa fa-check"></i> @lang('app.save')</button>
-                    <button type="reset" class="btn btn-secondary ml-3">@lang('app.reset')</button>
+                    <button type="reset" class="ml-3 btn btn-secondary">@lang('app.reset')</button>
                 </div>
             </x-form>
 
@@ -335,10 +337,18 @@
         error: "@lang('messages.errorOccured')",
     };
 
+    function checkboxChange(checkboxClass, hiddenFieldId) {
+        const selectedValues = $(`.${checkboxClass} input:checked`).map(function() {
+            return $(this).val();
+        }).get();
+
+        $(`#${hiddenFieldId}`).val(selectedValues.join(','));
+    }
+
     $(window).on('load', function () {
         // Animate loader off screen
         init();
-        $(".preloader-container").fadeOut("slow", function() {
+        $(".preloader-container").fadeOut("slow", function () {
             $(this).removeClass("d-flex");
         });
     });
@@ -358,7 +368,7 @@
 </script>
 <script>
 
-    $('.custom-date-picker').each(function(ind, el) {
+    $('.custom-date-picker').each(function (ind, el) {
         datepicker(el, {
             position: 'bl',
             ...datepickerConfig
@@ -388,13 +398,6 @@
         })
     });
 
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 </script>
 
 @if($globalSetting->google_recaptcha_status == 'active' && $globalSetting->google_recaptcha_v2_status == 'active')

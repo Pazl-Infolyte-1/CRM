@@ -3,7 +3,6 @@
 namespace App\Http\Requests\BankAccount;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAccount extends CoreRequest
 {

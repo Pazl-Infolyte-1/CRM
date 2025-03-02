@@ -13,12 +13,12 @@ class BirthdayReminderListener
     /**
      * Handle the event.
      *
-     * @param \App\Events\BirthdayReminderEvent $event
+     * @param BirthdayReminderEvent $event
      * @return void
      */
     public function handle(BirthdayReminderEvent $event)
     {
-        $users = User::allEmployees(null, false, null, $event->company->id);
+        $users = User::allEmployees(null, true, null, $event->company->id);
 
         Notification::send($users, new BirthdayReminder($event));
     }

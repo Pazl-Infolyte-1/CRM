@@ -6,7 +6,7 @@
 @endphp
 
 @forelse ($task->subtasks as $subtask)
-<div class="card w-100 rounded-0 border-0 subtask mb-3">
+<div class="card w-100 rounded-0 border-0 subtask mb-1">
 
     <div class="card-horizontal">
         <div class="d-flex">
@@ -28,7 +28,7 @@
                 </p>
                 <div class="dropdown ml-auto subtask-action">
                     <button
-                        class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                        class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fa fa-ellipsis-h"></i>
                     </button>
@@ -60,16 +60,12 @@
                     @foreach ($subtask->files as $file)
                         <x-file-card :fileName="$file->filename"
                             :dateAdded="$file->created_at->diffForHumans()">
-                            @if ($file->icon == 'images')
-                                <img src="{{ $file->file_url }}">
-                            @else
-                                <i class="fa {{ $file->icon }} text-lightest"></i>
-                            @endif
+                            <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
 
                             <x-slot name="action">
                                 <div class="dropdown ml-auto file-action">
                                     <button
-                                        class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true"
                                         aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>

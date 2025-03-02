@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Events\AppreciationEvent;
 use App\Models\Appreciation;
-use App\Models\Award;
 use App\Models\Notification;
 
 class AppreciationObserver
@@ -12,7 +11,7 @@ class AppreciationObserver
 
     public function creating(Appreciation $userAppreciation)
     {
-        if(company()) {
+        if (company()) {
             $userAppreciation->company_id = company()->id;
         }
     }

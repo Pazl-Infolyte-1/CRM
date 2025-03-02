@@ -8,11 +8,10 @@ use App\Models\EmployeeShift;
 use App\Models\EmployeeShiftSchedule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Files\Filesystem;
 
 class EmployeeShiftScheduleObserver
 {
+    public static $isShiftRotation = false;
 
     public function saving(EmployeeShiftSchedule $employeeShiftSchedule)
     {
@@ -42,7 +41,7 @@ class EmployeeShiftScheduleObserver
 
     public function created(EmployeeShiftSchedule $employeeShiftSchedule)
     {
-        if (user()) {
+        if (user() && !self::$isShiftRotation) {
             event(new EmployeeShiftScheduleEvent($employeeShiftSchedule));
         }
 

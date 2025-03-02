@@ -29,7 +29,7 @@ class CreateInviteLinkRequest extends FormRequest
         ];
 
         if ($this->allow_email === 'selected') {
-            $rules['email_domain'] = 'required|regex:/^[a-z0-9]+\.[a-z0-9]+$/i';
+            $rules['email_domain'] = 'required|regex:/^(?!:\/\/)(?=.{1,255}$)((.{1,63}\.){1,127}(?![0-9]*$)[a-z0-9-]+\.?)$/i';
         }
 
         return $rules;

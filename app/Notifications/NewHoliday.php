@@ -3,13 +3,10 @@
 namespace App\Notifications;
 
 use App\Models\Holiday;
-use Illuminate\Bus\Queueable;
 use App\Models\EmailNotificationSetting;
-use Illuminate\Notifications\Messages\SlackMessage;
 
 class NewHoliday extends BaseNotification
 {
-    use Queueable;
 
     /**
      * Create a new notification instance.
@@ -23,41 +20,87 @@ class NewHoliday extends BaseNotification
     {
         $this->holiday = $holiday;
         $this->company = $this->holiday->company;
-        $this->emailSetting = EmailNotificationSetting::where('company_id', $this->company->id)->where('slug', 'holiday-notification')->first();
+        $this->emailSetting = EmailNotificationSetting::where('company_id', $this->company->id)
+                                ->where('slug', 'holiday-notification')
+                                ->first();
     }
 
     /**
      * Get the notification's delivery channels.
      *
+     * @param mixed $notifiable
      * @return array
      */
-    public function via()
+    public function via($notifiable)
     {
-        $via = [];
+        $via = ['database'];
+
+        if ($this->emailSetting->send_email == 'yes' && $notifiable->email_notifications && $notifiable->email != '') {
+            array_push($via, 'mail');
+        }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.holidays.subject'), $this->holiday->occassion);
         }
 
         return $via;
     }
 
+    /**
+     * @param mixed $notifiable
+     * @return MailMessage
+     * @throws \Exception
+     */
+    public function toMail($notifiable)
+    {
+        $build = parent::build($notifiable);
+
+        $url = route('holidays.show', $this->holiday->id);
+        $url = getDomainSpecificUrl($url, $this->company);
+
+        $content = __('email.holidays.text') . '<br><br>' . __('app.occassion') . ': <strong>' . $this->holiday->occassion . '</strong><br>' . __('app.date') . ': <strong>' . $this->holiday->date->translatedFormat($this->company->date_format) . '</strong>';
+
+        $build->subject(__('email.holidays.subject') . ' - ' . config('app.name'))
+            ->markdown('mail.email', [
+                'url' => $url,
+                'content' => $content,
+                'themeColor' => $this->company->header_color,
+                'actionText' => __('email.leaves.action'),
+                'notifiableName' => $notifiable->name
+            ]);
+
+        parent::resetLocale();
+
+        return $build;
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @param mixed $notifiable
+     * @return array
+     */
+    //phpcs:ignore
+    public function toArray($notifiable)
+    {
+        return [
+            'id' => $this->holiday->id,
+            'holiday_date' => $this->holiday->date->format('Y-m-d H:i:s'),
+            'holiday_name' => $this->holiday->occassion
+        ];
+    }
+
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
+        return $this->slackBuild($notifiable)
+            ->content(__('email.holidays.subject') . "\n" . $notifiable->name . "\n" . '*' . __('app.date') . '*: ' . $this->holiday->date->format($this->company->date_format) . "\n" . __('modules.holiday.occasion') . ': ' . $this->holiday->occassion);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content(__('email.holidays.subject') . "\n" . $notifiable->name . "\n" . '*' . __('app.date') . '*: ' . $this->holiday->date->format($this->company->date_format) . "\n" . __('modules.holiday.occasion') . ': ' .  $this->holiday->occassion);
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.holidays.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
 }

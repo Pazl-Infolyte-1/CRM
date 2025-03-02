@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,7 +17,7 @@ class FileStorageCustomConfigProvider extends ServiceProvider
             switch ($setting->filesystem) {
 
             case 'aws_s3':
-                $authKeys = json_decode($setting->auth_keys);
+                $authKeys = json_decode(Crypt::decryptString($setting->auth_keys));
                 $driver = $authKeys->driver;
                 $key = $authKeys->key;
                 $secret = $authKeys->secret;
@@ -32,7 +33,7 @@ class FileStorageCustomConfigProvider extends ServiceProvider
 
 
             case 'digitalocean':
-                $authKeys = json_decode($setting->auth_keys);
+                $authKeys = json_decode(Crypt::decryptString($setting->auth_keys));
                 $driver = $authKeys->driver;
                 $key = $authKeys->key;
                 $secret = $authKeys->secret;
@@ -48,7 +49,7 @@ class FileStorageCustomConfigProvider extends ServiceProvider
                 break;
 
             case 'wasabi':
-                $authKeys = json_decode($setting->auth_keys);
+                $authKeys = json_decode(Crypt::decryptString($setting->auth_keys));
                 $driver = $authKeys->driver;
                 $key = $authKeys->key;
                 $secret = $authKeys->secret;
@@ -63,7 +64,7 @@ class FileStorageCustomConfigProvider extends ServiceProvider
                 config(['filesystems.disks.wasabi.endpoint' => 'https://s3.' . $region . '.wasabisys.com']);
                 break;
             case 'minio':
-                $authKeys = json_decode($setting->auth_keys);
+                $authKeys = json_decode(Crypt::decryptString($setting->auth_keys));
                 $driver = $authKeys->driver;
                 $key = $authKeys->key;
                 $secret = $authKeys->secret;

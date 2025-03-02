@@ -31,6 +31,9 @@ class ClearNullSessions extends Command
     public function handle()
     {
         Session::whereNull('user_id')->delete();
+        $this->info('Session deleted');
+
+        return Command::SUCCESS;
     }
 
 }

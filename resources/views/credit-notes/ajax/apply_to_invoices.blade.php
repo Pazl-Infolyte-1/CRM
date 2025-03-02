@@ -8,7 +8,7 @@
     @if ($nonPaidInvoices->count() > 0)
         <!--  USER CARDS START -->
         <div class="col-lg-12 col-md-12 mb-4 mb-xl-0 mb-lg-4 mb-md-0">
-            <h4 class="my-3 f-21 text-capitalize font-weight-bold">{{ $creditNote->cn_number }}</h4>
+            <h4 class="my-3 f-21  font-weight-bold">{{ $creditNote->cn_number }}</h4>
 
             <div class="row">
 
@@ -26,7 +26,7 @@
                         <div class="row">
                             <div class="col-10">
                                 <h4 class="card-title f-15 f-w-500 text-darkest-grey mb-0">
-                                    {{ $creditNote->client->name }}
+                                    {{ $creditNote->client->name_salutation }}
                                 </h4>
                             </div>
                         </div>
@@ -47,8 +47,8 @@
             </div>
 
 
-            <h4 class="mt-5 mb-3 f-21 text-capitalize font-weight-bold">@lang('app.client') @lang('app.unpaid')
-                @lang('app.menu.invoices')</h4>
+            <h4 class="mt-5 mb-3 f-21  font-weight-bold">@lang('app.clientUnpaidInvoices')
+               </h4>
 
             <x-cards.data padding="false">
                 <div class="table-responsive">

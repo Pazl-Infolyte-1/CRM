@@ -43,7 +43,7 @@
         data['projectID'] = projectID;
     });
     const showTable = () => {
-        window.LaravelDataTables["project-notes-table"].draw(false);
+        window.LaravelDataTables["project-notes-table"].draw(true);
     }
 
     $('#quick-action-type').change(function() {

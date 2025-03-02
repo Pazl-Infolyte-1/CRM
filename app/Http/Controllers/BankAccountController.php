@@ -11,8 +11,6 @@ use App\Helper\Reply;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\Currency;
-use App\Models\Module;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -26,6 +24,7 @@ class BankAccountController extends AccountBaseController
         $this->pageTitle = __('app.menu.bankaccount');
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('bankaccount', $this->user->modules));
+
             return $next($request);
         });
     }
@@ -43,7 +42,7 @@ class BankAccountController extends AccountBaseController
 
         $bankDetails = BankAccount::select('*');
 
-        if($viewPermission == 'added'){
+        if ($viewPermission == 'added') {
             $bankDetails = $bankDetails->where('added_by', user()->id);
         }
 
@@ -66,12 +65,12 @@ class BankAccountController extends AccountBaseController
 
         $this->currencies = Currency::all();
 
+        $this->view = 'bank-account.ajax.create';
+
         if (request()->ajax()) {
-            $html = view('bank-account.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'bank-account.ajax.create';
         return view('bank-account.create', $this->data);
     }
 
@@ -81,18 +80,17 @@ class BankAccountController extends AccountBaseController
         abort_403(!in_array($this->addPermission, ['all']));
 
         $account = new BankAccount();
-        $account->type    = $request->type;
-        $account->account_name    = $request->account_name;
-        $account->account_type  = $request->account_type;
-        $account->currency_id     = $request->currency_id;
-        $account->contact_number  = $request->contact_number;
+        $account->type = $request->type;
+        $account->account_name = $request->account_name;
+        $account->account_type = $request->account_type;
+        $account->currency_id = $request->currency_id;
+        $account->contact_number = $request->contact_number;
         $account->opening_balance = round($request->opening_balance, 2);
-        $account->status          = $request->status;
+        $account->status = $request->status;
 
-        if($request->type == 'bank')
-        {
-            $account->bank_name    = $request->bank_name;
-            $account->account_number  = $request->account_number;
+        if ($request->type == 'bank') {
+            $account->bank_name = $request->bank_name;
+            $account->account_number = $request->account_number;
 
             if ($request->hasFile('bank_logo')) {
                 $account->bank_logo = Files::uploadLocalOrS3($request->bank_logo, BankAccount::FILE_PATH);
@@ -108,7 +106,7 @@ class BankAccountController extends AccountBaseController
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -124,7 +122,7 @@ class BankAccountController extends AccountBaseController
         $this->month = now(company()->timezone)->month;
         $this->year = now(company()->timezone)->year;
         $this->creditVsDebitChart = $this->creditVsDebitChart($id);
-        $this->recentTransactions = BankTransaction::where('bank_account_id', $id)->orderBy('transaction_date', 'desc')->orderBy('id', 'desc')->limit(15)->get();
+        $this->recentTransactions = BankTransaction::where('bank_account_id', $id)->orderByDesc('transaction_date')->orderByDesc('id')->limit(15)->get();
 
         $dataTable = new BankTransactionDataTable();
 
@@ -136,7 +134,7 @@ class BankAccountController extends AccountBaseController
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
@@ -150,12 +148,11 @@ class BankAccountController extends AccountBaseController
 
         $this->currencies = Currency::all();
 
-        if (request()->ajax()) {
-            $html = view('bank-account.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'bank-account.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('bank-account.create', $this->data);
     }
@@ -167,20 +164,19 @@ class BankAccountController extends AccountBaseController
 
         abort_403(!(
             $this->editPermission == 'all' || ($this->editPermission == 'added' && $account->added_by == user()->id)
-         ));
+        ));
 
-        $account->type    = $request->type;
-        $account->account_name    = $request->account_name;
-        $account->account_type  = $request->account_type;
-        $account->currency_id     = $request->currency_id;
-        $account->contact_number  = $request->contact_number;
+        $account->type = $request->type;
+        $account->account_name = $request->account_name;
+        $account->account_type = $request->account_type;
+        $account->currency_id = $request->currency_id;
+        $account->contact_number = $request->contact_number;
         $account->opening_balance = round($request->opening_balance, 2);
-        $account->status          = $request->status;
+        $account->status = $request->status;
 
-        if($request->type == 'bank')
-        {
-            $account->bank_name    = $request->bank_name;
-            $account->account_number  = $request->account_number;
+        if ($request->type == 'bank') {
+            $account->bank_name = $request->bank_name;
+            $account->account_number = $request->account_number;
 
             if ($request->bank_logo_delete == 'yes') {
                 Files::deleteFile($account->bank_logo, BankAccount::FILE_PATH);
@@ -202,7 +198,7 @@ class BankAccountController extends AccountBaseController
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
 
@@ -215,6 +211,7 @@ class BankAccountController extends AccountBaseController
         ));
 
         BankAccount::destroy($id);
+
         return Reply::successWithData(__('messages.deleteSuccess'), ['redirectUrl' => route('bankaccounts.index')]);
 
     }
@@ -229,7 +226,7 @@ class BankAccountController extends AccountBaseController
 
         abort_403(!(
             $this->editPermission == 'all' || ($this->editPermission == 'added' && $bankAccount->added_by == user()->id)
-         ));
+        ));
 
         $bankAccount->status = $status;
         $bankAccount->save();
@@ -242,9 +239,10 @@ class BankAccountController extends AccountBaseController
         switch (request()->action_type) {
         case 'delete':
             $this->deleteRecords(request());
-                return Reply::success(__('messages.deleteSuccess'));
+
+            return Reply::success(__('messages.deleteSuccess'));
         default:
-                return Reply::error(__('messages.selectAction'));
+            return Reply::error(__('messages.selectAction'));
         }
     }
 
@@ -259,10 +257,10 @@ class BankAccountController extends AccountBaseController
     {
         $this->type = request('type');
 
-        if($this->type == 'account') {
+        if ($this->type == 'account') {
             $this->addPermission = user()->permission('add_bank_transfer');
         }
-        elseif($this->type == 'deposit'){
+        elseif ($this->type == 'deposit') {
             $this->addPermission = user()->permission('add_bank_deposit');
         }
         else {
@@ -276,24 +274,25 @@ class BankAccountController extends AccountBaseController
 
         $this->currentAccount = BankAccount::findOrFail($this->accountId);
         $this->bankAccounts = BankAccount::where('id', '!=', $this->accountId)->where('company_id', company()->id)
-            ->where('currency_id', $this->currentAccount->currency_id)->where('status', 1)->get();
+            ->where('status', 1)->get();
 
-        if (request()->ajax()) {
-            $html = view('bank-account.ajax.create-transaction', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
 
         $this->view = 'bank-account.ajax.create-transaction';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
         return view('bank-account.create', $this->data);
     }
 
     public function storeTransaction(StoreTransaction $request)
     {
-        if($request->type == 'account') {
+        if ($request->type == 'account') {
             $this->addPermission = user()->permission('add_bank_transfer');
 
         }
-        elseif($request->type == 'deposit'){
+        elseif ($request->type == 'deposit') {
             $this->addPermission = user()->permission('add_bank_deposit');
         }
         else {
@@ -302,7 +301,7 @@ class BankAccountController extends AccountBaseController
 
         abort_403(!in_array($this->addPermission, ['all']));
 
-        if(!($request->type == 'deposit')){
+        if (!($request->type == 'deposit')) {
 
             $bankAccount = BankAccount::find($request->from_bank_account);
             $bankBalance = $bankAccount->bank_balance;
@@ -311,7 +310,7 @@ class BankAccountController extends AccountBaseController
             $transaction = new BankTransaction();
             $transaction->bank_account_id = $request->from_bank_account;
             $transaction->type = 'Dr';
-            $transaction->transaction_date = Carbon::now();
+            $transaction->transaction_date = now();
             $transaction->amount = round($request->amount, 2);
             $transaction->memo = $request->memo;
             $transaction->bank_balance = round($totalBalance, 2);
@@ -322,17 +321,17 @@ class BankAccountController extends AccountBaseController
             $id = $request->from_bank_account;
         }
 
-        if(!($request->type == 'withdraw')){
+        if (!($request->type == 'withdraw')) {
 
             $bankAccount = BankAccount::find($request->to_bank_account);
             $bankBalance = $bankAccount->bank_balance;
-            $totalBalance = $bankBalance + $request->amount;
+            $totalBalance = $bankBalance + $request->amount * ($request->exchange_rate ?? 1);
 
             $transaction = new BankTransaction();
             $transaction->bank_account_id = $request->to_bank_account;
             $transaction->type = 'Cr';
-            $transaction->transaction_date = Carbon::now();
-            $transaction->amount = round($request->amount, 2);
+            $transaction->transaction_date = now();
+            $transaction->amount = round($request->amount * ($request->exchange_rate ?? 1), 2);
             $transaction->memo = $request->memo;
             $transaction->bank_balance = round($totalBalance, 2);
             $transaction->transaction_relation = 'bank';
@@ -358,13 +357,13 @@ class BankAccountController extends AccountBaseController
 
         $this->type = $this->bankTransaction->transaction_relation;
 
+        $this->pageTitle = __('modules.bankaccount.bankTransaction');
+        $this->view = 'bank-account.ajax.view-transaction';
+
         if (request()->ajax()) {
-            $this->pageTitle = __('modules.bankaccount.bankTransaction');
-            $html = view('bank-account.ajax.view-transaction', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'bank-account.ajax.view-transaction';
         return view('bank-account.create', $this->data);
     }
 
@@ -377,6 +376,7 @@ class BankAccountController extends AccountBaseController
         ));
 
         BankTransaction::destroy($request->transactionId);
+
         return Reply::successWithData(__('messages.deleteSuccess'), ['redirectUrl' => route('bankaccounts.show', $bankTransaction->bank_account_id)]);
     }
 
@@ -385,9 +385,10 @@ class BankAccountController extends AccountBaseController
         switch (request()->action_type) {
         case 'delete':
             $this->deleteTransactionRecords(request());
-                return Reply::success(__('messages.deleteSuccess'));
+
+            return Reply::success(__('messages.deleteSuccess'));
         default:
-                return Reply::error(__('messages.selectAction'));
+            return Reply::error(__('messages.selectAction'));
         }
     }
 
@@ -404,6 +405,7 @@ class BankAccountController extends AccountBaseController
         abort_403(!in_array($this->generatePermission, ['all', 'added']));
 
         $this->accountId = $id;
+
         return view('bank-account.generate-statement', $this->data);
     }
 
@@ -418,11 +420,13 @@ class BankAccountController extends AccountBaseController
 
     public function domPdfObjectForDownload($request)
     {
-        $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
-        $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+        $startDate = companyToDateString($request->startDate);
+        $endDate = companyToDateString($request->endDate);
 
-        $this->statements = BankAccount::with(['transaction' => function ($q) use($startDate, $endDate){
-            $q->whereBetween('bank_transactions.transaction_date', [$startDate, $endDate]);
+        $this->statements = BankAccount::with(['transaction' => function ($q) use ($startDate, $endDate) {
+            $q->whereBetween('bank_transactions.transaction_date', [$startDate, $endDate])
+                ->orderBy('bank_transactions.transaction_date', 'desc')
+                ->orderBy('bank_transactions.created_at', 'desc');
         }])->where('id', $request->accountId)->first();
 
         $this->sDate = $request->startDate;
@@ -441,22 +445,25 @@ class BankAccountController extends AccountBaseController
     public function creditVsDebitChart($bankAccountId)
     {
 
-        $period = now()->subMonth(3)->monthsUntil(now());  /* @phpstan-ignore-line */
-        $startDate = $period->startDate->startOfMonth();  /* @phpstan-ignore-line */
-        $endDate = $period->endDate->endOfMonth();  /* @phpstan-ignore-line */
+        $period = now()->subMonth(3)->monthsUntil(now());
+        /* @phpstan-ignore-line */
+        $startDate = $period->startDate->startOfMonth();
+        /* @phpstan-ignore-line */
+        $endDate = $period->endDate->endOfMonth();
+        /* @phpstan-ignore-line */
 
         $months = [];
 
-        foreach($period as $periodData){
+        foreach ($period as $periodData) {
             $months[$periodData->format('m-Y')] = [
                 'y' => $periodData->translatedFormat('F'),
-                'a' => 0 ,
+                'a' => 0,
                 'b' => 0
             ];
         }
 
         $creditAmount = BankTransaction::whereDate('transaction_date', '>=', $startDate)
-            ->whereDate('transaction_date', '<=', $endDate )
+            ->whereDate('transaction_date', '<=', $endDate)
             ->where('type', 'Cr')
             ->where('bank_account_id', $bankAccountId)
             ->select(DB::raw('sum(amount) as credit'),
@@ -467,7 +474,7 @@ class BankAccountController extends AccountBaseController
             ->get()->keyBy('date');
 
         $debitAmount = BankTransaction::whereDate('transaction_date', '>=', $startDate)
-            ->whereDate('transaction_date', '<=', $endDate )
+            ->whereDate('transaction_date', '<=', $endDate)
             ->where('bank_account_id', $bankAccountId)
             ->where('type', 'Dr')
             ->select(DB::raw('sum(amount) as debit'),
@@ -477,27 +484,30 @@ class BankAccountController extends AccountBaseController
             ->groupby('year', 'month')
             ->get()->keyBy('date');
 
-        foreach ($months as $key => $month){
+        foreach ($months as $key => $month) {
             $joinings = 0;
             $exit = 0;
 
-            if(isset($creditAmount[$key])){
-                $joinings = $creditAmount[$key]->credit; /* @phpstan-ignore-line */
+            if (isset($creditAmount[$key])) {
+                $joinings = $creditAmount[$key]->credit;
+                /* @phpstan-ignore-line */
             }
 
-            if(isset($debitAmount[$key])){
-                $exit = $debitAmount[$key]->debit; /* @phpstan-ignore-line */
+            if (isset($debitAmount[$key])) {
+                $exit = $debitAmount[$key]->debit;
+                /* @phpstan-ignore-line */
             }
 
             $graphData[] = [
                 'y' => $months[$key]['y'],
-                'a' => $joinings ,
+                'a' => $joinings,
                 'b' => $exit
             ];
 
         }
 
-        $graphData = collect($graphData); /* @phpstan-ignore-line */
+        $graphData = collect($graphData);
+        /* @phpstan-ignore-line */
 
         $data['labels'] = $graphData->pluck('y');
         $data['values'][] = $graphData->pluck('a');

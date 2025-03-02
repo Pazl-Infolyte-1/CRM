@@ -18,7 +18,7 @@
         <div class="col-xl-4 col-lg-6 col-md-6 mb-3">
 
             <div class="bg-white p-3 rounded b-shadow-4 d-flex justify-content-between align-items-center mb-4 mb-md-0 mb-lg-0">
-                <div class="d-block text-capitalize">
+                <div class="d-block ">
                     <h5 class="f-15 f-w-500 text-darkest-grey">@lang('app.menu.employees')</h5>
                     <div class="d-flex">
                         <a href="javascript:;"  class="total-employees" data-status="open"><p class="mb-0 f-15 font-weight-bold text-blue d-grid mr-5">
@@ -76,6 +76,9 @@
     @if (in_array('employees', user_modules()) && in_array('department_wise_employee', $activeWidgets))
         <div class="col-sm-12 col-lg-6 mt-3">
             <x-cards.data :title="__('modules.dashboard.departmentWiseEmployee').' <i class=\'fa fa-question-circle\' data-toggle=\'popover\' data-placement=\'top\' data-content=\''.__('messages.dateFilterNotApplied').'\' data-trigger=\'hover\'></i>'">
+                @if (array_sum($departmentWiseChart['values']) > 0)
+                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart1" data-chart-data="{{ json_encode($departmentWiseChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                @endif
                 <x-pie-chart id="task-chart1" :labels="$departmentWiseChart['labels']"
                     :values="$departmentWiseChart['values']" :colors="$departmentWiseChart['colors'] ?? null" height="300" width="300" />
             </x-cards.data>
@@ -85,6 +88,9 @@
     @if (in_array('employees', user_modules()) && in_array('designation_wise_employee', $activeWidgets))
         <div class="col-sm-12 col-lg-6 mt-3">
             <x-cards.data :title="__('modules.dashboard.designationWiseEmployee').' <i class=\'fa fa-question-circle\' data-toggle=\'popover\' data-placement=\'top\' data-content=\''.__('messages.dateFilterNotApplied').'\' data-trigger=\'hover\'></i>'">
+                @if (array_sum($designationWiseChart['values']) > 0)
+                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart2" data-chart-data="{{ json_encode($designationWiseChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                @endif
                 <x-pie-chart id="task-chart2" :labels="$designationWiseChart['labels']"
                     :values="$designationWiseChart['values']" :colors="$designationWiseChart['colors'] ?? null" height="300" width="300" />
             </x-cards.data>
@@ -94,6 +100,9 @@
     @if (in_array('employees', user_modules()) && in_array('gender_wise_employee', $activeWidgets))
         <div class="col-sm-12 col-lg-6 mt-3">
             <x-cards.data :title="__('modules.dashboard.genderWiseEmployee').' <i class=\'fa fa-question-circle\' data-toggle=\'popover\' data-placement=\'top\' data-content=\''.__('messages.dateFilterNotApplied').'\' data-trigger=\'hover\'></i>'">
+                @if (array_sum($genderWiseChart['values']) > 0)
+                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart3" data-chart-data="{{ json_encode($genderWiseChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                @endif
                 <x-pie-chart id="task-chart3" :labels="$genderWiseChart['labels']" :values="$genderWiseChart['values']"
                     :colors="$genderWiseChart['colors'] ?? null" height="300" width="300" />
             </x-cards.data>
@@ -103,6 +112,9 @@
     @if (in_array('employees', user_modules()) && in_array('role_wise_employee', $activeWidgets))
         <div class="col-sm-12 col-lg-6 mt-3">
             <x-cards.data :title="__('modules.dashboard.roleWiseEmployee').' <i class=\'fa fa-question-circle\' data-toggle=\'popover\' data-placement=\'top\' data-content=\''.__('messages.dateFilterNotApplied').'\' data-trigger=\'hover\'></i>'">
+                @if (array_sum($roleWiseChart['values']) > 0)
+                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart4" data-chart-data="{{ json_encode($roleWiseChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                @endif
                 <x-pie-chart id="task-chart4" :labels="$roleWiseChart['labels']" :values="$roleWiseChart['values']"
                     :colors="$roleWiseChart['colors'] ?? null" height="300" width="300" />
             </x-cards.data>
@@ -157,13 +169,38 @@
                     @forelse ($birthdays as $birthday)
                         <tr>
                             <td class="pl-20">
-                                <x-employee :user="$birthday->user" />
+                                <x-employee :user="$birthday->user"/>
                             </td>
-                            <td class="pr-20 text-right"><span class="badge badge-light p-2">{{ $birthday->date_of_birth->translatedFormat('d') }} {{ $birthday->date_of_birth->translatedFormat('M') }}</span></td>
+                            <td>
+                            <span class="badge badge-light p-2">
+                                <i class="fa fa-birthday-cake"></i>
+                                {{ $birthday->date_of_birth->translatedFormat('d M') }}
+                            </span>
+                            </td>
+                            <td class="pr-20" align="right">
+                                @php
+                                    $currentYear = now(company()->timezone)->year;
+                                    $year = $birthday->date_of_birth->timezone(company()->timezone)->year(date('Y'));
+                                    $dateBirth = $birthday->date_of_birth->format($currentYear . '-m-d');
+                                    $dateBirth = \Carbon\Carbon::parse($dateBirth);
+
+                                    $diffInDays = $year->copy()->diffForHumans(now()->timezone(company()->timezone),[
+                                        'syntax' => \Carbon\CarbonInterface::DIFF_RELATIVE_AUTO,
+                                        'options' => \Carbon\Carbon::JUST_NOW | \Carbon\Carbon::ONE_DAY_WORDS | \Carbon\Carbon::TWO_DAY_WORDS,
+                                    ]);
+
+                                @endphp
+
+                                @if ($dateBirth->isToday())
+                                    <span class="badge badge-light text-success p-2"><i class="fa fa-smile"></i> @lang('app.today')</span>
+                                @else
+                                    <span class="badge badge-light p-2">{{ $diffInDays }}</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="2" class="shadow-none">
+                            <td colspan="3" class="shadow-none">
                                 <x-cards.no-record icon="birthday-cake" :message="__('messages.noRecordFound')" />
                             </td>
                         </tr>
@@ -249,7 +286,7 @@
         var dateRange = getDateRange();
         var url = `{{ route('employees.index') }}`;
 
-        string = `?status=ex_employee&lastStartDate=${dateRange.startDate}&lastEndDate=${dateRange.endDate}`;
+        string = `?EmployeeType=ex_employee&lastStartDate=${dateRange.startDate}&lastEndDate=${dateRange.endDate}`;
         url += string;
 
         window.location.href = url;

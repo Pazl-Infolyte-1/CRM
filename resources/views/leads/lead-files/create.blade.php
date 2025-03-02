@@ -25,7 +25,7 @@
         //Dropzone class
         leadDropzone = new Dropzone("div#file-upload-dropzone", {
             dictDefaultMessage: "{{ __('app.dragDrop') }}",
-            url: "{{ route('lead-files.store') }}",
+            url: "{{ route('deal-files.store') }}",
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },

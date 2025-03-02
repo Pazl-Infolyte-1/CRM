@@ -16,12 +16,21 @@ use App\Traits\ProjectProgress;
 use App\Models\UniversalSearch;
 use App\Models\User;
 use App\Services\Google;
+use Carbon\Carbon;
+use Google\Service\Exception;
+use Google_Service_Calendar_Event;
+use Google_Service_Calendar_EventAttendee;
+use Google_Service_Calendar_EventDateTime;
 use Illuminate\Support\Facades\Config;
+use App\Traits\EmployeeActivityTrait;
+use App\Helper\Files;
+use App\Models\TaskFile;
 
 class TaskObserver
 {
 
     use ProjectProgress;
+    use EmployeeActivityTrait;
 
     public function saving(Task $task)
     {
@@ -73,6 +82,11 @@ class TaskObserver
     public function created(Task $task)
     {
         if (!isRunningInConsoleOrSeeding()) {
+
+            if (user()) {
+                self::createEmployeeActivity(user()->id, 'task-created', $task->id, 'task');
+            }
+
             $mentionIds = [];
             $mentionDescriptionMembers = null;
             $unmentionIds = null;
@@ -95,7 +109,7 @@ class TaskObserver
             if (request()->has('project_id') && request()->project_id != 'all' && request()->project_id != '') {
                 if ((request()->mention_user_id) != null || request()->mention_user_id != '' || $mentionIds != null && $mentionIds != '') {
 
-                        event(new TaskEvent($task, $mentionDescriptionMembers, 'TaskMention'));
+                    event(new TaskEvent($task, $mentionDescriptionMembers, 'TaskMention'));
 
                     if (request()->user_id != null || request()->user_id != '' || request()->has('user_id')) {
 
@@ -106,7 +120,8 @@ class TaskObserver
                         }
                     }
 
-                } else {
+                }
+                else {
 
                     if ($task->project->client_id != null && $task->project->allow_client_notification == 'enable' && $task->project->client->status != 'deactive') {
                         event(new TaskEvent($task, $task->project->client, 'NewClientTask'));
@@ -114,7 +129,8 @@ class TaskObserver
 
                 }
 
-            } else {
+            }
+            else {
 
                 if ((request()->mention_user_id) != null || request()->mention_user_id != '') {
 
@@ -122,14 +138,6 @@ class TaskObserver
 
                 }
 
-                if (request()->user_id != null || request()->user_id != '' || (isset(request()->user_id))) {
-
-                    if ($unmentionIds != null && $unmentionIds != '') {
-
-                        event(new TaskEvent($task, $unmentionDescriptionMember, 'NewTask'));
-
-                    }
-                }
             }
 
             $log = new AccountBaseController();
@@ -167,7 +175,7 @@ class TaskObserver
         $task->mentionUser()->sync(request()->mention_user_ids);
 
         if ($requestMentionIds != null) {
-            foreach ($requestMentionIds as  $value) {
+            foreach ($requestMentionIds as $value) {
 
                 if (($mentionedUser) != null) {
 
@@ -175,7 +183,8 @@ class TaskObserver
 
                         $newMention[] = $value;
                     }
-                } else {
+                }
+                else {
 
                     $newMention[] = $value;
                 }
@@ -200,63 +209,95 @@ class TaskObserver
 
         if (!isRunningInConsoleOrSeeding()) {
 
+            if (user()) {
+                self::createEmployeeActivity(user()->id, 'task-updated', $task->id, 'task');
+            }
+
             if ($task->isDirty('board_column_id')) {
 
-                if ($task->boardColumn->slug == 'completed') {
-                    // send task complete notification
+                if ($task->boardColumn->slug == 'completed'){
+                    $notification = 'TaskCompleted';
+                } elseif ($task->boardColumn->slug == 'waiting_approval'){
+                    $notification = 'TaskApproval';
+                } else {
+                    $notification = 'TaskStatusUpdated';
+                }
+
+                if($task->boardColumn->slug == 'waiting_approval'){
+
                     $admins = User::allAdmins($task->company->id);
-                    event(new TaskEvent($task, $admins, 'TaskCompleted'));
 
-                    if ($task->addedByUser) {
-                        $addedByUserRole = $task->addedByUser->roles->pluck('name')->toArray();
+                    $users = $task->taskUsers;
 
-                        if (!is_null($task->added_by) && !in_array('client', $addedByUserRole) && !in_array($task->added_by, $admins->pluck('id')->toArray())) {
-                            event(new TaskEvent($task, $task->addedByUser, 'TaskCompleted'));
-                        }
+                    $projectAdmintask = Task::with('project')
+                        ->whereHas('project', function ($query) {
+                            $query->whereNotNull('project_admin');
+                        })
+                        ->get()
+                        ->pluck('project.projectAdmin');
+
+                    $admins = $users->merge($admins);
+
+                    if (!$projectAdmintask->isEmpty()){
+                        $admins = $admins->merge($projectAdmintask);
                     }
 
-                    $taskUser = $task->users->whereNotIn('id', $admins->pluck('id'))->whereNotIn('id', [$task->added_by]);
-                    event(new TaskEvent($task, $taskUser, 'TaskCompleted'));
+                }else{
+                    $admins = User::allAdmins($task->company->id);
+                }
 
-                    $timeLogs = ProjectTimeLog::with('user')->whereNull('end_time')
-                        ->where('task_id', $task->id)
-                        ->get();
+                // send task complete notification
+                event(new TaskEvent($task, $admins, $notification));
 
-                    if ($timeLogs) {
-                        foreach ($timeLogs as $timeLog) {
+                if ($task->addedByUser) {
+                    $addedByUserRole = $task->addedByUser->roles->pluck('name')->toArray();
 
-                            $timeLog->end_time = now();
-                            $timeLog->edited_by_user = user()->id;
-                            $timeLog->save();
+                    if (!is_null($task->added_by) && !in_array('client', $addedByUserRole) && !in_array($task->added_by, $admins->pluck('id')->toArray())) {
+                        event(new TaskEvent($task, $task->addedByUser, $notification));
+                    }
+                }
 
+                $taskUser = $task->users->whereNotIn('id', $admins->pluck('id'))->whereNotIn('id', [$task->added_by]);
+                event(new TaskEvent($task, $taskUser, $notification));
+
+                $timeLogs = ProjectTimeLog::with('user')->whereNull('end_time')
+                    ->where('task_id', $task->id)
+                    ->get();
+
+                if ($timeLogs && ($task->boardColumn->slug == 'completed' || $task->boardColumn->slug == 'waiting_approval')) {
+                    foreach ($timeLogs as $timeLog) {
+
+                        $timeLog->end_time = now();
+                        $timeLog->edited_by_user = (user()) ? user()->id : null;
+                        $timeLog->save();
+
+                        /** @phpstan-ignore-next-line */
+                        $timeLog->total_hours = ($timeLog->end_time->diff($timeLog->start_time)->format('%d') * 24) + ($timeLog->end_time->diff($timeLog->start_time)->format('%H'));
+
+                        if ($timeLog->total_hours == 0) {
                             /** @phpstan-ignore-next-line */
-                            $timeLog->total_hours = ($timeLog->end_time->diff($timeLog->start_time)->format('%d') * 24) + ($timeLog->end_time->diff($timeLog->start_time)->format('%H'));
+                            $timeLog->total_hours = round(($timeLog->end_time->diff($timeLog->start_time)->format('%i') / 60), 2);
+                        }
 
-                            if ($timeLog->total_hours == 0) {
-                                /** @phpstan-ignore-next-line */
-                                $timeLog->total_hours = round(($timeLog->end_time->diff($timeLog->start_time)->format('%i') / 60), 2);
-                            }
+                        /** @phpstan-ignore-next-line */
+                        $timeLog->total_minutes = ($timeLog->total_hours * 60) + ($timeLog->end_time->diff($timeLog->start_time)->format('%i'));
 
+                        $timeLog->save();
+
+                        if (!is_null($timeLog->activeBreak)) {
                             /** @phpstan-ignore-next-line */
-                            $timeLog->total_minutes = ($timeLog->total_hours * 60) + ($timeLog->end_time->diff($timeLog->start_time)->format('%i'));
-
-                            $timeLog->save();
-
-                            if (!is_null($timeLog->activeBreak)) {
-                                /** @phpstan-ignore-next-line */
-                                $activeBreak = $timeLog->activeBreak;
-                                $activeBreak->end_time = $timeLog->end_time;
-                                $activeBreak->save();
-                            }
+                            $activeBreak = $timeLog->activeBreak;
+                            $activeBreak->end_time = $timeLog->end_time;
+                            $activeBreak->save();
                         }
                     }
+                }
 
-                    if ((request()->project_id && request()->project_id != 'all') || (!is_null($task->project_id))) {
-                        $project = $task->project;
+                if ((request()->project_id && request()->project_id != 'all') || (!is_null($task->project_id))) {
+                    $project = $task->project;
 
-                        if ($project->client_id != null && $project->allow_client_notification == 'enable' && $project->client->status != 'deactive') {
-                            event(new TaskEvent($task, $project->client, 'TaskCompletedClient'));
-                        }
+                    if ($project->client_id != null && $project->allow_client_notification == 'enable' && $project->client->status != 'deactive') {
+                        event(new TaskEvent($task, $project->client, 'TaskCompletedClient'));
                     }
                 }
 
@@ -315,6 +356,8 @@ class TaskObserver
             'App\Notifications\TaskComment',
             'App\Notifications\TaskCommentClient',
             'App\Notifications\TaskCompleted',
+            'App\Notifications\TaskStatusUpdated',
+            'App\Notifications\TaskApproval',
             'App\Notifications\NewClientTask',
             'App\Notifications\TaskCompletedClient',
             'App\Notifications\TaskNote',
@@ -344,7 +387,7 @@ class TaskObserver
                 if ($task->event_id) {
                     $google->service('Calendar')->events->delete('primary', $task->event_id);
                 }
-            } catch (\Google\Service\Exception $error) {
+            } catch (Exception $error) {
                 if (is_null($error->getErrors())) {
                     // Delete google calendar connection data i.e. token, name, google_id
                     $googleAccount->name = null;
@@ -356,6 +399,12 @@ class TaskObserver
             }
         }
 
+        $task->files()->each(function ($file) {
+            Files::deleteFile($file->hashname, TaskFile::FILE_PATH);
+            Files::deleteDirectory(TaskFile::FILE_PATH . '/' . $file->task_id);
+            $file->delete();
+        });
+
         /* End of deleting event from google calendar */
     }
 
@@ -364,6 +413,12 @@ class TaskObserver
      */
     public function deleted(Task $task)
     {
+
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'task-deleted');
+
+        }
+
         if (!is_null($task->project_id)) {
             // Calculate project progress if enabled
             $this->calculateProjectProgress($task->project_id);
@@ -397,34 +452,34 @@ class TaskObserver
             }
 
             if ($event->start_date && $event->due_date) {
-                $start_date = \Carbon\Carbon::parse($event->start_date)->shiftTimezone($googleAccount->timezone);
-                $due_date = \Carbon\Carbon::parse($event->due_date)->shiftTimezone($googleAccount->timezone);
+                $start_date = Carbon::parse($event->start_date)->shiftTimezone($googleAccount->timezone);
+                $due_date = Carbon::parse($event->due_date)->shiftTimezone($googleAccount->timezone);
 
                 // Create event
                 $google = $google->connectUsing($googleAccount->token);
 
-                $eventData = new \Google_Service_Calendar_Event(
+                $eventData = new Google_Service_Calendar_Event(
                     array(
-                    'summary' => $event->heading,
-                    'location' => $googleAccount->address,
-                    'description' => $event->description,
-                    'colorId' => 7,
-                    'start' => array(
-                        'dateTime' => $start_date,
-                        'timeZone' => $googleAccount->timezone,
-                    ),
-                    'end' => array(
-                        'dateTime' => $due_date,
-                        'timeZone' => $googleAccount->timezone,
-                    ),
-                    'attendees' => $attendiesData,
-                    'reminders' => array(
-                        'useDefault' => false,
-                        'overrides' => array(
-                            array('method' => 'email', 'minutes' => 24 * 60),
-                            array('method' => 'popup', 'minutes' => 10),
+                        'summary' => $event->heading,
+                        'location' => $googleAccount->address,
+                        'description' => $event->description,
+                        'colorId' => 7,
+                        'start' => array(
+                            'dateTime' => $start_date,
+                            'timeZone' => $googleAccount->timezone,
                         ),
-                    ),
+                        'end' => array(
+                            'dateTime' => $due_date,
+                            'timeZone' => $googleAccount->timezone,
+                        ),
+                        'attendees' => $attendiesData,
+                        'reminders' => array(
+                            'useDefault' => false,
+                            'overrides' => array(
+                                array('method' => 'email', 'minutes' => 24 * 60),
+                                array('method' => 'popup', 'minutes' => 10),
+                            ),
+                        ),
                     )
                 );
 
@@ -437,7 +492,7 @@ class TaskObserver
                     }
 
                     return $results->id;
-                } catch (\Google\Service\Exception $error) {
+                } catch (Exception $error) {
                     if (is_null($error->getErrors())) {
                         // Delete google calendar connection data i.e. token, name, google_id
                         $googleAccount->name = null;
@@ -466,16 +521,16 @@ class TaskObserver
             $frq = ['day' => 'DAILY', 'week' => 'WEEKLY', 'month', 'MONTHLY', 'year' => 'YEARLY'];
             $frequency = $frq[$event->repeat_type];
 
-            $eventData = new \Google_Service_Calendar_Event();
+            $eventData = new Google_Service_Calendar_Event();
             $eventData->setSummary($event->heading);
             $eventData->setLocation('');
 
-            $start = new \Google_Service_Calendar_EventDateTime();
+            $start = new Google_Service_Calendar_EventDateTime();
             $start->setDateTime($event->start_date->toAtomString());
             $start->setTimeZone($googleAccount->timezone);
 
             $eventData->setStart($start);
-            $end = new \Google_Service_Calendar_EventDateTime();
+            $end = new Google_Service_Calendar_EventDateTime();
             $end->setDateTime($event->due_date->toAtomString());
             $end->setTimeZone($googleAccount->timezone);
 
@@ -493,7 +548,7 @@ class TaskObserver
 
             foreach ($attendees as $attend) {
                 if (!is_null($attend->user) && !is_null($attend->user->email)) {
-                    $attendee1 = new \Google_Service_Calendar_EventAttendee();
+                    $attendee1 = new Google_Service_Calendar_EventAttendee();
                     $attendee1->setEmail($attend->user->email);
                     $attendiesData[] = $attendee1;
                 }
@@ -519,7 +574,7 @@ class TaskObserver
                 }
 
                 return;
-            } catch (\Google\Service\Exception $error) {
+            } catch (Exception $error) {
                 if (is_null($error->getErrors())) {
                     // Delete google calendar connection data i.e. token, name, google_id
                     $googleAccount->name = null;
@@ -535,7 +590,6 @@ class TaskObserver
                 $event->save();
             }
 
-            return;
         }
     }
 

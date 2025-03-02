@@ -31,6 +31,11 @@ class UpdateRequest extends FormRequest
             $rules['onesignal_rest_api_key'] = 'required';
         }
 
+        if (request()->get('beams_push_status') == 'active') {
+            $rules['instance_id'] = 'required';
+            $rules['beam_secret'] = 'required';
+        }
+
         return $rules;
     }
 

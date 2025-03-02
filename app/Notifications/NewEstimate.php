@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\User;
 use App\Models\Estimate;
+use App\Models\GlobalSetting;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class NewEstimate extends BaseNotification
@@ -39,6 +40,12 @@ class NewEstimate extends BaseNotification
             array_push($via, 'mail');
         }
 
+        if (push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.estimate.subject'), $this->estimate->estimate_number);
+        }
+
         return $via;
     }
 
@@ -51,14 +58,14 @@ class NewEstimate extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
-        $url = route('front.estimate.show', $this->estimate->hash);
+        $build = parent::build($notifiable);
+        $url = url()->temporarySignedRoute('front.estimate.show', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->estimate->hash);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.estimate.text');
+        $content = __('email.estimate.text') . '<br>' . __('app.menu.estimate') . ' ' . __('app.number') . ': ' .$this->estimate->estimate_number ;
 
-        return $build
-            ->subject(__('email.estimate.subject') . ' - ' . config('app.name') . '.')
+        $build
+            ->subject(__('email.estimate.subject') . ' (' . $this->estimate->estimate_number . ') - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -66,6 +73,10 @@ class NewEstimate extends BaseNotification
                 'actionText' => __('email.estimateDeclined.action'),
                 'notifiableName' => $this->user->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

@@ -2,11 +2,10 @@
 
 namespace App\DataTables;
 
-use Carbon\Carbon;
 use App\Models\Contract;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
-use App\DataTables\BaseDataTable;
+use App\Models\GlobalSetting;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
@@ -42,9 +41,7 @@ class ContractsDataTable extends BaseDataTable
         $customFieldColumns = CustomField::customFieldData($datatables, Contract::CUSTOM_FIELD_MODEL);
 
         return $datatables
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
@@ -58,7 +55,7 @@ class ContractsDataTable extends BaseDataTable
 
                 $action .= ' <a href="' . route('contracts.show', [$row->id]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
-                if (!$row->company_sign && user()->company_id == $row->company_id) {
+                if (!in_array('client', user_roles()) && !$row->company_sign && user()->company_id == $row->company_id) {
                     $action .= '<a class="dropdown-item sign-modal" href="javascript:;" data-contract-id="' . $row->id . '">
                     <i class="fa fa-check mr-2"></i>
                     ' . trans('modules.estimates.companysignature') . '
@@ -66,21 +63,21 @@ class ContractsDataTable extends BaseDataTable
                 }
 
                 if (!$row->signature) {
-                    $action .= '<a class="dropdown-item" href="' . url()->signedRoute('front.contract.show', [$row->hash]) . '" target="_blank"><i class="fa fa-link mr-2"></i>' . __('modules.proposal.publicLink') . '</a>';
+                    $action .= '<a class="dropdown-item" href="' . url()->temporarySignedRoute('front.contract.show', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$row->hash]) . '" target="_blank"><i class="fa fa-link mr-2"></i>' . __('modules.proposal.publicLink') . '</a>';
                 }
 
-                if ($this->addContractPermission == 'all' || $this->addContractPermission == 'added') {
+                if (in_array('clients', user_modules()) && ($this->addContractPermission == 'all' || $this->addContractPermission == 'added')) {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('contracts.create') . '?id=' . $row->id . '">
                             <i class="fa fa-copy mr-2"></i>
                             ' . __('app.copy') . ' ' . __('app.menu.contract') . '
                         </a>';
                 }
 
-                if (
-                    $this->editContractPermission == 'all'
+                if (in_array('clients', user_modules()) &&
+                    ($this->editContractPermission == 'all'
                     || ($this->editContractPermission == 'added' && user()->id == $row->added_by)
                     || ($this->editContractPermission == 'owned' && user()->id == $row->client_id)
-                    || ($this->editContractPermission == 'both' && (user()->id == $row->client_id || user()->id == $row->added_by))
+                    || ($this->editContractPermission == 'both' && (user()->id == $row->client_id || user()->id == $row->added_by)))
                 ) {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('contracts.edit', [$row->id]) . '">
                             <i class="fa fa-edit mr-2"></i>
@@ -114,13 +111,13 @@ class ContractsDataTable extends BaseDataTable
             })
             ->editColumn('project_name', function ($row) {
                 if ($row->project_id != null) {
-                    return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project->project_name . '</a>';
+                    return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . str($row->project->project_name)->limit(30) . '</a>';
                 }
 
                 return '--';
             })
             ->addColumn('contract_subject', function ($row) {
-                return $row->subject;
+                return str($row->subject)->limit(50);
             })
             ->editColumn('subject', function ($row) {
                 $signed = '';
@@ -131,7 +128,7 @@ class ContractsDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('contracts.show', [$row->id]) . '">' . $row->subject . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('contracts.show', [$row->id]) . '">' . str($row->subject)->limit(40) . '</a></h5>
                     <p class="mb-0">' . $signed . '</p>
                     </div>
                   </div>';
@@ -150,14 +147,24 @@ class ContractsDataTable extends BaseDataTable
                 return currency_format($row->amount, $row->currency->id);
             })
             ->addColumn('client_name', function ($row) {
-                return $row->client->name;
+                if ($row->client) {
+                    $client = $row->client;
+
+                    return view('components.client', [
+                        'user' => $client
+                    ]);
+
+                }
+
+                return '--';
+
             })
             ->editColumn('client.name', function ($row) {
                 return '<div class="media align-items-center">
                     <a href="' . route('clients.show', [$row->client_id]) . '">
-                    <img src="' . $row->client->image_url . '" class="mr-3 taskEmployeeImg rounded-circle" alt="' . $row->client->name . '" title="' . $row->client->name . '"></a>
+                    <img src="' . $row->client->image_url . '" class="mr-2 taskEmployeeImg rounded-circle" alt="' . $row->client->name . '" title="' . $row->client->name . '"></a>
                     <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('clients.show', [$row->client_id]) . '">' . ($row->client->salutation ? $row->client->salutation->label() . ' ' : '') . $row->client->name . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('clients.show', [$row->client_id]) . '">' . $row->client->name_salutation . '</a></h5>
                     <p class="mb-0 f-13 text-dark-grey">' . $row->client->clientDetails->company_name . '</p>
                     </div>
                   </div>';
@@ -166,21 +173,20 @@ class ContractsDataTable extends BaseDataTable
                 if ($row->signature) {
                     return __('app.signed');
                 }
-            })->editColumn('contract_number', function ($row) {
-                    return '<a href="' . route('contracts.show', [$row->id]) . '" class="text-darkest-grey">' . $row->contract_number . '</a>';
+            })
+            ->editColumn('contract_number', function ($row) {
+                return '<a href="' . route('contracts.show', [$row->id]) . '" class="text-darkest-grey">' . $row->contract_number . '</a>';
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
-            ->rawColumns(array_merge(['project_name','action', 'client.name', 'check', 'subject','contract_number'], $customFieldColumns));
+            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->rawColumns(array_merge(['project_name', 'action', 'client.name', 'check', 'subject', 'contract_number'], $customFieldColumns));
     }
 
     /**
      * @param Contract $model
-     * @property-read \App\Models\Award $title
      * @return \Illuminate\Database\Eloquent\Builder
+     * @property-read \App\Models\Award $title
      */
     public function query(Contract $model)
     {
@@ -189,25 +195,31 @@ class ContractsDataTable extends BaseDataTable
         $endDate = null;
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
         }
 
-            $model = $model->with(
-                [
-                    'project' => function ($q) {
-                        $q->withTrashed();
-                        $q->select('id', 'project_name', 'project_short_code', 'client_id');
-                    },
-                    'currency:id,currency_symbol,currency_code', 'project.client', 'client', 'project.clientdetails'
-                ]
-            )->with('contractType', 'client', 'signature', 'client.clientDetails')
-                ->join('users', 'users.id', '=', 'contracts.client_id')
-                ->join('client_details', 'users.id', '=', 'client_details.user_id')
-                ->select('contracts.*');
+        $model = $model->with(
+            [
+                'company',
+                'project' => function ($q) {
+                    $q->withTrashed();
+                    $q->select('id', 'project_name', 'project_short_code', 'client_id');
+                },
+                'client.clientDetails.company:id,company_name',
+                'currency:id,currency_symbol,currency_code',
+                'project.client',
+                'project.client.clientDetails.company',
+                'client',
+                'project.clientdetails'
+            ]
+        )->with('contractType', 'client', 'signature', 'client.clientDetails')
+            ->join('users', 'users.id', '=', 'contracts.client_id')
+            ->join('client_details', 'users.id', '=', 'client_details.user_id')
+            ->select('contracts.*');
 
         if ($startDate !== null && $endDate !== null) {
             $model->where(function ($q) use ($startDate, $endDate) {
@@ -235,12 +247,12 @@ class ContractsDataTable extends BaseDataTable
                     ->orWhere('contracts.amount', 'like', '%' . request('searchText') . '%')
                     ->orWhere('client_details.company_name', 'like', '%' . request('searchText') . '%');
             })
-            ->orWhere(function ($query) {
-                $query->whereHas('project', function ($q) {
-                    $q->where('project_name', 'like', '%' . request('searchText') . '%')
-                        ->orWhere('project_short_code', 'like', '%' . request('searchText') . '%'); // project short code
+                ->orWhere(function ($query) {
+                    $query->whereHas('project', function ($q) {
+                        $q->where('project_name', 'like', '%' . request('searchText') . '%')
+                            ->orWhere('project_short_code', 'like', '%' . request('searchText') . '%'); // project short code
+                    });
                 });
-            });
         }
 
         if ($this->viewContractPermission == 'added') {
@@ -264,8 +276,8 @@ class ContractsDataTable extends BaseDataTable
     /**
      * Optional method if you want to use html builder.
      *
-     * @property-read \App\Models\Award $title
      * @return \Yajra\DataTables\Html\Builder
+     * @property-read \App\Models\Award $title
      */
     public function html()
     {

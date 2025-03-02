@@ -1,6 +1,6 @@
 <x-form id="createMethods" method="POST" class="ajax-form">
     <div class="modal-header">
-        <h5 class="modal-title">@lang('app.addNew') @lang('app.menu.offlinePaymentMethod')</h5>
+        <h5 class="modal-title">@lang('app.addNewofflinePaymentMethod')</h5>
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
     </div>
 
@@ -18,6 +18,13 @@
                                       fieldId="description" :fieldPlaceholder="__('placeholders.offlinePayment.description')" fieldRequired="true">
                     </x-forms.textarea>
                 </div>
+{{--                <div class="form-group">--}}
+{{--                    <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 "--}}
+{{--                                  :fieldLabel="__('app.qrCode')"--}}
+{{--                                  fieldName="image"--}}
+{{--                                  fieldId="image">--}}
+{{--                    </x-forms.file>--}}
+{{--                </div>--}}
             </div>
 
         </div>
@@ -28,6 +35,10 @@
     </div>
 </x-form>
 <script>
+
+    // $("#image").dropify({
+    //     messages: dropifyMessages
+    // });
     //  save offline payments
     $('#save-method').click(function () {
         $.easyAjax({
@@ -37,6 +48,7 @@
             disableButton: true,
             buttonSelector: "#save-method",
             blockUI: true,
+            file: true,
             data: $('#createMethods').serialize(),
             success: function () {
                 window.location.reload();

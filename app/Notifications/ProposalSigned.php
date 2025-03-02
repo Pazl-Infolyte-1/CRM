@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
+use App\Models\GlobalSetting;
 use App\Models\Proposal;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -51,30 +52,34 @@ class ProposalSigned extends BaseNotification
     public function toMail($notifiable): MailMessage
     {
 
-        $build = parent::build();
+        $build = parent::build($notifiable);
 
-        $url = route('front.proposal', $this->proposal->hash);
+        $url = url()->temporarySignedRoute('front.proposal', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->proposal->hash);
         $url = getDomainSpecificUrl($url, $this->company);
 
 
         if ($this->proposal->status == 'accepted') {
 
-            $content = __('app.status') . ' : ' . $this->proposal->status;
+            $content = __('app.proposal') . ' ' . __('app.number') . ': ' . $this->proposal->proposal_number . '' . '<br>' . __('app.status') . ' : ' . $this->proposal->status;
 
-            return $build
-                ->subject(__('email.proposalSigned.subject'))
+            $build
+                ->subject(__('email.proposalSigned.subject') . ' (' . $this->proposal->proposal_number . ')' )
                 ->markdown('mail.email', [
                     'url' => $url,
                     'content' => $content,
                     'themeColor' => $this->company->header_color,
                     'actionText' => __('app.view') . ' ' . __('app.proposal'), 'notifiableName' => $notifiable->name
                 ]);
+
+            parent::resetLocale();
+
+            return $build;
         }
 
-        $content = __('email.proposalRejected.rejected') . ' : ' . $this->proposal->client_comment . '<br>' . __('app.status') . ': ' . $this->proposal->status;
+        $content = __('app.proposal') . ' ' . __('app.number') . ': ' . $this->proposal->proposal_number . '' . '<br>' . __('email.proposalRejected.rejected') . ' : ' . $this->proposal->client_comment . '<br>' . __('app.status') . ': ' . $this->proposal->status;
 
-        return $build
-            ->subject(__('email.proposalRejected.subject'))
+        $build
+            ->subject(__('email.proposalRejected.subject') . ' (' . $this->proposal->proposal_number . ')' )
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -82,6 +87,10 @@ class ProposalSigned extends BaseNotification
                 'actionText' => __('app.view') . ' ' . __('app.proposal'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

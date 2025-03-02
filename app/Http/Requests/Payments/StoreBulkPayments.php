@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests\Payments;
 
-use App\Helper\Reply;
-use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreBulkPayments extends FormRequest

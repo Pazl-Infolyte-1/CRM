@@ -11,7 +11,7 @@
                 class="mr-3 float-left emergency-contacts-btn"
                 link="javascript:;"
                 icon="plus">
-                @lang('app.create') @lang('app.new')
+                @lang('app.createNew')
             </x-forms.link-primary>
         </div>
     @endif

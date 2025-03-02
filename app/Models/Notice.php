@@ -59,6 +59,16 @@ class Notice extends BaseModel
         return $this->hasMany(NoticeView::class, 'notice_id');
     }
 
+    public function noticeEmployees(): HasMany
+    {
+        return $this->hasMany(NoticeBoardUser::class, 'notice_id')->where('to', 'employee');
+    }
+
+    public function noticeClients(): HasMany
+    {
+        return $this->hasMany(NoticeBoardUser::class, 'notice_id')->where('to', 'client');
+    }
+
     public function getNoticeDateAttribute()
     {
         if (!is_null($this->created_at)) {
@@ -71,6 +81,11 @@ class Notice extends BaseModel
     public function department(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'department_id', 'id');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(NoticeFile::class, 'notice_id')->orderByDesc('id');
     }
 
 }

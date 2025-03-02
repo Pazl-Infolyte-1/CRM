@@ -2,7 +2,6 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\ProposalTemplate;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Column;

@@ -41,7 +41,7 @@ return array(
     'deselectAllText' => 'Deselect All',
     'linkTitle' => 'Link Title',
     'url' => 'URL',
-    'categoryName' => "e.g. Finance",
+    'categoryName' => 'e.g. Finance',
     'invoices' => array(
         'invoicePrefix' => 'Enter invoice prefix',
         'estimatePrefix' => 'Enter estimate prefix',
@@ -56,7 +56,14 @@ return array(
         'estimateNumberSeparator' => 'Estimate Number Separator',
         'credit_noteNumberSeparator' => 'Credit Note Number Separator',
         'contractNumberSeparator' => 'Contract Number Separator',
-        'contractPrefix' => 'Contract Prefix'
+        'contractPrefix' => 'Contract Prefix',
+        'otherInfo' => 'Enter Other Information',
+        'estimateRequestPrefix' => 'Enter Estimate Request Prefix',
+        'estimateRequestNumberSeparator' => 'Enter Estimate Request Number Separator',
+        'proposalPrefix' => 'Enter Proposal Prefix',
+        'proposalNumberSeparator' => 'Enter Proposal Number Separator',
+        'BankDetails' => 'Add Payment Method Details (e.g., Bank Account, Transfer Information)',
+        'title' => 'Payment Description',
     ),
 
     'currency' => array(
@@ -106,6 +113,7 @@ return array(
         'awsBucket' => 'e.g. test-bucket',
     ),
     'hsnSac' => 'e.g. 995431',
+    'sku' => "Write the product's sku here",
     'hourEstimate' => 'e.g. 500',
     'paymentGateway' => array(
         'sandboxPaypalClientId' => 'e.g. AW-Ydt5KHz2FwhAikHsObpRrpB55qE8MyvUkHbQsFb_6_2Unv3WNBSmBxEqA8N74JzOaFTPBUI-MG4sB',
@@ -142,7 +150,7 @@ return array(
     'recaptchaSecret' => 'e.g. XXXXXXxxxxxXXXXXXxxxxx',
     'recaptchaV3' => 'e.g. 6LeL_s8ZAAAAAMVC2clQdxxxXXXxxxxxXXX',
     'fileSetting' => 'e.g. application/x-zip-compressed',
-    'searchForCompany' => 'Search For A Compnay',
+    'searchForCompany' => 'Search For A Company',
     'tickets' => array(
         'ticketChannel' => 'e.g. Facebook, Phone, etc.',
         'ticketGroup' => 'e.g. Sales, Support, etc.',
@@ -172,4 +180,10 @@ return array(
         'languageName' => 'e.g. English',
         'languageCode' => 'e.g. en',
     ),
+    'gst/vat' => 'e.g. GST/VAT',
+    'days' => 'e.g. 3 days',
+    'estimateRequest' => array(
+        'reason' => 'e.g. Not within budget',
+    ),
+    'twitterId' => 'e.g. 182180xxxxxx1843842',
 );

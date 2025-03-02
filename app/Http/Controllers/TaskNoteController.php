@@ -44,7 +44,7 @@ class TaskNoteController extends AccountBaseController
         $note->user_id = user()->id;
         $note->save();
 
-        $this->notes = TaskNote::where('task_id', $request->taskId)->orderBy('id', 'desc')->get();
+        $this->notes = TaskNote::where('task_id', $request->taskId)->orderByDesc('id')->get();
         $view = view('tasks.notes.show', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'view' => $view]);
@@ -64,7 +64,7 @@ class TaskNoteController extends AccountBaseController
 
         $note_task_id = $note->task_id;
         $note->delete();
-        $this->notes = TaskNote::with('task')->where('task_id', $note_task_id)->orderBy('id', 'desc')->get();
+        $this->notes = TaskNote::with('task')->where('task_id', $note_task_id)->orderByDesc('id')->get();
         $view = view('tasks.notes.show', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'view' => $view]);
@@ -108,7 +108,7 @@ class TaskNoteController extends AccountBaseController
         $note->note = trim_editor($request->note);
         $note->save();
 
-        $this->notes = TaskNote::with('task')->where('task_id', $note->task_id)->orderBy('id', 'desc')->get();
+        $this->notes = TaskNote::with('task')->where('task_id', $note->task_id)->orderByDesc('id')->get();
         $view = view('tasks.notes.show', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'view' => $view]);

@@ -1,20 +1,17 @@
-<div class="col-xl-12 col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4">
+<div class="p-4 col-xl-12 col-lg-12 col-md-12 ntfcn-tab-content-left w-100">
     <div class="row">
         @include('sections.password-autocomplete-hide')
 
         <div class="col-lg-12">
-            @php
-                $userImage = $user->hasGravatar($user->email) ? str_replace('?s=200&d=mp', '', $user->image_url) : asset('img/avatar.png');
-            @endphp
             <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
                           :fieldLabel="__('modules.profile.profilePicture')"
-                          :fieldValue="($user->image ? $user->masked_image_url : $userImage)" fieldName="image"
+                          :fieldValue="($user->image ? $user->masked_image_url : $user->image_url)" fieldName="image"
                           fieldId="profile-image" :popover="__('modules.themeSettings.logoSize')">
             </x-forms.file>
         </div>
 
         <div class="col-lg-4">
-            <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
+            <label class="mt-3 mb-12 f-14 text-dark-grey w-100"
                    for="usr">@lang('modules.profile.yourName')</label>
             <div class="input-group">
                 <select class="select-picker form-control" name="salutation" id="salutation"
@@ -61,8 +58,8 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="form-group my-3">
-                <label class="f-14 text-dark-grey mb-12 w-100"
+            <div class="my-3 form-group">
+                <label class="mb-12 f-14 text-dark-grey w-100"
                        for="usr">@lang('modules.emailSettings.emailNotifications')</label>
                 <div class="d-flex">
                     <x-forms.radio fieldId="login-yes" :fieldLabel="__('app.enable')"
@@ -77,23 +74,10 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="form-group my-3">
-                <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('app.rtlTheme')</label>
-                <div class="d-flex">
-                    <x-forms.radio fieldId="rtl-yes" :fieldLabel="__('app.yes')" fieldName="rtl" fieldValue="1"
-                                   :checked="($user->rtl == 1) ? 'checked' : ''">
-                    </x-forms.radio>
-                    <x-forms.radio fieldId="rtl-no" :fieldLabel="__('app.no')" fieldValue="0" fieldName="rtl"
-                                   :checked="($user->rtl == 0) ? 'checked' : ''">
-                    </x-forms.radio>
-                </div>
-            </div>
-        </div>
 
         <div class="col-lg-4">
-            <div class="form-group my-3">
-                <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('app.googleCalender')</label>
+            <div class="my-3 form-group">
+                <label class="mb-12 f-14 text-dark-grey w-100" for="usr">@lang('app.googleCalender')</label>
                 <div class="d-flex">
                     <x-forms.radio fieldId="google_calendar_status-yes" :fieldLabel="__('app.yes')"
                                    fieldName="google_calendar_status" fieldValue="1"
@@ -112,7 +96,7 @@
                             search="true" alignRight="true">
                 <option value="">--</option>
                 @foreach ($countries as $item)
-                    <option data-tokens="{{ $item->iso3 }}" data-phonecode="{{ $item->phonecode }}"
+                    <option data-tokens="{{ $item->iso3 }}" data-phonecode="{{ $item->phonecode }}" data-iso="{{ $item->iso }}"
                             data-content="<span class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span> {{ $item->nicename }}"
                             value="{{ $item->id }}" {{ $item->id == $user->country_id ? 'selected' : '' }}>
                         {{ $item->nicename }}</option>
@@ -126,9 +110,26 @@
             <x-forms.input-group style="margin-top:-4px">
                 <x-forms.select fieldId="country_phonecode" fieldName="country_phonecode"
                                 search="true">
+                    @php
+                        $check = true;
+                    @endphp
                     @foreach ($countries as $item)
-                        <option @selected($user->country_phonecode == $item->phonecode)
-                                data-tokens="{{ $item->name }}"
+
+                        @php
+
+                            $selected = '';
+
+                             if (($user->country && $user->country->iso == $item->iso && $user->country_phonecode == $item->phonecode) ||
+                                 ($check && $user->country_phonecode == $item->phonecode)) {
+                                 $selected = 'selected';
+                                 $check = false;
+                             }
+
+
+                        @endphp
+                        <option
+                                {{$selected}}
+                                data-tokens="{{ $item->name }}" data-country-iso="{{ $item->iso }}"
                                 data-content="{{$item->flagSpanCountryCode()}}"
                                 value="{{ $item->phonecode }}">{{ $item->phonecode }}
                         </option>
@@ -144,7 +145,7 @@
                             fieldName="locale" search="true">
                 @foreach ($languageSettings as $language)
                     <option {{ user()->locale == $language->language_code ? 'selected' : '' }}
-                            data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}"
+                            data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name . ($language->is_rtl == 1 ? ' (' . __('app.rtl') . ')' : '') }}"
                             value="{{ $language->language_code }}">{{ $language->language_name }}</option>
                 @endforeach
             </x-forms.select>
@@ -177,12 +178,22 @@
                 </x-forms.input-group>
             </div>
         @endif
+        @if ($socialAuthSettings->twitter_status == 'enable')
+            <div class="col-lg-4">
+                <x-forms.text :fieldLabel="__('modules.profile.twitterId')"
+                                :fieldPlaceholder="__('placeholders.twitterId')"
+                                fieldName="twitter_id" fieldId="twitter_id"
+                                :fieldValue="$user->userAuth->twitter_id"/>
+            </div>
+        @endif
         @if (in_array('employee', user_roles()))
             <div class="col-md-4">
                 <x-forms.select fieldId="marital_status" :fieldLabel="__('modules.employees.maritalStatus')"
                         fieldName="marital_status" :fieldPlaceholder="__('placeholders.date')">
-                        <option @selected($user->employeeDetail->marital_status == 'unmarried') value="unmarried">@lang('modules.leaves.unmarried')</option>
-                        <option @selected($user->employeeDetail->marital_status == 'married') value="married">@lang('modules.leaves.married')</option>
+                        @foreach (\App\Enums\MaritalStatus::cases() as $status)
+                            <option @selected($user->employeeDetail->marital_status == $status)
+                                value="{{ $status->value }}">{{ $status->label() }}</option>
+                        @endforeach
                 </x-forms.select>
             </div>
             <div class="col-lg-3 col-md-6 d-none marriage_date">
@@ -193,7 +204,7 @@
         @endif
 
         <div class="col-md-12">
-            <div class="form-group my-3">
+            <div class="my-3 form-group">
 
                 <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.profile.yourAddress')"
                                   fieldRequired="false" fieldName="address" fieldId="address"
@@ -206,7 +217,7 @@
 
         @if (!in_array('client', user_roles()))
             <div class="col-md-12">
-                <div class="form-group my-3">
+                <div class="my-3 form-group">
                     <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.about')"
                                       fieldName="about_me" fieldId="about_me" fieldPlaceholder=""
                                       :fieldValue="($user->employeeDetail ? $user->employeeDetail->about_me : '')">
@@ -224,11 +235,11 @@
                     @lang('sms::modules.telegramBotNameInfo')
                 </p>
                 <p class="text-bold"><span id="telegram-link-text">https://t.me/{{ sms_setting()->telegram_bot_name }}</span>
-                    <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
+                    <a href="javascript:;" class="p-1 py-2 ml-1 rounded btn-copy btn-secondary f-12"
                         data-clipboard-target="#telegram-link-text">
-                        <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
-                    <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="btn-secondary f-12 rounded p-1 py-2 ml-1">
-                        <i class="fa fa-copy mx-1"></i>@lang('app.openInNewTab')</a>
+                        <i class="mx-1 fa fa-copy"></i>@lang('app.copy')</a>
+                    <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="p-1 py-2 ml-1 rounded btn-secondary f-12">
+                        <i class="mx-1 fa fa-copy"></i>@lang('app.openInNewTab')</a>
                 </p>
             </div>
         @endif
@@ -304,18 +315,36 @@
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $('#country_id').on('change', function() {
-        var phonecode = $(this).find(':selected').data('phonecode');
-        $('#country_phonecode').val(phonecode);
-        $('#country_phonecode').selectpicker('refresh');
+        $(document).ready(function () {
+            function updatePhoneCode() {
+                var phonecode = $('#country_id').find(':selected').data('phonecode');
+                var iso = $('#country_id').find(':selected').data('iso');
+
+                $('#country_phonecode').find('option').each(function () {
+                    if ($(this).data('country-iso') === iso) {
+                        $(this).val(phonecode);
+                        $(this).prop('selected', true); // Set the option as selected
+                    }
+                });
+                $('.select-picker').selectpicker('refresh');
+            }
+
+            // Trigger on country change
+            $('#country').change(function () {
+                updatePhoneCode();
+            });
+
+            // Call the function once when the page loads
+            updatePhoneCode();
         });
+
         var marital_status = $('#marital_status').val();
-        if(marital_status == 'married') {
+        if(marital_status == '{{ \App\Enums\MaritalStatus::Married->value }}') {
             $('.marriage_date').removeClass('d-none');
         }
         $('#marital_status').change(function(){
             var value = $(this).val();
-            if(value == 'married') {
+            if(value == '{{ \App\Enums\MaritalStatus::Married->value }}') {
                 $('.marriage_date').removeClass('d-none');
             }
             else {

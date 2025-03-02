@@ -105,7 +105,7 @@ class TwoFASettingController extends AccountBaseController
     {
         $checkUser = auth()->user();
         $checkUser->generateTwoFactorCode();
-        event(new TwoFactorCodeEvent($checkUser));
+        event(new TwoFactorCodeEvent($checkUser->user));
         return view('security-settings.ajax.validate-email-confirm-modal', $this->data);
     }
 

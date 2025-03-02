@@ -2,6 +2,9 @@
     $addProductPermission = user()->permission('add_product');
 @endphp
 
+<!-- for sortable content -->
+<link rel="stylesheet" href="{{ asset('vendor/css/jquery-ui.css') }}">
+
 @if (!in_array('clients', user_modules()))
     <x-alert class="mb-3" type="danger" icon="exclamation-circle"><span>@lang('messages.enableClientModule')</span>
         <x-forms.link-secondary icon="arrow-left" :link="route('estimates.index')">@lang('app.back')</x-forms.link-secondary>
@@ -11,7 +14,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.estimate') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.estimateDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -22,7 +25,7 @@
             <!-- INVOICE NUMBER START -->
             <div class="col-md-6 col-lg-4">
                 <div class="form-group mb-4">
-                    <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.estimates.estimatesNumber')</label>
+                    <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.estimates.estimatesNumber')</label>
                     <div class="input-group">
                         <div class="input-group-prepend  height-35 ">
                             <span class="input-group-text border-grey f-15 bg-additional-grey px-3 text-dark"
@@ -61,9 +64,10 @@
                         <select class="form-control select-picker" name="currency_id" id="currency_id">
                             @foreach ($currencies as $currency)
                                 <option
-                                    @if (isset($estimate)) @if ($currency->id == $estimate->currency_id) selected @endif
-                                @else @if ($currency->id == company()->currency_id) selected @endif
-                                    @if ($estimateTemplate && $currency->id == $estimateTemplate->currency_id) selected @endif @endif
+                                    @if (isset($estimate)) @selected ($currency->id == $estimate->currency_id)
+                                @else @selected ($currency->id == company()->currency_id)
+                                      @selected ($estimateTemplate && $currency->id == $estimateTemplate->currency_id)
+                                @endif
                                     value="{{ $currency->id }}">
                                     {{ $currency->currency_code . ' (' . $currency->currency_symbol . ')' }}
                                 </option>
@@ -79,6 +83,9 @@
             @if (isset($estimate))
                 <input type="hidden" name="estimate_id" value="{{ $estimate->id ?? '' }}">
             @endif
+            @isset($estimateRequestId)
+                <input type="hidden" name="estimate_request_id" value="{{ $estimateRequestId }}" />
+            @endisset
             <div class="col-md-6 col-lg-4">
                 @if (isset($client) && !is_null($client))
                     <div class="form-group mb-lg-0 mb-md-0 mb-4">
@@ -86,19 +93,63 @@
                         </x-forms.label>
                         <div class="input-group">
                             <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                            <input type="text" value="{{ $client->name }}"
+                            <input type="text" value="{{ $client->name_salutation }}"
                                 class="form-control height-35 f-15 readonly-background" readonly>
                         </div>
                     </div>
                 @else
-                    <x-client-selection-dropdown :clients="$clients" :selected="isset($estimate)
-                    ? $estimate->client_id
-                    : (request()->has('default_client')
-                        ? request()->has('default_client')
-                        : null)" />
+
+                <x-client-selection-dropdown
+                :clients="$clients"
+                :selected="isset($estimate) ? $estimate->client_id : (request()->has('default_client') ? request()->input('default_client') : $estimateTemplate->client_id ?? null)"
+            />
                 @endif
             </div>
             <!-- CLIENT END -->
+
+            @if(in_array('projects', user_modules()))
+            <!-- PROJECT START -->
+            <div class="col-md-4">
+                @if (isset($project) && !is_null($project))
+                    <div class="form-group mb-4">
+                        <x-forms.label fieldId="due_date" :fieldLabel="__('app.project')">
+                        </x-forms.label>
+                        <div class="input-group">
+                            <input type="hidden" name="project_id" id="project_id" value="{{ $project->id }}">
+                            <input type="text" value="{{ $project->project_name }}"
+                                class="form-control height-35 f-15 readonly-background" readonly>
+                        </div>
+                    </div>
+                @else
+                    <div class="form-group c-inv-select mb-4">
+                        <x-forms.label fieldId="project_id" :fieldLabel="__('app.project')">
+                        </x-forms.label>
+                        <div class="select-others height-35 rounded">
+                            <select class="form-control select-picker" data-live-search="true" data-size="8"
+                                name="project_id" id="project_id">
+                                <option value="">--</option>
+                                @if (isset($invoice) && $invoice->client)
+                                    @foreach ($invoice->client->projects as $item)
+                                        <option @selected($invoice->project_id == $item->id)  value="{{ $item->id }}"
+                                                data-content="{!! '<strong>'.$item->project_short_code."</strong> ".$item->project_name !!}"
+                                        >
+                                            {{ $item->project_name }}</option>
+                                    @endforeach
+                                @elseif (isset($estimate) && $estimate->client)
+                                    @foreach ($estimate->client->projects as $item)
+                                            <option @selected($estimate->project_id == $item->id) value="{{ $item->id }}"
+                                                    data-content="{!! '<strong>'.$item->project_short_code."</strong> ".$item->project_name !!}"
+                                            >
+                                                {{ $item->project_name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            <!-- PROJECT END -->
+            @endif
 
             <div class="col-md-6 col-lg-4">
                 <div class="form-group c-inv-select mb-4">
@@ -108,7 +159,7 @@
                         <select class="form-control select-picker" data-live-search="true" data-size="8"
                             name="calculate_tax" id="calculate_tax">
                             <option value="after_discount">@lang('modules.invoices.afterDiscount')</option>
-                            <option value="before_discount" @if (isset($estimateTemplate->calculate_tax) && $estimateTemplate->calculate_tax == 'before_discount') selected @endif>
+                            <option value="before_discount" @selected (isset($estimateTemplate->calculate_tax) && $estimateTemplate->calculate_tax == 'before_discount')>
                                 @lang('modules.invoices.beforeDiscount')</option>
                         </select>
                     </div>
@@ -165,7 +216,7 @@
                             <x-slot name="append">
                                 <a href="{{ route('products.create') }}" data-redirect-url="no"
                                     class="btn btn-outline-secondary border-grey openRightModal"
-                                    data-toggle="tooltip" data-original-title="{{ __('modules.dashboard.addNewproduct') }}">@lang('app.add')</a>
+                                    data-toggle="tooltip" data-original-title="{{ __('modules.dashboard.addNewProduct') }}">@lang('app.add')</a>
                             </x-slot>
                         @endif
                     </x-forms.input-group>
@@ -179,6 +230,11 @@
                 @foreach ($estimate->items as $key => $item)
                     <!-- DESKTOP DESCRIPTION TABLE START -->
                     <div class="d-flex px-4 py-3 c-inv-desc item-row">
+                        <div class="d-flex align-items-center">
+                            <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
+                            <input type="hidden" name="sort_order[]"
+                                    value="1">
+                        </div>
 
                         <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                             <table width="100%">
@@ -230,7 +286,7 @@
                                                 <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                                     @foreach ($units as $unit)
                                                         <option
-                                                        @if ($item->unit_id == $unit->id) selected @endif
+                                                            @selected ($item->unit_id == $unit->id)
                                                         value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                                     @endforeach
                                                 </select>
@@ -250,7 +306,7 @@
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
                                                         <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
-                                                            @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
+                                                            @selected (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false)
                                                             value="{{ $tax->id }}">
                                                             {{ $tax->tax_name }}:
                                                             {{ $tax->rate_percent }}%</option>
@@ -301,6 +357,12 @@
                 @foreach ($estimateTemplateItem as $item)
                     <!-- DESKTOP DESCRIPTION TABLE START -->
                     <div class="d-flex px-4 py-3 c-inv-desc item-row">
+                        <div class="d-flex align-items-center">
+                            <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
+                            <input type="hidden" name="sort_order[]"
+                                    value="1">
+                        </div>
+
                         <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                             <table width="100%">
                                 <tbody>
@@ -346,7 +408,7 @@
                                                 <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                                     @foreach ($units as $unit)
                                                         <option
-                                                        @if ($item->unit_id == $unit->id) selected @endif
+                                                            @selected($item->unit_id == $unit->id)
                                                         value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                                     @endforeach
                                                 </select>
@@ -365,7 +427,7 @@
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
                                                         <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
-                                                            @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
+                                                            @selected (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false)
                                                             value="{{ $tax->id }}">
                                                             {{ $tax->tax_name }}
                                                             {{ $tax->rate_percent }}%</option>
@@ -416,6 +478,11 @@
                 <!-- DESKTOP DESCRIPTION TABLE START -->
 
                 <div class="d-flex px-4 py-3 c-inv-desc item-row">
+                    <div class="d-flex align-items-center">
+                        <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
+                        <input type="hidden" name="sort_order[]"
+                                value="1">
+                    </div>
 
                     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                         <table width="100%">
@@ -460,7 +527,7 @@
                                             <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                                 @foreach ($units as $unit)
                                                     <option
-                                                    @if ($unit->default == 1) selected @endif
+                                                        @selected ($unit->default == 1)
                                                     value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                                 @endforeach
                                             </select>
@@ -525,7 +592,7 @@
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14 text-capitalize">
+            <table width="100%" class="text-right f-14 ">
                 <tbody>
                     <tr>
                         <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -543,7 +610,7 @@
                                         <td width="20%" class="text-dark-grey">@lang('modules.invoices.discount')
                                         </td>
                                         <td width="40%" style="padding: 5px;">
-                                            <table width="100%" class="mw-250">
+                                            <table width="100%">
                                                 <tbody>
                                                     <tr>
                                                         <td width="70%" class="c-inv-sub-padding">
@@ -559,11 +626,11 @@
                                                                 <select class="form-control select-picker"
                                                                     id="discount_type" name="discount_type">
                                                                     <option
-                                                                        @if (isset($estimateTemplate) && $estimateTemplate->discount_type == 'percent') selected @endif
+                                                                        @selected(isset($estimateTemplate) && $estimateTemplate->discount_type == 'percent')
                                                                         value="percent">%
                                                                     </option>
                                                                     <option
-                                                                        @if (isset($estimateTemplate) && $estimateTemplate->discount_type == 'fixed') selected @endif
+                                                                        @selected(isset($estimateTemplate) && $estimateTemplate->discount_type == 'fixed')
                                                                         value="fixed">
                                                                         @lang('modules.invoices.amount')</option>
                                                                 </select>
@@ -605,7 +672,7 @@
         <!-- NOTE AND TERMS AND CONDITIONS START -->
         <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
             <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                <x-forms.label fieldId="" class="text-capitalize" :fieldLabel="__('modules.invoices.note')">
+                <x-forms.label fieldId="" class="" :fieldLabel="__('modules.invoices.note')">
                 </x-forms.label>
                 <textarea class="form-control" name="note" id="note" rows="4" placeholder="@lang('placeholders.invoices.note')"></textarea>
             </div>
@@ -648,10 +715,9 @@
                 <x-forms.button-secondary data-type="draft" class="save-form mr-3">@lang('app.saveDraft')
                 </x-forms.button-secondary>
 
+                <x-forms.button-cancel :link="route('estimates.index')" class="border-0">@lang('app.cancel')
+                </x-forms.button-cancel>
             </div>
-
-            <x-forms.button-cancel :link="route('estimates.index')" class="border-0">@lang('app.cancel')
-            </x-forms.button-cancel>
 
         </x-form-actions>
         <!-- CANCEL SAVE SEND END -->
@@ -661,17 +727,62 @@
 </div>
 <!-- CREATE INVOICE END -->
 
+<!-- for sortable content -->
+<script src="{{ asset('vendor/jquery/jquery-ui.min.js') }}"></script>
+
 <script>
+    $(function () {
+        $("#sortable").sortable();
+    });
+
     $(document).ready(function() {
 
         $('.toggle-product-category').click(function() {
             $('.product-category-filter').toggleClass('d-none');
+            var url = "{{route('invoices.product_category', ':id')}}";
+            url = url.replace(':id', null);
+            changeProductCategory(url);
+            $('#product_category_id').val('').trigger('change');
+            $('#product_category_id').selectpicker('refresh');
         });
 
         $('#product_category_id').on('change', function(){
             var categoryId = $(this).val();
-            var url = "{{route('invoices.product_category', ':id')}}",
-            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);;
+            var url = "{{route('invoices.product_category', ':id')}}";
+            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);
+            changeProductCategory(url);
+        });
+
+$       ('#client_list_id').change(function() {
+            var id = $(this).val();
+            changeClient(id);
+        });
+
+        function changeClient(id) {
+            if (id == '') {
+                id = 0;
+            }
+            var url = "{{ route('clients.project_list', ':id') }}";
+            url = url.replace(':id', id);
+            var token = "{{ csrf_token() }}";
+            $.easyAjax({
+                url: url,
+                container: '#saveInvoiceForm',
+                type: "POST",
+                blockUI: true,
+                data: {
+                    _token: token
+                },
+                success: function(response) {
+                    if (response.status == 'success') {
+                        $('#project_id').html(response.data);
+                        $('#project_id').selectpicker('refresh');
+                    }
+                }
+            });
+        }
+
+        function changeProductCategory(url) {
             $.easyAjax({
                 url : url,
                 type : "GET",
@@ -695,7 +806,7 @@
                     }
                 }
             });
-        });
+        }
 
         $('.itemImage').on('change', function(e) {
             console.log($('#' + e.target.id).data('item-id'));
@@ -795,6 +906,11 @@
 
             var i = $(document).find('.item_name').length;
             var item = ' <div class="d-flex px-4 py-3 c-inv-desc item-row">' +
+                `<div class="d-flex align-items-center">
+                    <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
+                    <input type="hidden" name="sort_order[]"
+                            value="${i+1}">
+                </div>` +
                 '<div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">' +
                 '<table width="100%">' +
                 '<tbody>' +
@@ -830,7 +946,7 @@
                 `<select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                     @foreach ($units as $unit)
                         <option
-                        @if ($unit->default == 1) selected @endif
+                        @selected($unit->default == 1)
                         value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                     @endforeach
                 </select>
@@ -994,12 +1110,5 @@
         return str;
     }
 
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 </script>
 @endif

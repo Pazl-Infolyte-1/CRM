@@ -18,8 +18,7 @@ trait ProjectProgress
 
     public function calculateProjectProgress($projectId, $projectProgress = 'false')
     {
-
-        $project = Project::findOrFail($projectId);
+        $project = Project::withTrashed()->findOrFail($projectId);
 
         if (!is_null($project) && ($project->calculate_task_progress == 'true' || $projectProgress == 'true')) {
             $taskBoardColumn = TaskboardColumn::completeColumn();

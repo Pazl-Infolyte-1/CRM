@@ -2,8 +2,6 @@
 
 namespace App\Helper;
 
-use Illuminate\Contracts\Validation\Validator;
-
 class Reply
 {
 

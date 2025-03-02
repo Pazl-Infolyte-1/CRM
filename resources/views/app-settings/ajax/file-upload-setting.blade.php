@@ -1,4 +1,3 @@
-
 <link rel="stylesheet" href="{{ asset('vendor/css/tagify.css') }}">
 
 <style>
@@ -26,7 +25,7 @@
         background: var(--header_color);
     }
 
-    #datatable{
+    #datatable {
         margin-bottom: -20px;
     }
 
@@ -34,7 +33,18 @@
 
 <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4 ">
     <div class="row">
+        <div class="col-md-12">
+            @php
+                $uploadMaxFilesize = \App\Helper\Files::getUploadMaxFilesize();
+                $postMaxSize = \App\Helper\Files::getPostMaxSize();
+            @endphp
 
+            <span class="text-info">
+                Server upload_max_filesize = <strong>{{\App\Helper\Files::getUploadMaxFilesize()['size']}}</strong>
+                &nbsp; &nbsp; Server post_max_size = <strong>{{\App\Helper\Files::getUploadMaxFilesize()['size']}}</strong>
+            </span>
+
+        </div>
         <div class="col-lg-3">
 
             <label for="allowed_file_size" class="mt-3">
@@ -50,9 +60,10 @@
                     <label class="input-group-text border-grey bg-white height-35">MB</label>
                 </x-slot>
             </x-forms.input-group>
+            <small>{{__('messages.lowerValue')}} {{\App\Helper\Files::getUploadMaxFilesize()['size']}}</small>
 
         </div>
-        <div class="col-lg-3">
+        <div class="col-lg-4">
             <label for="allow_max_no_of_files" class="mt-3">
                 @lang('modules.accountSettings.maxNumberOfFiles') <sup class="f-14">*</sup>
             </label>
@@ -70,7 +81,7 @@
                 @lang('modules.accountSettings.allowedFileType') <sup class="f-14">*</sup>
             </label>
             <textarea type="text" name="allowed_file_types" id="allowed_file_types"
-                      placeholder=@lang('placeholders.fileSetting')
+                      placeholder="@lang('placeholders.fileSetting')"
                       class="form-control f-14">{{ global_setting()->allowed_file_types }}</textarea>
         </div>
 
@@ -90,7 +101,7 @@
 
 <script>
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         var input = document.querySelector('textarea[id=allowed_file_types]');
 
         var whitelist = [
@@ -114,7 +125,7 @@
         });
 
         $('body').on('click', '#save-file-upload-setting-form', function () {
-            const url = "{{ route('app-settings.update', [company()->id]) }}?page=file-upload-setting";
+            const url = "{{ route('app-settings.update', [companyOrGlobalSetting()->id]) }}?page=file-upload-setting";
 
             $.easyAjax({
                 url: url,

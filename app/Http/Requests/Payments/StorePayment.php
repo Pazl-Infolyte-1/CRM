@@ -4,7 +4,6 @@ namespace App\Http\Requests\Payments;
 
 use App\Models\Invoice;
 use App\Http\Requests\CoreRequest;
-use App\Models\PaymentGatewayCredentials;
 
 class StorePayment extends CoreRequest
 {

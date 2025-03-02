@@ -2,6 +2,7 @@
 
 namespace App\View\Components\Forms;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Select extends Component
@@ -15,6 +16,7 @@ class Select extends Component
     public $fieldName;
     public $fieldId;
     public $popover;
+    public $changeDealStage;
 
     /**
      * Create a new component instance.
@@ -29,23 +31,25 @@ class Select extends Component
         bool $multiple = false,
         bool $search = false,
         bool $alignRight = false,
-        $popover = null
+        $popover = null,
+        $changeDealStage = null
     )
     {
-        $this->fieldName    = $fieldName;
-        $this->fieldLabel   = $fieldLabel;
+        $this->fieldName = $fieldName;
+        $this->fieldLabel = $fieldLabel;
         $this->fieldId = $fieldId;
         $this->fieldRequired = $fieldRequired;
-        $this->multiple   = $multiple;
-        $this->search   = $search;
+        $this->multiple = $multiple;
+        $this->search = $search;
         $this->popover = $popover;
         $this->alignRight = $alignRight;
+        $this->changeDealStage = $changeDealStage;
     }
 
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|string
+     * @return View|string
      */
     public function render()
     {

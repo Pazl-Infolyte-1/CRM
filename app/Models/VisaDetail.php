@@ -3,10 +3,8 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\VisaDetail
@@ -44,7 +42,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @mixin \Eloquent
  */
 
-class VisaDetail extends Model
+class VisaDetail extends BaseModel
 {
     use HasCompany;
 

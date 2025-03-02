@@ -4,7 +4,6 @@ namespace App\Http\Requests\Admin\User;
 
 use App\Models\EmployeeDetails;
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateEmployee extends CoreRequest
 {

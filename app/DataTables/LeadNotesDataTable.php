@@ -2,7 +2,6 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\LeadNote;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -31,11 +30,8 @@ class LeadNotesDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
-
                 $action = '<div class="task_view">';
 
                 $action .= '<div class="dropdown">
@@ -97,9 +93,7 @@ class LeadNotesDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'check', 'title', 'type']);
     }
 

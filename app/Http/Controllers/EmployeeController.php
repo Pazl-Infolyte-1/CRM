@@ -9,6 +9,14 @@ use App\DataTables\TasksDataTable;
 use App\DataTables\TicketDataTable;
 use App\DataTables\TimeLogsDataTable;
 use App\Enums\Salutation;
+use App\Models\Company;
+use App\Scopes\ActiveScope;
+use App\Scopes\CompanyScope;
+use Carbon\Carbon;
+use App\Models\Role;
+use App\Models\Task;
+use App\Models\Team;
+use App\Models\User;
 use App\Helper\Files;
 use App\Helper\Reply;
 use App\Http\Requests\Admin\Employee\ImportProcessRequest;
@@ -18,10 +26,13 @@ use App\Http\Requests\Admin\Employee\UpdateRequest;
 use App\Http\Requests\User\CreateInviteLinkRequest;
 use App\Http\Requests\User\InviteEmailRequest;
 use App\Imports\EmployeeImport;
+use App\Models\ModuleSetting;
 use App\Jobs\ImportEmployeeJob;
 use App\Models\Appreciation;
 use App\Models\Attendance;
+use App\Models\AutomateShift;
 use App\Models\Designation;
+use App\Models\EmployeeActivity;
 use App\Models\EmployeeDetails;
 use App\Models\EmployeeSkill;
 use App\Models\LanguageSetting;
@@ -32,27 +43,28 @@ use App\Models\Notification;
 use App\Models\Passport;
 use App\Models\ProjectTimeLog;
 use App\Models\ProjectTimeLogBreak;
-use App\Models\Role;
 use App\Models\RoleUser;
 use App\Models\Skill;
-use App\Models\Task;
 use App\Models\TaskboardColumn;
-use App\Models\Team;
 use App\Models\Ticket;
 use App\Models\UniversalSearch;
-use App\Models\User;
-use App\Models\UserActivity;
 use App\Models\UserInvitation;
 use App\Models\VisaDetail;
-use App\Scopes\ActiveScope;
 use App\Traits\ImportExcel;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\UserAuth;
 use Symfony\Component\Mailer\Exception\TransportException;
+use App\Models\CompanyAddress;
+use App\Models\Promotion;
+use App\Models\PackageUpdateNotify;
+use App\Models\ShiftRotation;
+use Modules\Payroll\Entities\EmployeeMonthlySalary;
+use Modules\Payroll\Entities\PayrollSetting;
 
 class EmployeeController extends AccountBaseController
 {
+
     use ImportExcel;
 
     public function __construct()
@@ -82,8 +94,7 @@ class EmployeeController extends AccountBaseController
             $this->departments = Team::all();
             $this->designations = Designation::allDesignations();
             $this->totalEmployees = count($this->employees);
-            $this->roles = Role::where('name', '<>', 'client')
-                ->orderBy('id')->get();
+            $this->roles = Role::where('name', '<>', 'client')->orderBy('id')->get();
         }
 
         return $dataTable->render('employees.index', $this->data);
@@ -112,22 +123,22 @@ class EmployeeController extends AccountBaseController
         $this->employees = User::allEmployees(null, true);
         $this->languages = LanguageSetting::where('status', 'enabled')->get();
         $this->salutations = Salutation::cases();
+        $this->companyAddresses = CompanyAddress::all();
 
         $userRoles = user()->roles->pluck('name')->toArray();
 
-        if(in_array('admin', $userRoles))
-        {
+        if (in_array('admin', $userRoles)) {
             $this->roles = Role::where('name', '<>', 'client')->get();
         }
-        else
-        {
+        else {
             $this->roles = Role::whereNotIn('name', ['admin', 'client'])->get();
         }
 
         $employee = new EmployeeDetails();
+        $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
 
-        if ($employee->getCustomFieldGroupsWithFields()) {
-            $this->fields = $employee->getCustomFieldGroupsWithFields()->fields;
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $this->view = 'employees.ajax.create';
@@ -140,6 +151,30 @@ class EmployeeController extends AccountBaseController
 
         return view('employees.create', $this->data);
 
+    }
+
+    public function getExitDateMessage(Request $request)
+    {
+        $lastDate = $request->input('last_date');
+        $lastDate = Carbon::parse($lastDate);
+        $today = Carbon::now()->startOfDay();
+        $tomorrow = Carbon::now()->addDay();
+        $isExitDate = $request->input('is_exit_date');
+
+        if ($lastDate < $today) {
+            $message = __('messages.exitDateErrorForPast', ['date' => $tomorrow->format(company()->date_format)]);
+            $showMessage = true;
+        } else {
+            $message = __('messages.exitDateErrorForFuture', ['date' => $lastDate->format(company()->date_format)]);
+
+            if($isExitDate  == 'false' && $lastDate >= $today){
+                $showMessage = false;
+            } else {
+                $showMessage = true;
+            }
+        }
+
+        return response()->json(['message' => $message, 'showMessage' => $showMessage]);
     }
 
     public function assignRole(Request $request)
@@ -166,6 +201,8 @@ class EmployeeController extends AccountBaseController
         $userSession = new AppSettingController();
         $userSession->deleteSessions([$user->id]);
 
+        cache()->forget('sidebar_user_perms_' . $user->id);
+
         return Reply::success(__('messages.roleAssigned'));
     }
 
@@ -179,18 +216,28 @@ class EmployeeController extends AccountBaseController
         $addPermission = user()->permission('add_employees');
         abort_403(!in_array($addPermission, ['all', 'added']));
 
+        // WORKSUITESAAS
+        $company = company();
+
+        if (!is_null($company->employees) && $company->employees->count() >= $company->package->max_employees) {
+            return Reply::error(__('superadmin.maxEmployeesLimitReached'));
+        }
+
         DB::beginTransaction();
         try {
+
+            $userAuth = UserAuth::createUserAuthCredentials($request->email);
+
             $user = new User();
             $user->name = $request->name;
             $user->email = $request->email;
-            $user->password = bcrypt($request->password);
             $user->mobile = $request->mobile;
             $user->country_id = $request->country;
             $user->salutation = $request->salutation;
             $user->country_phonecode = $request->country_phonecode;
             $user->gender = $request->gender;
             $user->locale = $request->locale;
+            $user->user_auth_id = $userAuth->id;
 
             if ($request->has('login')) {
                 $user->login = $request->login;
@@ -241,28 +288,36 @@ class EmployeeController extends AccountBaseController
             $employeeRole = Role::where('name', 'employee')->first();
             $user->attachRole($employeeRole);
 
+
             if ($employeeRole->id != $request->role) {
                 $otherRole = Role::where('id', $request->role)->first();
+
                 $user->attachRole($otherRole);
+                $user->assignUserRolePermission($otherRole->id); // sync permission for admin
+            }
+            else{
+                $user->assignUserRolePermission($employeeRole->id); // else then for default role
             }
 
-            $user->assignUserRolePermission($request->role);
             $this->logSearchEntry($user->id, $user->name, 'employees.show', 'employee');
 
             // Commit Transaction
             DB::commit();
 
+            // WORKSUITESAAS
+            session()->forget('company');
+
         } catch (TransportException $e) {
             // Rollback Transaction
             DB::rollback();
 
-            return Reply::error('Please configure SMTP details to add employee. Visit Settings -> notification setting to set smtp '.$e->getMessage(), 'smtp_error');
+            return Reply::error('Please configure SMTP details to add employee. Visit Settings -> notification setting to set smtp ' . $e->getMessage(), 'smtp_error');
         } catch (\Exception $e) {
             logger($e->getMessage());
             // Rollback Transaction
             DB::rollback();
 
-            return Reply::error('Some error occurred when inserting the data. Please try again or contact support '. $e->getMessage());
+            return Reply::error('Some error occurred when inserting the data. Please try again or contact support ' . $e->getMessage());
         }
 
 
@@ -284,9 +339,18 @@ class EmployeeController extends AccountBaseController
         switch ($request->action_type) {
         case 'delete':
             $this->deleteRecords($request);
-
+            // WORKSUITESAAS
+            session()->forget('company');
             return Reply::success(__('messages.deleteSuccess'));
         case 'change-status':
+            $company = Company::with(['package', 'employees'])->where('id', user()->company_id)->first();
+
+            $updateIds = explode(',', str_replace('on,', '', $request->row_ids));
+
+            if ($request->status == 'active' && !is_null($company->employees) && ($company->employees->count() + count($updateIds)) > $company->package->max_employees) {
+                return Reply::error(__('superadmin.maxEmployeesLimitReached'));
+            }
+
             $this->changeStatus($request);
 
             return Reply::success(__('messages.updateSuccess'));
@@ -330,13 +394,17 @@ class EmployeeController extends AccountBaseController
         $users->each(function ($user) {
             $this->deleteEmployee($user);
         });
+
     }
 
     protected function changeStatus($request)
     {
         abort_403(user()->permission('edit_employees') != 'all');
 
-        User::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->update(['status' => $request->status]);
+        $inactiveDate = $request->status == 'deactive' ? now() : null;
+
+        User::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->update(['status' => $request->status, 'inactive_date' => $inactiveDate]);
+        clearCompanyValidPackageCache(user()->company_id);
     }
 
     /**
@@ -348,6 +416,10 @@ class EmployeeController extends AccountBaseController
     public function edit($id)
     {
         $this->employee = User::withoutGlobalScope(ActiveScope::class)->with('employeeDetail', 'reportingTeam')->findOrFail($id);
+        $this->emailCountInCompanies = User::withoutGlobalScopes([ActiveScope::class, CompanyScope::class])
+            ->where('email', $this->employee->email)
+            ->whereNotNull('email')
+            ->count();
 
         $this->editPermission = user()->permission('edit_employees');
 
@@ -371,6 +443,7 @@ class EmployeeController extends AccountBaseController
         $this->roles = Role::where('name', '<>', 'client')->get();
         $this->userRoles = $this->employee->roles->pluck('name')->toArray();
         $this->salutations = Salutation::cases();
+        $this->companyAddresses = CompanyAddress::all();
 
         /** @phpstan-ignore-next-line */
         if (count($this->employee->reportingTeam) > 0) {
@@ -383,8 +456,10 @@ class EmployeeController extends AccountBaseController
         if (!is_null($this->employee->employeeDetail)) {
             $this->employeeDetail = $this->employee->employeeDetail->withCustomFields();
 
-            if ($this->employeeDetail->getCustomFieldGroupsWithFields()) {
-                $this->fields = $this->employeeDetail->getCustomFieldGroupsWithFields()->fields;
+            $getCustomFieldGroupsWithFields = $this->employeeDetail->getCustomFieldGroupsWithFields();
+
+            if ($getCustomFieldGroupsWithFields) {
+                $this->fields = $getCustomFieldGroupsWithFields->fields;
             }
         }
 
@@ -409,14 +484,9 @@ class EmployeeController extends AccountBaseController
      */
     public function update(UpdateRequest $request, $id)
     {
-
         $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
-        $user->name = $request->name;
-        $user->email = $request->email;
 
-        if ($request->password != '') {
-            $user->password = bcrypt($request->password);
-        }
+        $user->name = $request->name;
 
         $user->mobile = $request->mobile;
         $user->country_id = $request->country;
@@ -425,8 +495,25 @@ class EmployeeController extends AccountBaseController
         $user->gender = $request->gender;
         $user->locale = $request->locale;
 
-        if (request()->has('status')) {
+        if ($request->status) {
+            $lastDate = $request->last_date ? Carbon::createFromFormat($this->company->date_format, $request->last_date, $this->company->timezone) : null;
+
+            if (request()->last_date != null && $request->status == 'deactive') {
+                $user->status = 'deactive';
+                $user->inactive_date = $lastDate;
+            }
+            else {
+                $user->status = 'active';
+                $user->inactive_date = null;
+            }
+
+
+            if (request()->status == 'active' && !checkCompanyCanAddMoreEmployees(user()->company_id) && $user->status != 'active') {
+                return Reply::error(__('superadmin.maxEmployeesLimitReached'));
+            }
+
             $user->status = $request->status;
+            PackageUpdateNotify::where('company_id', user()->company_id)->where('user_id', $user->id)->delete();
         }
 
         if ($id != user()->id) {
@@ -508,7 +595,7 @@ class EmployeeController extends AccountBaseController
         $employee->last_date = null;
 
         if ($request->last_date != '') {
-            $employee->last_date = Carbon::createFromFormat($this->company->date_format, $request->last_date)->format('Y-m-d');
+            $employee->last_date = companyToYmd($request->last_date);
         }
 
         $employee->save();
@@ -519,7 +606,7 @@ class EmployeeController extends AccountBaseController
         }
 
         if (user()->id == $user->id) {
-            session()->forget('user');
+            session(['user' => $user]);
         }
 
         return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('employees.index')]);
@@ -541,7 +628,13 @@ class EmployeeController extends AccountBaseController
             return Reply::error(__('messages.adminCannotDelete'));
         }
 
+        PackageUpdateNotify::where('company_id', $user->company_id)->where('user_id', $user->id)->delete();
+
         $this->deleteEmployee($user);
+
+        // WORKSUITESAAS
+
+        session()->forget('company');
 
         return Reply::success(__('messages.deleteSuccess'));
 
@@ -557,14 +650,16 @@ class EmployeeController extends AccountBaseController
     {
         $this->viewPermission = user()->permission('view_employees');
 
-        $this->employee = User::with(['employeeDetail.designation', 'employeeDetail.department','appreciations', 'appreciations.award', 'appreciations.award.awardIcon', 'employeeDetail.reportingTo', 'country', 'emergencyContacts', 'reportingTeam' => function ($query) {
-            $query->join('users', 'users.id', '=', 'employee_details.user_id');
-            $query->where('users.status', '=', 'active');
-        }, 'reportingTeam.user', 'leaveTypes', 'leaveTypes.leaveType', 'appreciationsGrouped', 'appreciationsGrouped.award', 'appreciationsGrouped.award.awardIcon'])
-        ->withoutGlobalScope(ActiveScope::class)
-        ->withOut('clientDetails', 'role')
-        ->withCount('member', 'agents', 'openTasks')
-        ->findOrFail($id);
+        $this->employee = User::with('leaveTypes.leaveType')->withoutGlobalScope(ActiveScope::class)
+            ->withOut('clientDetails')
+            ->withCount(['member', 'agents', 'openTasks'])
+            ->findOrFail($id);
+
+        if ($this->employee->employeeDetail->company_address_id) {
+            $this->companyAddress = CompanyAddress::where('id', $this->employee->employeeDetail->company_address_id)->first();
+        } else {
+            $this->companyAddress = CompanyAddress::where('is_default', 1)->where('company_id', $this->company->id)->first();
+        }
 
         $this->employeeLanguage = LanguageSetting::where('language_code', $this->employee->locale)->first();
 
@@ -642,7 +737,8 @@ class EmployeeController extends AccountBaseController
             return $this->tickets();
         case 'projects':
             return $this->projects();
-
+        case 'attendance':
+            return $this->attendance($this->employee->id);
         case 'tasks':
             return $this->tasks();
         case 'leaves':
@@ -656,6 +752,14 @@ class EmployeeController extends AccountBaseController
         case 'emergency-contacts':
             $this->view = 'employees.ajax.emergency-contacts';
             break;
+        case 'increment-promotions':
+            $viewIncrementPermission = user()->permission('view_increment_promotion');
+            abort_403(($viewIncrementPermission == 'none'));
+
+            $this->manageIncrementPermission = user()->permission('manage_increment_promotion');
+            $this->incrementPromotion($id);
+            $this->view = 'employees.ajax.increment-promotions';
+            break;
         case 'appreciation':
             $viewAppreciationPermission = user()->permission('view_appreciation');
             abort_403(!in_array($viewAppreciationPermission, ['all', 'added', 'owned', 'both']));
@@ -664,45 +768,131 @@ class EmployeeController extends AccountBaseController
             $this->view = 'employees.ajax.appreciations';
             break;
         case 'leaves-quota':
-            $this->leaveQuota($id);
-            $this->leavesTakenByUser = Leave::byUserCount($this->employee);
-            $this->leaveTypes = LeaveType::byUser($this->employee);
+
+            $settings = company();
+            $now = Carbon::now();
+            $yearStartMonth = $settings->year_starts_from;
+            $leaveStartDate = null;
+            $leaveEndDate = null;
+
+            if($settings && $settings->leaves_start_from == 'year_start'){
+
+                if ($yearStartMonth > $now->month) {
+                    // Not completed a year yet
+                    $leaveStartDate = Carbon::create($now->year, $yearStartMonth, 1)->subYear();
+                    $leaveEndDate = $leaveStartDate->copy()->addYear()->subDay();
+                } else {
+                    $leaveStartDate = Carbon::create($now->year, $yearStartMonth, 1);
+                    $leaveEndDate = $leaveStartDate->copy()->addYear()->subDay();
+                }
+
+            } elseif ($settings && $settings->leaves_start_from == 'joining_date'){
+
+                $joiningDate = Carbon::parse($this->employee->employeedetails->joining_date->format((now(company()->timezone)->year) . '-m-d'));
+                $joinMonth = $joiningDate->month;
+                $joinDay = $joiningDate->day;
+
+                if ($joinMonth > $now->month || ($joinMonth == $now->month && $now->day < $joinDay)) {
+                    // Not completed a year yet
+                    $leaveStartDate = $joiningDate->copy()->subYear();
+                    $leaveEndDate = $joiningDate->copy()->subDay();
+                } else {
+                    // Completed a year
+                    $leaveStartDate = $joiningDate;
+                    $leaveEndDate = $joiningDate->copy()->addYear()->subDay();
+                }
+
+            }
+
             $this->employeeLeavesQuotas = $this->employee->leaveTypes;
-            $this->employeeLeavesQuota = clone $this->employeeLeavesQuotas;
 
+            $hasLeaveQuotas = false;
             $totalLeaves = 0;
+            $overUtilizedLeaves = 0;
+            $leaveCounts = [];
+            $allowedEmployeeLeavesQuotas = []; // Leave Types Which employee can take according to leave type conditions
 
-            foreach($this->leaveTypes as $key => $leavesCount)
-            {
-                $leavesCountCheck = $leavesCount->leaveTypeCodition($leavesCount, $this->userRole);
+            foreach ($this->employeeLeavesQuotas as $key => $leavesQuota) {
 
-                if($leavesCountCheck && $this->employeeLeavesQuotas[$key]->leave_type_id == $leavesCount->id){
-                    $totalLeaves += $this->employeeLeavesQuotas[$key]->no_of_leaves;
+                if (
+                    ($leavesQuota->leaveType->deleted_at == null || $leavesQuota->leaves_used > 0) &&
+                    $leavesQuota->leaveType && ($leavesQuota->leaveType->leaveTypeCondition($leavesQuota->leaveType, $this->employee))) {
+
+                    $hasLeaveQuotas = true;
+                    $allowedEmployeeLeavesQuotas[] = $leavesQuota;
+
+                    // $sum = ($leavesQuota->leaveType->deleted_at == null) ? $leavesQuota->leaves_remaining : 0;
+                    // $totalLeaves = $totalLeaves + ($leavesQuota?->no_of_leaves ?: 0) - ($leaveCounts[$leavesQuota->leave_type_id] ?: 0);
+                    $totalLeaves = $totalLeaves + ($leavesQuota?->leaves_remaining ?: 0);
                 }
             }
 
+            $this->leaveStartDate = $leaveStartDate->format(company()->date_format);
+            $this->leaveEndDate = $leaveEndDate->format(company()->date_format);
+            $this->leaveCounts = $leaveCounts;
+
+            $this->hasLeaveQuotas = $hasLeaveQuotas;
             $this->allowedLeaves = $totalLeaves;
+            $this->allowedEmployeeLeavesQuotas = $allowedEmployeeLeavesQuotas;
             $this->view = 'employees.ajax.leaves_quota';
             break;
         case 'shifts':
             abort_403(user()->permission('view_shift_roster') != 'all' || !in_array('attendance', user_modules()));
+
+            $automateShift = AutomateShift::where('user_id', $id)->first();
+            $this->shiftRotation = $automateShift ? ShiftRotation::findOrFail($automateShift->employee_shift_rotation_id) : [];
+
             $this->view = 'employees.ajax.shifts';
             break;
         case 'permissions':
             abort_403(user()->permission('manage_role_permission_setting') != 'all');
 
-            $this->modulesData = Module::with('permissions')->withCount('customPermissions')->get();
+            $disabledModulesNames = ModuleSetting::where('is_allowed', '0')->pluck('module_name');
+
+            if($this->employee->customised_permissions === 1){
+                $this->modulesData = Module::with('permissions')->withCount('customPermissions')->whereNotIn('module_name',$disabledModulesNames)->get();
+            }else{
+                $user = User::with('role')->findOrFail($id);
+                $this->role = Role::with('permissions')->where('name', '<>', 'admin')->findOrFail($user->role[count($user->role) - 1]->role_id);
+
+                if ($this->role->name == 'client') {
+                    $clientModules = ModuleSetting::where('type', 'client')->get()->pluck('module_name');
+                    $this->modulesData = Module::with('permissions')->withCount('customPermissions')->whereNotIn('module_name',$disabledModulesNames)
+                        ->whereIn('module_name', $clientModules)->where('module_name', '<>', 'messages')->get();
+
+                }
+                else {
+                    $this->modulesData = Module::with('permissions')->where('module_name', '<>', 'messages')->withCount('customPermissions')->whereNotIn('module_name',$disabledModulesNames)->get();
+                }
+            }
+
+            $this->employeeModules = array_merge(
+                ModuleSetting::where('module_name', '<>', 'settings')
+                                ->where('status', 'active')
+                                ->where('type', 'employee')
+                                ->pluck('module_name')
+                                ->toArray(),
+                ['settings', 'dashboards']
+            );
+
             $this->view = 'employees.ajax.permissions';
             break;
 
         case 'activity':
-            $this->activities = UserActivity::where('user_id', $id)->orderBy('id', 'desc')->get();
+            $userId = auth()->id();
+
+
+            $this->histories = EmployeeActivity::where('emp_id', $id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+
             $this->view = 'employees.ajax.activity';
             break;
 
         case 'immigration':
             abort_403($viewImmigrationPermission == 'none');
-            $this->passport = Passport::with('country')->where('user_id', $this->employee->id )->first();
+            $this->passport = Passport::with('country')->where('user_id', $this->employee->id)->first();
             $this->visa = VisaDetail::with('country')->where('user_id', $this->employee->id)->get();
             $this->view = 'employees.ajax.immigration';
             break;
@@ -721,6 +911,50 @@ class EmployeeController extends AccountBaseController
         $this->activeTab = $tab ?: 'profile';
 
         return view('employees.show', $this->data);
+    }
+
+    public function incrementPromotion($id)
+    {
+        $promotions = Promotion::employeePromotions($id)
+            ->map(function ($promotion) use ($id) {
+                return [
+                    'type' => 'promotion',
+                    'date' => $promotion->date,
+                    'data' => $promotion,
+                ];
+            });
+
+        if (module_enabled('Payroll') && in_array('payroll', user_modules())) {
+            $increments = EmployeeMonthlySalary::employeeIncrements($id)
+                ->map(function ($increment, $index) use ($id) {
+
+                    $netSalaryData = EmployeeMonthlySalary::employeeNetSalary($id, $increment->date);
+                    $isFirst = ($index === 0);
+                    $netSalary = $isFirst ? $netSalaryData['initialSalary'] : $netSalaryData['netSalary'];
+                    $incrementAmount = $increment->amount;
+                    $percentIncrement = ($netSalary > 0) ? round(($incrementAmount / $netSalary) * 100) : 0;
+
+                    return [
+                        'type' => 'increment',
+                        'date' => $increment->date,
+                        'data' => $increment,
+                        'netSalary' => $netSalary,
+                        'percentage' => $percentIncrement
+                    ];
+                });
+
+            $payrollCurrency = PayrollSetting::with('currency')->first();
+            $this->currency = $payrollCurrency->currency ? $payrollCurrency->currency->id : '';
+        }
+        else {
+            $increments = collect([]);
+            $this->currency = $this->company->currency_id;
+        }
+
+        $this->careerProgress = $promotions->concat($increments)
+            ->sortByDesc('date')->values();
+
+        return $this->careerProgress;
     }
 
     /**
@@ -764,18 +998,39 @@ class EmployeeController extends AccountBaseController
 
     public function byDepartment($id)
     {
-        $users = User::join('employee_details', 'employee_details.user_id', '=', 'users.id');
+        $viewPermission = user()->permission('view_employees');
+        $users = User::with('employeeDetail')->withoutGlobalScope(ActiveScope::class)->join('employee_details', 'employee_details.user_id', '=', 'users.id');
+
+        if (request()->request_from == 'rotation' && request()->rotation) {
+            $rotAssignedEmps = AutomateShift::where('employee_shift_rotation_id', request()->rotation)->pluck('user_id');
+            $users = $users->whereNotIn('users.id', $rotAssignedEmps);
+        }
 
         if ($id != 0) {
             $users = $users->where('employee_details.department_id', $id);
         }
 
-        $users = $users->select('users.*')->get();
+        if ($viewPermission == 'owned' || $viewPermission == 'none') {
+            $users = $users->where('users.id', user()->id);
+        } elseif ($viewPermission == 'both') {
+            $users = $users->where(function ($query) {
+                $query->where('employee_details.user_id', user()->id)
+                      ->orWhere('employee_details.added_by', user()->id);
+            });
+        } elseif ($viewPermission == 'added') {
+            $users = $users->where('employee_details.added_by', user()->id);
+        }
+
+        $users = $users->select('users.*')->where('status', 'active')->get();
 
         $options = '';
 
         foreach ($users as $item) {
-            $options .= '<option  data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div>  ' . $item->name . '" value="' . $item->id . '"> ' . $item->name . ' </option>';
+            if($item->status == 'active'){
+                $content = ($item->status === 'deactive') ? "<span class='badge badge-pill badge-danger border align-center ml-2 px-2'>Inactive</span>" : '';
+
+                $options .= '<option  data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div>  ' . $item->name . $content . '" value="' . $item->id . '"> ' . $item->name . ' </option>';
+            }
         }
 
         return Reply::dataOnly(['status' => 'success', 'data' => $options]);
@@ -785,11 +1040,11 @@ class EmployeeController extends AccountBaseController
     {
         $viewAppreciationPermission = user()->permission('view_appreciation');
 
-        if($viewAppreciationPermission == 'none'){
+        if ($viewAppreciationPermission == 'none') {
             return [];
         }
 
-        $appreciations = Appreciation::with(['award','award.awardIcon', 'awardTo'])->select('id', 'award_id', 'award_to', 'award_date', 'image', 'summary', 'created_at');
+        $appreciations = Appreciation::with(['award', 'award.awardIcon', 'awardTo'])->select('id', 'award_id', 'award_to', 'award_date', 'image', 'summary', 'created_at');
         $appreciations->join('awards', 'awards.id', '=', 'appreciations.award_id');
 
         if ($viewAppreciationPermission == 'added') {
@@ -874,6 +1129,24 @@ class EmployeeController extends AccountBaseController
         return $dataTable->render('employees.show', $this->data);
     }
 
+    public function attendance($employeeId)
+    {
+        $this->viewAttendancePermission = user()->permission('view_attendance');
+        abort_403(in_array($this->viewAttendancePermission, ['none']));
+
+        $tab = request('tab');
+        $this->activeTab = $tab ?: 'profile';
+        $this->employees = User::with('employeeDetail')->where('id', $employeeId)->get();
+
+        $now = now();
+        $this->year = $now->format('Y');
+        $this->month = $now->format('m');
+        $this->departments = Team::all();
+        $this->designations = Designation::all();
+
+        return view('employees.ajax.attendance', $this->data);
+    }
+
     public function timelogs()
     {
 
@@ -953,19 +1226,20 @@ class EmployeeController extends AccountBaseController
         $employee->slack_username = $request->slack_username;
         $employee->department_id = $request->department;
         $employee->designation_id = $request->designation;
+        $employee->company_address_id = $request->company_address;
         $employee->reporting_to = $request->reporting_to;
         $employee->about_me = $request->about_me;
-        $employee->joining_date = Carbon::createFromFormat($this->company->date_format, $request->joining_date)->format('Y-m-d');
-        $employee->date_of_birth = $request->date_of_birth ? Carbon::createFromFormat($this->company->date_format, $request->date_of_birth)->format('Y-m-d') : null;
-        $employee->calendar_view = 'task,events,holiday,tickets,leaves';
-        $employee->probation_end_date = $request->probation_end_date ? Carbon::createFromFormat($this->company->date_format, $request->probation_end_date)->format('Y-m-d') : null;
-        $employee->notice_period_start_date = $request->notice_period_start_date ? Carbon::createFromFormat($this->company->date_format, $request->notice_period_start_date)->format('Y-m-d') : null;
-        $employee->notice_period_end_date = $request->notice_period_end_date ? Carbon::createFromFormat($this->company->date_format, $request->notice_period_end_date)->format('Y-m-d') : null;
+        $employee->joining_date = companyToYmd($request->joining_date);
+        $employee->date_of_birth = $request->date_of_birth ? companyToYmd($request->date_of_birth) : null;
+        $employee->calendar_view = 'task,events,holiday,tickets,leaves,follow_ups';
+        $employee->probation_end_date = $request->probation_end_date ? companyToYmd($request->probation_end_date) : null;
+        $employee->notice_period_start_date = $request->notice_period_start_date ? companyToYmd($request->notice_period_start_date) : null;
+        $employee->notice_period_end_date = $request->notice_period_end_date ? companyToYmd($request->notice_period_end_date) : null;
         $employee->marital_status = $request->marital_status;
-        $employee->marriage_anniversary_date = $request->marriage_anniversary_date ? Carbon::createFromFormat($this->company->date_format, $request->marriage_anniversary_date)->format('Y-m-d') : null;
+        $employee->marriage_anniversary_date = $request->marriage_anniversary_date ? companyToYmd($request->marriage_anniversary_date) : null;
         $employee->employment_type = $request->employment_type;
-        $employee->internship_end_date = $request->internship_end_date ? Carbon::createFromFormat($this->company->date_format, $request->internship_end_date)->format('Y-m-d') : null;
-        $employee->contract_end_date = $request->contract_end_date ? Carbon::createFromFormat($this->company->date_format, $request->contract_end_date)->format('Y-m-d') : null;
+        $employee->internship_end_date = $request->internship_end_date ? companyToYmd($request->internship_end_date) : null;
+        $employee->contract_end_date = $request->contract_end_date ? companyToYmd($request->contract_end_date) : null;
     }
 
     public function importMember()
@@ -975,21 +1249,22 @@ class EmployeeController extends AccountBaseController
         $addPermission = user()->permission('add_employees');
         abort_403(!in_array($addPermission, ['all', 'added']));
 
+        $this->view = 'employees.ajax.import';
 
         if (request()->ajax()) {
-            $html = view('employees.ajax.import', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'employees.ajax.import';
 
         return view('employees.create', $this->data);
     }
 
     public function importStore(ImportRequest $request)
     {
-        $this->importFileProcess($request, EmployeeImport::class);
+        $rvalue = $this->importFileProcess($request, EmployeeImport::class);
+
+        if($rvalue == 'abort'){
+            return Reply::error(__('messages.abortAction'));
+        }
 
         $view = view('employees.ajax.import_progress', $this->data)->render();
 
@@ -1001,20 +1276,6 @@ class EmployeeController extends AccountBaseController
         $batch = $this->importJobProcess($request, EmployeeImport::class, ImportEmployeeJob::class);
 
         return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);
-    }
-
-    public function leaveQuota($id)
-    {
-        $roles = User::with('roles')->findOrFail($id);
-        $userRole = [];
-
-        $userRoles = $roles->roles->count() > 1 ? $roles->roles->where('name', '!=', 'employee') : $roles->roles;
-
-        foreach($userRoles as $role){
-            $userRole[] = $role->id;
-        }
-
-        $this->userRole = $userRole;
     }
 
 }

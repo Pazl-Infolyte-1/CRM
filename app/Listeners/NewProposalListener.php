@@ -2,7 +2,6 @@
 
 namespace App\Listeners;
 
-use App\Events\NewInvoiceEvent;
 use App\Events\NewProposalEvent;
 use App\Models\User;
 use App\Notifications\NewProposal;

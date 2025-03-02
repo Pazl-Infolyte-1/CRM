@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * App\Models\Currency
@@ -43,13 +42,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder|Currency whereDecimalSeparator($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Currency whereNoOfDecimal($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Currency whereThousandSeparator($value)
-
  * @mixin \Eloquent
  */
 class Currency extends BaseModel
 {
     use HasCompany;
 
+    protected $guarded =['id'];
     public function invoices()
     {
         return $this->hasMany(Invoice::class);

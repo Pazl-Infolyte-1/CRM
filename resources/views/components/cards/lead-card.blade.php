@@ -11,9 +11,9 @@ $moveClass = '';
     id="drag-task-{{ $lead->id }}">
     <div class="card-body p-2">
         <div class="d-flex justify-content-between mb-2">
-            <a href="{{ route('leads.show', [$lead->id]) }}"
-                class="f-12 f-w-500 text-dark mb-0 text-wrap openRightModal">{{ $lead->client_name }}
-                @if (!is_null($lead->client_id))
+            <a href="{{ route('deals.show', [$lead->id]) }}"
+                class="f-12 f-w-500 text-dark mb-0 text-wrap openRightModal">{{ $lead->name }}
+                @if (!is_null($lead->contact->client_id))
                 <i class="fa fa-check-circle text-success" data-toggle="tooltip" data-original-title="@lang('modules.lead.convertedClient')"></i>
                 @endif
             </a>
@@ -25,10 +25,10 @@ $moveClass = '';
             @endif
         </div>
 
-        @if ($lead->company_name)
+        @if ($lead->contact->client_name)
             <div class="d-flex mb-3 align-items-center">
                 <i class="fa fa-building f-11 text-lightest"></i><span
-                    class="ml-2 f-11 text-lightest">{{ $lead->company_name }}</span>
+                    class="ml-2 f-11 text-lightest">{{ $lead->contact->client_name_salutation }}</span>
             </div>
         @endif
 

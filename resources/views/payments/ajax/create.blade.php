@@ -3,7 +3,7 @@
         <x-form id="save-payment-data-form">
 
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.payments.paymentDetails')</h4>
                 <div class="row p-20">
 
@@ -76,7 +76,7 @@
                                 </option>
                             @else
                                 @foreach ($currencies as $currency)
-                                    <option @if ($currency->id == company()->currency_id) selected @endif value="{{ $currency->id }}"
+                                    <option @selected($currency->id == company()->currency_id) value="{{ $currency->id }}"
                                         data-currency-code="{{ $currency->currency_code }}">
                                         {{ $currency->currency_code . ' (' . $currency->currency_symbol . ')' }}
                                     </option>
@@ -86,8 +86,8 @@
                     </div>
                     <div class="col-md-3">
                         <x-forms.text fieldId="exchange_rate" :fieldLabel="__('modules.currencySettings.exchangeRate')"
-                        fieldName="exchange_rate" fieldRequired="true" :fieldValue="$exchangeRate" fieldReadOnly="true"
-                        :fieldHelp="$currencyCode != company()->currency->currency_code ? ( company()->currency->currency_code.' '.__('app.to').' '.$currencyCode ) : ' '" />
+                        fieldName="exchange_rate" fieldRequired="true" :fieldValue="(isset($projectName) ? $project->currency->exchange_rate : (isset($invoice) ? $invoice->exchange_rate : $companyCurrency->exchange_rate))"
+                        :fieldHelp="$currencyCode != company()->currency->currency_code ? ($currencyCode .' '.__('app.to').' '. company()->currency->currency_code) : ' '" />
                     </div>
 
                     <div class="col-md-3">
@@ -143,7 +143,7 @@
                                 <option value="">--</option>
                                 @if($viewBankAccountPermission != 'none')
                                     @foreach ($bankDetails as $bankDetail)
-                                        <option @if (isset($invoice) && $invoice->bank_account_id == $bankDetail->id) selected @endif value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
+                                        <option @selected(isset($invoice) && $invoice->bank_account_id == $bankDetail->id) value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
                                             {{ $bankDetail->bank_name }} | @endif
                                             {{ $bankDetail->account_name }}
                                         </option>
@@ -218,6 +218,7 @@
             var url = "{{ route('payments.account_list') }}";
             var curId = $('#currency_id').val();
             var token = "{{ csrf_token() }}";
+            var paymentInvoiceId = $('#payment_invoice_id').val();
 
             $.easyAjax({
                 url: url,
@@ -226,18 +227,14 @@
                 blockUI: true,
                 data: {
                     _token: token,
-                    'curId' :curId
+                    'curId' :curId,
+                    'paymentInvoiceId': paymentInvoiceId
                 },
                 success: function(response) {
                     if (response.status == 'success') {
                         $('#bank_account_id').html(response.data);
                         $('#bank_account_id').selectpicker('refresh');
                         $('#exchange_rate').val(response.exchangeRate);
-                        if(curId != undefined && curId != companyCurrency){
-                            $('#exchange_rate').prop('readonly', false);
-                        } else {
-                            $('#exchange_rate').prop('readonly', true);
-                        }
                     }
                 }
             });
@@ -318,11 +315,6 @@
                         if(id != 0) {
                             $('#exchange_rate').val(response.exchangeRate);
                         }
-                        if(curId != undefined && curId != companyCurrency){
-                            $('#exchange_rate').prop('readonly', false);
-                        } else {
-                            $('#exchange_rate').prop('readonly', true);
-                        }
                     }
                 }
             });
@@ -336,12 +328,6 @@
             var currentCurrencyName = $('#currency option:selected').attr('data-currency-code');
             var companyCurrency = '{{ $companyCurrency->id }}';
 
-            if(curId == companyCurrency){
-                $('#exchange_rate').prop('readonly', true);
-            } else{
-                $('#exchange_rate').prop('readonly', false);
-            }
-
             var token = "{{ csrf_token() }}";
 
             $.easyAjax({
@@ -354,7 +340,7 @@
                         $('#bank_account_id').html(response.data);
                         $('#bank_account_id').selectpicker('refresh');
                         $('#exchange_rate').val(response.exchangeRate);
-                        let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
+                        let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+currentCurrencyName+' @lang('app.to') '+companyCurrencyName+' )' : '';
                         $('#exchange_rateHelp').html(currencyExchange);
                     }
                 }

@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Message;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class ClientChatStore extends CoreRequest
 {

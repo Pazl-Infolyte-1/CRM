@@ -32,69 +32,85 @@
                 </div>
             </div>
 
-            <x-form id="save-taskfile-data-form" class="d-none">
+            @php
+                $userRoles = user_roles();
+                $isAdmin = in_array('admin', $userRoles);
+                $isEmployee = in_array('employee', $userRoles);
+            @endphp
 
-                <input type="hidden" name="task_id" value="{{ $task->id }}">
-                <div class="row">
-                    <div class="col-md-12 d-none error-block">
-                        <x-alert type="danger" id="error"></x-alert>
-                    </div>
-                    <div class="col-md-12">
-                        <x-forms.file-multiple fieldLabel="" fieldName="file[]" fieldId="task-file-upload-dropzone"/>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="w-100 justify-content-end d-flex mt-2">
-                            <x-forms.button-cancel id="cancel-taskfile" class="border-0">@lang('app.cancel')
-                            </x-forms.button-cancel>
+            @if ($task->approval_send == 1 && $task?->project?->need_approval_by_admin == 1 && $isEmployee && !$isAdmin && $status->slug == 'waiting_approval')
+                <!-- Popup for Send Approval -->
+                @include('tasks.ajax.sent-approval-modal')
+            @else
+                <x-form id="save-taskfile-data-form" class="d-none">
+
+                    <input type="hidden" name="task_id" value="{{ $task->id }}">
+                    <div class="row">
+                        <div class="col-md-12 d-none error-block">
+                            <x-alert type="danger" id="error"></x-alert>
+                        </div>
+                        <div class="col-md-12">
+                            <x-forms.file-multiple fieldLabel="" fieldName="file[]" fieldId="task-file-upload-dropzone"/>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="w-100 justify-content-end d-flex mt-2">
+                                <x-forms.button-cancel id="cancel-taskfile" class="border-0">@lang('app.cancel')
+                                </x-forms.button-cancel>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </x-form>
+                </x-form>
+            @endif
         </div>
     @endif
 
     <div class="d-flex flex-wrap p-20" id="task-file-list">
+        @php
+            $filesShowCount = 0; // This is done because if fies uploaded and not have permission to view then no record found message should be shown
+        @endphp
         @forelse($task->files as $file)
-            <x-file-card :fileName="$file->filename" :dateAdded="$file->created_at->diffForHumans()">
-                @if ($file->icon == 'images')
-                    <img src="{{ $file->file_url }}">
-                @else
-                    <i class="fa {{ $file->icon }} text-lightest"></i>
-                @endif
+            @if ($viewTaskFilePermission == 'all' || ($viewTaskFilePermission == 'added' && $file->added_by == user()->id))
+                @php
+                    $filesShowCount++;
+                @endphp
+                <x-file-card :fileName="$file->filename" :dateAdded="$file->created_at->diffForHumans()">
+                    <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
+                        <x-slot name="action">
+                            <div class="dropdown ml-auto file-action">
+                                <button class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
+                                        type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa fa-ellipsis-h"></i>
+                                </button>
 
-                @if ($viewTaskFilePermission == 'all' || ($viewTaskFilePermission == 'added' && $file->added_by == user()->id))
-                    <x-slot name="action">
-                        <div class="dropdown ml-auto file-action">
-                            <button class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
-                                    type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-ellipsis-h"></i>
-                            </button>
-
-                            <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
-                                 aria-labelledby="dropdownMenuLink" tabindex="0">
-                                @if ($viewTaskFilePermission == 'all' || ($viewTaskFilePermission == 'added' && $file->added_by == user()->id))
+                                <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
+                                    aria-labelledby="dropdownMenuLink" tabindex="0">
                                     @if ($file->icon = 'images')
-                                        <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank"
-                                           href="{{ $file->file_url }}">@lang('app.view')</a>
+                                        @if ($file->icon == 'images')
+                                            <a class="img-lightbox cursor-pointer d-block text-dark-grey f-13 pt-3 px-3" data-image-url="{{ $file->file_url }}" href="javascript:;">@lang('app.view')</a>
+                                        @else
+                                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank" href="{{ $file->file_url }}">@lang('app.view')</a>
+                                        @endif
                                     @endif
                                     <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "
-                                       href="{{ route('task_files.download', md5($file->id)) }}">@lang('app.download')</a>
-                                @endif
+                                    href="{{ route('task_files.download', md5($file->id)) }}">@lang('app.download')</a>
 
-                                @if ($deleteTaskFilePermission == 'all' || ($deleteTaskFilePermission == 'added' && $file->added_by == user()->id))
-                                    <a class="cursor-pointer d-block text-dark-grey f-13 pb-3 px-3 delete-file"
-                                       data-row-id="{{ $file->id }}" href="javascript:;">@lang('app.delete')</a>
-                                @endif
+                                    @if ($deleteTaskFilePermission == 'all' || ($deleteTaskFilePermission == 'added' && $file->added_by == user()->id))
+                                        <a class="cursor-pointer d-block text-dark-grey f-13 pb-3 px-3 delete-file"
+                                        data-row-id="{{ $file->id }}" href="javascript:;">@lang('app.delete')</a>
+                                    @endif
+                                </div>
                             </div>
-                        </div>
-                    </x-slot>
-                @endif
+                        </x-slot>
 
-            </x-file-card>
+                </x-file-card>
+            @endif
         @empty
             <x-cards.no-record :message="__('messages.noFileUploaded')" icon="file"/>
         @endforelse
 
+        @if ($filesShowCount == 0 && $task->files->count() > 0)
+            <x-cards.no-record :message="__('messages.noFileUploaded')" icon="file"/>
+        @endif
     </div>
 
 </div>
@@ -103,6 +119,24 @@
 <script>
     $(document).ready(function () {
         var add_task_files = "{{ $addTaskFilePermission }}";
+        var send_approval = "{{ $task->approval_send }}";
+        var admin = "{{ in_array('admin', user_roles()) }}";
+        var employee = "{{ in_array('employee', user_roles()) }}";
+        var needApproval = "{{ $task?->project?->need_approval_by_admin }}";
+        var status = "{{ $status->slug }}";
+
+        $('#add-task-file').click(function () {
+            if (send_approval == 1 && employee == 1 && admin != 1 && needApproval == 1 && status == 'waiting_approval') {
+                $('#send-approval-modal').modal('show');
+                $('.modal-backdrop').css('display', 'none');
+            }else{
+                $(this).closest('.row').addClass('d-none');
+                $('.error-block').addClass('d-none');
+                $('#save-taskfile-data-form').removeClass('d-none');
+            }
+        });
+
+
         if (add_task_files == "all" || add_task_files == "added") {
 
             Dropzone.autoDiscover = false;
@@ -168,12 +202,6 @@
 
             });
         }
-
-        $('#add-task-file').click(function () {
-            $(this).closest('.row').addClass('d-none');
-            $('.error-block').addClass('d-none');
-            $('#save-taskfile-data-form').removeClass('d-none');
-        });
 
         $('#cancel-taskfile').click(function () {
             $('#save-taskfile-data-form').addClass('d-none');

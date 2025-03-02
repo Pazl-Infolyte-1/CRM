@@ -97,3 +97,8 @@ table.dataTable{
   height: 35px;
   min-width: 53px;
 }
+
+.dataTables_wrapper .table thead td, .dataTables_wrapper .table thead th {
+    text-wrap: nowrap;
+    border-bottom-width: 2px;
+}

@@ -69,7 +69,7 @@ class SubTaskFileController extends AccountBaseController
 
         SubTaskFile::destroy($id);
 
-        $this->files = SubTaskFile::where('sub_task_id', $file->sub_task_id)->orderBy('id', 'desc')->get();
+        $this->files = SubTaskFile::where('sub_task_id', $file->sub_task_id)->orderByDesc('id')->get();
         $view = view('tasks.sub_tasks.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.deleteSuccess'), ['view' => $view]);
@@ -80,6 +80,7 @@ class SubTaskFileController extends AccountBaseController
         $file = SubTaskFile::whereRaw('md5(id) = ?', $id)->firstOrFail();
         $this->viewPermission = user()->permission('view_sub_tasks');
         abort_403(!($this->viewPermission == 'all' || ($this->viewPermission == 'added' && $file->added_by == user()->id)));
+
         return download_local_s3($file, SubTaskFile::FILE_PATH . '/' . $file->sub_task_id . '/' . $file->hashname);
     }
 

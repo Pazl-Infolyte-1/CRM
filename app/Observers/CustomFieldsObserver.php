@@ -28,66 +28,47 @@ class CustomFieldsObserver
     {
         $lead = CustomFieldGroup::where('name', 'Lead')->first();
 
-        if ($customField->custom_field_group_id == $lead->id) {
-            $leadField = new LeadCustomForm();
-
-            if ($customField->required == 'yes') {
-                $leadField->required = 1;
-            }
-            else {
-                $leadField->required = 0;
-            }
-
-            $leadField->field_display_name = $customField->label;
-            $leadField->custom_fields_id = $customField->id;
-            $leadField->field_name = $customField->name;
-            $leadField->field_order = LeadCustomForm::max('field_order');
-            $leadField->save();
+        if ($customField->custom_field_group_id != $lead->id) {
+            return false;
         }
+
+        $leadField = new LeadCustomForm();
+        $leadField->required = ($customField->required == 'yes') ? 1 : 0;
+        $leadField->field_display_name = str($customField->label);
+        $leadField->custom_fields_id = $customField->id;
+        $leadField->field_name = $customField->name;
+        $leadField->field_order = LeadCustomForm::max('field_order');
+        $leadField->save();
     }
 
     private function ticket($customField)
     {
         $ticket = CustomFieldGroup::where('name', 'Ticket')->first();
 
-        if ($customField->custom_field_group_id == $ticket->id) {
-
-            $ticketField = new TicketCustomForm();
-
-            if ($customField->required == 'yes') {
-                $ticketField->required = 1;
-
-            }
-            else {
-                $ticketField->required = 0;
-            }
-
-            $ticketField->field_display_name = $customField->label;
-            $ticketField->custom_fields_id = $customField->id;
-            $ticketField->field_name = $customField->name;
-            $ticketField->field_type = $customField->type;
-            $ticketField->field_order = TicketCustomForm::max('field_order');
-            $ticketField->save();
+        if ($customField->custom_field_group_id != $ticket->id) {
+            return false;
         }
+
+        $ticketField = new TicketCustomForm();
+        $ticketField->required = ($customField->required == 'yes') ? 1 : 0;
+        $ticketField->field_display_name = str($customField->label);
+        $ticketField->custom_fields_id = $customField->id;
+        $ticketField->field_name = $customField->name;
+        $ticketField->field_type = $customField->type;
+        $ticketField->field_order = TicketCustomForm::max('field_order');
+        $ticketField->save();
     }
 
     public function updated(CustomField $customField)
     {
         $lead = CustomFieldGroup::where('name', 'Lead')->first();
 
-        if ($customField->custom_field_group_id === $lead->id) {
+
+        if ($customField->custom_field_group_id == $lead->id) {
             $id = $customField->id;
             $leadField = LeadCustomForm::firstWhere('custom_fields_id', $id);
-
-            if ($customField->required == 'yes') {
-                $leadField->required = 1;
-
-            }
-            else {
-                $leadField->required = 0;
-            }
-
-            $leadField->field_display_name = $customField->label;
+            $leadField->required = ($customField->required == 'yes') ? 1 : 0;
+            $leadField->field_display_name = str($customField->label);
             $leadField->field_name = $customField->name;
             $leadField->save();
         }
@@ -98,15 +79,8 @@ class CustomFieldsObserver
             $id = $customField->id;
             $ticketField = TicketCustomForm::firstWhere('custom_fields_id', $id);
 
-            if ($customField->required == 'yes') {
-                $ticketField->required = 1;
-
-            }
-            else {
-                $ticketField->required = 0;
-            }
-
-            $ticketField->field_display_name = $customField->label;
+            $ticketField->required = ($customField->required == 'yes') ? 1 : 0;
+            $ticketField->field_display_name = str($customField->label);
             $ticketField->custom_fields_id = $customField->id;
             $ticketField->field_name = $customField->name;
             $ticketField->field_type = $customField->type;
@@ -114,8 +88,7 @@ class CustomFieldsObserver
         }
 
         // remove select values that is deleted from custom field
-        if ($customField->type == 'select')
-        {
+        if ($customField->type == 'select') {
             $valuesIndexCount = count(json_decode($customField->values)) - 1;
 
             // delete values that is greater than the index count

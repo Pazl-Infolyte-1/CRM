@@ -31,6 +31,22 @@
                         <option value="disabled" @if($languageSetting->status == 'disabled') selected @endif>@lang('app.disabled')</option>
                     </x-forms.select>
                 </div>
+
+                <div class="col-lg-4">
+                    <div class="form-group my-3">
+                        <x-forms.label class="f-14 text-dark-grey mb-12 w-100" fieldId="is_rtl"
+                                               :fieldLabel="__('app.rtlTheme')" fieldRequired="true">
+                        </x-forms.label>
+                        <div class="d-flex">
+                            <x-forms.radio fieldId="rtl-yes" :fieldLabel="__('app.yes')" fieldName="is_rtl" fieldValue="1"
+                                           :checked="($languageSetting->is_rtl == 1) ? 'checked' : ''">
+                            </x-forms.radio>
+                            <x-forms.radio fieldId="rtl-no" :fieldLabel="__('app.no')" fieldValue="0" fieldName="is_rtl"
+                                           :checked="($languageSetting->is_rtl == 0) ? 'checked' : ''">
+                            </x-forms.radio>
+                        </div>
+                    </div>
+                </div>
             </div>
         </x-form>
     </div>

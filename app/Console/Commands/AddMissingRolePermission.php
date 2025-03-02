@@ -30,15 +30,20 @@ class AddMissingRolePermission extends Command
      */
     public function handle()
     {
-        $companies = Company::select('id')->get();
+
         $rolePerm = new RolePermissionController();
 
-        foreach ($companies as $company) {
-            $rolePerm->addMissingAdminPermission($company->id);
-            $rolePerm->addMissingEmployeePermission($company->id);
-        }
+        Company::active()->select('id')->chunk(50, function ($companies) use ($rolePerm) {
 
-        return true;
+            foreach ($companies as $company) {
+                $this->info('Running for company:' . $company->id);
+                $rolePerm->addMissingAdminPermission($company->id);
+                $rolePerm->addMissingEmployeePermission($company->id);
+            }
+        });
+
+
+        return Command::SUCCESS;
     }
 
 }

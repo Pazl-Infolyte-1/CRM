@@ -1,8 +1,8 @@
 @extends('layouts.public')
 
 @push('styles')
-    <link rel='stylesheet' href="{{ asset('vendor/css/dragula.css') }}" type='text/css' />
-    <link rel='stylesheet' href="{{ asset('vendor/css/drag.css') }}" type='text/css' />
+    <link rel='stylesheet' href="{{ asset('vendor/css/dragula.css') }}" type='text/css'/>
+    <link rel='stylesheet' href="{{ asset('vendor/css/drag.css') }}" type='text/css'/>
 @endpush
 
 
@@ -35,7 +35,7 @@
                 url: url,
                 container: '#taskboard-columns',
                 type: "GET",
-                success: function(response) {
+                success: function (response) {
                     $('#taskboard-columns').html(response.view);
                     $("body").tooltip({
                         selector: '[data-toggle="tooltip"]'
@@ -44,7 +44,7 @@
             });
         }
 
-        $('body').on('click', '.load-more-tasks', function() {
+        $('body').on('click', '.load-more-tasks', function () {
             var columnId = $(this).data('column-id');
             var totalTasks = $(this).data('total-tasks');
             var currentTotalTasks = $('#drag-container-' + columnId + ' .task-card').length;
@@ -58,7 +58,7 @@
                 container: '#drag-container-' + columnId,
                 blockUI: true,
                 type: "GET",
-                success: function(response) {
+                success: function (response) {
                     $('#drag-container-' + columnId).append(response.view);
                     if (response.load_more == 'show') {
                         $('#drag-container-' + columnId).closest('.b-p-body').find('.load-more-tasks');
@@ -96,7 +96,7 @@
 
 
         // Task Detail show in sidebar
-        $('body').on('click', '.taskDetail', function() {
+        $('body').on('click', '.taskDetail', function () {
 
             var id = $(this).data('task-id');
             openTaskDetail();
@@ -108,13 +108,13 @@
                 blockUI: true,
                 container: RIGHT_MODAL,
                 historyPush: true,
-                success: function(response) {
+                success: function (response) {
                     if (response.status == "success") {
                         $(RIGHT_MODAL_CONTENT).html(response.html);
                         $(RIGHT_MODAL_TITLE).html(response.title);
                     }
                 },
-                error: function(request, status, error) {
+                error: function (request, status, error) {
                     if (request.status == 403) {
                         $(RIGHT_MODAL_CONTENT).html(
                             '<div class="align-content-between d-flex justify-content-center mt-105 f-21">403 | Permission Denied</div>'
@@ -132,7 +132,7 @@
             });
         });
 
-        $('body').on('click', '.collapse-column', function() {
+        $('body').on('click', '.collapse-column', function () {
             var columnId = $(this).data('column-id');
             var collapseType = $(this).data('type');
 

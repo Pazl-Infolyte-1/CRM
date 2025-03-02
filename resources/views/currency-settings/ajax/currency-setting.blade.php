@@ -23,7 +23,7 @@
                             </td>
                             <td>{{ $currency->currency_symbol }}</td>
                             <td>{{ $currency->currency_code }}</td>
-                            <td><span data-toggle="tooltip" data-original-title="1 {{companyOrGlobalSetting()->currency->currency_code}} = {{$currency->exchange_rate}} {{$currency->currency_code}}">
+                            <td><span data-toggle="tooltip" data-original-title="1 {{$currency->currency_code}} = {{$currency->exchange_rate}} {{companyOrGlobalSetting()->currency->currency_code}}">
                                 {{ !is_null($currency->exchange_rate) ? $currency->exchange_rate : '--' }}</span> </td>
                             <td> {{ currency_format(1000, $currency->id) }}</td>
                             <td class="text-right">

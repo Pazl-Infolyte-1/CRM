@@ -2,13 +2,8 @@
 
 namespace App\DataTables;
 
-use Carbon\Carbon;
-use App\Models\Project;
-use App\DataTables\BaseDataTable;
 use App\Models\ContractTemplate;
-use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Illuminate\Support\Facades\DB;
 
 class ContractTemplatesDataTable extends BaseDataTable
 {
@@ -39,9 +34,7 @@ class ContractTemplatesDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
                 $action = '<div class="task_view">
                 <div class="dropdown">
@@ -102,9 +95,7 @@ class ContractTemplatesDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'check', 'subject']);
     }
 

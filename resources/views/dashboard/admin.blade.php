@@ -24,6 +24,15 @@
     </style>
 @endpush
 
+@php
+$viewOverviewDashboard = user()->permission('view_overview_dashboard');
+$viewProjectDashboard = user()->permission('view_project_dashboard');
+$viewClientDashboard = user()->permission('view_client_dashboard');
+$viewHRDashboard = user()->permission('view_hr_dashboard');
+$viewTicketDashboard = user()->permission('view_ticket_dashboard');
+$viewFinanceDashboard = user()->permission('view_finance_dashboard');
+@endphp
+
 @section('filter-section')
     <!-- FILTER START -->
     <!-- DASHBOARD HEADER START -->
@@ -96,10 +105,15 @@
                                 <li class="border-bottom mb-3">
                                     <h4 class="heading-h3">@lang('modules.dashboard.dashboardWidgets')</h4>
                                 </li>
+                                @php
+                                    $userModules = user_modules();
+                                @endphp
                                 @foreach ($widgets as $widget)
                                     @php
                                         $wname = \Illuminate\Support\Str::camel($widget->widget_name);
+                                        $moduleName = $widgetToModuleMap[$widget->widget_name] ?? null;
                                     @endphp
+                                    @if ($moduleName && in_array($moduleName, $userModules))
                                     <li class="mb-2 float-left w-50">
                                         <div class="checkbox checkbox-info ">
                                             <input id="{{ $widget->widget_name }}" name="{{ $widget->widget_name }}"
@@ -108,6 +122,7 @@
                                             $wname)</label>
                                         </div>
                                     </li>
+                                    @endif
                                 @endforeach
                                 @if (count($widgets) % 2 != 0)
                                     <li class="mb-2 float-left w-50 height-35"></li>
@@ -248,6 +263,7 @@
                 }
             });
         }
+
     </script>
     <script>
         const activeTab = "{{ $activeTab }}";

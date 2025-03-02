@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helper\Reply;
 use App\Http\Requests\UpdateQuickBooksSetting;
 use App\Models\QuickBooksSetting;
-use Illuminate\Http\Request;
 
 class QuickbookSettingsController extends AccountBaseController
 {

@@ -19,6 +19,7 @@ class ExpenseCategoryController extends AccountBaseController
         $this->pageTitle = 'app.menu.expenses';
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('expenses', $this->user->modules));
+
             return $next($request);
         });
     }
@@ -27,33 +28,34 @@ class ExpenseCategoryController extends AccountBaseController
     {
         $this->categories = $this->getCategoryByCurrentRole();
         $this->roles = Role::where('name', '<>', 'admin')->where('name', '<>', 'client')->get();
+
         return view('expenses.category.create', $this->data);
     }
 
     public function store(StoreExpenseCategory $request)
     {
         $category = new ExpensesCategory();
-        $category->category_name = $request->category_name;
+        $category->category_name = strip_tags($request->category_name);
         $category->save();
 
         $roles = $request->role;
 
-        if($request->role && count($roles) > 0) // If selected role id.
+        if ($request->role && count($roles) > 0) // If selected role id.
         {
             ExpensesCategoryRole::where('expenses_category_id', $category->id)->delete();
 
-            foreach($roles as $role){
+            foreach ($roles as $role) {
                 $expansesCategoryRoles = new ExpensesCategoryRole();
                 $expansesCategoryRoles->expenses_category_id = $category->id;
                 $expansesCategoryRoles->role_id = $role;
                 $expansesCategoryRoles->save();
             }
         }
-        else{
+        else {
             // If not selected role id select all roles default.
             $rolesData = Role::where('name', '<>', 'admin')->where('name', '<>', 'client')->get();
 
-            foreach($rolesData as $roleData){
+            foreach ($rolesData as $roleData) {
                 $expansesCategoryRoles = new ExpensesCategoryRole();
                 $expansesCategoryRoles->expenses_category_id = $category->id;
                 $expansesCategoryRoles->role_id = $roleData->id;
@@ -70,7 +72,7 @@ class ExpenseCategoryController extends AccountBaseController
     public function update(StoreExpenseCategory $request, $id)
     {
         $group = ExpensesCategory::findOrFail($id);
-        $category = strip_tags($request->category_name);
+        $category = $request->category_name;
 
         if ($request->has('role_update')) // If selected role id.
         {
@@ -83,7 +85,7 @@ class ExpenseCategoryController extends AccountBaseController
 
             ExpensesCategoryRole::where('expenses_category_id', $group->id)->delete();
 
-            foreach($roles as $role){
+            foreach ($roles as $role) {
                 $expansesCategoryRoles = new ExpensesCategoryRole();
                 $expansesCategoryRoles->expenses_category_id = $group->id;
                 $expansesCategoryRoles->role_id = $role;
@@ -92,7 +94,7 @@ class ExpenseCategoryController extends AccountBaseController
         }
 
         if ($category != '') {
-            $group->category_name = strip_tags($request->category_name);
+            $group->category_name = $request->category_name;
         }
 
         $group->save();
@@ -117,9 +119,9 @@ class ExpenseCategoryController extends AccountBaseController
     {
         $categories = ExpensesCategory::with(['roles', 'roles.role']);
 
-        if(!in_array('admin', user_roles()) && !in_array('client', user_roles())){
+        if (!in_array('admin', user_roles()) && !in_array('client', user_roles())) {
 
-            $userRoleID = DB::select('select user_roles.role_id from role_user as user_roles where user_roles.user_id = '.user()->id.' ORDER BY user_roles.role_id DESC limit 1');
+            $userRoleID = DB::select('select user_roles.role_id from role_user as user_roles where user_roles.user_id = ' . user()->id . ' ORDER BY user_roles.role_id DESC limit 1');
 
             $categories = $categories->join('expenses_category_roles', 'expenses_category_roles.expenses_category_id', 'expenses_category.id')
                 ->join('roles', 'expenses_category_roles.role_id', 'roles.id')
@@ -127,9 +129,7 @@ class ExpenseCategoryController extends AccountBaseController
                 ->where('expenses_category_roles.role_id', $userRoleID[0]->role_id);
         }
 
-        $categories = $categories->get();
-
-        return $categories;
+        return $categories->get();
     }
 
 }

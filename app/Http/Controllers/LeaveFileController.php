@@ -13,19 +13,21 @@ class LeaveFileController extends AccountBaseController
 
     public function store(Request $request)
     {
-
         if ($request->hasFile('file')) {
-            foreach ($request->file as $fileData) {
-                $file = new LeaveFile();
-                $file->leave_id = $request->leave_id;
+            $leaveIDs = $request->input('leave_ids');
+            foreach ($leaveIDs as $leaveID) {
+                foreach ($request->file as $fileData) {
+                    $file = new LeaveFile();
+                    $file->leave_id = $leaveID;
 
-                $filename = Files::uploadLocalOrS3($fileData, LeaveFile::FILE_PATH . '/' . $request->leave_id);
+                    $filename = Files::uploadLocalOrS3($fileData, LeaveFile::FILE_PATH . '/' . $leaveID);
 
-                $file->user_id = user()->id;
-                $file->filename = $fileData->getClientOriginalName();
-                $file->hashname = $filename;
-                $file->size = $fileData->getSize();
-                $file->save();
+                    $file->user_id = user()->id;
+                    $file->filename = $fileData->getClientOriginalName();
+                    $file->hashname = $filename;
+                    $file->size = $fileData->getSize();
+                    $file->save();
+                }
             }
         }
 
@@ -43,10 +45,10 @@ class LeaveFileController extends AccountBaseController
         $file = LeaveFile::findOrFail($id);
         $this->leave = Leave::findorFail($file->leave_id);
         Files::deleteFile($file->hashname, LeaveFile::FILE_PATH . '/' . $file->leave_id);
+        Files::deleteDirectory(LeaveFile::FILE_PATH . '/' . $file->leave_id);
 
         LeaveFile::destroy($id);
-
-        $this->files = LeaveFile::where('leave_id', $file->leave_id)->orderBy('id', 'desc')->get();
+        $this->files = LeaveFile::where('leave_id', $file->leave_id)->orderByDesc('id')->get();
         $view = view('leaves.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.deleteSuccess'), ['view' => $view]);

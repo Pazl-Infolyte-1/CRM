@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Estimate
@@ -78,6 +77,8 @@ use Illuminate\Support\Facades\DB;
  * @method static \Illuminate\Database\Eloquent\Builder|Estimate whereIpAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Estimate whereLastViewed($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Estimate whereUnitId($value)
+ * @property string|null $original_estimate_number
+ * @method static \Illuminate\Database\Eloquent\Builder|Estimate whereOriginalEstimateNumber($value)
  * @mixin \Eloquent
  */
 class Estimate extends BaseModel
@@ -97,6 +98,11 @@ class Estimate extends BaseModel
     public function items(): HasMany
     {
         return $this->hasMany(EstimateItem::class, 'estimate_id');
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'project_id')->withTrashed();
     }
 
     public function company(): BelongsTo
@@ -147,7 +153,12 @@ class Estimate extends BaseModel
 
     public static function lastEstimateNumber()
     {
-        return (int)Estimate::latest()->first()?->original_estimate_number ?? 0;
+        return (int)Estimate::orderBy('id', 'desc')->first()?->original_estimate_number ?? 0;
+    }
+
+    public function estimateRequest(): BelongsTo
+    {
+        return $this->belongsTo(EstimateRequest::class, 'estimate_request_id');
     }
 
 }

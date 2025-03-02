@@ -15,32 +15,43 @@
         <div class="row p-20">
             <div class="col-md-12">
                 <a class="f-15 f-w-500" href="javascript:;" id="add-notes"><i
-                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                    @lang('app.note')</a>
+                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('modules.client.createNote')
+                    </a>
             </div>
         </div>
 
-        <x-form id="save-note-data-form" class="d-none">
-            <div class="col-md-12 p-20 ">
-                <div class="media">
-                    <img src="{{ user()->image_url }}" class="align-self-start mr-3 taskEmployeeImg rounded"
-                         alt="{{ user()->name }}">
-                    <div class="media-body bg-white">
-                        <div class="form-group">
-                            <div id="task-note"></div>
-                            <textarea name="note" class="form-control invisible d-none" id="task-note-text"></textarea>
+        @php
+            $userRoles = user_roles();
+            $isAdmin = in_array('admin', $userRoles);
+            $isEmployee = in_array('employee', $userRoles);
+        @endphp
+
+        @if ($task->approval_send == 1 && $isEmployee && !$isAdmin && $task->project->need_approval_by_admin == 1 && $status->slug == 'waiting_approval')
+            <!-- Popup for Send Approval -->
+            @include('tasks.ajax.sent-approval-modal')
+        @else
+            <x-form id="save-note-data-form" class="d-none">
+                <div class="col-md-12 p-20 ">
+                    <div class="media">
+                        <img src="{{ user()->image_url }}" class="align-self-start mr-3 taskEmployeeImg rounded"
+                            alt="{{ user()->name }}">
+                        <div class="media-body bg-white">
+                            <div class="form-group">
+                                <div id="task-note"></div>
+                                <textarea name="note" class="form-control invisible d-none" id="task-note-text"></textarea>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="w-100 justify-content-end d-flex mt-2">
-                    <x-forms.button-cancel id="cancel-note" class="border-0 mr-3">@lang('app.cancel')
-                    </x-forms.button-cancel>
-                    <x-forms.button-primary id="submit-note" icon="location-arrow">@lang('app.submit')
-                        </x-button-primary>
-                </div>
+                    <div class="w-100 justify-content-end d-flex mt-2">
+                        <x-forms.button-cancel id="cancel-note" class="border-0 mr-3">@lang('app.cancel')
+                        </x-forms.button-cancel>
+                        <x-forms.button-primary id="submit-note" icon="location-arrow">@lang('app.submit')
+                            </x-forms.button-primary>
+                    </div>
 
-            </div>
-        </x-form>
+                </div>
+            </x-form>
+        @endif
     @endif
 
 
@@ -57,9 +68,11 @@
                             <p class="card-date f-11 text-lightest mb-0">
                                 {{ $note->created_at->diffForHumans() }}
                             </p>
+                            @if ($editTaskNotePermission == 'all' || ($editTaskNotePermission == 'added' && $note->added_by == user()->id) ||
+                            $deleteTaskNotePermission == 'all' || ($deleteTaskNotePermission == 'added' && $note->added_by == user()->id))
                             <div class="dropdown ml-auto note-action">
                                 <button
-                                    class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                                    class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                                     type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <i class="fa fa-ellipsis-h"></i>
                                 </button>
@@ -78,6 +91,7 @@
                                     @endif
                                 </div>
                             </div>
+                            @endif
                         </div>
                         <div class="card-text f-14 text-dark-grey text-justify ql-editor">{!! $note->note !!}
                         </div>
@@ -95,10 +109,20 @@
 
 <script>
     var add_task_notes = "{{ $addTaskNotePermission }}";
+    var send_approval = "{{ $task->approval_send }}";
+    var admin = "{{ in_array('admin', user_roles()) }}";
+    var employee = "{{ in_array('employee', user_roles()) }}";
+    var needApproval = "{{ $task?->project?->need_approval_by_admin }}";
+    var status = "{{ $status->slug }}";
 
     $('#add-notes').click(function () {
-        $(this).closest('.row').addClass('d-none');
-        $('#save-note-data-form').removeClass('d-none');
+        if (send_approval == 1 && employee == 1 && admin != 1 && needApproval == 1 && status == 'waiting_approval') {
+            $('#send-approval-modal').modal('show');
+            $('.modal-backdrop').css('display', 'none');
+        }else{
+            $(this).closest('.row').addClass('d-none');
+            $('#save-note-data-form').removeClass('d-none');
+        }
     });
 
     $('#cancel-note').click(function () {

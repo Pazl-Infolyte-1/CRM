@@ -3,7 +3,6 @@
 namespace App\Observers;
 
 use App\Events\InvitationEmailEvent;
-use App\Models\UserchatFile;
 use App\Models\UserInvitation;
 
 class UserInvitationObserver

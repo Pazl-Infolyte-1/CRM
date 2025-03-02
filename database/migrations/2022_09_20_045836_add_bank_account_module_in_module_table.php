@@ -8,12 +8,13 @@ use App\Models\PermissionRole;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserPermission;
+use App\Scopes\ActiveScope;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+
     /**
      * Run the migrations.
      *
@@ -143,172 +144,146 @@ return new class extends Migration
                 ->onUpdate('cascade');
         });
 
-        $count = Company::count();
 
+        $count = Company::withoutGlobalScope(ActiveScope::class)->count();
+
+        // If bankaccount module is created right now and not previosly
         if ($count > 0) {
 
-            $types = ['admin', 'employee'];
+            $module = Module::firstOrCreate(['module_name' => 'bankaccount']);
 
-            $permissionType = [
-                [
-                    'name' => 'add_bankaccount',
-                    'display_name' => 'Add Bankaccount',
-                    'allowed_permission' => Permission::ALL_NONE,
-                    'is_custom' => 0
-                ],
-                [
-                    'name' => 'view_bankaccount',
-                    'display_name' => 'View Bankaccount',
-                    'allowed_permission' => Permission::ALL_4_ADDED_1_NONE_5,
-                    'is_custom' => 0
-                ],
-                [
-                    'name' => 'edit_bankaccount',
-                    'display_name' => 'Edit Bankaccount',
-                    'allowed_permission' => Permission::ALL_4_ADDED_1_NONE_5,
-                    'is_custom' => 0
-                ],
-                [
-                    'name' => 'delete_bankaccount',
-                    'display_name' => 'Delete Bankaccount',
-                    'allowed_permission' => Permission::ALL_4_ADDED_1_NONE_5,
-                    'is_custom' => 0
-                ],
-                [
-                    'name' => 'add_bank_transfer',
-                    'display_name' => 'Add Bank Transfer',
-                    'allowed_permission' => Permission::ALL_NONE,
-                    'is_custom' => 1,
-                ],
-                [
-                    'name' => 'add_bank_deposit',
-                    'display_name' => 'Add Bank Deposit',
-                    'allowed_permission' => Permission::ALL_NONE,
-                    'is_custom' => 1,
-                ],
-                [
-                    'name' => 'add_bank_withdraw',
-                    'display_name' => 'Add Bank Withdraw',
-                    'allowed_permission' => Permission::ALL_NONE,
-                    'is_custom' => 1,
-                ],
-            ];
+            if ($module->wasRecentlyCreated) {
+                $modulePayment = Module::where('module_name', 'payments')->first();
+                $moduleExpense = Module::where('module_name', 'expenses')->first();
+                $moduleInvoice = Module::where('module_name', 'invoices')->first();
 
-            $module = new Module();
-            $module->module_name = 'bankaccount';
-            $module->description = null;
-            $module->save();
+                $permissions = [
+                    [
+                        'module_id' => $module->id,
+                        'name' => 'add_bankaccount',
+                        'allowed_permissions' => Permission::ALL_NONE,
+                        'is_custom' => 0
+                    ],
+                    [
+                        'module_id' => $module->id,
+                        'name' => 'view_bankaccount',
+                        'allowed_permissions' => Permission::ALL_4_ADDED_1_NONE_5,
+                        'is_custom' => 0
+                    ],
+                    [
+                        'module_id' => $module->id,
+                        'name' => 'edit_bankaccount',
+                        'allowed_permissions' => Permission::ALL_4_ADDED_1_NONE_5,
+                        'is_custom' => 0
+                    ],
+                    [
+                        'module_id' => $module->id,
+                        'name' => 'delete_bankaccount',
+                        'allowed_permissions' => Permission::ALL_4_ADDED_1_NONE_5,
+                        'is_custom' => 0
+                    ],
+                    [
+                        'module_id' => $module->id,
+                        'name' => 'add_bank_transfer',
+                        'allowed_permissions' => Permission::ALL_NONE,
+                        'is_custom' => 1,
+                    ],
+                    [
+                        'module_id' => $module->id,
+                        'name' => 'add_bank_deposit',
+                        'allowed_permissions' => Permission::ALL_NONE,
+                        'is_custom' => 1,
+                    ],
+                    [
+                        'module_id' => $module->id,
+                        'name' => 'add_bank_withdraw',
+                        'allowed_permissions' => Permission::ALL_NONE,
+                        'is_custom' => 1,
+                    ],
+                    [
+                        'module_id' => $modulePayment->id,
+                        'name' => 'link_payment_bank_account',
+                        'is_custom' => 1,
+                        'allowed_permissions' => Permission::ALL_NONE
+                    ],
+                    [
+                        'module_id' => $moduleExpense->id,
+                        'name' => 'link_expense_bank_account',
+                        'is_custom' => 1,
+                        'allowed_permissions' => Permission::ALL_NONE
+                    ],
+                    [
+                        'module_id' => $moduleInvoice->id,
+                        'name' => 'link_invoice_bank_account',
+                        'is_custom' => 1,
+                        'allowed_permissions' => Permission::ALL_NONE
+                    ],
+                ];
+
+                Permission::insert($permissions);
+            }
 
             $companies = Company::select('id')->get();
 
-            foreach($companies as $company){
+            $typeArray = [];
+            $types = ['admin', 'employee'];
 
-                foreach($types as $type){
-                    $moduleSetting = new ModuleSetting();
-                    $moduleSetting->company_id = $company->id;
-                    $moduleSetting->module_name = 'bankaccount';
-                    $moduleSetting->status = 'active';
-                    $moduleSetting->type = $type;
-                    $moduleSetting->save();
+            foreach ($companies as $company) {
+                foreach ($types as $type) {
+                    $typeArray[] = [
+                        'company_id' => $company->id,
+                        'module_name' => 'bankaccount',
+                        'status' => 'active',
+                        'type' => $type,
+                    ];
                 }
+
             }
 
-            foreach($permissionType as $key => $permissionTypes)
-            {
-                $permission = new Permission();
-                $permission->name = $permissionTypes['name'];
-                $permission->display_name = $permissionTypes['display_name'];
-                $permission->module_id = $module->id;
-                $permission->is_custom = $permissionTypes['is_custom'];
-                $permission->allowed_permissions = $permissionTypes['allowed_permission'];
-                $permission->save();
+            foreach (array_chunk($typeArray, 200) as $setting) {
+                ModuleSetting::insert($setting);
+            }
 
-                foreach($companies as $company){
+            $allBankPermissions = Permission::where('module_id', $module->id)->get();
+
+            $permissionRole = [];
+            $userPermission = [];
+
+            foreach ($allBankPermissions as $permission) {
+
+                foreach ($companies as $company) {
 
                     $role = Role::where('name', 'admin')->where('company_id', $company->id)->first();
 
-                    $permissionRole = new PermissionRole();
-                    $permissionRole->permission_id = $permission->id;
-                    $permissionRole->role_id = $role->id;
-                    $permissionRole->permission_type_id = 4;
-                    $permissionRole->save();
+                    $permissionRole[] = [
+                        'permission_id' => $permission->id,
+                        'role_id' => $role->id,
+                        'permission_type_id' => 4,
+                    ];
 
                     $admins = User::allAdmins($company->id);
 
-                    foreach($admins as $admin) {
-                        $userPermission = new UserPermission();
-                        $userPermission->user_id = $admin->id;
-                        $userPermission->permission_id = $permission->id;
-                        $userPermission->permission_type_id = 4;
-                        $userPermission->save();
+                    foreach ($admins as $admin) {
+                        $userPermission [] = [
+                            'user_id' => $admin->id,
+                            'permission_id' => $permission->id,
+                            'permission_type_id' => 4,
+                        ];
                     }
                 }
             }
 
-            $bankRelatedModules = Module::select('id', 'module_name')->whereIn('module_name', ['payments', 'expenses', 'invoices'])->get();
-
-            $modulePermissions = [
-                [
-                    'name' => 'link_payment_bank_account',
-                    'display_name' => 'Link Payment Bank Account',
-                    'allowed_permission' => Permission::ALL_NONE
-                ],
-                [
-                    'name' => 'link_expense_bank_account',
-                    'display_name' => 'Link Expense Bank Account',
-                    'allowed_permission' => Permission::ALL_NONE
-                ],
-                [
-                    'name' => 'link_invoice_bank_account',
-                    'display_name' => 'Link Invoice Bank Account',
-                    'allowed_permission' => Permission::ALL_NONE
-                ],
-            ];
-
-            foreach($bankRelatedModules as $bankRelatedModule)
-            {
-                if($bankRelatedModule->module_name == 'payments'){
-                    $modulePermission = $modulePermissions[0];
-                }
-
-                elseif($bankRelatedModule->module_name == 'expenses'){
-                    $modulePermission = $modulePermissions[1];
-                }
-
-                else{
-                    $modulePermission = $modulePermissions[2];
-                }
-
-                $permission = new Permission();
-                $permission->name = $modulePermission['name'];
-                $permission->display_name = $modulePermission['display_name'];
-                $permission->module_id = $bankRelatedModule->id;
-                $permission->is_custom = 1;
-                $permission->allowed_permissions = $modulePermission['allowed_permission'];
-                $permission->save();
-
-                foreach($companies as $company){
-
-                    $role = Role::where('name', 'admin')->where('company_id', $company->id)->first();
-
-                    $permissionRole = new PermissionRole();
-                    $permissionRole->permission_id = $permission->id;
-                    $permissionRole->role_id = $role->id;
-                    $permissionRole->permission_type_id = 4;
-                    $permissionRole->save();
-
-                    $admins = User::allAdmins($company->id);
-
-                    foreach($admins as $admin) {
-                        $userPermission = new UserPermission();
-                        $userPermission->user_id = $admin->id;
-                        $userPermission->permission_id = $permission->id;
-                        $userPermission->permission_type_id = 4;
-                        $userPermission->save();
-                    }
-                }
+            foreach (array_chunk($permissionRole, 200) as $permissionRoleChunk) {
+                PermissionRole::insert($permissionRoleChunk);
             }
+
+            foreach (array_chunk($userPermission, 200) as $userPermissionChunk) {
+                UserPermission::insert($userPermissionChunk);
+            }
+
+
         }
+
     }
 
     /**
@@ -318,34 +293,7 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('payments', function (Blueprint $table) {
-            $table->dropForeign('payments_bank_account_id_foreign');
-            $table->dropColumn('bank_account_id');
-        });
 
-        Schema::table('expenses', function (Blueprint $table) {
-            $table->dropForeign('expenses_bank_account_id_foreign');
-            $table->dropColumn('bank_account_id');
-        });
-
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropForeign('invoices_bank_account_id_foreign');
-            $table->dropColumn('bank_account_id');
-        });
-
-        Schema::dropIfExists('bank_transactions');
-        Schema::dropIfExists('bank_accounts');
-
-        Module::where('module_name', 'bankaccount')->delete();
-        Permission::where('name', 'link_payment_bank_account')->delete();
-        Permission::where('name', 'link_expense_bank_account')->delete();
-        Permission::where('name', 'link_invoice_bank_account')->delete();
-
-        $moduleSettings = ModuleSetting::where('module_name', 'bankaccount')->get();
-
-        foreach($moduleSettings as $moduleSetting){
-            $moduleSetting->delete();
-        }
     }
 
 };

@@ -10,11 +10,12 @@ use App\Traits\UnitTypeSaveTrait;
 
 class ProposalTemplateObserver
 {
+
     use UnitTypeSaveTrait;
 
     public function creating(ProposalTemplate $proposal)
     {
-        if(company()) {
+        if (company()) {
             $proposal->company_id = company()->id;
         }
     }
@@ -62,7 +63,7 @@ class ProposalTemplateObserver
                         $proposalTemplateItemImage->proposal_template_item_id = $proposalTemplateItem->id;
                         $proposalTemplateItemImage->company_id = $proposalTemplateItem->company_id;
 
-                        if(isset($invoice_item_image[$key])) {
+                        if (isset($invoice_item_image[$key])) {
                             $filename = Files::uploadLocalOrS3($invoice_item_image[$key], ProposalTemplateItemImage::FILE_PATH . '/' . $proposalTemplateItem->id . '/');
                             $proposalTemplateItemImage->filename = $invoice_item_image[$key]->getClientOriginalName();
                             $proposalTemplateItemImage->hashname = $filename;
@@ -73,14 +74,14 @@ class ProposalTemplateObserver
                         $proposalTemplateItemImage->save();
                     }
 
-                };
+                }
             }
 
         }
     }
 
     /**
-     * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
+     * @throws RelatedResourceNotFoundException
      */
     public function updated(ProposalTemplate $proposal)
     {

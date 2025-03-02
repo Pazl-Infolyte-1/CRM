@@ -20,11 +20,16 @@ return new class extends Migration {
                 $table->string('project_short_code')->after('project_name')->nullable();
             });
 
-            $projects = Project::select(['project_name', 'id'])->get();
+            $projects = Project::withTrashed()->select(['project_name', 'id'])->get();
 
             foreach ($projects as $project) {
-                $project->project_short_code = $this->initials($project->project_name);
-                $project->saveQuietly();
+                try {
+
+                    $project->project_short_code = $this->initials($project->project_name);
+                    $project->saveQuietly();
+                // @codingStandardsIgnoreLine
+                }catch (\Exception $e){
+                }
             }
         }
     }
@@ -44,19 +49,27 @@ return new class extends Migration {
 
     protected function initials($str): string
     {
+        $str = preg_replace('/\s+/', ' ', $str);
         $ret = '';
 
         $array = explode(' ', $str);
 
-        if (count($array) === 1) {
-            return strtoupper(substr($str, -4));
+        if (count($array) === 1 || count($array) === 0) {
+            return $this->clean(strtoupper(substr($str, -4)));
         }
 
         foreach ($array as $word) {
             $ret .= strtoupper($word[0]);
         }
 
-        return $ret;
+        return $this->clean($ret);
+    }
+
+    protected function clean($string) {
+        $string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
+        $string = preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
+
+        return preg_replace('/-+/', '-', $string); // Replaces multiple hyphens with single one.
     }
 
 };

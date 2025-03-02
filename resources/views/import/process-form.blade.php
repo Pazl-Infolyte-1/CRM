@@ -1,7 +1,7 @@
 <div class="col-sm-12">
     <x-form id="process-{{ $importClassName }}-data-form">
         <div class="add-{{ $importClassName }} bg-white rounded">
-            <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+            <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                 {{ $headingTitle }}</h4>
                 <div class="col-12">
                     <p class="mt-3">@lang("messages.matchColumnMessage")</p>
@@ -30,101 +30,96 @@
                 </div>
                 </div>
 
-                <div class="col-md-12 import-table" style="overflow-x: auto;">
-                <input type="hidden" name="file" value="{{ $file }}">
-                <input type="hidden" name="has_heading" value="{{ $hasHeading }}">
-                <table>
-                    <tbody>
-                        <tr>
+                <div class="col-md-12 import-table">
+                    <input type="hidden" name="file" value="{{ $file }}">
+                    <input type="hidden" name="has_heading" value="{{ $hasHeading }}">
+
+                    <div class="row">
                         @forelse ($importSample[0] as $key => $item)
-                            <td valign="top">
-                                <div class="row importBox  border-grey {{ !empty($heading) ? (collect($columns)->whereIn('id', $heading[$key])->first() ? 'matched' : 'unmatched') : 'unmatched' }}"
-                                    id="box_{{ $key }}" data-key="{{ $key }}">
-                                    <div class="importOptions w-100">
+                            <div class="col-md-3 importBox  border-grey {{ !empty($heading) ? (collect($columns)->whereIn('id', $heading[$key])->first() ? 'matched' : 'unmatched') : 'unmatched' }}"
+                                id="box_{{ $key }}" data-key="{{ $key }}">
+                                <div class="importOptions w-100">
+                                    <div class="col-sm-12 p-0">
+                                        @if (!empty($heading))
+                                            <h4>
+                                                {{$fileHeading[$key]}}
+                                            </h4>
+                                        @endif
+                                    </div>
+
+                                    <div class="selectColumnNameBox" id="selectColumnNameBox_{{ $key }}" style="display:none;">
                                         <div class="col-sm-12 p-0">
-                                            @if (!empty($heading))
-                                                <h4>
-                                                    {{$fileHeading[$key]}}
-                                                </h4>
-                                            @endif
-                                        </div>
 
-                                        <div class="selectColumnNameBox" id="selectColumnNameBox_{{ $key }}" style="display:none;">
-                                            <div class="col-sm-12 p-0">
-
-                                                <div class="form-group">
-                                                    <label class="control-label">
-                                                        @lang('app.columnName')
-                                                    </label>
-                                                    <div id="selectOptionList_{{ $key }}">
-                                                        <select class="form-control select-picker mb-2" id="columnName_{{ $key }}" name="columns[{{ $key }}]">
-                                                            <option value="">@lang("app.selectAColumn")</option>
-                                                            @if (!empty($heading) && collect($columns)->whereIn('id', $heading[$key])->first())
-                                                                @foreach($columns as $selectKey => $selectColumn)
-                                                                <option value="{{ $selectColumn['id'] }}" {{ ($heading[$key]==$selectColumn['id']) ? 'selected' : '' }}>{{$selectColumn['name'] }}
-                                                                </option>
-                                                                @endforeach
-                                                            @endif
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-12 p-0">
-                                                <div class="form-group">
-                                                    <button onclick="goBack({{ $key }})" class="btn btn-info btn-sm" type="button">@lang("app.btnBack")</button>
-                                                    <button onclick="saveColumnBox({{ $key }})" class="btn btn-dark btn-sm"
-                                                        type="button">@lang("app.save")</button>
-                                                    <a href="javascript:void(0);" onclick="skipColumnBox({{ $key }})">@lang("app.skip")</a>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row columnDescriptionBox" id="columnDescriptionBox_{{ $key }}">
-                                            <div class="col-sm-12">
-                                                <p id="columnDescriptionBoxText_{{ $key }}">
-                                                    @if (!empty($heading))
-                                                        @if(collect($columns)->whereIn('id', $heading[$key])->first())
-                                                            {{ collect($columns)->whereIn('id', $heading[$key])->first()['name'] }}
-                                                        @else
-                                                        <span class="unmatchedWarning" id="unmatchedWarning_{{$key}}">(@lang('app.unmatchedColumn'))</span>
+                                            <div class="form-group">
+                                                <label class="control-label">
+                                                    @lang('app.columnName')
+                                                </label>
+                                                <div id="selectOptionList_{{ $key }}">
+                                                    <select class="form-control select-picker mb-2" id="columnName_{{ $key }}" name="columns[{{ $key }}]">
+                                                        <option value="">@lang("app.selectAColumn")</option>
+                                                        @if (!empty($heading) && collect($columns)->whereIn('id', $heading[$key])->first())
+                                                            @foreach($columns as $selectKey => $selectColumn)
+                                                            <option value="{{ $selectColumn['id'] }}" {{ ($heading[$key]==$selectColumn['id']) ? 'selected' : '' }}>{{$selectColumn['name'] }}
+                                                            </option>
+                                                            @endforeach
                                                         @endif
-                                                    @else
-                                                      <span class="unmatchedWarning" id="unmatchedWarning_{{$key}}">(@lang('app.unmatchedColumn'))</span>
-                                                    @endif
-                                                    </p>
-                                                    <p class="alert alert-warning notimported" style="display:none;" id="columnSkipBox_{{ $key }}">
-                                                        @lang("app.willNotBeImported")</p>
-                                                </div><!-- col-sm-12 -->
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
-
-                                        <div class="row editAndSkipBox" id="editAndSkipBox_{{ $key }}">
-                                            <div class="col-sm-12">
-                                                <a href="javascript:void(0);" onclick="showColumnBox({{ $key }})">@lang("app.edit")</a>&nbsp;
-                                                <a href="javascript:void(0);" onclick="skipColumnBox({{ $key }})"
-                                                    id="skipButton_{{ $key }}">@lang("app.skip")</a>
-                                            </div><!-- col-sm-12 -->
+                                        <div class="col-sm-12 p-0">
+                                            <div class="form-group">
+                                                <button onclick="goBack({{ $key }})" class="btn btn-info btn-sm" type="button">@lang("app.btnBack")</button>
+                                                <button onclick="saveColumnBox({{ $key }})" class="btn btn-dark btn-sm"
+                                                    type="button">@lang("app.save")</button>
+                                                <a href="javascript:void(0);" onclick="skipColumnBox({{ $key }})">@lang("app.skip")</a>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="importSample w-100">
+                                    <div class="row columnDescriptionBox" id="columnDescriptionBox_{{ $key }}">
+                                        <div class="col-sm-12">
+                                            <p id="columnDescriptionBoxText_{{ $key }}">
+                                                @if (!empty($heading))
+                                                    @if(collect($columns)->whereIn('id', $heading[$key])->first())
+                                                        {{ collect($columns)->whereIn('id', $heading[$key])->first()['name'] }}
+                                                    @else
+                                                    <span class="unmatchedWarning" id="unmatchedWarning_{{$key}}">(@lang('app.unmatchedColumn'))</span>
+                                                    @endif
+                                                @else
+                                                <span class="unmatchedWarning" id="unmatchedWarning_{{$key}}">(@lang('app.unmatchedColumn'))</span>
+                                                @endif
+                                                </p>
+                                                <p class="alert alert-warning notimported" style="display:none;" id="columnSkipBox_{{ $key }}">
+                                                    @lang("app.willNotBeImported")</p>
+                                            </div><!-- col-sm-12 -->
+                                    </div>
 
-
-                                        @foreach ($importSample as $dataKey => $value)
-                                        <p class="sample">
-                                            {{ $value[$key] }}
-                                        </p>
-                                        @endforeach
+                                    <div class="row editAndSkipBox" id="editAndSkipBox_{{ $key }}">
+                                        <div class="col-sm-12">
+                                            <a href="javascript:void(0);" onclick="showColumnBox({{ $key }})">@lang("app.edit")</a>&nbsp;
+                                            <a href="javascript:void(0);" onclick="skipColumnBox({{ $key }})"
+                                                id="skipButton_{{ $key }}">@lang("app.skip")</a>
+                                        </div><!-- col-sm-12 -->
                                     </div>
                                 </div>
-                            </td>
+
+                                <div class="importSample w-100">
+
+
+                                    @foreach ($importSample as $dataKey => $value)
+                                    <p class="sample">
+                                        {{ $value[$key] }}
+                                    </p>
+                                    @endforeach
+                                </div>
+                            </div>
                         @empty
                         @endforelse
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="col-md-12">
+                        <div class="col-md-12">
+                        </div>
+                    </div>
                 </div>
-            </div>
             <x-form-actions>
                 <x-forms.button-primary id="process-{{ $importClassName }}-form" disabled class="mr-3" icon="check">@lang('app.submit')
                 </x-forms.button-primary>

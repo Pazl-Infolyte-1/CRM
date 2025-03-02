@@ -6,6 +6,8 @@ $addLeadAgentPermission = user()->permission('add_lead_agent');
 $addLeadSourcesPermission = user()->permission('add_lead_sources');
 $addLeadCategoryPermission = user()->permission('add_lead_category');
 $addProductPermission = user()->permission('add_product');
+$changeDealStagesPermission = user()->permission('change_deal_stages');
+
 @endphp
 
 <link rel="stylesheet" href="{{ asset('vendor/css/dropzone.min.css') }}">
@@ -14,93 +16,54 @@ $addProductPermission = user()->permission('add_product');
     <div class="col-sm-12">
         <x-form id="save-lead-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('modules.lead.leadDetails')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    @lang('modules.deal.dealDetails')</h4>
 
                 <div class="row p-20">
-                    <div class="col-lg-4 col-md-6">
-                        <x-forms.select fieldId="salutation" :fieldLabel="__('modules.client.salutation')"
-                            fieldName="salutation">
+                    {{-- <div class="col-lg-4 ">
+                        <x-forms.select fieldId="lead_contact" :fieldLabel="__('modules.leadContact.leadContacts')" fieldName="lead_contact" fieldRequired="true">
                             <option value="">--</option>
-                            @foreach ($salutations as $salutation)
-                                <option value="{{ $salutation->value }}" @selected($lead->salutation == $salutation)>{{ $salutation->label() }}</option>
+                            @foreach ($leadContacts as $leadContact)
+                                <option @if($leadContact->id == $deal->lead_id) selected @endif value="{{ $leadContact->id }}">
+                                    {{ $leadContact->client_name_salutation }}</option>
+                            @endforeach
+                        </x-forms.select>
+                    </div> --}}
+
+
+                    <div class="col-lg-4 col-md-6">
+                        <x-forms.text :fieldLabel="__('app.name')" fieldName="name"
+                            fieldId="name" fieldPlaceholder="" fieldRequired="true"
+                            :fieldValue="$deal->name" />
+                    </div>
+
+                    <div class="col-lg-4">
+                        <x-forms.select fieldId="editPipeline" :fieldLabel="__('modules.deal.pipeline')" fieldName="pipeline" fieldRequired="true">
+                            @foreach ($leadPipelines as $pipeline)
+                                <option @selected($pipeline->id == $deal->lead_pipeline_id) value="{{ $pipeline->id }}">
+                                    {{ $pipeline->name }}</option>
+                            @endforeach
+                        </x-forms.select>
+                    </div>
+                    <div class="col-lg-4">
+                        <x-forms.select fieldId="stages" :fieldLabel="__('modules.deal.stages')" fieldName="stage_id" fieldRequired="true" changeDealStage="{{$changeDealStagesPermission}}">
+                            @foreach ($stages as $stage)
+                                <option @selected($stage->id == $deal->pipeline_stage_id) value="{{ $stage->id }}"   >
+                                    {{ $stage->name }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
 
-                    <div class="col-lg-4 col-md-6">
-                        <x-forms.text :fieldLabel="__('modules.lead.clientName')" fieldName="client_name"
-                            fieldId="client_name" fieldPlaceholder="" fieldRequired="true"
-                            :fieldValue="$lead->client_name" />
-                    </div>
-
-                    <div class="col-lg-4 col-md-6">
-                        <x-forms.email fieldId="client_email" :fieldLabel="__('modules.lead.clientEmail')"
-                            fieldName="client_email" :fieldPlaceholder="__('placeholders.email')"
-                            :fieldValue="$lead->client_email" :fieldHelp="__('modules.lead.leadEmailInfo')">
-                        </x-forms.email>
-                    </div>
-
-
-                    @if ($viewLeadAgentPermission != 'none')
-                        <div class="col-lg-4 col-md-6">
-                            <x-forms.label class="my-3" fieldId="agent_id" :fieldLabel="__('modules.tickets.chooseAgents')">
-                            </x-forms.label>
-                            <x-forms.input-group>
-                                <select class="form-control select-picker" name="agent_id" id="agent_id"
-                                    data-live-search="true">
-                                    <option value="">--</option>
-                                    @foreach ($leadAgents as $emp)
-                                        <x-user-option :user="$emp->user" :selected="$emp->id == $lead->agent_id" :userID="$emp->id" />
-                                    @endforeach
-                                </select>
-
-                                @if ($addLeadAgentPermission == 'all' || $addLeadAgentPermission == 'added')
-                                    <x-slot name="append">
-                                        <button type="button"
-                                            class="btn btn-outline-secondary border-grey add-lead-agent"
-                                            data-toggle="tooltip" data-original-title="{{ __('app.add').'  '.__('app.new').' '.__('modules.tickets.agents') }}">@lang('app.add')</button>
-                                    </x-slot>
-                                @endif
-                            </x-forms.input-group>
-                        </div>
-                    @endif
-
-                    @if ($viewLeadSourcesPermission != 'none')
-                        <div class="col-lg-4 col-md-6">
-                            <x-forms.label class="my-3" fieldId="source_id" :fieldLabel="__('modules.lead.leadSource')">
-                            </x-forms.label>
-                            <x-forms.input-group>
-                                <select class="form-control select-picker" name="source_id" id="source_id"
-                                    data-live-search="true">
-                                    <option value="">--</option>
-                                    @foreach ($sources as $source)
-                                        <option @if ($lead->source_id == $source->id) selected @endif value="{{ $source->id }}">
-                                            {{ $source->type }}</option>
-                                    @endforeach
-                                </select>
-
-                                @if ($addLeadSourcesPermission == 'all' || $addLeadSourcesPermission == 'added')
-                                    <x-slot name="append">
-                                        <button type="button"
-                                            class="btn btn-outline-secondary border-grey add-lead-source"
-                                            data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.lead.leadSource') }}">@lang('app.add')</button>
-                                    </x-slot>
-                                @endif
-                            </x-forms.input-group>
-                        </div>
-                    @endif
-
                     @if ($viewLeadCategoryPermission != 'none')
                         <div class="col-lg-4 col-md-6">
-                            <x-forms.label class="my-3" fieldId="category_id" :fieldLabel="__('modules.lead.leadCategory')">
+                            <x-forms.label class="my-3" fieldId="category_id" :fieldLabel="__('modules.deal.dealCategory')">
                             </x-forms.label>
                             <x-forms.input-group>
                                 <select class="form-control select-picker" name="category_id" id="category_id"
                                     data-live-search="true">
                                     <option value="">--</option>
                                     @forelse($categories as $category)
-                                        <option value="{{ $category->id }}" @if ($lead->category_id == $category->id) selected @endif>{{ $category->category_name }}</option>
+                                        <option value="{{ $category->id }}" @if ($deal->category_id == $category->id) selected @endif>{{ $category->category_name }}</option>
                                     @empty
                                         <option value="">@lang('messages.noCategoryAdded')</option>
                                     @endforelse
@@ -117,144 +80,86 @@ $addProductPermission = user()->permission('add_product');
                         </div>
                     @endif
 
-                    <div class="col-lg-4 col-md-6 my-3">
-                        <x-forms.label fieldId="value" :fieldLabel="__('app.lead') .' '. __('app.value')">
+                    @if ($viewLeadAgentPermission != 'none')
+                        <div class="col-lg-4 col-md-6">
+                            <x-forms.label class="my-3" fieldId="deal_agent_id" :fieldLabel="__('modules.deal.dealAgent')">
+                            </x-forms.label>
+                            <x-forms.input-group>
+                                <select class="form-control select-picker" name="agent_id" id="deal_agent_id"
+                                    data-live-search="true">
+                                    <option value="">--</option>
+                                </select>
+
+                                @if ($addLeadAgentPermission == 'all' || $addLeadAgentPermission == 'added')
+                                    <x-slot name="append">
+                                        <button type="button"
+                                            class="btn btn-outline-secondary border-grey add-lead-agent"
+                                            data-toggle="tooltip" data-original-title="{{ __('app.add').'  '.__('app.new').' '.__('modules.tickets.agents') }}">@lang('app.add')</button>
+                                    </x-slot>
+                                @endif
+                            </x-forms.input-group>
+                        </div>
+                    @endif
+
+                    <div class="col-lg-4 col-md-6 mt-4">
+                        <x-forms.label fieldId="value" :fieldLabel="__('modules.deal.dealValue')">
                         </x-forms.label>
                         <x-forms.input-group>
                             <x-slot name="prepend">
                                 <span
-                                    class="input-group-text f-14">{{!is_null($lead->currency_id) ? $lead->currency->currency_code : company()->currency->currency_code}} ( {{ !is_null($lead->currency_id) ? $lead->currency->currency_symbol : company()->currency->currency_symbol }} )</span>
+                                    class="input-group-text f-14">{{!is_null($deal->currency_id) ? $deal->currency->currency_code : company()->currency->currency_code}} ( {{ !is_null($deal->currency_id) ? $deal->currency->currency_symbol : company()->currency->currency_symbol }} )</span>
                             </x-slot>
-                            <input type="number" name="value" id="value" class="form-control height-35 f-14" value="{{$lead->value}}"/>
+                            <input type="number" name="value" id="value" class="form-control height-35 f-14" value="{{$deal->value}}"/>
                         </x-forms.input-group>
                     </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <x-forms.label class=" mt-3" fieldId="next_follow_up" :fieldLabel="__('app.next_follow_up')">
-                        </x-forms.label>
-                        <x-forms.input-group>
-                            <select class="form-control select-picker" name="next_follow_up" id="next_follow_up"
-                                data-live-search="true" data-size="8">
-                                <option @if ($lead->next_follow_up == 'yes') selected @endif value="yes"> @lang('app.yes')</option>
-                                <option @if ($lead->next_follow_up == 'no') selected @endif value="no"> @lang('app.no')</option>
-                            </select>
-                        </x-forms.input-group>
-                    </div>
-
-
-                    <div class="col-md-6 col-lg-4">
-                        <x-forms.label class="mt-3" fieldId="status" :fieldLabel="__('app.status')">
-                        </x-forms.label>
-                        <x-forms.input-group>
-                            <select class="form-control select-picker" name="status" id="status" data-live-search="true"
-                                data-size="8">
-                                @forelse($status as $sts)
-                                    <option @if ($lead->status_id == $sts->id) selected @endif value="{{ $sts->id }}">
-                                        {{ $sts->type }}</option>
-                                @empty
-                                    <option value="">--</option>
-                                @endforelse
-                            </select>
-                        </x-forms.input-group>
+                    <div class="col-md-5 col-lg-4 dueDateBox mt-1">
+                        <x-forms.datepicker fieldId="close_date" class="custom-date-picker" fieldRequired="true" :fieldLabel="__('modules.deal.closeDate')"
+                                fieldName="close_date" :fieldPlaceholder="__('placeholders.date')"
+                                :fieldValue="(($deal->close_date) ? $deal->close_date->format(company()->date_format) : '')"/>
                     </div>
 
                     @if(in_array('products', user_modules()) || in_array('purchase', user_modules()))
-                        <div class="col-lg-4 mt-2">
+                        <div class="col-lg-4 mt-3">
                             <div class="form-group">
                                 <x-forms.label fieldId="selectProduct" :fieldLabel="__('app.menu.products')" >
                                 </x-forms.label>
                                 <x-forms.input-group>
                                     <select class="form-control select-picker" data-live-search="true" data-size="8"  name="product_id[]" multiple  id="add-products" title="{{ __('app.menu.selectProduct') }}">
                                         @foreach ($products as $item)
-                                            <option @if(in_array($item->id, $productIds)) selected @endif data-content="{{ $item->name }}" value="{{ $item->id }}">
+                                            <option @selected(in_array($item->id, $productIds)) data-content="{{ $item->name }}" value="{{ $item->id }}">
                                                 {{ $item->name }}</option>
                                         @endforeach
                                     </select>
-                                    @if ($addProductPermission == 'all' || $addProductPermission == 'added')
+                                    {{-- @if ($addProductPermission == 'all' || $addProductPermission == 'added')
                                         <x-slot name="append">
                                             <a href="{{ route('products.create') }}" data-redirect-url="no"
                                                 class="btn btn-outline-secondary border-grey openRightModal"
                                                 data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
                                         </x-slot>
-                                    @endif
+                                    @endif --}}
                                 </x-forms.input-group>
                             </div>
                         </div>
                     @endif
 
-                </div>
-
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
-                    @lang('modules.lead.companyDetails')</h4>
-
-
-                <div class="row p-20">
-
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.text :fieldLabel="__('modules.lead.companyName')" fieldName="company_name"
-                            fieldId="company_name" :fieldPlaceholder="__('placeholders.company')"
-                            :fieldValue="$lead->company_name" />
-                    </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.text :fieldLabel="__('modules.lead.website')" fieldName="website" fieldId="website"
-                            :fieldPlaceholder="__('placeholders.website')" :fieldValue="$lead->website" />
-                    </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.tel fieldId="mobile" :fieldLabel="__('modules.lead.mobile')" fieldName="mobile"
-                           :fieldPlaceholder="__('placeholders.mobile')" :fieldValue="$lead->mobile"></x-forms.tel>
-                    </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.text :fieldLabel="__('modules.client.officePhoneNumber')" fieldName="office"
-                            fieldId="office" fieldPlaceholder="" :fieldValue="$lead->office" />
-                    </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country"
-                            search="true">
+                    <div class="col-lg-4 col-md-6">
+                        <x-forms.select fieldId="deal_watcher" :fieldLabel="__('app.dealWatcher')"
+                                        fieldName="deal_watcher">
                             <option value="">--</option>
-                            @foreach ($countries as $item)
-                                <option @if ($lead->country == $item->nicename) selected @endif data-tokens="{{ $item->iso3 }}"
-                                    data-content="<span class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span> {{ $item->nicename }}"
-                                    value="{{ $item->nicename }}">{{ $item->nicename }}</option>
+                            @foreach ($employees as $item)
+                                <x-user-option :user="$item" :selected="($deal->deal_watcher == $item->id)"/>
                             @endforeach
                         </x-forms.select>
                     </div>
 
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.state')" fieldName="state"
-                            fieldId="state" :fieldPlaceholder="__('placeholders.state')" :fieldValue="$lead->state" />
-                    </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.city')" fieldName="city" :fieldValue="$lead->city"
-                            fieldId="city" :fieldPlaceholder="__('placeholders.city')" />
-                    </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.postalCode')"
-                            fieldName="postal_code" fieldId="postal_code" :fieldPlaceholder="__('placeholders.postalCode')"
-                            :fieldValue="$lead->postal_code" />
-                    </div>
-
-                    <div class="col-md-12">
-                        <div class="form-group my-3">
-                            <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.address')"
-                                fieldName="address" fieldId="address" :fieldPlaceholder="__('placeholders.address')"
-                                :fieldValue="$lead->address">
-                            </x-forms.textarea>
-                        </div>
-                    </div>
                 </div>
 
-                <x-forms.custom-field :fields="$fields" :model="$lead"></x-forms.custom-field>
+                <x-forms.custom-field :fields="$fields" :model="$deal"></x-forms.custom-field>
 
                 <x-form-actions>
                     <x-forms.button-primary id="save-lead-form" class="mr-3" icon="check">@lang('app.save')
                     </x-forms.button-primary>
-                    <x-forms.button-cancel :link="route('tasks.index')" class="border-0">@lang('app.cancel')
+                    <x-forms.button-cancel :link="route('deals.index')" class="border-0">@lang('app.cancel')
                     </x-forms.button-cancel>
                 </x-form-actions>
 
@@ -268,7 +173,7 @@ $addProductPermission = user()->permission('add_product');
 <script>
     $(document).ready(function() {
 
-        $('.custom-date-picker').each(function(ind, el) {
+        $('#close_date').each(function(ind, el) {
             datepicker(el, {
                 position: 'bl',
                 ...datepickerConfig
@@ -276,7 +181,10 @@ $addProductPermission = user()->permission('add_product');
         });
 
         $('#save-lead-form').click(function() {
-            const url = "{{ route('leads.update', [$lead->id]) }}";
+
+            const tab = "{{ $tab }}";
+            const url = tab != null ? "{{ route('deals.update', [$deal->id]) }}?tab=" + tab : "{{ route('deals.update', [$deal->id]) }}";
+
             $.easyAjax({
                 url: url,
                 container: '#save-lead-data-form',
@@ -293,7 +201,8 @@ $addProductPermission = user()->permission('add_product');
         });
 
         $('body').on('click', '.add-lead-agent', function() {
-            const url = '{{ route('lead-agent-settings.create') }}';
+            var categoryId = $('#category_id').val();
+            var url = "{{ route('lead-agent-settings.create').'?categoryId='}}"+categoryId;
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
@@ -366,6 +275,40 @@ $addProductPermission = user()->permission('add_product');
             });
         });
 
+        $('#editPipeline').on("change", function (e) {
+            let pipelineId = $(this).val();
+            getStages(pipelineId)
+        });
+
+        getStages($('#editPipeline').val());
+        var selectedStageId = {{ $deal->pipeline_stage_id }};
+         // GET STAGES
+        function getStages(pipelineId) {
+            var url = "{{ route('deals.get-stage', ':id') }}";
+            url = url.replace(':id', pipelineId);
+
+            $.easyAjax({
+                url: url,
+                type: "GET",
+                success: function (response) {
+                    if (response.status == 'success') {
+                        var options = [];
+                        var rData = [];
+                        rData = response.data;
+                        $.each(rData, function (index, value) {
+                            var selectData = '';
+                            var selected = value.id == selectedStageId ? 'selected' : '';
+                            selectData = `<option data-content="<i class='fa fa-circle' style='color: ${value.label_color}'></i> ${value.name} " value="${value.id}" ${selected}> ${value.name}</option>`;
+                            options.push(selectData);
+                        });
+
+                        $('#stages').html(options);
+                        $('#stages').selectpicker('refresh');
+                    }
+                }
+            })
+        }
+
         $('#add-employee').click(function() {
             $(MODAL_XL).modal('show');
 
@@ -384,17 +327,55 @@ $addProductPermission = user()->permission('add_product');
                 }
             });
         });
+        var categoryId = $('#category_id').val();
+        if(categoryId != '')
+        {
+            getAgents(categoryId);
+        }
+
+        function getAgents(categoryId){
+            var url = "{{ route('deals.get_agents', ':id')}}";
+            url = url.replace(':id', categoryId);
+            var dealId = "{{$deal->id}}";
+            $.easyAjax({
+                url: url,
+                type: "GET",
+                data: {
+                    dealId : dealId,
+                },
+                success: function(response)
+                {
+                    var options = [];
+                    var rData = [];
+                    if($.isArray(response.data))
+                    {
+                        rData = response.data;
+                        $.each(rData, function(index, value) {
+                            var selectData = '';
+                            options.push(value);
+                        });
+                        $('#deal_agent_id').html('<option value="">--</option>' + options);
+                    }
+                    else
+                    {
+                        $('#deal_agent_id').html(response.data);
+                    }
+                    $('#deal_agent_id').selectpicker('refresh');
+                }
+            });
+        }
+
+        $('#category_id').change(function(){
+            var id = $(this).val();
+            if(id != '')
+            {
+                getAgents(id);
+            }
+        });
 
         <x-forms.custom-field-filejs/>
 
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id){
-        let checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 </script>

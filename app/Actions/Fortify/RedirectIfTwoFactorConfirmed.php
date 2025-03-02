@@ -18,11 +18,11 @@ class RedirectIfTwoFactorConfirmed extends RedirectIfTwoFactorAuthenticatable
             return $this->twoFactorChallengeResponse($request, $user);
         }
 
-        if(optional($user)->two_factor_email_confirmed && ($user->two_fa_verify_via == 'email' || $user->two_fa_verify_via == 'both') &&
-        in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user))) {
+        if (optional($user)->two_factor_email_confirmed && ($user->two_fa_verify_via == 'email' || $user->two_fa_verify_via == 'both') &&
+            in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user))) {
             // Send otp to user from here
             $user->generateTwoFactorCode();
-            event(new TwoFactorCodeEvent($user));
+            event(new TwoFactorCodeEvent($user->user));
             return $this->twoFactorChallengeResponse($request, $user);
         }
 

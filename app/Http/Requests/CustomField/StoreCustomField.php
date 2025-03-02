@@ -4,9 +4,9 @@ namespace App\Http\Requests\CustomField;
 
 use App\Models\CustomField;
 use App\Http\Requests\CoreRequest;
+use Google\Service\BinaryAuthorization\Check;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
-use Symfony\Component\Console\Input\Input;
 
 class StoreCustomField extends CoreRequest
 {
@@ -39,11 +39,23 @@ class StoreCustomField extends CoreRequest
             return false;
         });
 
-
-        return [
+        $rules = [
             'label'     => 'required|not_custom_fields',
             'required'  => 'required',
             'type'      => 'required'
+        ];
+
+        if (in_array($this->type, ['select', 'radio', 'checkbox'])) {
+            $rules['value.*'] = 'required';
+        }
+
+        return $rules;
+    }
+
+    public function attributes()
+    {
+        return [
+            'value.*' => __('app.value'),
         ];
     }
 

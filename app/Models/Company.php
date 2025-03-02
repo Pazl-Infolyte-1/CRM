@@ -2,13 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\SuperAdmin\Package;
+use App\Models\SuperAdmin\GlobalInvoice;
+use App\Scopes\ActiveScope;
+use App\Scopes\CompanyScope;
+use App\Traits\CustomFieldsTrait;
 use App\Traits\HasMaskImage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Cashier\Billable;
 
 /**
  * App\Models\Company
@@ -65,6 +72,7 @@ use Illuminate\Support\Facades\Schema;
  * @property-read mixed $favicon_url
  * @property-read mixed $icon
  * @property-read mixed $light_logo_url
+ * @property-read mixed $masked_default_logo
  * @property-read mixed $login_background_url
  * @property-read mixed $logo_url
  * @property-read mixed $moment_date_format
@@ -194,23 +202,34 @@ use Illuminate\Support\Facades\Schema;
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\ModuleSetting[] $moduleSetting
  * @property-read int|null $module_setting_count
  * @method static \Illuminate\Database\Eloquent\Builder|Company whereHash($value)
- * @property string $year_starts_from
+ * @property int|null $package_id
+ * @property string $package_type
+ * @property string|null $stripe_id
+ * @property string|null $card_brand
+ * @property string|null $card_last_four
+ * @property string|null $trial_ends_at
+ * @property string|null $licence_expire_on
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\User[] $clients
  * @property-read int|null $clients_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Contract[] $contracts
  * @property-read int|null $contracts_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Currency[] $currencies
  * @property-read int|null $currencies_count
+ * @property-read \App\Models\CompanyAddress|null $defaultAddress
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\User[] $employees
+ * @property-read int|null $employees_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Estimate[] $estimates
  * @property-read int|null $estimates_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\FileStorage[] $fileStorage
  * @property-read int|null $file_storage_count
+ * @property-read mixed $extras
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Invoice[] $invoices
  * @property-read int|null $invoices_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Lead[] $leads
  * @property-read int|null $leads_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Order[] $orders
  * @property-read int|null $orders_count
+ * @property-read Package|null $package
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Project[] $projects
  * @property-read int|null $projects_count
  * @property-read \App\Models\SlackSetting|null $slackSetting
@@ -232,17 +251,39 @@ use Illuminate\Support\Facades\Schema;
  * @method static \Illuminate\Database\Eloquent\Builder|Company whereShowNewWebhookAlert($value)
  * @property string $auth_theme_text
  * @method static \Illuminate\Database\Eloquent\Builder|Company whereAuthThemeText($value)
+ * @property int $employee_can_export_data
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereEmployeeCanExportData($value)
  * @mixin \Eloquent
+ * @property-read \App\Models\User|null $user
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\User[] $users
+ * @property-read int|null $users_count
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereCardBrand($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereCardLastFour($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereLicenceExpireOn($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company wherePackageId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company wherePackageType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereStripeId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereTrialEndsAt($value)
  */
 class Company extends BaseModel
 {
 
     use HasFactory;
     use HasMaskImage;
+    const CUSTOM_FIELD_MODEL = 'App\Models\Company';
+
+    use CustomFieldsTrait, Billable;
+
+    // WORKSUITESAAS
+    protected $with = [];
 
     protected $table = 'companies';
 
-    public $dates = ['last_login'];
+    public $dates = [
+        'last_login',
+        'subscription_updated_at', // WORKSUITESAAS
+        'licence_expire_on' // WORKSUITESAAS
+    ];
 
     protected $casts = [
         'google_calendar_status' => 'string'
@@ -259,6 +300,33 @@ class Company extends BaseModel
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_id');
+    }
+
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(Package::class, 'package_id');
+    }
+
+    public function globalInvoices()
+    {
+        return $this->hasMany(GlobalInvoice::class, 'company_id', 'id');
+    }
+
+    public function user()
+    {
+        return $this->hasOne(User::class)->withoutGlobalScopes([CompanyScope::class, ActiveScope::class])->setEagerLoads([]);
+    }
+
+    public static function firstActiveAdmin($company)
+    {
+        $admins = Role::with('users')->where('name', 'admin')->where('company_id', $company->id)->first();
+
+        return $admins->users->first();
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(User::class)->whereHas('employeeDetail');
     }
 
     public function getLogoUrlAttribute()
@@ -416,8 +484,16 @@ class Company extends BaseModel
 
     public function getMomentDateFormatAttribute()
     {
+        return array_key_exists($this->date_format, self::DATE_FORMATS)
+        ? self::DATE_FORMATS[$this->date_format]
+        : null;
 
-        return isset($this->date_format) ? self::DATE_FORMATS[$this->date_format] : null;
+        // return isset($this->date_format) ? self::DATE_FORMATS[$this->date_format] : null;
+    }
+
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('companies.status', 'active');
     }
 
     public function getFaviconUrlAttribute()
@@ -544,7 +620,7 @@ class Company extends BaseModel
         return $this->HasOne(SlackSetting::class);
     }
 
-    public function fileStorage()
+    public function fileStorage(): HasMany
     {
         return $this->hasMany(FileStorage::class);
     }
@@ -556,49 +632,65 @@ class Company extends BaseModel
         }
     }
 
-    public function clients()
+    public function clients(): HasMany
     {
         return $this->hasMany(User::class)->whereHas('ClientDetails');
     }
 
-    public function invoices()
+    public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
     }
 
-    public function estimates()
+    public function estimates(): HasMany
     {
         return $this->hasMany(Estimate::class);
     }
 
-    public function projects()
+    public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
     }
 
-    public function tasks()
+    public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
     }
 
-    public function leads()
+    public function leads(): HasMany
     {
-        return $this->hasMany(Lead::class);
+        return $this->hasMany(Deal::class);
     }
 
-    public function orders()
+    public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
-    public function tickets()
+    public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
     }
 
-    public function contracts()
+    public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class)->withoutGlobalScope(CompanyScope::class)->withoutGlobalScope('active');
+    }
+
+    // WORKSUITESAAS
+    public function approvalBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
 }

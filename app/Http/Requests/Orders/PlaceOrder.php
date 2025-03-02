@@ -2,12 +2,14 @@
 
 namespace App\Http\Requests\Orders;
 
+use App\Helper\NumberFormat;
+use App\Traits\CustomFieldsRequestTrait;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class PlaceOrder extends FormRequest
 {
-
+    use CustomFieldsRequestTrait;
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -22,7 +24,7 @@ class PlaceOrder extends FormRequest
     {
         if ($this->order_number) {
             $this->merge([
-                'order_number' => \App\Helper\NumberFormat::order($this->order_number),
+                'order_number' => NumberFormat::order($this->order_number),
             ]);
         }
     }
@@ -47,7 +49,18 @@ class PlaceOrder extends FormRequest
             $rules['client_id'] = 'required';
         }
 
+        $rules = $this->customFieldRules($rules);
+
         return $rules;
+    }
+
+    public function attributes()
+    {
+        $attributes = [];
+
+        $attributes = $this->customFieldsAttributes($attributes);
+
+        return $attributes;
     }
 
     public function messages()

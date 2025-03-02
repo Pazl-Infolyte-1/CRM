@@ -2,20 +2,20 @@
     <div class="col-md-6 mb-3">
         <div
             class="bg-white p-20 rounded b-shadow-4 d-flex justify-content-between align-items-center mt-3 mt-lg-0 mt-md-0">
-            <div class="d-block text-capitalize">
-                <h5 class="f-15 f-w-500 mb-20 text-darkest-grey"> @lang('app.menu.lead') </h5>
+            <div class="d-block ">
+                <h5 class="f-15 f-w-500 mb-20 text-darkest-grey"> @lang('app.menu.deal')  <i class="fa fa-question-circle" data-toggle="popover" data-placement="top" data-content="@lang('messages.leadConversion')" data-html="true" data-trigger="hover"></i></h5>
                 <div class="d-flex">
-                    <a href="{{ route('leads.index') . '?assignee=me&type=lead' }}">
+                    <a href="{{ route('deals.index') . '?assignee=me' }}">
                         <p class="mb-0 f-21 font-weight-bold text-blue d-grid mr-5">
-                            {{ $totalLead }}<span
-                                class="f-12 font-weight-normal text-lightest">@lang('app.total') @lang('app.menu.leads')</span>
+                            {{ count($deals) }}<span
+                                class="f-12 font-weight-normal text-lightest">@lang('modules.deal.totalDeals')</span>
                         </p>
                     </a>
 
-                    <a href="{{ route('leads.index') . '?assignee=me&type=client' }}">
+                    <a href="{{ route('deals.index') . '?assignee=me&stage=win' }}">
                         <p class="mb-0 f-21 font-weight-bold text-success d-grid">
-                            {{ $convertedLead }}<span
-                                class="f-12 font-weight-normal text-lightest">@lang('modules.lead.convertedLead')</span>
+                            {{ $convertedDeals }}<span
+                                class="f-12 font-weight-normal text-lightest">@lang('modules.deal.convertedDeals')</span>
                         </p>
                     </a>
                 </div>

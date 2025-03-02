@@ -2,10 +2,8 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\LeadStatus;
 use App\Models\RemovalRequestLead;
-use App\Models\User;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;

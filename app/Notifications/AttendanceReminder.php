@@ -2,7 +2,9 @@
 
 namespace App\Notifications;
 
+use App\Models\GlobalSetting;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\App;
 
 class AttendanceReminder extends BaseNotification
 {
@@ -31,7 +33,7 @@ class AttendanceReminder extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $this->company = $notifiable->company;
 
         $url = route('dashboard');
@@ -39,7 +41,7 @@ class AttendanceReminder extends BaseNotification
 
         $content = __('email.AttendanceReminder.text');
 
-        return $build
+        $build
             ->subject(__('email.AttendanceReminder.subject'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -47,6 +49,10 @@ class AttendanceReminder extends BaseNotification
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.AttendanceReminder.action'), 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

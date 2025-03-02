@@ -52,7 +52,7 @@ $addContractPermission = user()->permission('renew_contract');
                     <x-forms.button-cancel link="javascript:;" id="cancel-renew" class="border-0 mr-3">@lang('app.cancel')
                     </x-forms.button-cancel>
                     <x-forms.button-primary id="submit-renew" icon="check">@lang('app.renew')
-                        </x-button-primary>
+                        </x-forms.button-primary>
                 </div>
             </x-form>
         @endif

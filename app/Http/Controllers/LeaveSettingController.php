@@ -8,6 +8,7 @@ use App\Models\LeaveSetting;
 use App\Models\LeaveType;
 use App\Models\Team;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class LeaveSettingController extends AccountBaseController
 {
@@ -26,7 +27,8 @@ class LeaveSettingController extends AccountBaseController
 
     public function index()
     {
-        $this->leaveTypes = LeaveType::all();
+        $this->leaveTypes = LeaveType::withCount('leaves')->get();
+    
 
         $tab = request('tab');
 
@@ -34,6 +36,12 @@ class LeaveSettingController extends AccountBaseController
         case 'general':
             $this->leavePermission = LeaveSetting::first();
             $this->view = 'leave-settings.ajax.general';
+                break;
+        case 'archive':
+            $this->archiveleaveTypes = LeaveType::onlyTrashed()->get();
+            $this->departments = Team::all();
+            $this->designations = Designation::all();
+            $this->view = 'leave-settings.ajax.archive';
                 break;
         default:
             $this->departments = Team::all();
@@ -58,6 +66,9 @@ class LeaveSettingController extends AccountBaseController
         $setting->leaves_start_from = $request->leaveCountFrom;
         $setting->year_starts_from = $request->yearStartFrom;
         $setting->save();
+
+        Artisan::call('app:recalculate-leaves-quotas ' . $setting->id);
+
 
         return Reply::success(__('messages.updateSuccess'));
     }

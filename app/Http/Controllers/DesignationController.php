@@ -37,13 +37,15 @@ class DesignationController extends AccountBaseController
     public function create()
     {
         $this->designations = Designation::all();
+        $this->view = 'designation.ajax.create';
 
-        if (request()->ajax()) {
-            $html = view('designation.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->model == true) {
+            return view('employees.create_designation', $this->data);
         }
 
-        $this->view = 'designation.ajax.create';
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('designation.create', $this->data);
     }
@@ -60,13 +62,14 @@ class DesignationController extends AccountBaseController
         $group->save();
 
         $redirectUrl = urldecode($request->redirect_url);
+        $this->designations = Designation::all();
 
         if ($redirectUrl == '') {
             $redirectUrl = route('designations.index');
         }
 
 
-        return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => $redirectUrl]);
+        return Reply::successWithData(__('messages.recordSaved'), ['designations' => $this->designations, 'redirectUrl' => $redirectUrl]);
     }
 
     public function show($id)
@@ -74,13 +77,12 @@ class DesignationController extends AccountBaseController
         $this->designation = Designation::findOrFail($id);
         $this->parent = Designation::where('id', $this->designation->parent_id)->first();
 
-        if (request()->ajax())
-        {
-            $html = view('designation.ajax.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        $this->view = 'designation.ajax.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'designation.ajax.show';
         return view('designation.create', $this->data);
     }
 
@@ -100,13 +102,12 @@ class DesignationController extends AccountBaseController
         });
 
 
-        if (request()->ajax())
-        {
-            $html = view('designation.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        $this->view = 'designation.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'designation.ajax.edit';
         return view('designation.create', $this->data);
 
     }

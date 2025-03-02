@@ -20,86 +20,97 @@
             <div class="row">
                 <div class="col-md-12">
                     <a class="f-15 f-w-500" href="javascript:;" id="add-sub-task"><i
-                            class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                        @lang('modules.tasks.subTask')</a>
+                            class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.menu.addSubTask')
+                    </a>
                 </div>
             </div>
 
-            <x-form id="save-subtask-data-form" class="d-none">
-                <input type="hidden" name="task_id" value="{{ $task->id }}">
-                <div class="row">
-                    <div class="col-md-12">
-                        <x-forms.text :fieldLabel="__('app.title')" fieldName="title" fieldRequired="true"
-                                      fieldId="title" :fieldPlaceholder="__('placeholders.task')"/>
-                    </div>
+            @php
+                $userRoles = user_roles();
+                $isAdmin = in_array('admin', $userRoles);
+                $isEmployee = in_array('employee', $userRoles);
+            @endphp
 
-                    <div class="col-md-4">
-                        <x-forms.datepicker fieldId="sub_task_start_date" :fieldLabel="__('app.startDate')"
-                                            fieldName="start_date"
-                                            :fieldPlaceholder="__('placeholders.date')"/>
-                    </div>
-
-                    <div class="col-md-4">
-                        <x-forms.datepicker fieldId="sub_task_due_date" :fieldLabel="__('app.dueDate')"
-                                            fieldName="due_date"
-                                            :fieldPlaceholder="__('placeholders.date')"/>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="form-group my-3">
-                            <x-forms.label fieldId="subTaskAssignee"
-                                           :fieldLabel="__('modules.tasks.assignTo')">
-                            </x-forms.label>
-                            <x-forms.input-group>
-                                <select class="form-control select-picker" name="user_id"
-                                        id="subTaskAssignee" data-live-search="true">
-                                    <option value="">--</option>
-                                    @foreach ($task->users as $item)
-                                        <x-user-option :user="$item" :pill="true"/>
-                                    @endforeach
-                                </select>
-                            </x-forms.input-group>
+            @if ($task->approval_send == 1 && $task->project->need_approval_by_admin == 1 && $isEmployee && !$isAdmin && $status->slug == 'waiting_approval')
+                <!-- Popup for Send Approval -->
+                @include('tasks.ajax.sent-approval-modal')
+            @else
+                <x-form id="save-subtask-data-form" class="d-none">
+                    <input type="hidden" name="task_id" value="{{ $task->id }}">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <x-forms.text :fieldLabel="__('app.title')" fieldName="title" fieldRequired="true"
+                                        fieldId="title" :fieldPlaceholder="__('placeholders.task')"/>
                         </div>
-                    </div>
 
-                    <div class="col-md-12">
-                        <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.description')"
-                                          fieldName="description" fieldId="description" fieldPlaceholder="">
-                        </x-forms.textarea>
-                    </div>
-
-                    <div class="col-md-12">
-                        <a class="f-15 f-w-500" href="javascript:;" id="add-subtask-file"><i
-                                class="fa fa-paperclip font-weight-bold mr-1"></i>@lang('modules.projects.uploadFile')
-                        </a>
-                    </div>
-
-                    @if ($addSubTaskPermission == 'all' || $addSubTaskPermission == 'added')
-                        <div class="col-lg-12 add-file-box d-none">
-                            <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2"
-                                                   :fieldLabel="__('modules.projects.uploadFile')" fieldName="file"
-                                                   fieldId="task-file-upload-dropzone"/>
-                            <input type="hidden" name="image_url" id="image_url">
+                        <div class="col-md-4">
+                            <x-forms.datepicker fieldId="sub_task_start_date" :fieldLabel="__('app.startDate')"
+                                                fieldName="start_date"
+                                                :fieldPlaceholder="__('placeholders.date')"/>
                         </div>
-                        <div class="col-md-12 add-file-delete-sub-task-filebox d-none mb-5">
-                            <div class="w-100 justify-content-end d-flex mt-2">
-                                <x-forms.button-cancel id="cancel-subtaskfile" class="border-0">@lang('app.cancel')
-                                </x-forms.button-cancel>
+
+                        <div class="col-md-4">
+                            <x-forms.datepicker fieldId="sub_task_due_date" :fieldLabel="__('app.dueDate')"
+                                                fieldName="due_date"
+                                                :fieldPlaceholder="__('placeholders.date')"/>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group my-3">
+                                <x-forms.label fieldId="subTaskAssignee"
+                                            :fieldLabel="__('modules.tasks.assignTo')">
+                                </x-forms.label>
+                                <x-forms.input-group>
+                                    <select class="form-control select-picker" name="user_id"
+                                            id="subTaskAssignee" data-live-search="true">
+                                        <option value="">--</option>
+                                        @foreach ($task->activeUsers as $item)
+                                            <x-user-option :user="$item" :pill="true"/>
+                                        @endforeach
+                                    </select>
+                                </x-forms.input-group>
                             </div>
                         </div>
-                        <input type="hidden" name="subTaskID" id="subTaskID">
-                        <input type="hidden" name="addedFiles" id="addedFiles">
-                    @endif
-                    <div class="col-md-12">
-                        <div class="w-100 justify-content-end d-flex mt-2">
-                            <x-forms.button-cancel id="cancel-subtask" class="border-0 mr-3">@lang('app.cancel')
-                            </x-forms.button-cancel>
-                            <x-forms.button-primary id="save-subtask" icon="location-arrow">@lang('app.submit')
-                                </x-button-primary>
+
+                        <div class="col-md-12">
+                            <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.description')"
+                                            fieldName="description" fieldId="description" fieldPlaceholder="">
+                            </x-forms.textarea>
+                        </div>
+
+                        <div class="col-md-12">
+                            <a class="f-15 f-w-500" href="javascript:;" id="add-subtask-file"><i
+                                    class="fa fa-paperclip font-weight-bold mr-1"></i>@lang('modules.projects.uploadFile')
+                            </a>
+                        </div>
+
+                        @if ($addSubTaskPermission == 'all' || $addSubTaskPermission == 'added')
+                            <div class="col-lg-12 add-file-box d-none">
+                                <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2"
+                                                    :fieldLabel="__('modules.projects.uploadFile')" fieldName="file"
+                                                    fieldId="task-file-upload-dropzone"/>
+                                <input type="hidden" name="image_url" id="image_url">
+                            </div>
+                            <div class="col-md-12 add-file-delete-sub-task-filebox d-none mb-5">
+                                <div class="w-100 justify-content-end d-flex mt-2">
+                                    <x-forms.button-cancel id="cancel-subtaskfile" class="border-0">@lang('app.cancel')
+                                    </x-forms.button-cancel>
+                                </div>
+                            </div>
+                            <input type="hidden" name="subTaskID" id="subTaskID">
+                            <input type="hidden" name="addedFiles" id="addedFiles">
+                        @endif
+                        <div class="col-md-12">
+                            <div class="w-100 justify-content-end d-flex mt-2">
+                                <x-forms.button-cancel id="cancel-subtask" class="border-0 mr-3">@lang('app.cancel')
+                                </x-forms.button-cancel>
+                                <x-forms.button-primary id="save-subtask" icon="location-arrow">@lang('app.submit')
+                                </x-forms.button-primary>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </x-form>
+                </x-form>
+            @endif
         </div>
     @endif
 
@@ -107,14 +118,30 @@
     @if ($viewSubTaskPermission == 'all' || $viewSubTaskPermission == 'added')
         <div class="d-flex flex-wrap justify-content-between p-20" id="sub-task-list">
             @forelse ($task->subtasks as $subtask)
-                <div class="card w-100 rounded-0 border-0 subtask mb-3">
+                <div class="card w-100 rounded-0 border-0 subtask mb-1">
 
                     <div class="card-horizontal">
+                        @php
+                            // false means checkbox is clickable
+                            $user_id = user()->id;
+                            $assigned_to = $subtask->assigned_to;
+                            $added_by = $subtask->added_by;
+
+                            $checkBoxDisablePermission =
+                                ($editSubTaskPermission === 'both' && ($assigned_to === $user_id || $added_by === $user_id)) ||
+                                ($editSubTaskPermission === 'owned' && $assigned_to === $user_id) ||
+                                $editSubTaskPermission === 'all' ||
+                                ($editSubTaskPermission === 'added' && $added_by === $user_id)
+                                ? false : true;
+
+                        @endphp
+
                         <div class="d-flex">
                             <x-forms.checkbox :fieldId="'checkbox'.$subtask->id" class="task-check"
                                               data-sub-task-id="{{ $subtask->id }}"
                                               :checked="($subtask->status == 'complete') ? true : false" fieldLabel=""
-                                              :fieldName="'checkbox'.$subtask->id"/>
+                                              :fieldName="'checkbox'.$subtask->id"
+                                              :fieldPermission="$checkBoxDisablePermission" />
 
                         </div>
                         <div class="card-body pt-0">
@@ -129,7 +156,7 @@
                                 </p>
                                 <div class="dropdown ml-auto subtask-action">
                                     <button
-                                        class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>
                                     </button>
@@ -140,12 +167,12 @@
                                             <a class="dropdown-item view-subtask" href="javascript:;"
                                                data-row-id="{{ $subtask->id }}">@lang('app.view')</a>
                                         @endif
-                                        @if ($editSubTaskPermission == 'all' || ($editSubTaskPermission == 'added' && $subtask->added_by == user()->id))
+                                        @if ($editSubTaskPermission == 'all' || ($editSubTaskPermission == 'added' && $subtask->added_by == user()->id) || ($editSubTaskPermission == 'owned' && $subtask->assigned_to == user()->id) || ($editSubTaskPermission == 'both' && ($subtask->assigned_to == user()->id || $subtask->added_by == user()->id)))
                                             <a class="dropdown-item edit-subtask" href="javascript:;"
                                                data-row-id="{{ $subtask->id }}">@lang('app.edit')</a>
                                         @endif
 
-                                        @if ($deleteSubTaskPermission == 'all' || ($deleteSubTaskPermission == 'added' && $subtask->added_by == user()->id))
+                                        @if ($deleteSubTaskPermission == 'all' || ($deleteSubTaskPermission == 'added' && $subtask->added_by == user()->id) || ($deleteSubTaskPermission == 'owned' && $subtask->assigned_to == user()->id) || ($deleteSubTaskPermission == 'both' && ($subtask->assigned_to == user()->id || $subtask->added_by == user()->id)))
                                             <a class="dropdown-item delete-subtask" data-row-id="{{ $subtask->id }}"
                                                href="javascript:;">@lang('app.delete')</a>
                                         @endif
@@ -159,16 +186,12 @@
                                         <x-file-card :fileName="$file->filename"
                                                      :dateAdded="$file->created_at->diffForHumans()"
                                                      class="subTask{{ $file->id }}">
-                                            @if ($file->icon == 'images')
-                                                <img src="{{ $file->file_url }}">
-                                            @else
-                                                <i class="fa {{ $file->icon }} text-lightest"></i>
-                                            @endif
+                                            <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
 
                                             <x-slot name="action">
                                                 <div class="dropdown ml-auto file-action">
                                                     <button
-                                                        class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                                                        class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                                                         type="button" data-toggle="dropdown" aria-haspopup="true"
                                                         aria-expanded="false">
                                                         <i class="fa fa-ellipsis-h"></i>
@@ -178,9 +201,11 @@
                                                         class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                                         aria-labelledby="dropdownMenuLink" tabindex="0">
 
-                                                        <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 "
-                                                           target="_blank"
-                                                           href="{{ $file->file_url }}">@lang('app.view')</a>
+                                                        @if ($file->icon == 'images')
+                                                            <a class="img-lightbox cursor-pointer d-block text-dark-grey f-13 pt-3 px-3" data-image-url="{{ $file->file_url }}" href="javascript:;">@lang('app.view')</a>
+                                                        @else
+                                                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank" href="{{ $file->file_url }}">@lang('app.view')</a>
+                                                        @endif
 
                                                         <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "
                                                            href="{{ route('sub-task-files.download', md5($file->id)) }}">@lang('app.download')</a>
@@ -213,6 +238,22 @@
 
 <script>
     $(document).ready(function () {
+
+        var send_approval = "{{ $task->approval_send }}";
+        var admin = "{{ in_array('admin', user_roles()) }}";
+        var employee = "{{ in_array('employee', user_roles()) }}";
+        var needApproval = "{{ $task?->project?->need_approval_by_admin }}";
+        var status = "{{ $status->slug }}";
+
+        $('body').on('click', '#add-sub-task', function () {
+            if (send_approval == 1 && employee == 1 && admin != 1 && needApproval == 1 && status == 'waiting_approval') {
+                $('#send-approval-modal').modal('show');
+                $('.modal-backdrop').css('display', 'none');
+            }else{
+                $(this).closest('.row').addClass('d-none');
+                $('#save-subtask-data-form').removeClass('d-none');
+            }
+        });
 
         $('.select-picker').selectpicker();
 
@@ -268,7 +309,8 @@
                 $.easyBlockUI();
             });
             taskDropzone.on('queuecomplete', function () {
-                window.location.reload();
+                var msgs = "@lang('messages.recordSaved')";
+                window.location.href = "{{ route('tasks.index') }}"
             });
             taskDropzone.on('removedfile', function () {
                 var grp = $('div#file-upload-dropzone').closest(".form-group");
@@ -322,17 +364,20 @@
                             subTaskID = response.subTaskID;
                             $('#subTaskID').val(response.subTaskID);
                             taskDropzone.processQueue();
-                        } else {
+                        } else if ($(RIGHT_MODAL).hasClass('in')) {
+                            document.getElementById('close-task-detail').click();
+                            if ($('#allTasks-table').length) {
+                                window.LaravelDataTables["allTasks-table"].draw(true);
+                            } else {
+                                // window.location.href = response.redirectUrl;
+                            }
+                        }else {
                             window.location.reload();
+                            // window.location.href = response.redirectUrl;
                         }
                     }
                 }
             });
-        });
-
-        $('body').on('click', '#add-sub-task', function () {
-            $(this).closest('.row').addClass('d-none');
-            $('#save-subtask-data-form').removeClass('d-none');
         });
 
         $('#cancel-subtask').click(function () {
@@ -342,8 +387,6 @@
 
         $('body').on('click', '.delete-sub-task-file', function () {
             var id = $(this).data('row-id');
-            var name = $(this).data('row-name');
-            var replyFile = $(this);
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
                 text: "@lang('messages.recoverRecord')",

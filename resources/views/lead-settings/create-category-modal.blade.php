@@ -1,6 +1,6 @@
 <x-form id="add-lead-category" method="POST" class="ajax-form">
     <div class="modal-header">
-        <h5 class="modal-title" id="modelHeading">@lang('modules.lead.addLeadCategory')</h5>
+        <h5 class="modal-title" id="modelHeading">@lang('app.addNewDealCategory')</h5>
         <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
                 aria-hidden="true">×</span></button>
     </div>
@@ -42,6 +42,8 @@
                     else {
                         $('#category_id').html(response.data);
                         $('#category_id').selectpicker('refresh');
+                        $('#deal_agent_id').html('<option value="">--</option>');
+                        $('#deal_agent_id').selectpicker('refresh');
                         $(MODAL_LG).modal('hide');
                     }
                 }

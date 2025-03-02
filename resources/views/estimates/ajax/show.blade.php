@@ -35,11 +35,11 @@
 @if (!in_array('client', user_roles()))
     @if (!is_null($invoice->last_viewed))
         <x-alert type="info">
-            {{ $invoice->client->name }} @lang('app.viewedOn')
+            {{ $invoice->client->name_salutation }} @lang('app.viewedOn')
             {{ $invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->date_format) }}
             @lang('app.at')
             {{ $invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->time_format) }}
-            @lang('app.using') @lang('modules.attendance.ipAddress'):{{ $invoice->ip_address }}
+            @lang('app.usingIpAddress'):{{ $invoice->ip_address }}
         </x-alert>
     @endif
 @endif
@@ -66,7 +66,7 @@
                                 {{ company()->company_phone }}
                             @endif
                             @if ($invoiceSetting->show_gst == 'yes' && !is_null($invoiceSetting->gst_number))
-                                <br>@lang('app.gstIn'): {{ $invoiceSetting->gst_number }}
+                                <br><br>{{ $invoiceSetting->tax_name }}: {{ $invoiceSetting->gst_number }}<br>
                             @endif
                         </p><br>
                     </td>
@@ -84,6 +84,13 @@
                                     {{ $invoice->valid_till->translatedFormat(company()->date_format) }}
                                 </td>
                             </tr>
+                            <tr>
+                                <td class="bg-light-grey border-right-0 f-w-500">
+                                    @lang('app.createdOn')</td>
+                                <td class="border-left-0">
+                                    {{ $invoice->created_at->translatedFormat(company()->date_format) }}
+                                </td>
+                            </tr>
                         </table>
                     </td>
                 </tr>
@@ -94,39 +101,29 @@
             <table width="100%">
                 <tr class="inv-unpaid">
                     <td class="f-14 text-dark">
-                        @if (
-                            ($invoice->client || $invoice->clientDetails)
-                            && ($invoice->client->name
-                                || $invoice->client->email
-                                || $invoice->client->mobile
-                                || $invoice->clientDetails->company_name
-                                || $invoice->clientDetails->address
-                                )
-                            && (invoice_setting()->show_client_name == 'yes'
-                            || invoice_setting()->show_client_email == 'yes'
-                            || invoice_setting()->show_client_phone == 'yes'
-                            || invoice_setting()->show_client_company_name == 'yes'
-                            || invoice_setting()->show_client_company_address == 'yes')
-                        )
+                        @if ($invoice->client || $invoice->clientDetails)
                         <p class="mb-0 text-left">
-                            <span class="text-dark-grey text-capitalize">
+                            <span class="text-dark-grey ">
                                 @lang("modules.invoices.billedTo")
                             </span><br>
 
                             @if ($invoice->client && $invoice->client->name && invoice_setting()->show_client_name == 'yes')
-                                {{ $invoice->client->name }}<br>
+                                {{ $invoice->client->name_salutation }}<br>
                             @endif
                             @if ($invoice->client && $invoice->client->email && invoice_setting()->show_client_email == 'yes')
                                 {{ $invoice->client->email }}<br>
                             @endif
                             @if ($invoice->client && $invoice->client->mobile && invoice_setting()->show_client_phone == 'yes')
-                            +{{$invoice->clientdetails->user->country->phonecode}} {{ $invoice->client->mobile }}<br>
+                                {{ $invoice->client->mobile_with_phonecode }}<br>
                             @endif
                             @if ($invoice->clientDetails && $invoice->clientDetails->company_name && invoice_setting()->show_client_company_name == 'yes')
                                 {{ $invoice->clientDetails->company_name }}<br>
                             @endif
                             @if ($invoice->clientDetails && $invoice->clientDetails->address && invoice_setting()->show_client_company_address == 'yes')
-                                {!! nl2br($invoice->clientDetails->address) !!}
+                                {!! nl2br($invoice->clientDetails->address) !!}<br><br>
+                            @endif
+                            @if ($invoice->clientDetails && $invoice->clientDetails->gst_number && invoice_setting()->show_gst == 'yes')
+                                {{ $invoice->clientDetails->tax_name }}: {{ $invoice->clientDetails->gst_number }}<br>
                             @endif
                         </p>
                         @endif
@@ -148,7 +145,7 @@
             </table>
             <br><br>
             <div class="row">
-                <span class="text-dark-grey text-capitalize ml-3 mb-2">
+                <span class="text-dark-grey  ml-3 mb-2">
                     @lang('modules.invoices.description')
                 </span><br>
                 <div class="col-sm-12 ql-editor2">
@@ -176,7 +173,7 @@
                                     ({{ $invoice->currency->currency_code }})</td>
                             </tr>
 
-                            @foreach ($invoice->items as $item)
+                            @foreach ($invoice->items->sortBy('field_order') as $item)
                                 @if ($item->type == 'item')
                                     <tr class="font-weight-semibold f-13">
                                         <td>{{ $item->item_name }}</td>
@@ -220,7 +217,7 @@
                                         @if ($discount != 0 && $discount != '')
                                             <tr class="text-dark-grey" align="right">
                                                 <td class="w-50 border-top-0 border-left-0">
-                                                    @lang('modules.invoices.discount')</td>
+                                                    @lang('modules.invoices.discount'): {{ $discountType}} </td>
                                             </tr>
                                         @endif
                                         @foreach ($taxes as $key => $tax)
@@ -269,7 +266,7 @@
             </table>
             <table width="100%" class="inv-desc-mob d-block d-lg-none d-md-none">
 
-                @foreach ($invoice->items as $item)
+                @foreach ($invoice->items->sortBy('field_order') as $item)
                     @if ($item->type == 'item')
                         <tr>
                             <th width="50%" class="bg-light-grey text-dark-grey font-weight-bold">
@@ -360,7 +357,7 @@
                         <table>
                             <tr>@lang('app.note')</tr>
                             <tr>
-                                <p class="text-dark-grey">{!! !empty($invoice->note) ? $invoice->note : '--' !!}</p>
+                                <p class="text-dark-grey">{!! !empty($invoice->note) ? nl2br($invoice->note) : '--' !!}</p>
                             </tr>
                         </table>
                     </td>
@@ -373,6 +370,18 @@
                         </table>
                     </td>
                 </tr>
+                @if (isset($invoiceSetting->other_info))
+                    <tr>
+                        <td align="vertical-align: text-top">
+                            <table>
+                                <tr>
+                                    <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                    </p>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                @endif
                 @if (isset($taxes) && invoice_setting()->tax_calculation_msg == 1)
                     <tr>
                         <td>
@@ -438,11 +447,13 @@
                                 </a>
                             </li>
                         @endif
-                        <li>
-                            <a class="dropdown-item btn-copy"
-                                data-clipboard-text="{{ route('front.estimate.show', $invoice->hash) }}">
-                                <i class="fa fa-copy mr-2"></i> @lang('modules.estimates.copyLink')</a>
-                        </li>
+                        @if($invoice->send_status)
+                            <li>
+                                <a class="dropdown-item btn-copy"
+                                    data-clipboard-text="{{ url()->temporarySignedRoute('front.estimate.show', now()->addDays(\App\Models\GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash) }}">
+                                    <i class="fa fa-copy mr-2"></i> @lang('modules.estimates.copyLink')</a>
+                            </li>
+                        @endif
                         @if ($invoice->status != 'canceled' && $invoice->status != 'accepted' && !in_array('client', user_roles()))
                             <li>
                                 <a href="javascript:;" data-toggle="tooltip" data-estimate-id="{{ $invoice->id }}"
@@ -481,8 +492,8 @@
                     @if ($addEstimatePermission == 'all' || $addEstimatePermission == 'added')
                         <li>
                             <a href="{{ route('estimates.create') . '?estimate=' . $invoice->id }}"
-                                class="dropdown-item"><i class="fa fa-copy mr-2"></i> @lang('app.create')
-                                @lang('app.duplicate')</a>
+                                class="dropdown-item"><i class="fa fa-copy mr-2"></i> @lang('app.createDuplicate')
+                                </a>
                         </li>
                     @endif
                     @if ($firstEstimate->id == $invoice->id)
@@ -691,7 +702,7 @@
                 },
                 success: function(response) {
                     if (response.status == "success") {
-                        window.LaravelDataTables["invoices-table"].draw(false);
+                        window.LaravelDataTables["invoices-table"].draw(true);
                     }
                 }
             });

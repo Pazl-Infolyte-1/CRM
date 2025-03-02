@@ -43,12 +43,12 @@ class LeadStatus extends BaseModel
 
     public function leads(): HasMany
     {
-        return $this->hasMany(Lead::class, 'status_id')->orderBy('column_priority');
+        return $this->hasMany(Deal::class, 'status_id')->orderBy('column_priority');
     }
 
     public function userSetting(): HasOne
     {
-        return $this->hasOne(UserLeadboardSetting::class, 'board_column_id')->where('user_id', user()->id);
+        return $this->hasOne(UserLeadboardSetting::class, 'pipeline_stage_id')->where('user_id', user()->id);
     }
 
 }

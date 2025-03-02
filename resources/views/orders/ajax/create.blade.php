@@ -4,7 +4,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoice') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.invoiceDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -22,7 +22,7 @@
             <!-- INVOICE NUMBER START -->
             <div class="col-md-3">
                 <div class="form-group mb-lg-0 mb-md-0 mb-4">
-                    <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                    <label class="f-14 text-dark-grey mb-12 "
                         for="usr">@lang('modules.invoices.invoiceNumber')</label>
                     <div class="input-group">
                         <div class="input-group-prepend  height-35 ">
@@ -44,7 +44,7 @@
                         <input type="text" id="invoice_date" name="issue_date"
                             class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
                             placeholder="@lang('placeholders.date')"
-                            value="{{ Carbon\Carbon::now(company()->timezone)->format(company()->date_format) }}">
+                            value="{{ now(company()->timezone)->format(company()->date_format) }}">
                     </div>
                 </div>
             </div>
@@ -57,7 +57,7 @@
                         <input type="text" id="due_date" name="due_date"
                             class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
                             placeholder="@lang('placeholders.date')"
-                            value="{{ Carbon\Carbon::now(company()->timezone)->addDays($invoiceSetting->due_after)->format(company()->date_format) }}">
+                            value="{{ now(company()->timezone)->addDays($invoiceSetting->due_after)->format(company()->date_format) }}">
                     </div>
                 </div>
             </div>
@@ -72,14 +72,13 @@
                         <select class="form-control select-picker" name="currency_id" id="currency_id">
                             @foreach ($currencies as $currency)
                                 <option @if (isset($estimate))
-                                    @if ($currency->id==$estimate->currency_id) selected @endif
-                                @else
-                                    @if ($currency->id == company()->currency_id)
-                                        selected @endif
-                            @endif
-                            value="{{ $currency->id }}">
-                            {{ $currency->currency_code . ' (' . $currency->currency_symbol . ')' }}
-                            </option>
+                                            @selected($currency->id==$estimate->currency_id)
+                                        @else
+                                            @selected ($currency->id == company()->currency_id)
+                                        @endif
+                                        value="{{ $currency->id }}">
+                                    {{ $currency->currency_code . ' (' . $currency->currency_symbol . ')' }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -102,7 +101,7 @@
                         </x-forms.label>
                         <div class="input-group">
                             <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                            <input type="text" value="{{ $client->name }}"
+                            <input type="text" value="{{ $client->name_salutation }}"
                                 class="form-control height-35 f-15 readonly-background" readonly>
                         </div>
                     </div>
@@ -160,7 +159,7 @@
             <!-- BILLING ADDRESS START -->
             <div class="col-md-4">
                 <div class="form-group c-inv-select mb-0">
-                    <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
+                    <label class="f-14 text-dark-grey mb-12  w-100"
                         for="usr">@lang('modules.invoices.billingAddress')</label>
                     <p class="f-15" id="client_billing_address">
                         @if (isset($estimate) && $estimate->client)
@@ -177,7 +176,7 @@
             <!-- SHIPPING ADDRESS START -->
             <div class="col-md-4">
                 <div class="form-group c-inv-select mb-lg-0 mb-md-0 mb-4">
-                    <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
+                    <label class="f-14 text-dark-grey mb-12  w-100"
                         for="usr">@lang('modules.invoices.shippingAddress') </label>
                     <p class="f-15" id="client_shipping_address">
                         @if (isset($estimate) && $estimate->client && $estimate->client->clientDetails->shipping_address)
@@ -185,7 +184,7 @@
                         @elseif(isset($client) && $client->clientDetails && $client->clientDetails->shipping_address)
                             {!! nl2br($client->clientDetails->shipping_address) !!}
                         @else
-                            <a href="javascript:;" class="text-capitalize" id="show-shipping-field"><i
+                            <a href="javascript:;" class="" id="show-shipping-field"><i
                                     class="f-12 mr-2 fa fa-plus"></i>@lang('app.addShippingAddress')</a>
                         @endif
                     </p>
@@ -235,6 +234,7 @@
                                         @endif
                                         <td width="10%" class="border-0" align="right">@lang("modules.invoices.qty")
                                         </td>
+                                        <td width="10%" class="border-0" align="right">@lang('app.sku')</td>
                                         <td width="10%" class="border-0" align="right">
                                             @lang("modules.invoices.unitPrice")</td>
                                         <td width="13%" class="border-0" align="right">@lang('modules.invoices.tax')
@@ -264,6 +264,11 @@
                                             <input type="number" min="1"
                                                 class="form-control f-14 border-0 w-100 text-right quantity"
                                                 value="{{ $item->quantity }}" name="quantity[]">
+                                        </td>
+                                        <td class="border-bottom-0">
+                                            <input type="text" min="1"
+                                                class="f-14 border-0 w-100 text-right form-control"
+                                                placeholder="--" value="{{ $item->sku }}" name="sku[]" readonly>
                                         </td>
                                         <td class="border-bottom-0">
                                             <input type="number" class="f-14 border-0 w-100 text-right cost_per_item"
@@ -323,6 +328,7 @@
                                         <td width="10%" class="border-0" align="right">@lang("app.hsnSac")</td>
                                     @endif
                                     <td width="10%" class="border-0" align="right">@lang("modules.invoices.qty")</td>
+                                    <td width="10%" class="border-0" align="right">@lang('app.sku')</td>
                                     <td width="10%" class="border-0" align="right">@lang("modules.invoices.unitPrice")
                                     </td>
                                     <td width="13%" class="border-0" align="right">@lang('modules.invoices.tax')</td>
@@ -350,6 +356,11 @@
                                         <input type="number" min="1"
                                             class="form-control f-14 border-0 w-100 text-right quantity" value="1"
                                             name="quantity[]">
+                                    </td>
+                                    <td class="border-bottom-0">
+                                        <input type="text" min="1"
+                                            class="f-14 border-0 w-100 text-right form-control"
+                                            placeholder="0.00" value="0" name="sku[]" readonly>
                                     </td>
                                     <td class="border-bottom-0">
                                         <input type="number" min="1"
@@ -405,7 +416,7 @@
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14 text-capitalize">
+            <table width="100%" class="text-right f-14 ">
                 <tbody>
                     <tr>
                         <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -435,11 +446,13 @@
                                                             <div
                                                                 class="select-others select-tax height-35 rounded border-0">
                                                                 <select class="form-control select-picker"
-                                                                    id="discount_type" name="discount_type">
-                                                                    <option @if (isset($estimate) && $estimate->discount_type == 'percent') selected @endif
+                                                                        id="discount_type" name="discount_type">
+                                                                    <option
+                                                                        @selected (isset($estimate) && $estimate->discount_type == 'percent')
                                                                         value="percent">%
                                                                     </option>
-                                                                    <option @if (isset($estimate) && $estimate->discount_type == 'fixed') selected @endif
+                                                                    <option
+                                                                        @selected (isset($estimate) && $estimate->discount_type == 'fixed')
                                                                         value="fixed">
                                                                         @lang('modules.invoices.amount')</option>
                                                                 </select>
@@ -481,7 +494,7 @@
         <!-- NOTE AND TERMS AND CONDITIONS START -->
         <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
             <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                <x-forms.label fieldId="" class="text-capitalize" :fieldLabel="__('modules.invoices.note')">
+                <x-forms.label fieldId="" class="" :fieldLabel="__('modules.invoices.note')">
                 </x-forms.label>
                 <textarea class="form-control" name="note" id="note" rows="4"
                     placeholder="@lang('placeholders.invoices.note')"></textarea>
@@ -606,7 +619,7 @@
 
                             if (response.data.client_details.shipping_address === null) {
                                 var addShippingLink =
-                                    '<a href="javascript:;" class="text-capitalize" id="show-shipping-field"><i class="f-12 mr-2 fa fa-plus"></i>@lang("app.addShippingAddress")</a>';
+                                    '<a href="javascript:;" class="" id="show-shipping-field"><i class="f-12 mr-2 fa fa-plus"></i>@lang("app.addShippingAddress")</a>';
                                 $('#client_shipping_address').html(addShippingLink);
                             } else {
                                 $('#client_shipping_address').html(nl2br(response.data
@@ -617,7 +630,7 @@
                         }
                     } else {
                         var addShippingLink =
-                            '<a href="javascript:;" class="text-capitalize" id="show-shipping-field"><i class="f-12 mr-2 fa fa-plus"></i>@lang("app.addShippingAddress")</a>';
+                            '<a href="javascript:;" class="" id="show-shipping-field"><i class="f-12 mr-2 fa fa-plus"></i>@lang("app.addShippingAddress")</a>';
                         $('#client_shipping_address').html(addShippingLink);
                     }
                 }
@@ -682,6 +695,7 @@
 
             item +=
                 '<td width="10%" class="border-0" align="right">@lang("modules.invoices.qty")</td>' +
+                '<td width="10%" class="border-0" align="right">@lang("app.sku")</td>' +
                 '<td width="10%" class="border-0" align="right">@lang("modules.invoices.unitPrice")</td>' +
                 '<td width="13%" class="border-0" align="right">@lang("modules.invoices.tax")</td>' +
                 '<td width="17%" class="border-0 bblr-mbl" align="right">@lang("modules.invoices.amount")</td>' +
@@ -701,6 +715,9 @@
             }
             item += '<td class="border-bottom-0">' +
                 '<input type="number" min="1" class="form-control f-14 border-0 w-100 text-right quantity" value="1" name="quantity[]">' +
+                '</td>' +
+                '<td class="border-bottom-0">' +
+                '<input type="text" min="1" class="f-14 border-0 w-100 text-right" placeholder="0.00" value="0" name="sku[]">' +
                 '</td>' +
                 '<td class="border-bottom-0">' +
                 '<input type="number" min="1" class="f-14 border-0 w-100 text-right cost_per_item" placeholder="0.00" value="0" name="cost_per_item[]">' +

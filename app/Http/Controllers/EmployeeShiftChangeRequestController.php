@@ -43,7 +43,7 @@ class EmployeeShiftChangeRequestController extends AccountBaseController
     public function edit(Request $request, $id)
     {
         $shiftId = $request->shift_id;
-        $this->day = Carbon::createFromFormat($this->company->date_format, $request->date)->dayOfWeek;
+        $this->day = Carbon::parse($request->date)->dayOfWeek;
         $this->shift = EmployeeShiftSchedule::with('requestChange', 'requestChange.shift')->findOrFail($id);
         $this->employeeShifts = EmployeeShift::where('shift_name', '<>', 'Day Off')
             ->where('id', '!=', $shiftId )

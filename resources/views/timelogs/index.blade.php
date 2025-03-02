@@ -63,7 +63,7 @@
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="project_id" id="project_id"
@@ -79,7 +79,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="status" id="status" data-live-search="true"
@@ -94,7 +94,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.invoiceGenerate')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.invoiceGenerate')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="invoice_generate" id="invoice_generate"
@@ -203,7 +203,7 @@
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["timelogs-table"].draw(false);
+            window.LaravelDataTables["timelogs-table"].draw(true);
         }
 
         $('#project_id, #employee, #status, #invoice_generate').on('change keyup',
@@ -338,23 +338,12 @@
             });
         });
 
-        $('body').on('click', '.stop-active-timer', function () {
-            const id = $(this).data('time-id');
-            let url = "{{ route('timelogs.stop_timer', ':id') }}";
+        $('body').on('click', '.stop-active-timer', function() {
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
             url = url.replace(':id', id);
-            const token = '{{ csrf_token() }}';
-            $.easyAjax({
-                url: url,
-                type: "POST",
-                data: {
-                    timeId: id,
-                    _token: token
-                },
-                success: function (data) {
-                    showTable();
-                }
-            })
-
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
         });
 
         $('body').on('click', '.approve-timelog', function () {

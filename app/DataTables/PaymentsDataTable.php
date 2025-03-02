@@ -2,9 +2,7 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\Payment;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -12,16 +10,16 @@ use Yajra\DataTables\Html\Column;
 class PaymentsDataTable extends BaseDataTable
 {
 
-    private $editPaymentPermission;
     private $deletePaymentPermission;
     private $viewPaymentPermission;
+    private $trashedData;
 
-    public function __construct()
+    public function __construct($trashedData = false)
     {
         parent::__construct();
-        $this->editPaymentPermission = user()->permission('edit_payments');
         $this->deletePaymentPermission = user()->permission('delete_payments');
         $this->viewPaymentPermission = user()->permission('view_payments');
+        $this->trashedData = $trashedData;
     }
 
     /**
@@ -56,19 +54,6 @@ class PaymentsDataTable extends BaseDataTable
                 $action .= '<a href="' . route('payments.show', $row->id) . '" class="openRightModal dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 $action .= '<a href="' . route('payments.download', $row->id) . '" class="dropdown-item"><i class="fa fa-download mr-2"></i>' . __('app.download') . '</a>';
-
-                if (
-                    ($this->editPaymentPermission == 'all'
-                        || ($this->editPaymentPermission == 'added' && isset($row->added_by) && user()->id == $row->added_by)
-                        || ($this->editPaymentPermission == 'owned' && isset($row->invoice) && user()->id == $row->invoice->client_id)
-                        || ($this->editPaymentPermission == 'both' && ((isset($row->invoice) && user()->id == $row->invoice->client_id) || (isset($row->added_by) && user()->id == $row->added_by))))
-                    && $row->status != 'failed' && ($row->gateway == null || $row->gateway == 'Offline' || is_null($row->transaction_id))
-                ) {
-                    $action .= '<a class="dropdown-item openRightModal" href="' . route('payments.edit', [$row->id]) . '">
-                            <i class="fa fa-edit mr-2"></i>
-                            ' . trans('app.edit') . '
-                        </a>';
-                }
 
                 if (
                     ($this->deletePaymentPermission == 'all'
@@ -179,19 +164,16 @@ class PaymentsDataTable extends BaseDataTable
 
                 return currency_format($row->amount, $currencyId);
             })
-            ->editColumn(
-                'paid_on',
-                function ($row) {
-                    if (!is_null($row->paid_on)) {
-                        return $row->paid_on->translatedFormat($this->company->date_format);
-                    }
+            ->editColumn('paid_on', function ($row) {
+                if (!is_null($row->paid_on)) {
+                    return $row->paid_on->translatedFormat($this->company->date_format);
                 }
+                    return '--';
+            }
             )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['invoice', 'action', 'status', 'client_id', 'client_email', 'project_id', 'invoice_number', 'order_number', 'check'])
             ->removeColumn('invoice_id')
             ->removeColumn('currency_symbol')
@@ -206,19 +188,30 @@ class PaymentsDataTable extends BaseDataTable
     {
         $request = $this->request();
 
-        $model = Payment::with(['invoice.client', 'order.client', 'currency:id,currency_symbol,currency_code'])
+        $model = Payment::with([
+            'invoice.client',
+            'invoice.client.clientDetails.company:id,logo,company_name',
+            'order.client',
+            'order.client.clientDetails.company:id,logo,company_name',
+            'currency:id,currency_symbol,currency_code',
+            'project:id,project_short_code,project_name'
+        ])
             ->leftJoin('invoices', 'invoices.id', '=', 'payments.invoice_id')
             ->leftJoin('projects', 'projects.id', '=', 'payments.project_id')
             ->leftJoin('orders', 'orders.id', '=', 'payments.order_id')
             ->select('payments.id', 'payments.company_id', 'payments.project_id', 'payments.currency_id', 'payments.invoice_id', 'payments.amount', 'payments.status', 'payments.paid_on', 'payments.remarks', 'payments.bill', 'payments.added_by', 'payments.order_id', 'payments.gateway', 'payments.transaction_id');
 
+        if (!$this->trashedData) {
+            $model = $model->whereNull('projects.deleted_at');
+        }
+
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(payments.`paid_on`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(payments.`paid_on`)'), '<=', $endDate);
         }
 
@@ -308,7 +301,7 @@ class PaymentsDataTable extends BaseDataTable
             __('modules.taskCode') => ['data' => 'short_code', 'name' => 'project_short_code', 'title' => __('modules.taskCode')],
             __('app.project') => ['data' => 'project_id', 'name' => 'project_id', 'title' => __('app.project'), 'width' => '10%'],
             __('app.invoice') . '#' => ['data' => 'invoice_number', 'name' => 'invoices.invoice_number', 'title' => __('app.invoice') . '#'],
-            __('app.client') => ['data' => 'client_id', 'name' => 'client_id.name', 'orderable' => false, 'title' => __('app.client'), 'exportable' => false, 'visible' => !in_array('client', user_roles())],
+            __('app.client') => ['data' => 'client_id', 'name' => 'client_id.name', 'orderable' => false, 'title' => __('app.client'), 'exportable' => false, 'visible' => (!in_array('client', user_roles()) && in_array('clients', user_modules()))],
             __('app.customers') => ['data' => 'client_name', 'name' => 'client_name', 'visible' => false, 'title' => __('app.client')],
             __('app.client_email') => ['data' => 'client_email', 'name' => 'client_email', 'visible' => false, 'title' => __('app.client_email')],
             __('app.order') . '#' => ['data' => 'order_number', 'name' => 'payments.order_id', 'title' => __('app.order') . '#'],

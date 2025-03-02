@@ -3,6 +3,7 @@
 return [
 
     'description',
+    'answer',
     'summery',
     'note',
     'notes',
@@ -24,4 +25,9 @@ return [
     'shipping_address',
     'item_summary',
     'note_details',
+    'footer_script',
+    'header_script',
+    'header_description',
+    'message2',
+    'editedMessage',
 ];

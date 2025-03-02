@@ -61,4 +61,8 @@ class TaskboardColumn extends BaseModel
         return TaskboardColumn::where('slug', 'completed')->first();
     }
 
+    public static function waitingForApprovalColumn()
+    {
+        return TaskboardColumn::where('slug', 'waiting_approval')->first();
+    }
 }

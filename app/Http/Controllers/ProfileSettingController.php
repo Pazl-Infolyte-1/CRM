@@ -21,12 +21,16 @@ class ProfileSettingController extends AccountBaseController
     {
         $tab = request('tab');
 
-        $this->user = User::findOrFail(user()->id);
+        if (session()->has('clientContact') && session('clientContact')) {
+            $this->user = User::findOrFail(session('clientContact')->client_id);
+        }else{
+            $this->user = User::findOrFail(user()->id);
+        }
+
         $viewDocumentPermission = user()->permission('view_documents');
         $viewClientDocumentPermission = user()->permission('view_client_document');
 
         $this->countries = countries();
-
         $this->salutations = Salutation::cases();
 
         switch ($tab) {

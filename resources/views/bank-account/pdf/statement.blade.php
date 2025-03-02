@@ -228,7 +228,7 @@
         <section id="sums">
             <table cellpadding="0" cellspacing="0">
                 <tr>
-                    <th>@lang('app.total') @lang('modules.bankaccount.bankBalance') ({!!
+                    <th>@lang('app.totalBankBalance') ({!!
                         htmlentities($statements->currency->currency_code) !!})</th>
                     <td>{{ currency_format($statements->bank_balance, $statements->currency_id, false) }}</td>
                 </tr>

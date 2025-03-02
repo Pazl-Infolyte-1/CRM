@@ -3,9 +3,6 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -41,8 +38,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static Builder|Award whereUpdatedAt($value)
  * @mixin \Eloquent
  */
-class Award extends Model
+class Award extends BaseModel
 {
+
     use HasCompany;
 
     public function appreciation(): HasOne

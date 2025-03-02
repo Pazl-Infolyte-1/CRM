@@ -18,7 +18,7 @@ if (!in_array($laravelVersion, array('9.0'))) {
 
 $reqList = array(
     '9.0' => array(
-        'php' => '8.0',
+        'php' => '8.2',
         'mcrypt' => false,
         'openssl' => true,
         'pdo' => true,
@@ -111,14 +111,15 @@ if (function_exists('apache_get_modules')) {
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h3 class="panel-title">Server Requirements.
-                    @if (version_compare(PHP_VERSION, '8.0') > 0)
+                    @if (version_compare(PHP_VERSION, '8.2') > 0)
                         <span class="pull-right">Current PHP Version: {{ phpversion() }} <i
                                 class="fa fa fa-check-circle text-success"></i></span>
                     @else
                         <span class="pull-right">Current PHP Version: {{ phpversion() }} <i data-toggle="tooltip"
                                                                                             data-original-title="PHP Update Required"
                                                                                             class="fa fa fa-exclamation-circle text-danger"></i></span>
-                    @endif</h3>
+                    @endif
+                </h3>
             </div>
             <div class="panel-body">
                 <div class="wrapper">

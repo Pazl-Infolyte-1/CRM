@@ -3,6 +3,7 @@ $addProjectMilestonePermission = ($project->project_admin == user()->id) ? 'all'
 $viewProjectMilestonePermission = ($project->project_admin == user()->id) ? 'all' : user()->permission('view_project_milestones');
 $editProjectMilestonePermission = ($project->project_admin == user()->id) ? 'all' : user()->permission('edit_project_milestones');
 $deleteProjectMilestonePermission = ($project->project_admin == user()->id) ? 'all' : user()->permission('delete_project_milestones');
+$statuses = ['complete', 'incomplete']; // Define all your possible statuses here
 @endphp
 
 <!-- ROW START -->
@@ -20,9 +21,10 @@ $deleteProjectMilestonePermission = ($project->project_admin == user()->id) ? 'a
                 <x-table class="border-0 pb-3 admin-dash-table table-hover">
 
                     <x-slot name="thead">
-                        <th class="pl-20">#</th>
+                        <th class="pl-20">S. No.</th>
                         <th>@lang('modules.projects.milestoneTitle')</th>
                         <th>@lang('modules.projects.milestoneCost')</th>
+                        <th>@lang('modules.projects.taskCount')</th>
                         <th>@lang('app.status')</th>
                         <th class="text-right pr-20">@lang('app.action')</th>
                     </x-slot>
@@ -42,14 +44,21 @@ $deleteProjectMilestonePermission = ($project->project_admin == user()->id) ? 'a
                                 @endif
                             </td>
                             <td>
-                                @if ($item->status == 'complete')
-                                    <i class="fa fa-circle mr-1 text-dark-green f-10"></i>
-                                    {{ trans('app.' . $item->status) }}
-                                @else
-                                    <i class="fa fa-circle mr-1 text-red f-10"></i>
-                                    {{ trans('app.' . $item->status) }}
-                                @endif
+                                {{ $item->tasks_count }}
                             </td>
+                            <td>
+                                <select class="form-control select-picker change-milestone-status" id="change-milestone-status" data-size="5" data-milestone-id="{{ $item->id }}">
+                                    @foreach ($statuses as $status)
+                                        @php
+                                            $iconClass = $status == 'complete' ? 'fa fa-circle mr-1 text-dark-green' : 'fa fa-circle mr-1 text-red';
+                                        @endphp
+                                        <option value="{{ $status }}" data-icon="{{ $iconClass }}" @if ($item->status == $status) selected @endif>
+                                            {{ trans('app.' . $status) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+
                             <td class="text-right pr-20">
                                 <div class="task_view">
                                     <a href="javascript:;" data-milestone-id="{{ $item->id }}"
@@ -64,11 +73,13 @@ $deleteProjectMilestonePermission = ($project->project_admin == user()->id) ? 'a
                                             aria-labelledby="dropdownMenuLink-{{ $item->id }}" tabindex="0">
 
                                             @if ($editProjectMilestonePermission == 'all' || ($editProjectMilestonePermission == 'added' && user()->id == $item->added_by))
-                                                <a class="dropdown-item edit-milestone" href="javascript:;"
-                                                    data-row-id="{{ $item->id }}">
-                                                    <i class="fa fa-edit mr-2"></i>
-                                                    @lang('app.edit')
-                                                </a>
+                                                @if(is_null($project->deleted_at))
+                                                    <a class="dropdown-item edit-milestone" href="javascript:;"
+                                                        data-row-id="{{ $item->id }}">
+                                                        <i class="fa fa-edit mr-2"></i>
+                                                        @lang('app.edit')
+                                                    </a>
+                                                @endif
                                             @endif
 
                                             @if ($deleteProjectMilestonePermission == 'all' || ($deleteProjectMilestonePermission == 'added' && user()->id == $item->added_by))
@@ -168,6 +179,33 @@ $deleteProjectMilestonePermission = ($project->project_admin == user()->id) ? 'a
             }
         });
 
+    });
+
+    $(document).ready(function() {
+        $('.change-milestone-status').on('change', function() {
+            var milestoneId = $(this).data('milestone-id');
+            var newStatus = $(this).val();
+            var url = "{{ route('milestones.updateStatus', ':id') }}";
+            url = url.replace(':id', milestoneId);
+
+            var token = "{{ csrf_token() }}";
+
+            $.easyAjax({
+                type: 'POST',
+                url: url,
+                data: {
+                    '_token': token,
+                    'status': newStatus,
+                    '_method': 'POST'
+                },
+                success: function(response) {
+                    if(response.status == 'success') {
+                        // Optionally, display a success message or update the UI
+                        console.log('Status updated successfully');
+                    }
+                }
+            });
+        });
     });
 
 </script>

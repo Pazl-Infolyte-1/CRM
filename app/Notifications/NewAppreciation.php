@@ -3,14 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
-use App\Models\SlackSetting;
-use App\Models\Task;
 use App\Models\Appreciation;
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\SlackMessage;
-use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
 
@@ -52,8 +45,14 @@ class NewAppreciation extends BaseNotification
             array_push($via, 'slack');
         }
 
-        if ($this->emailSetting->send_push == 'yes') {
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
             array_push($via, OneSignalChannel::class);
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.newAppreciation.subject'), $this->userAppreciation->award->title);
         }
 
         return $via;
@@ -67,17 +66,24 @@ class NewAppreciation extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $content = __('email.newAppreciation.text', ['award' => $this->userAppreciation->award->title, 'award_at' => $this->userAppreciation->award_date->format($this->company->date_format)]);
+        $url = route('appreciations.show', $this->userAppreciation->id);
+        $url = getDomainSpecificUrl($url, $this->company);
 
-        return $build
+        $build
             ->subject(__('email.newAppreciation.subject'))
             ->markdown('mail.email', [
-                'url' => route('appreciations.show', $this->userAppreciation->id), 'content' => $content,
+                'url' => $url,
+                'content' => $content,
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.newAppreciation.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**
@@ -102,24 +108,18 @@ class NewAppreciation extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return SlackMessage
+     * @return \Illuminate\Notifications\Messages\SlackMessage
      */
     public function toSlack($notifiable)
     {
-        $slack = SlackSetting::setting();
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newAppreciation.subject') . '*' . "\n" . '<' . route('appreciations.show', $this->userAppreciation->id) . '|' . $this->userAppreciation->award->title . '>');
-        }
+        $url = route('appreciations.show', $this->userAppreciation->id);
+        $url = getDomainSpecificUrl($url, $this->company);
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newAppreciation.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.newAppreciation.subject') . '*' . "\n" . '<' . $url . '|' . $this->userAppreciation->award->title . '>');
+
+
     }
 
     // phpcs:ignore

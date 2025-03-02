@@ -3,9 +3,9 @@
 namespace App\Notifications;
 
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
+use App\Models\EmailNotificationSetting;
 
 class TimeTrackerReminder extends BaseNotification
 {
@@ -16,6 +16,7 @@ class TimeTrackerReminder extends BaseNotification
      * @return void
      */
     private $event;
+    private $emailSetting;
 
     public function __construct($event)
     {
@@ -28,9 +29,19 @@ class TimeTrackerReminder extends BaseNotification
      *
      * @return array
      */
-    public function via()
+    public function via($notifiable)
     {
-        $via = ['mail', 'database', 'slack', OneSignalChannel::class];
+        $via = ['mail', 'database', OneSignalChannel::class];
+
+        if ($this->company->slackSetting->status == 'active') {
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
+        }
+
+        if (push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.trackerReminder.subject'), __('email.trackerReminder.text'));
+        }
 
         return $via;
     }
@@ -44,13 +55,13 @@ class TimeTrackerReminder extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
-        $url = route('tasks.index').'?assignedTo='.$notifiable->id;
+        $build = parent::build($notifiable);
+        $url = route('tasks.index') . '?assignedTo=' . $notifiable->id;
         $url = getDomainSpecificUrl($url, $this->company);
         $greeting = __('email.trackerReminder.dear') . ' <strong>' . $notifiable->name . '</strong>,' . '<br>';
         $content = $greeting . __('email.trackerReminder.text');
 
-        return $build
+        $build
             ->subject(__('email.trackerReminder.subject'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -58,6 +69,10 @@ class TimeTrackerReminder extends BaseNotification
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.trackerReminder.action')
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     public function toArray()
@@ -69,14 +84,8 @@ class TimeTrackerReminder extends BaseNotification
 
     public function toSlack($notifiable) // phpcs:ignore
     {
-        $new = new SlackMessage;
 
-        $slack = $notifiable->company->slackSetting;
-
-        return $new
-            ->from(config('app.name'))
-            ->to('@' . $notifiable->employeeDetail->slack_username)
-            ->image($slack->slack_logo_url)
+        return $this->slackBuild($notifiable)
             ->content('>*' . __('email.trackerReminder.subject') . '*' . "\n" . __('email.trackerReminder.text') . ' ');
     }
 
@@ -85,7 +94,7 @@ class TimeTrackerReminder extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.trackerReminder.subject'))
-            ->setBody( __('email.trackerReminder.text'));
+            ->setBody(__('email.trackerReminder.text'));
     }
 
 }

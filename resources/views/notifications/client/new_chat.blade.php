@@ -1,7 +1,7 @@
 @php
 $notificationUser = \App\Models\User::find($notification->data['user_one']);
 if (!isset($notification->data['from_name'])) {
-    $chat = \App\UserChat::with('fromUser')->find($notification->data['id']);
+    $chat = \App\Models\UserChat::with('fromUser')->find($notification->data['id']);
     $fromName = $chat->fromUser->name;
 } else {
     $fromName = $notification->data['from_name'];

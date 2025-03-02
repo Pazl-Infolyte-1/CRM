@@ -5,16 +5,12 @@ $deleteContractFilePermission = user()->permission('delete_contract_files');
 
 @forelse($files as $file)
 <x-file-card :fileName="$file->filename" :dateAdded="$file->created_at->diffForHumans()">
-    @if ($file->icon == 'images')
-        <img src="{{ $file->file_url }}">
-    @else
-        <i class="fa {{ $file->icon }} text-lightest"></i>
-    @endif
+    <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
 
     @if ($viewContractFilePermission == 'all' || ($viewContractFilePermission == 'added' && $file->added_by == user()->id))
         <x-slot name="action">
             <div class="dropdown ml-auto file-action">
-                <button class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                <button class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                     type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fa fa-ellipsis-h"></i>
                 </button>
@@ -22,8 +18,11 @@ $deleteContractFilePermission = user()->permission('delete_contract_files');
                 <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                     aria-labelledby="dropdownMenuLink" tabindex="0">
                     @if ($viewContractFilePermission == 'all' || ($viewContractFilePermission == 'added' && $file->added_by == user()->id))
-                        <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank"
-                                href="{{ $file->file_url }}">@lang('app.view')</a>
+                        @if ($file->icon == 'images')
+                            <a class="img-lightbox cursor-pointer d-block text-dark-grey f-13 pt-3 px-3" data-image-url="{{ $file->file_url }}" href="javascript:;">@lang('app.view')</a>
+                        @else
+                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank" href="{{ $file->file_url }}">@lang('app.view')</a>
+                        @endif
                         <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "
                             href="{{ route('contractFiles.download', md5($file->id)) }}">@lang('app.download')</a>
                     @endif

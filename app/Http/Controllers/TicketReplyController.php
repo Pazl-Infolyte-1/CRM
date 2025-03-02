@@ -6,6 +6,7 @@ use App\Helper\Files;
 use App\Helper\Reply;
 use App\Models\TicketFile;
 use App\Models\TicketReply;
+use AWS\CRT\HTTP\Request;
 
 class TicketReplyController extends AccountBaseController
 {
@@ -37,12 +38,20 @@ class TicketReplyController extends AccountBaseController
         $ticketFiles = TicketFile::where('ticket_reply_id', $id)->get();
 
         foreach ($ticketFiles as $file) {
-            Files::deleteFile($file->hashname, 'ticket-files/' . $file->ticket_reply_id);
             $file->delete();
         }
 
         TicketReply::destroy($id);
+
         return Reply::success(__('messages.deleteSuccess'));
+
+    }
+
+    public function editNote()
+    {
+        $ticketMessage = TicketReply::findOrFail(request()->id);
+        $ticketMessage->update(['message' => request()->editedMessage]);
+        return Reply::success(__('messages.noteAddedSuccess'));
 
     }
 

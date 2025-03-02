@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * App\Models\SignUpSetting
@@ -13,7 +12,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder|SignUpSetting query()
  * @mixin \Eloquent
  */
-class SignUpSetting extends Model
+class SignUpSetting extends BaseModel
 {
+
     use HasFactory;
 }

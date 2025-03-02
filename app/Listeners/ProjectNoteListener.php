@@ -12,13 +12,13 @@ class ProjectNoteListener
     /**
      * Handle the event.
      *
-     * @param  ProjectNoteEvent $event
+     * @param ProjectNoteEvent $event
      * @return void
      */
 
     public function handle(ProjectNoteEvent $event)
     {
-            Notification::send($event->unmentionUser, new NewProjectNote($event->project, $event));
+        Notification::send($event->unmentionUser, new NewProjectNote($event->project, $event));
 
     }
 

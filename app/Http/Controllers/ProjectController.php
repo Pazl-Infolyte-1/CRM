@@ -7,6 +7,7 @@ use App\DataTables\ArchiveTasksDataTable;
 use App\DataTables\DiscussionDataTable;
 use App\DataTables\ExpensesDataTable;
 use App\DataTables\InvoicesDataTable;
+use App\DataTables\OrdersDataTable;
 use App\DataTables\PaymentsDataTable;
 use App\DataTables\ProjectNotesDataTable;
 use App\DataTables\ProjectsDataTable;
@@ -25,6 +26,7 @@ use App\Models\BankAccount;
 use App\Models\Currency;
 use App\Models\DiscussionCategory;
 use App\Models\Expense;
+use App\Models\GanttLink;
 use App\Models\Invoice;
 use App\Models\MessageSetting;
 use App\Models\Payment;
@@ -32,6 +34,7 @@ use App\Models\Pinned;
 use App\Models\Project;
 use App\Models\ProjectActivity;
 use App\Models\ProjectCategory;
+use App\Models\ProjectDepartment;
 use App\Models\ProjectFile;
 use App\Models\ProjectMember;
 use App\Models\ProjectMilestone;
@@ -53,12 +56,15 @@ use App\Traits\ProjectProgress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\CarbonInterval;
 use Symfony\Component\Mailer\Exception\TransportException;
 
 class ProjectController extends AccountBaseController
 {
 
     use ProjectProgress, ImportExcel;
+
+    private $onlyTrashedRecords = true;
 
     public function __construct()
     {
@@ -204,7 +210,7 @@ class ProjectController extends AccountBaseController
         abort_403(!in_array($this->addPermission, ['all', 'added']));
 
         $this->pageTitle = __('app.addProject');
-        $this->clients = User::allClients(null, true, ($this->addPermission == 'all' ? 'all' : null));
+        $this->clients = User::allClients(null, false, ($this->addPermission == 'all' ? 'all' : null));
         $this->categories = ProjectCategory::all();
         $this->templates = ProjectTemplate::all();
         $this->currencies = Currency::all();
@@ -221,13 +227,18 @@ class ProjectController extends AccountBaseController
         $this->projectTemplate = request('template') ? ProjectTemplate::with('projectMembers')->findOrFail(request('template')) : null;
 
         if ($this->projectTemplate) {
-            $this->projectTemplateMembers = $this->projectTemplate->projectMembers ? $this->projectTemplate->projectMembers->pluck('id')->toArray() : null;
+            $templateMembers = ProjectTemplate::findOrFail(request('template'));
+            $this->projectTemplateMembers = $templateMembers->members ? $templateMembers->members->pluck('user_id')->toArray() : null;
+            // do not remove below commented line...
+            // $this->projectTemplateMembers = $this->projectTemplate->projectMembers ? $this->projectTemplate->projectMembers->pluck('id')->toArray() : null;
         }
 
         $project = new Project();
 
-        if ($project->getCustomFieldGroupsWithFields()) {
-            $this->fields = $project->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $project->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         if (in_array('client', user_roles())) {
@@ -252,13 +263,11 @@ class ProjectController extends AccountBaseController
 
         $this->userData = $userData;
 
-        if (request()->ajax()) {
-            $html = view('projects.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'projects.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('projects.create', $this->data);
 
@@ -271,6 +280,7 @@ class ProjectController extends AccountBaseController
      */
     public function store(StoreProject $request)
     {
+
         $this->addPermission = user()->permission('add_projects');
 
         abort_403(!in_array($this->addPermission, ['all', 'added']));
@@ -279,8 +289,8 @@ class ProjectController extends AccountBaseController
 
         try {
 
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
-            $deadline = !$request->has('without_deadline') ? Carbon::createFromFormat($this->company->date_format, $request->deadline)->format('Y-m-d') : null;
+            $startDate = companyToYmd($request->start_date);
+            $deadline = !$request->has('without_deadline') ? companyToYmd($request->deadline) : null;
 
             $project = new Project();
             $project->project_name = $request->project_name;
@@ -288,6 +298,9 @@ class ProjectController extends AccountBaseController
             $project->start_date = $startDate;
             $project->deadline = $deadline;
             $project->client_id = $request->client_id;
+            $project->public_gantt_chart = $request->public_gantt_chart ?? 'enable';
+            $project->public_taskboard = $request->public_taskboard ?? 'enable';
+            $project->need_approval_by_admin = $request->need_approval_by_admin ?? '0';
 
             if (!is_null($request->duplicateProjectID)) {
 
@@ -313,13 +326,10 @@ class ProjectController extends AccountBaseController
                     $project->category_id = $request->category_id;
                 }
 
-                $request->client_view_task = $request->client_view_task ? 'enable' : 'disable';
-                $project->allow_client_notification = ($request->client_view_task) && ($request->client_task_notification) ? 'enable' : 'disable';
-                $request->manual_timelog = $request->manual_timelog ? 'enable' : 'disable';
+                $project->client_view_task = $request->client_view_task ? 'enable' : 'disable';
+                $project->allow_client_notification = $request->client_task_notification ? 'enable' : 'disable';
+                $project->manual_timelog = $request->manual_timelog ? 'enable' : 'disable';
 
-                if ($request->team_id > 0) {
-                    $project->team_id = $request->team_id;
-                }
 
                 $project->project_budget = $request->project_budget;
                 $project->currency_id = $request->currency_id != '' ? $request->currency_id : company()->currency_id;
@@ -344,6 +354,15 @@ class ProjectController extends AccountBaseController
 
             $project->save();
 
+            if ($request->has('team_id') && is_array($request->team_id) && count($request->team_id) > 0) {
+                foreach ($request->team_id as $team) {
+                    ProjectDepartment::create([
+                        'project_id' => $project->id,
+                        'team_id' => $team
+                    ]);
+                }
+            }
+
             if (trim_editor($request->notes) != '') {
                 $project->notes()->create([
                     'title' => 'Note',
@@ -357,7 +376,7 @@ class ProjectController extends AccountBaseController
 
             if ($request->template_id) {
                 $template = ProjectTemplate::with('projectMembers')->findOrFail($request->template_id);
-
+                $counter = 1;
                 foreach ($template->tasks as $task) {
 
                     $projectTask = new Task();
@@ -367,8 +386,22 @@ class ProjectController extends AccountBaseController
                     $projectTask->description = trim_editor($task->description);
                     $projectTask->start_date = $startDate;
                     $projectTask->due_date = $deadline;
+                    $projectTask->priority = $task->priority;
+
+                    if(isset($project->project_short_code)){
+                        $projectTask->task_short_code = $project->project_short_code . '-' . $counter;
+                    }else{
+                        $projectTask->task_short_code = $counter;
+                    }
                     $projectTask->is_private = 0;
                     $projectTask->save();
+
+                    $taskLabels = explode(",", $task->task_labels);
+
+                    if (!empty($taskLabels) && count($taskLabels) > 0 && !in_array('', $taskLabels)) {
+
+                        $projectTask->labels()->sync($taskLabels);
+                    }
 
                     foreach ($task->usersMany as $value) {
                         TaskUser::create(
@@ -382,6 +415,8 @@ class ProjectController extends AccountBaseController
                     foreach ($task->subtasks as $value) {
                         $projectTask->subtasks()->create(['title' => $value->title]);
                     }
+
+                    $counter++;
                 }
             }
 
@@ -426,7 +461,7 @@ class ProjectController extends AccountBaseController
 
     public function edit($id)
     {
-        $this->project = Project::with('client', 'members', 'members.user', 'members.user.session', 'members.user.employeeDetail.designation', 'milestones', 'milestones.currency')
+        $this->project = Project::with('client', 'members', 'members.user', 'members.user.session', 'members.user.employeeDetail.designation', 'milestones', 'milestones.currency', 'departments')
             ->withTrashed()
             ->findOrFail($id)
             ->withCustomFields();
@@ -447,20 +482,40 @@ class ProjectController extends AccountBaseController
 
         $this->pageTitle = __('app.update') . ' ' . __('app.project');
 
-        if ($this->project->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->project->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $this->project->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
-        $this->clients = User::allClients(null, true, ($this->editPermission == 'all' ? 'all' : null));
+        $this->clients = User::allClients(null, false, ($this->editPermission == 'all' ? 'all' : null));
         $this->categories = ProjectCategory::all();
         $this->currencies = Currency::all();
         $this->teams = Team::all();
         $this->projectStatus = ProjectStatusSetting::where('status', 'active')->get();
+        $this->departmentIds = $this->project->departments->pluck('team_id')->toArray();
 
-        $this->employees = '';
 
-        if ($this->editPermission == 'all' || $this->editProjectMembersPermission == 'all') {
-            $this->employees = User::allEmployees(null, null, ($this->editPermission == 'all' ? 'all' : null));
+        /**
+         * If the project has departments, it retrieves the team IDs associated with those departments and fetches the users belonging to each team.
+         * If the project does not have any departments, its giving all the employees.
+         */
+        if ($this->project->departments->count() > 0 && ($this->editPermission == 'all' || $this->editProjectMembersPermission == 'all')) {
+            $this->teamIds = $this->project->departments->pluck('team_id')->toArray();
+            $this->employees = collect([]);
+
+            foreach ($this->teamIds as $teamId) {
+                $team = User::departmentUsers($teamId);
+                $this->employees = $this->employees->merge($team);
+            }
+
+        }
+        else{
+            $this->employees = '';
+
+            if (($this->editPermission == 'all' || $this->editPermission = 'owned') || $this->editProjectMembersPermission == 'all') {
+                $this->employees = User::allEmployees(null, false, ($this->editProjectMembersPermission == 'all' ? 'all' : null));
+            }
         }
 
         $userData = [];
@@ -477,15 +532,13 @@ class ProjectController extends AccountBaseController
 
         $this->userData = $userData;
 
-        if (request()->ajax()) {
-            $html = view('projects.ajax.edit', $this->data)->render();
+        $this->view = 'projects.ajax.edit';
 
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
         }
 
-
         abort_403(user()->permission('edit_projects') == 'added' && $this->project->added_by != user()->id);
-        $this->view = 'projects.ajax.edit';
 
         return view('projects.create', $this->data);
 
@@ -505,10 +558,10 @@ class ProjectController extends AccountBaseController
 
         $project->project_summary = trim_editor($request->project_summary);
 
-        $project->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
+        $project->start_date = companyToYmd($request->start_date);
 
         if (!$request->has('without_deadline')) {
-            $project->deadline = Carbon::createFromFormat($this->company->date_format, $request->deadline)->format('Y-m-d');
+            $project->deadline = companyToYmd($request->deadline);
         }
         else {
             $project->deadline = null;
@@ -543,28 +596,26 @@ class ProjectController extends AccountBaseController
             $project->manual_timelog = 'disable';
         }
 
-        $project->team_id = null;
-
-        if ($request->team_id > 0) {
-            $project->team_id = $request->team_id;
-        }
-
         $project->client_id = ($request->client_id == 'null' || $request->client_id == '') ? null : $request->client_id;
 
         if ($request->calculate_task_progress) {
             $project->calculate_task_progress = 'true';
             $project->completion_percent = $this->calculateProjectProgress($id, 'true');
+            $project->status = $request->status;
         }
         else {
             $project->calculate_task_progress = 'false';
             $project->completion_percent = $request->completion_percent;
+            if($request->completion_percent == 100){
+                $project->status = 'finished';
+            }else{
+                $project->status = $request->status;
+            }
         }
 
         $project->project_budget = $request->project_budget;
         $project->currency_id = $request->currency_id != '' ? $request->currency_id : company()->currency_id;
         $project->hours_allocated = $request->hours_allocated;
-        $project->status = $request->status;
-
         $project->miro_board_id = $request->miro_board_id;
 
         if ($request->has('miroboard_checkbox')) {
@@ -589,8 +640,18 @@ class ProjectController extends AccountBaseController
             $project->projectMembers()->sync($request->member_id);
         }
 
+        if (is_null($request->member_id && $request->has('member_id'))) {
+            $project->projectMembers()->detach();
+        }
+
+        $project->public_gantt_chart = $request->public_gantt_chart;
+        $project->public_taskboard = $request->public_taskboard;
+        $project->need_approval_by_admin = $request->need_approval_by_admin;
         $project->save();
 
+        if ($request->has('team_id')) {
+            $project->projectDepartments()->sync($request->team_id);
+        }
 
         // To add custom fields data
         if ($request->custom_fields_data) {
@@ -659,8 +720,10 @@ class ProjectController extends AccountBaseController
 
         $this->pageTitle = $this->project->project_name;
 
-        if ($this->project->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->project->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $this->project->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $this->messageSetting = MessageSetting::first();
@@ -676,6 +739,9 @@ class ProjectController extends AccountBaseController
             $this->view = 'projects.ajax.members';
             break;
         case 'milestones':
+            $this->project = Project::with(['milestones' => function($query) {
+                $query->withCount('tasks');
+            }])->findOrFail($id);
             $this->view = 'projects.ajax.milestones';
             break;
         case 'taskboard':
@@ -684,11 +750,14 @@ class ProjectController extends AccountBaseController
             break;
         case 'tasks':
             $this->taskBoardStatus = TaskboardColumn::all();
-
+            $this->unAssignedTask = $this->project->tasks()->whereDoesntHave('users')->count();
             return (!$this->project->trashed()) ? $this->tasks($this->project->project_admin == user()->id) : $this->archivedTasks($this->project->project_admin == user()->id);
         case 'gantt':
-            $this->taskBoardStatus = TaskboardColumn::all();
-            $this->view = 'projects.ajax.gantt';
+            $this->hideCompleted = request('hide_completed') ?? 0;
+            // $this->taskBoardStatus = TaskboardColumn::all();
+            $this->ganttData = $this->ganttDataNew($this->project->id, $this->hideCompleted, $this->project->company);
+            $this->view = 'projects.ajax.gantt_dhtml';
+            // $this->view = 'projects.ajax.gantt';
             break;
         case 'invoices':
             return $this->invoices();
@@ -696,6 +765,7 @@ class ProjectController extends AccountBaseController
             $this->view = 'projects.ajax.files';
             break;
         case 'timelogs':
+            $this->employees = User::allEmployees();
             return $this->timelogs($this->project->project_admin == user()->id);
         case 'expenses':
             return $this->expenses();
@@ -720,11 +790,18 @@ class ProjectController extends AccountBaseController
 
             return $this->burndownChart($this->project);
         case 'activity':
-            $this->activities = ProjectActivity::getProjectActivities($id, 10);
+            $this->activities = [];
+
+            if(!in_array('client', user_roles())){
+                $this->activities = ProjectActivity::getProjectActivities($id, 10);
+            }
+
             $this->view = 'projects.ajax.activity';
             break;
         case 'tickets':
             return $this->tickets($this->project->project_admin == user()->id);
+        case 'orders':
+            return $this->orders();
         default:
             $this->taskChart = $this->taskChartData($id);
             $hoursLogged = $this->project->times()->sum('total_minutes');
@@ -739,23 +816,35 @@ class ProjectController extends AccountBaseController
                 ->where('project_id', $id)
                 ->sum('amount');
 
-            $this->hoursLogged = intdiv($hoursLogged - $breakMinutes, 60);
+            // Initialize variables to store hours and minutes
+            $this->hoursLogged = $this->convertMinutesToHoursAndMinutes($hoursLogged, $breakMinutes);
+
             $this->expenses = Expense::where(['project_id' => $id, 'status' => 'approved'])->sum('price');
+            $this->profit = $this->earnings - $this->expenses;
+
             $this->view = 'projects.ajax.overview';
             break;
         }
 
-
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         $this->activeTab = $tab ?: 'overview';
 
         return view('projects.show', $this->data);
 
+    }
+
+    // Convert minutes in hours and minutes
+    public function convertMinutesToHoursAndMinutes($totalMinutes, $breakMinutes = 0)
+    {
+        $totalMinutes = ($totalMinutes - $breakMinutes);
+
+        $hours = floor($totalMinutes / 60);
+        $minutes = $totalMinutes % 60;
+
+        return $hours.__('app.hour').' '. $minutes.__('app.minute');
     }
 
     /**
@@ -883,7 +972,7 @@ class ProjectController extends AccountBaseController
 
     public function tasks($projectAdmin = false)
     {
-        $dataTable = new TasksDataTable();
+        $dataTable = new TasksDataTable(true);
 
         if (!$projectAdmin) {
             $viewPermission = user()->permission('view_project_tasks');
@@ -892,7 +981,6 @@ class ProjectController extends AccountBaseController
             $viewPermission = user()->permission('view_tasks');
             abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
         }
-
         $tab = request('tab');
         $this->activeTab = $tab ?: 'overview';
 
@@ -979,7 +1067,7 @@ class ProjectController extends AccountBaseController
 
     public function invoices()
     {
-        $dataTable = new InvoicesDataTable;
+        $dataTable = new InvoicesDataTable($this->onlyTrashedRecords);
         $viewPermission = user()->permission('view_project_invoices');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned']));
 
@@ -1078,14 +1166,17 @@ class ProjectController extends AccountBaseController
         }
         else {
 
-            $members = ProjectMember::with('user')->where('project_id', $id)->get();
+            $members = ProjectMember::with('user')->where('project_id', $id)->whereHas('user', function ($q) {
+                $q->where('status', 'active');
+            })->get();
 
 
             foreach ($members as $item) {
+                $content = ( $item->user->status == 'deactive') ? "<span class='badge badge-pill badge-danger border align-center ml-2 px-2'>Inactive</span>" : '';
                 $self_select = (user() && user()->id == $item->user->id) ? '<span class=\'ml-2 badge badge-secondary\'>' . __('app.itsYou') . '</span>' : '';
 
                 $options .= '<option
-                data-content="<span class=\'badge badge-pill badge-light border\'><div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->user->image_url . ' ></div> ' . $item->user->name . '' . $self_select . '</span>"
+                data-content="<span class=\'badge badge-pill badge-light border\'><div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->user->image_url . ' ></div> ' . $item->user->name . '' . $self_select . '' . $content .'</span>"
                 value="' . $item->user->id . '"> ' . $item->user->name . ' </option>';
 
                 $url = route('employees.show', [$item->user->id]);
@@ -1105,7 +1196,7 @@ class ProjectController extends AccountBaseController
 
     public function timelogs($projectAdmin = false)
     {
-        $dataTable = new TimeLogsDataTable();
+        $dataTable = new TimeLogsDataTable($this->onlyTrashedRecords);
 
         if (!$projectAdmin) {
             $viewPermission = user()->permission('view_project_timelogs');
@@ -1122,7 +1213,7 @@ class ProjectController extends AccountBaseController
 
     public function expenses()
     {
-        $dataTable = new ExpensesDataTable();
+        $dataTable = new ExpensesDataTable($this->onlyTrashedRecords);
         $viewPermission = user()->permission('view_project_expenses');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned']));
 
@@ -1137,7 +1228,7 @@ class ProjectController extends AccountBaseController
 
     public function payments()
     {
-        $dataTable = new PaymentsDataTable();
+        $dataTable = new PaymentsDataTable($this->onlyTrashedRecords);
         $viewPermission = user()->permission('view_project_payments');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned']));
 
@@ -1271,7 +1362,7 @@ class ProjectController extends AccountBaseController
 
     public function tickets($projectAdmin = false)
     {
-        $dataTable = new TicketDataTable();
+        $dataTable = new TicketDataTable($this->onlyTrashedRecords);
 
         if (!$projectAdmin) {
             $viewPermission = user()->permission('view_tickets');
@@ -1303,8 +1394,13 @@ class ProjectController extends AccountBaseController
 
         if (!$projectAdmin) {
             $viewPermission = user()->permission('view_project_rating');
-            abort_403(!in_array($viewPermission, ['all', 'added']));
+            abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
         }
+
+        $this->deleteRatingPermission = user()->permission('delete_project_rating');
+        $this->editRatingPermission = user()->permission('edit_project_rating');
+        $this->addRatingPermission = user()->permission('add_project_rating');
+
 
         $tab = request('tab');
         $this->activeTab = $tab ?: 'rating';
@@ -1333,7 +1429,7 @@ class ProjectController extends AccountBaseController
             }
             else {
                 $this->clients = User::allClients();
-                $this->allEmployees = User::allEmployees();
+                $this->allEmployees = User::allEmployees(null, true);
             }
 
             $this->categories = ProjectCategory::all();
@@ -1359,21 +1455,22 @@ class ProjectController extends AccountBaseController
         $this->addPermission = user()->permission('add_projects');
         abort_403(!in_array($this->addPermission, ['all', 'added']));
 
+        $this->view = 'projects.ajax.import';
 
         if (request()->ajax()) {
-            $html = view('projects.ajax.import', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'projects.ajax.import';
 
         return view('projects.create', $this->data);
     }
 
     public function importStore(ImportRequest $request)
     {
-        $this->importFileProcess($request, ProjectImport::class);
+        $rvalue = $this->importFileProcess($request, ProjectImport::class);
+
+        if($rvalue == 'abort'){
+            return Reply::error(__('messages.abortAction'));
+        }
 
         $view = view('projects.ajax.import_progress', $this->data)->render();
 
@@ -1485,10 +1582,23 @@ class ProjectController extends AccountBaseController
 
         $addPermission = user()->permission('add_projects');
         $this->memberIds = $this->project->members->pluck('user_id')->toArray();
+        $this->teams = Team::all();
+        $this->departmentIds = $this->project->departments->pluck('team_id')->toArray();
 
-        $this->employees = User::allEmployees(null, true, ($addPermission == 'all' ? 'all' : null));
+        if ($this->project->departments->count() > 0) {
+            $this->teamIds = $this->project->departments->pluck('team_id')->toArray();
+            $this->employees = collect([]);
 
-        $this->clients = User::allClients(null, true, ($addPermission == 'all' ? 'all' : null));
+            foreach ($this->teamIds as $teamId) {
+                $team = User::departmentUsers($teamId);
+                $this->employees = $this->employees->merge($team);
+            }
+        }
+        else {
+            $this->employees = User::allEmployees(null, true, ($addPermission == 'all' ? 'all' : null));
+        }
+
+        $this->clients = User::allClients(null, false, ($addPermission == 'all' ? 'all' : null));
 
         if (in_array('client', user_roles())) {
             $this->client = User::withoutGlobalScope(ActiveScope::class)->findOrFail(user()->id);
@@ -1712,11 +1822,166 @@ class ProjectController extends AccountBaseController
             ->when(($request->requesterType == 'employee' && $request->userId), function ($query) use ($request) {
                 $query->whereHas('members', function ($q) use ($request) {
                     $q->where('user_id', $request->userId);
-                });
+                })
+                ->orWhere('public', 1);
             })
             ->get();
 
         return Reply::dataOnly(['projects' => $projects]);
+    }
+
+    public function orders()
+    {
+        $dataTable = new OrdersDataTable($this->onlyTrashedRecords);
+        $viewPermission = user()->permission('view_project_orders');
+        abort_403(!in_array($viewPermission, ['all', 'added', 'owned']));
+
+        $tab = request('tab');
+        $this->activeTab = $tab ?: 'overview';
+
+        $this->view = 'projects.ajax.orders';
+
+        return $dataTable->render('projects.show', $this->data);
+    }
+
+    public function ganttDataNew($projectID, $hideCompleted, $company)
+    {
+        $taskBoardColumn = TaskboardColumn::completeColumn();
+
+        if ($hideCompleted == 0) {
+            $milestones = ProjectMilestone::with(['tasks' => function ($q) {
+                return $q->whereNotNull('tasks.start_date');
+            }, 'tasks.boardColumn'])->where('project_id', $projectID)->get();
+
+        } else {
+            $milestones = ProjectMilestone::with(['tasks' => function ($q) use ($taskBoardColumn) {
+                return $q->whereNotNull('tasks.start_date')->where('tasks.board_column_id', '<>', $taskBoardColumn->id);
+            }, 'tasks.boardColumn'])
+            ->where('status', 'incomplete')
+            ->where('project_id', $projectID)->get();
+        }
+
+        $nonMilestoneTasks = Task::whereNull('milestone_id')->whereNotNull('start_date')->with('boardColumn');
+
+        if ($hideCompleted == 1) {
+            $nonMilestoneTasks = $nonMilestoneTasks->where('tasks.board_column_id', '<>', $taskBoardColumn->id);
+        }
+
+        $nonMilestoneTasks = $nonMilestoneTasks->where('project_id', $projectID)->get();
+
+        $ganttData = [];
+        $ganttData['data'] = [];
+        $ganttData['links'] = [];
+
+        foreach ($milestones as $key => $milestone) {
+            $parentID = 'project-' . $milestone->id;
+
+            $ganttData['data'][] = [
+                'id' => $parentID,
+                'text' => $milestone->milestone_title,
+                'type' => 'project',
+                'start_date' => $milestone->start_date->format('d-m-Y H:i'),
+                'duration' => $milestone->start_date->diffInDays($milestone->end_date) + 1,
+                'progress' => ($milestone->tasks->count()) ? ($milestone->completionPercent() / 100) : 0,
+                'parent' => 0,
+                'open' => ($milestone->status == 'incomplete'),
+                'color' => '#cccccc',
+                'textColor' => '#09203F',
+                'linkable' => false,
+                'priority' => ($key + 1)
+            ];
+
+
+            foreach ($milestone->tasks as $key2 => $task) {
+                $taskUsers = '<div class="d-inline-flex align-items-center ml-1 text-dark w-180" data-task-id="'.$task->id.'">';
+
+                foreach($task->users as $item) {
+                    $taskUsers .= '<img data-toggle="tooltip" class="taskEmployeeImg rounded-circle mr-1" data-original-title="'.$item->name.'"
+                                                     src="'.$item->image_url.'">';
+                }
+
+                $taskUsers .= view('components.status', ['style' => 'color: ' . $task->boardColumn->label_color, 'value' => $task->boardColumn->column_name, 'color' => 'red'])->render() . '</div>';
+
+                $ganttData['data'][] = [
+                    'id' => $task->id,
+                    'text' => $task->heading,
+                    'text_user' => $taskUsers,
+                    'type' => 'task',
+                    'start_date' => $task->start_date->format('d-m-Y H:i'),
+                    'duration' => (($task->due_date) ? $task->start_date->diffInDays($task->due_date) + 1 : 1),
+                    'parent' => $parentID,
+                    'priority' => ($key2 + 1),
+                    'color' => $task->boardColumn->label_color.'20',
+                    'textColor' => '#09203F',
+                    'view' => view('components.cards.task-card', ['task' => $task, 'draggable' => false, 'company' => $company])->render()
+                ];
+
+                if (!is_null($task->dependent_task_id)) {
+                    $ganttData['links'][] = [
+                        'id' => $task->id,
+                        'source' => $task->dependent_task_id,
+                        'target' => $task->id,
+                        'type' => 0
+                    ];
+                }
+            }
+
+            if ($milestone->tasks->count()) {
+                $ganttData['data'][] = [
+                    'id' => 'milestone-' . $milestone->id,
+                    'text' => $milestone->milestone_title,
+                    'type' => 'milestone',
+                    'start_date' => (($task->due_date) ? $task->due_date->format('d-m-Y H:i') : $task->start_date->format('d-m-Y H:i')),
+                    'duration' => (($task->due_date) ? $task->start_date->diffInDays($task->due_date) + 1 : 1),
+                    'parent' => $parentID,
+                ];
+
+                $ganttData['links'][] = [
+                    'id' => 'milestone-' . $milestone->id,
+                    'source' => $task->id,
+                    'target' => 'milestone-' . $milestone->id,
+                    'type' => 0
+                ];
+            }
+        }
+
+        foreach ($nonMilestoneTasks as $key2 => $task) {
+            $taskUsers = '<div class="d-inline-flex align-items-center ml-1 text-dark w-180" data-task-id="'.$task->id.'">';
+
+            foreach($task->users as $item) {
+                $taskUsers .= '<img data-toggle="tooltip" class="taskEmployeeImg rounded-circle mr-1" data-original-title="'.$item->name.'"
+                                                 src="'.$item->image_url.'">';
+            }
+
+            $taskUsers .= view('components.status', ['style' => 'color: ' . $task->boardColumn->label_color, 'value' => $task->boardColumn->column_name, 'color' => 'red'])->render() . '</div>';
+
+            $ganttData['data'][] = [
+                'id' => $task->id,
+                'text' => $task->heading,
+                'text_user' => $taskUsers,
+                'type' => 'task',
+                'start_date' => $task->start_date->format('d-m-Y H:i'),
+                'duration' => (($task->due_date) ? $task->start_date->diffInDays($task->due_date) : 1),
+                'priority' => ($key2 + 1),
+                'color' => $task->boardColumn->label_color.'20',
+                'textColor' => '#09203F',
+                'view' => view('components.cards.task-card', ['task' => $task, 'draggable' => false, 'company' => $company])->render()
+            ];
+
+            if (!is_null($task->dependent_task_id)) {
+                $ganttData['links'][] = [
+                    'id' => $task->id,
+                    'source' => $task->dependent_task_id,
+                    'target' => $task->id,
+                    'type' => 0
+                ];
+            }
+
+        }
+
+        $ganttData['links'] = array_merge($ganttData['links'], GanttLink::where('project_id', $projectID)->select('id', 'type', 'source', 'target', 'type')->get()->toArray());
+
+        return $ganttData;
     }
 
 }

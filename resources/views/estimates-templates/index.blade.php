@@ -68,7 +68,7 @@
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["estimate-template-table"].draw(false);
+            window.LaravelDataTables["estimate-template-table"].draw(true);
         }
 
         $('#search-text-field').on('change keyup',

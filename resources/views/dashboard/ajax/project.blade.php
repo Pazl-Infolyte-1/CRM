@@ -36,8 +36,11 @@
     @if (in_array('projects', user_modules()) && in_array('status_wise_project', $activeWidgets))
         <div class="col-sm-12 col-lg-6 mt-3">
             <x-cards.data :title="__('modules.dashboard.statusWiseProject')">
+                @if (array_sum($statusWiseProject['values']) > 0)
+                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="status-wise-project" data-chart-data="{{ json_encode($statusWiseProject) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                @endif
                 <x-pie-chart id="task-chart" :labels="$statusWiseProject['labels']"
-                    :values="$statusWiseProject['values']" :colors="$statusWiseProject['colors']" height="250" width="300" />
+                    :values="$statusWiseProject['values']" :colors="$statusWiseProject['colors']" height="310" width="300" />
             </x-cards.data>
         </div>
     @endif

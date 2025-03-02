@@ -2,7 +2,6 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\PurposeConsentUser;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Button;
@@ -23,30 +22,14 @@ class ClientGDPRDataTable extends BaseDataTable
             ->eloquent($query)
             ->addIndexColumn()
             ->editColumn('status', function ($row) {
-                if ($row->status == 'agree') {
-                    $status = __('modules.gdpr.optIn');
-                }
-                elseif ($row->status == 'disagree') {
-                    $status = __('modules.gdpr.optOut');
-                }
-                else {
-                    $status = '';
-                }
-
-                return $status;
+                return match ($row->status) {
+                    'agree' => __('modules.gdpr.optIn'),
+                    'disagree' => __('modules.gdpr.optOut'),
+                    default => ''
+                };
             })
-            ->editColumn(
-                'created_at',
-                function ($row) {
-                    return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
-                }
-            )
-            ->editColumn(
-                'action',
-                function ($row) {
-                    return $row->status;
-                }
-            )
+            ->editColumn('created_at', fn($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format))
+            ->editColumn('action', fn($row) => $row->status)
             ->rawColumns(['status']);
     }
 

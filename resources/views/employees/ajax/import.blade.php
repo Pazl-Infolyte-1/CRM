@@ -2,8 +2,8 @@
     <div class="col-sm-12">
         <x-form id="import-employee-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.importExcel') @lang('app.employee')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    @lang('app.importEmployee')</h4>
                 <div class="col-sm-12 pt-2">
                     <div class="alert alert-warning" role="alert">
                         @lang('app.importExcelInfo')
@@ -11,6 +11,8 @@
                 </div>
                 <div class="row py-20">
                     <div class="col-md-12">
+                        <x-forms.link-secondary :link="asset('sample-import/employees-sample.xlsx')" icon="download">@lang('app.downloadSampleImport')</x-forms.link-secondary>
+
                         <x-forms.file :fieldLabel="__('modules.import.file')" fieldName="import_file"
                                       fieldId="employee_import"/>
                     </div>

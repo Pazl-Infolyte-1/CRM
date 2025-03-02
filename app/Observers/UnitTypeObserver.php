@@ -9,7 +9,7 @@ class UnitTypeObserver
 
     public function creating(UnitType $unitType)
     {
-        if(company()) {
+        if (company()) {
             $unitType->company_id = company()->id;
         }
     }

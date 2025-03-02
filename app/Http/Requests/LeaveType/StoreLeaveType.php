@@ -27,8 +27,6 @@ class StoreLeaveType extends CoreRequest
         $rules = [
             'type_name' => 'required',
             'color' => 'required',
-            'leave_number' => 'required',
-            'monthly_limit' => 'required|lte:leave_number',
             'gender' => 'required',
             'marital_status' => 'required',
             'department' => 'required',
@@ -38,6 +36,10 @@ class StoreLeaveType extends CoreRequest
 
         if(!is_null(request('effective_after'))){
             $rules['effective_after'] = 'numeric|min:1';
+        }
+
+        if(!is_null(request('leavetype'))){
+            $rules['leavetype'] = 'required';
         }
 
         return $rules;

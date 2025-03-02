@@ -12,6 +12,7 @@ use Square\Models\OrderLineItem;
 use Illuminate\Support\Facades\Log;
 use Square\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Models\GlobalSetting;
 use App\Traits\MakeOrderInvoiceTrait;
 use App\Traits\MakePaymentTrait;
 use Square\Models\CreateOrderRequest;
@@ -140,7 +141,7 @@ class SquareController extends Controller
                 $invoice->save();
                 $this->makePayment('Square', $amount, $invoice, $request->transactionId, (($order->getState() == 'COMPLETED') ? 'complete' : 'failed'));
 
-                return redirect(route('front.invoice', $invoice->hash));
+                return redirect(url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash));
 
             case 'order':
 

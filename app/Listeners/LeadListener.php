@@ -3,8 +3,8 @@
 namespace App\Listeners;
 
 use App\Events\LeadEvent;
-use App\Models\Lead;
-use App\Notifications\LeadAgentAssigned;
+use App\Models\User;
+use App\Notifications\NewLeadCreated;
 use Illuminate\Support\Facades\Notification;
 
 class LeadListener
@@ -19,14 +19,12 @@ class LeadListener
 
     public function handle(LeadEvent $event)
     {
-        if ($event->notificationName == 'LeadAgentAssigned') {
+        $admins = User::allAdmins($event->leadContact->company->id);
 
-            $lead = Lead::with('leadAgent', 'leadAgent.user')->findOrFail($event->lead->id);
-
-            if ($lead->leadAgent) {
-                Notification::send($lead->leadAgent->user, new LeadAgentAssigned($lead));
-            }
+        if (session('is_imported') == false) {
+            Notification::send($admins, new NewLeadCreated($event->leadContact));
         }
+
     }
 
 }

@@ -1,3 +1,12 @@
+<style>
+    .custom-label-class {
+        width: 20%; /* Adjust the label width */
+    }
+
+    .custom-value-class {
+        width: 80%; /* Adjust the value width */
+    }
+</style>
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">@lang('modules.lead.addFollowUp')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
@@ -10,20 +19,21 @@
                 <div class="row">
 
                     <div class="col-md-12">
-                        <x-cards.data-row :label="__('modules.lead.clientName')" :value="$lead->client_name ?? '--'" />
+                        <x-cards.data-row :label="__('modules.lead.clientName')" :value="$deal->contact->client_name_salutation ?? '--'"
+                            labelClasses="custom-label-class"  otherClasses="custom-value-class" />
                     </div>
 
                     <div class="col-md-6">
                         <x-forms.datepicker fieldId="next_follow_up_date" fieldRequired="true"
                             :fieldLabel="__('modules.lead.leadFollowUp')" fieldName="next_follow_up_date"
-                            :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                            :fieldValue="now(company()->timezone)->format(company()->date_format)"
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
                     <div class="col-md-6">
                         <div class="bootstrap-timepicker timepicker">
                             <x-forms.text :fieldLabel="__('modules.timeLogs.startTime')" :fieldPlaceholder="__('placeholders.hours')"
                                 fieldName="start_time" fieldId="start_time" fieldRequired="true"
-                                :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->time_format)" />
+                                :fieldValue="now(company()->timezone)->format(company()->time_format)" />
                         </div>
                     </div>
                     <div class="col-lg-12 my-3">
@@ -57,7 +67,7 @@
                     </div>
                 </div>
             </div>
-            <input type="hidden" name="lead_id" value="{{ $leadID }}">
+            <input type="hidden" name="deal_id" value="{{ $dealID }}">
         </x-form>
     </div>
 </div>
@@ -90,7 +100,7 @@
         // save channel
         $('#save-followup').click(function() {
             $.easyAjax({
-                url: "{{ route('leads.follow_up_store') }}",
+                url: "{{ route('deals.follow_up_store') }}",
                 container: '#followUpForm',
                 type: "POST",
                 blockUI: true,

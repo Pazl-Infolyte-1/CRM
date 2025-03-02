@@ -75,13 +75,25 @@ $deleteOrderPermission = user()->permission('delete_order');
                 </tr>
             </table>
             <table width="100%">
+                @if ($order->project)
+                    <tr>
+                        <td class="f-14 text-dark">
+                            @lang('modules.invoices.project'):
+                            <p class="mb-3">
+                                @if ($order->project)
+                                    {{$order->project->project_name}}
+                                @endif
+                            </p>
+                        </td>
+                    </tr>
+                @endif
                 <tr class="inv-unpaid">
 
                     <td class="f-14 text-dark">
                         <p>@lang("modules.invoices.billedTo"):</p>
                         <p class="mt-3 mb-0">
                         @if ($order->client->name && $invoiceSetting->show_client_name == 'yes')
-                            {{ $order->client->name }}<br>
+                            {{ $order->client->name_salutation }}<br>
                         @endif
 
                         @if ($order->client->email && $invoiceSetting->show_client_email == 'yes')
@@ -89,7 +101,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                         @endif
 
                         @if ($order->client->mobile && $invoiceSetting->show_client_phone == 'yes')
-                            {{ $order->client->mobile }}<br>
+                            {{ $order->client->mobile_with_phonecode }}<br>
                         @endif
 
                         @if ($order->client->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
@@ -137,6 +149,9 @@ $deleteOrderPermission = user()->permission('delete_order');
                                     @lang('modules.invoices.qty')
                                 </td>
                                 <td class="border-right-0 border-left-0" align="right">
+                                    @lang('app.sku')
+                                </td>
+                                <td class="border-right-0 border-left-0" align="right">
                                     @lang("modules.invoices.unitPrice") ({{ $order->currency->currency_code }})
                                 </td>
                                 <td class="border-right-0 border-left-0" align="right">@lang("modules.invoices.tax")</td>
@@ -145,13 +160,14 @@ $deleteOrderPermission = user()->permission('delete_order');
                                     ({{ $order->currency->currency_code }})</td>
                             </tr>
 
-                            @foreach ($order->items as $item)
+                            @foreach ($order->items->sortBy('field_order') as $item)
                                 <tr class="text-dark">
                                     <td>{{ $item->item_name }}</td>
                                     @if($invoiceSetting->hsn_sac_code_show)
                                         <td align="right">{{ $item->hsn_sac_code }}</td>
                                     @endif
                                     <td align="right">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
+                                    <td align="right">{{ $item->sku }}</td>
                                     <td align="right">
                                         {{ currency_format($item->unit_price, $order->currency_id, false) }}</td>
                                     <td align="right">{{ $item->tax_list }}</td>
@@ -160,7 +176,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                                 </tr>
                                 @if ($item->item_summary != '' || $item->orderItemImage)
                                     <tr class="text-dark">
-                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}" class="border-bottom-0">
+                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '7' : '6' }}" class="border-bottom-0">
                                             {!! nl2br(pdfStripTags($item->item_summary)) !!}
                                             @if ($item->orderItemImage)
                                                 <p class="mt-2">
@@ -174,7 +190,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                                 @endif
                                 @if ($item->has('product') && $item->product && $item->product->downloadable && $item->product->download_file_url && $order->status == 'completed')
                                     <tr class="text-dark">
-                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}" class="border-bottom-0">
+                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '7' : '6' }}" class="border-bottom-0">
                                             <p class="mt-2">
                                                 <x-forms.link-secondary icon="download" :link="$item->product->download_file_url" class="mr-3" download="{{ $item->product->name }}">@lang('app.download')</x-forms.link-secondary>
                                             </p>
@@ -186,7 +202,7 @@ $deleteOrderPermission = user()->permission('delete_order');
 
 
                             <tr>
-                                <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '4' : '3' }}" class="blank-td border-bottom-0 border-left-0 border-right-0"></td>
+                                <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5' : '4' }}" class="blank-td border-bottom-0 border-left-0 border-right-0"></td>
                                 <td class="p-0 border-right-0">
                                     <table width="100%">
                                         <tr class="text-dark-grey" align="right">
@@ -244,7 +260,7 @@ $deleteOrderPermission = user()->permission('delete_order');
             </table>
             <table width="100%" class="inv-desc-mob d-block d-lg-none d-md-none">
 
-                @foreach ($order->items as $item)
+                @foreach ($order->items->sortBy('field_order') as $item)
                     @if ($item->type == 'item')
 
                         <tr>
@@ -333,11 +349,18 @@ $deleteOrderPermission = user()->permission('delete_order');
                         <table>
                             <tr>@lang('app.clientNote')</tr>
                             <tr>
-                                <p class="text-dark-grey">{!! !empty($order->note) ? $order->note : '--' !!}</p>
+                                <p class="text-dark-grey">{!! !empty($order->note) ? nl2br($order->note) : '--' !!}</p>
                             </tr>
                         </table>
                     </td>
                 </tr>
+                @if ($invoiceSetting->other_info)
+                    <tr>
+                        <td>
+                            <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}</p>
+                        </td>
+                    </tr>
+                @endif
             </table>
         </div>
     </div>
@@ -386,7 +409,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                             </li>
                         @endif
 
-                        @if (!in_array($order->status, ['completed', 'canceled', 'refunded']) && ($editOrderPermission == 'all'|| ($editOrderPermission == 'both' && ($order->added_by == user()->id || $order->client_id == user()->id)) || ($editOrderPermission == 'added' && $order->added_by == user()->id) || ($editOrderPermission == 'owned' && $order->client_id == user()->id)))
+                        @if (!in_array($order->status, ['completed', 'canceled', 'refunded']) && ($editOrderPermission == 'all'|| ($editOrderPermission == 'both' && ($order->added_by == user()->id || $order->client_id == user()->id)) || ($editOrderPermission == 'added' && $order->added_by == user()->id) || ($editOrderPermission == 'owned' && $order->client_id == user()->id)) && (!is_null($order->project) && is_null($order->project->deleted_at)) )
                             <li>
                                 <a class="dropdown-item f-14 text-dark openRightModal" href="{{route('orders.edit', $order->id)}}">
                                     <i class="fa fa-edit f-w-500 mr-2 f-11"></i> @lang('app.edit')
@@ -407,8 +430,13 @@ $deleteOrderPermission = user()->permission('delete_order');
                 </div>
 
             {{-- PAYMENT GATEWAY --}}
-            @if (in_array('client', user_roles()) && $order->total > 0 && in_array($order->status, ['pending', 'failed'])
-            && ($credentials->show_pay || $methods->count() > 0))
+            @if (
+                in_array('client', user_roles()) &&
+                $order->total > 0 && in_array($order->status, ['pending', 'failed']) &&
+                ($credentials->show_pay || ($methods->count() > 0 && $offlinePayemntDone === 'no')) &&
+                !(!empty($invoice->payment) && isset($invoice->payment[0]->gateway) && $invoice->payment[0]->gateway == 'Offline')
+                && !($payment && $payment->status === 'pending')
+            )
                 <div class="inv-action mr-3 mr-lg-3 mr-md-3 dropup">
                     <button class="dropdown-toggle btn-primary rounded mr-3 mr-lg-0 mr-md-0 f-15" type="button"
                         id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
@@ -443,7 +471,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                             <li>
                                 <a class="dropdown-item f-14 text-dark" href="javascript:void(0);"
                                     id="payfastModal">
-                                    <img style="height: 15px;" src="{{ asset('img/payfast-logo.png') }}">
+                                    <img style="height: 15px;" src="{{ asset('img/payfast.png') }}">
                                     @lang('modules.invoices.payPayfast')</a>
                             </li>
                         @endif
@@ -488,7 +516,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                                 </a>
                             </li>
                         @endif
-                        @if ($methods->count() > 0)
+                        @if ($methods->count() > 0 && $offlinePayemntDone === 'no')
                             <li>
                                 <a class="dropdown-item f-14 text-dark" href="javascript:;" id="offlinePaymentModal"
                                     data-order-id="{{ $order->id }}">
@@ -515,6 +543,7 @@ $deleteOrderPermission = user()->permission('delete_order');
         <!-- TASK STATUS START -->
         <div class="col-md-12">
             <x-cards.data>
+                <h5 class="mb-3"> @lang('modules.projects.otherInfo')</h5>
                 <x-forms.custom-field-show :fields="$fields" :model="$order"></x-forms.custom-field-show>
             </x-cards.data>
         </div>
@@ -522,6 +551,18 @@ $deleteOrderPermission = user()->permission('delete_order');
 @endif
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+@if($bankDetails != null)
+    <script>
+        var bankAccounts = @json($bankDetails->mapWithKeys(function ($account) {
+            return [$account['id'] => $account['bank_name'] . ' | ' . $account['account_name']];
+        }));
+    </script>
+@else
+    <script>
+        var bankAccounts = {};
+    </script>
+@endif
 
 <script>
 
@@ -578,23 +619,61 @@ $deleteOrderPermission = user()->permission('delete_order');
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                $.easyAjax({
-                    url: url,
-                    type: "POST",
-                    container: '.content-wrapper',
-                    blockUI: true,
-                    data: {
-                        '_token': token,
-                        orderId: {{ $order->id }},
-                        status: status
-                    },
-                    success: function(data) {
-                        if (data.status == 'success') {
-                            $.unblockUI();
-                            window.location.reload();
+                if (status === 'completed' && Object.keys(bankAccounts).length > 0) {
+                    Swal.fire({
+                        title: "@lang('messages.selectBank')",
+                        input: 'select',
+                        inputOptions: bankAccounts,
+                        inputPlaceholder: "@lang('messages.selectBank')",
+                        showCancelButton: true,
+                        inputValidator: (value) => {
+                                    return new Promise((resolve) => {
+                                        resolve();
+                                    });
                         }
-                    }
-                });
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            let selectedBankAccount = result.value;
+
+                            $.easyAjax({
+                                url: url,
+                                type: "POST",
+                                container: '.content-wrapper',
+                                blockUI: true,
+                                data: {
+                                    '_token': token,
+                                    orderId: {{ $order->id }},
+                                    status: status,
+                                    bank_account_id: selectedBankAccount
+                                },
+                                success: function(data) {
+                                    if (data.status == 'success') {
+                                        $.unblockUI();
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    $.easyAjax({
+                        url: url,
+                        type: "POST",
+                        container: '.content-wrapper',
+                        blockUI: true,
+                        data: {
+                            '_token': token,
+                            orderId: {{ $order->id }},
+                            status: status
+                        },
+                        success: function(data) {
+                            if (data.status == 'success') {
+                                $.unblockUI();
+                                window.location.reload();
+                            }
+                        }
+                    });
+                }
             }
         });
 

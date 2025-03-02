@@ -22,10 +22,10 @@
                         </p>
                         <div class="select-status mr-3">
                             <select class="form-control select-picker" id="assignedTo" data-live-search="true"
-                                data-size="8">
+                                    data-size="8">
                                 <option value="all">@lang('app.all')</option>
                                 @foreach ($project->members as $employee)
-                                    <x-user-option :user="$employee->user" />
+                                    <x-user-option :user="$employee->user"/>
                                 @endforeach
                             </select>
                         </div>
@@ -46,20 +46,20 @@
                     </div>
                     <!-- ASSIGN END -->
 
-                 <!-- ASSIGN START -->
-                 <div class="select-box py-2 px-2 mr-3">
-                    <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.task')
-                    </p>
-                    <div class="select-status mr-3">
-                        <select class="form-control select-picker" id="projectTask" data-live-search="true"
-                            data-size="8" multiple name="projectTask[]">
-                            @foreach ($project->tasks as $task)
-                                <option value="{{ $task->id}}">{{ $task->heading }}</option>
-                            @endforeach
-                        </select>
+                    <!-- ASSIGN START -->
+                    <div class="select-box py-2 px-2 mr-3">
+                        <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.task')
+                        </p>
+                        <div class="select-status mr-3">
+                            <select class="form-control select-picker" id="projectTask" data-live-search="true"
+                                    data-size="8" multiple name="projectTask[]">
+                                @foreach ($project->tasks as $task)
+                                    <option value="{{ $task->id}}">{{ $task->heading }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                </div>
-                <!-- ASSIGN END -->
+                    <!-- ASSIGN END -->
                 </div>
 
 
@@ -73,13 +73,12 @@
     </div>
     <!-- ROW END -->
 
-
 @endsection
 
 @push('scripts')
     <script src="{{ asset('vendor/frappe/frappe-gantt.js') }}"></script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
 
             function loadData() {
                 var projectID = "{{ $project->id }}";
@@ -89,14 +88,14 @@
                 var token = "{{ csrf_token() }}";
 
                 var url = "{{ route('front.gantt_data', $project->id) }}?assignedTo=" +
-                    assignedTo + '&projectID=' + projectID  + '&projectTask=' + projectTask  + '&_token=' + token;
+                    assignedTo + '&projectID=' + projectID + '&projectTask=' + projectTask + '&_token=' + token;
 
                 $.easyAjax({
                     url: url,
                     blockUI: true,
                     container: '.content-wrapper',
                     type: "POST",
-                    success: function(response) {
+                    success: function (response) {
                         if (!response.length) {
                             $("#gantt").html(
                                 "<div class='d-flex justify-content-center p-20'>{{ __('messages.noRecordFound') }}</div>"
@@ -109,10 +108,10 @@
                         var gantt = new Gantt("#gantt", response, {
                             popup_trigger: "mouseover",
                             view_mode: viewMode,
-                            on_click: function(task) {
+                            on_click: function (task) {
                                 taskDetail(task.taskid);
                             },
-                            on_date_change: function(task, start, end) {
+                            on_date_change: function (task, start, end) {
                                 var taskId = task.taskid;
                                 var token = '{{ csrf_token() }}';
                                 var url =
@@ -134,9 +133,9 @@
                                     }
                                 });
                             },
-                            on_progress_change: function(task, progress) {
+                            on_progress_change: function (task, progress) {
                             },
-                            on_view_change: function(mode) {
+                            on_view_change: function (mode) {
                             }
                         });
 
@@ -144,12 +143,12 @@
                 });
             }
 
-            $('#assignedTo, #gantt-view, #projectTask').on('change keyup', function() {
+            $('#assignedTo, #gantt-view, #projectTask').on('change keyup', function () {
                 loadData();
             });
 
             // Task Detail show in sidebar
-            var taskDetail = function(id) {
+            var taskDetail = function (id) {
                 openTaskDetail();
                 var url = "{{ route('front.task_detail', ':id') }}";
                 url = url.replace(':id', id);
@@ -159,13 +158,13 @@
                     blockUI: true,
                     container: RIGHT_MODAL,
                     historyPush: true,
-                    success: function(response) {
+                    success: function (response) {
                         if (response.status == "success") {
                             $(RIGHT_MODAL_CONTENT).html(response.html);
                             $(RIGHT_MODAL_TITLE).html(response.title);
                         }
                     },
-                    error: function(request, status, error) {
+                    error: function (request, status, error) {
                         if (request.status == 403) {
                             $(RIGHT_MODAL_CONTENT).html(
                                 '<div class="align-content-between d-flex justify-content-center mt-105 f-21">403 | Permission Denied</div>'

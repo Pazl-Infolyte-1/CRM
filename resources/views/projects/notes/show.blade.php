@@ -9,7 +9,7 @@
             @if($note->type == 1)
 
                 <div class="col-12 px-0 pb-3 d-flex">
-                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                         @lang('modules.tasks.assignTo')</p>
                     <p class="mb-0 text-dark-grey f-14">
                         @foreach ($employees as $item)

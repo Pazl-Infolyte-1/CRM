@@ -6,7 +6,6 @@ use App\Events\LeaveEvent;
 use App\Models\EmployeeDetails;
 use App\Models\Permission;
 use App\Models\PermissionType;
-use App\Models\Role;
 use App\Notifications\LeaveApplication;
 use App\Notifications\LeaveStatusApprove;
 use App\Notifications\LeaveStatusReject;
@@ -38,7 +37,6 @@ class LeaveListener
         $adminUserIds = User::allAdmins($event->leave->company->id)->pluck('id')->toArray();
 
         $adminUserIds = array_merge($permissionUserIds, $adminUserIds);
-
 
 
         if ($reportingTo == null) {

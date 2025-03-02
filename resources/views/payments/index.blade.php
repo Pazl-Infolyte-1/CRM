@@ -60,7 +60,7 @@
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="project_id" id="project_id" data-live-search="true" data-container="body"
@@ -75,7 +75,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="status" id="status" data-live-search="true" data-container="body" data-size="8">
@@ -186,7 +186,7 @@
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["payments-table"].draw(false);
+            window.LaravelDataTables["payments-table"].draw(true);
         }
 
         $('#clientID, #project_id, #status').on('change keyup', function() {

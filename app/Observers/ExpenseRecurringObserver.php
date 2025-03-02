@@ -62,6 +62,37 @@ class ExpenseRecurringObserver
         }
     }
 
+    public function updating(ExpenseRecurring $expense)
+    {
+        switch ($expense->rotation) {
+            case 'daily':
+                $days = $expense->issue_date->addDay();
+                break;
+            case 'weekly':
+                $days = $expense->issue_date->addWeek();
+                break;
+            case 'bi-weekly':
+                $days = $expense->issue_date->addWeeks(2);
+                break;
+            case 'monthly':
+                $days = $expense->issue_date->addMonth();
+                break;
+            case 'quarterly':
+                $days = $expense->issue_date->addQuarter();
+                break;
+            case 'half-yearly':
+                $days = $expense->issue_date->addMonths(6);
+                break;
+            case 'annually':
+                $days = $expense->issue_date->addYear();
+                break;
+            default:
+                $days = $expense->issue_date->addDay();
+            }
+
+            $expense->next_expense_date = $days->format('Y-m-d');
+    }
+
     public function updated(ExpenseRecurring $expense)
     {
         if (!isRunningInConsoleOrSeeding()) {
@@ -74,7 +105,7 @@ class ExpenseRecurringObserver
     public function deleting(ExpenseRecurring $expense)
     {
         $notifyData = ['App\Notifications\NewExpenseRecurringMember', 'App\Notifications\ExpenseRecurringStatus'];
-        \App\Models\Notification::deleteNotification($notifyData, $expense->id);
+        Notification::deleteNotification($notifyData, $expense->id);
 
     }
 

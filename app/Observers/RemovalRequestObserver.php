@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Events\RemovalRequestAdminEvent;
 use App\Events\RemovalRequestApproveRejectEvent;
 use App\Models\RemovalRequest;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 class RemovalRequestObserver
@@ -24,7 +25,7 @@ class RemovalRequestObserver
                 if ($removal->user) {
                     event(new RemovalRequestApproveRejectEvent($removal));
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::info($e);
             }
         }

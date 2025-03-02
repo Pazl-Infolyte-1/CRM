@@ -11,11 +11,9 @@ $addProjectPermission = user()->permission('add_projects');
                 <x-forms.link-primary :link="route('projects.create').'?default_client='.$client->id"
                     class="mr-3 openRightModal" icon="plus"
                     data-redirect-url="{{ route('clients.show', $client->id) . '?tab=projects' }}">
-                    @lang('app.add')
-                    @lang('app.project')
+                    @lang('app.addProject')
                 </x-forms.link-primary>
             @endif
-
         </div>
         <!-- Add Task Export Buttons End -->
         <!-- Task Box Start -->
@@ -67,7 +65,7 @@ $addProjectPermission = user()->permission('add_projects');
         data['searchText'] = searchText;
     });
     const showTable = () => {
-        window.LaravelDataTables["projects-table"].draw(false);
+        window.LaravelDataTables["projects-table"].draw(true);
     }
 
     $('#quick-action-type').change(function() {
@@ -220,7 +218,7 @@ $addProjectPermission = user()->permission('add_projects');
                     },
                     success: function(response) {
                         if (response.status == "success") {
-                            window.LaravelDataTables["projects-table"].draw(false);
+                            window.LaravelDataTables["projects-table"].draw(true);
                         }
                     }
                 });
@@ -228,4 +226,29 @@ $addProjectPermission = user()->permission('add_projects');
         });
     });
 
+    $('#projects-table').on('change', '.change-status', function() {
+        var url = "{{ route('projects.change_status') }}";
+        var token = "{{ csrf_token() }}";
+        var id = $(this).data('project-id');
+        var status = $(this).val();
+
+        if (id != "" && status != "") {
+            $.easyAjax({
+                url: url,
+                type: "POST",
+                container: '.content-wrapper',
+                blockUI: true,
+                data: {
+                    '_token': token,
+                    projectId: id,
+                    statusId: status,
+                    sortBy: 'id'
+                },
+                success: function(data) {
+                    window.LaravelDataTables["projects-table"].draw(true);
+                }
+            });
+
+        }
+    });
 </script>

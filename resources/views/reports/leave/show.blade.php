@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.menu.leaves') @lang('app.details')</h5>
+    <h5 class="modal-title">@lang('app.leavesDetails')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 <div class="modal-body px-0 pt-0">
@@ -16,9 +16,6 @@
                     <x-tab-item class="ajax-tab" :active="(request('view') === 'pending')"
                         :link="route('leave-report.show', $userId).'?view=pending&startDate='.urlencode($startDate).'&endDate='.urlencode($endDate)">
                         @lang('app.pending')</x-tab-item>
-                    <x-tab-item class="ajax-tab" :active="(request('view') === 'upcoming')"
-                        :link="route('leave-report.show', $userId).'?view=upcoming&startDate='.urlencode($startDate).'&endDate='.urlencode($endDate)">
-                        @lang('app.upcoming')</x-tab-item>
                 </x-tab-section>
 
 

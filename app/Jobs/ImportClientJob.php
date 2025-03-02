@@ -5,9 +5,12 @@ namespace App\Jobs;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\ClientDetails;
+use App\Models\UserAuth;
+use App\Models\Country;
+use Exception;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
-use App\Models\UniversalSearch;
+use App\Traits\ExcelImportable;
 use Illuminate\Support\Facades\DB;
 use App\Traits\UniversalSearchTrait;
 use Illuminate\Queue\SerializesModels;
@@ -19,6 +22,7 @@ class ImportClientJob implements ShouldQueue
 {
 
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels, UniversalSearchTrait;
+    use ExcelImportable;
 
     private $row;
     private $columns;
@@ -43,41 +47,50 @@ class ImportClientJob implements ShouldQueue
      */
     public function handle()
     {
-        if (!empty(array_keys($this->columns, 'name'))) {
+        if ($this->isColumnExists('name')) {
 
             $user = null;
 
-            if(!empty(array_keys($this->columns, 'email')) && filter_var($this->row[array_keys($this->columns, 'email')[0]], FILTER_VALIDATE_EMAIL)){
-                $user = User::where('email', $this->row[array_keys($this->columns, 'email')[0]])->first();
+            if ($this->isColumnExists('email') && $this->isEmailValid($this->getColumnValue('email'))) {
+                $user = User::where('email', $this->getColumnValue('email'))->first();
             }
 
             if ($user) {
-                $this->job->fail(__('messages.duplicateEntryForEmail') . $this->row[array_keys($this->columns, 'email')[0]]);
+                $this->failJobWithMessage(__('messages.duplicateEntryForEmail') . $this->getColumnValue('email'));
             }
             else {
                 DB::beginTransaction();
                 try {
+
+                    $countryID = $this->isColumnExists('country_id') ? Country::where('name', $this->getColumnValue('country_id'))->first()->id : null;
+
                     $user = new User();
                     $user->company_id = $this->company?->id;
-                    $user->name = $this->row[array_keys($this->columns, 'name')[0]];
-                    $user->email = !empty(array_keys($this->columns, 'email')) && filter_var($this->row[array_keys($this->columns, 'email')[0]], FILTER_VALIDATE_EMAIL) ? $this->row[array_keys($this->columns, 'email')[0]] : null;
-                    $user->password = bcrypt(123456);
-                    $user->mobile = !empty(array_keys($this->columns, 'mobile')) ? $this->row[array_keys($this->columns, 'mobile')[0]] : null;
-                    $user->gender = !empty(array_keys($this->columns, 'gender')) ? strtolower($this->row[array_keys($this->columns, 'gender')[0]]) : null;
+                    $user->name = $this->getColumnValue('name');
+                    $user->email = $this->isColumnExists('email') && $this->isEmailValid($this->getColumnValue('email')) ? $this->getColumnValue('email') : null;
+                    $user->mobile = $this->isColumnExists('mobile') ? $this->getColumnValue('mobile') : null;
+                    $user->gender = $this->isColumnExists('gender') ? strtolower($this->getColumnValue('gender')) : null;
+                    $user->country_id = $countryID;
+
+                    if(!empty(array_keys($this->columns, 'email')) && filter_var($this->row[array_keys($this->columns, 'email')[0]], FILTER_VALIDATE_EMAIL)){
+                        $userAuth = UserAuth::createUserAuthCredentials(array_keys($this->columns, 'email')[0]);
+                        $user->user_auth_id = $userAuth->id;
+                    }
+
                     $user->save();
 
                     if ($user->id) {
                         $clientDetails = new ClientDetails();
                         $clientDetails->company_id = $this->company?->id;
                         $clientDetails->user_id = $user->id;
-                        $clientDetails->company_name = !empty(array_keys($this->columns, 'company_name')) ? $this->row[array_keys($this->columns, 'company_name')[0]] : null;
-                        $clientDetails->address = !empty(array_keys($this->columns, 'address')) ? $this->row[array_keys($this->columns, 'address')[0]] : null;
-                        $clientDetails->city = !empty(array_keys($this->columns, 'city')) ? $this->row[array_keys($this->columns, 'city')[0]] : null;
-                        $clientDetails->state = !empty(array_keys($this->columns, 'state')) ? $this->row[array_keys($this->columns, 'state')[0]] : null;
-                        $clientDetails->postal_code = !empty(array_keys($this->columns, 'postal_code')) ? $this->row[array_keys($this->columns, 'postal_code')[0]] : null;
-                        $clientDetails->office = !empty(array_keys($this->columns, 'company_phone')) ? $this->row[array_keys($this->columns, 'company_phone')[0]] : null;
-                        $clientDetails->website = !empty(array_keys($this->columns, 'company_website')) ? $this->row[array_keys($this->columns, 'company_website')[0]] : null;
-                        $clientDetails->gst_number = !empty(array_keys($this->columns, 'gst_number')) ? $this->row[array_keys($this->columns, 'gst_number')[0]] : null;
+                        $clientDetails->company_name = $this->isColumnExists('company_name') ? $this->getColumnValue('company_name') : null;
+                        $clientDetails->address = $this->isColumnExists('address') ? $this->getColumnValue('address') : null;
+                        $clientDetails->city = $this->isColumnExists('city') ? $this->getColumnValue('city') : null;
+                        $clientDetails->state = $this->isColumnExists('state') ? $this->getColumnValue('state') : null;
+                        $clientDetails->postal_code = $this->isColumnExists('postal_code') ? $this->getColumnValue('postal_code') : null;
+                        $clientDetails->office = $this->isColumnExists('company_phone') ? $this->getColumnValue('company_phone') : null;
+                        $clientDetails->website = $this->isColumnExists('company_website') ? $this->getColumnValue('company_website') : null;
+                        $clientDetails->gst_number = $this->isColumnExists('gst_number') ? $this->getColumnValue('gst_number') : null;
                         $clientDetails->save();
                     }
 
@@ -95,14 +108,14 @@ class ImportClientJob implements ShouldQueue
                     }
 
                     DB::commit();
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     DB::rollBack();
-                    $this->job->fail($e->getMessage());
+                    $this->failJobWithMessage($e->getMessage());
                 }
             }
         }
         else {
-            $this->job->fail(__('messages.invalidData') . json_encode($this->row, true));
+            $this->failJob(__('messages.invalidData'));
         }
     }
 

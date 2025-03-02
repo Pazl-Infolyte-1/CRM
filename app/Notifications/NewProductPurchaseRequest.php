@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
 use App\Models\Invoice;
-use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
 
@@ -43,11 +42,17 @@ class NewProductPurchaseRequest extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
-        if ($this->emailSetting->send_push == 'yes') {
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
             array_push($via, OneSignalChannel::class);
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.productPurchase.subject'), __('email.productPurchase.text') . ' ' . $this->invoice->client->name . '.');
         }
 
         return $via;
@@ -61,13 +66,13 @@ class NewProductPurchaseRequest extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('invoices.show', $this->invoice->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.productPurchase.subject') . '<br>' . __('email.productPurchase.text') . ' ' . $this->invoice->client->name . '.';
 
-        return $build
+        $build
             ->subject(__('email.productPurchase.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -76,6 +81,10 @@ class NewProductPurchaseRequest extends BaseNotification
                 'actionText' => __('email.productPurchase.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**
@@ -93,20 +102,8 @@ class NewProductPurchaseRequest extends BaseNotification
     //phpcs:ignore
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
-
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content(__('email.productPurchase.subject') . "\n" . __('email.productPurchase.text') . ' ' . $this->invoice->client->name . '.');
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.productPurchase.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+        return $this->slackBuild($notifiable)
+            ->content(__('email.productPurchase.subject') . "\n" . __('email.productPurchase.text') . ' ' . $this->invoice->client->name . '.');
     }
 
     //phpcs:ignore

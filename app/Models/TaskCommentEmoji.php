@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Scopes\ActiveScope;
 
@@ -28,7 +27,7 @@ use App\Scopes\ActiveScope;
  * @method static \Illuminate\Database\Eloquent\Builder|TaskCommentEmoji whereUserId($value)
  * @mixin \Eloquent
  */
-class TaskCommentEmoji extends Model
+class TaskCommentEmoji extends BaseModel
 {
 
     public function taskComment(): BelongsTo

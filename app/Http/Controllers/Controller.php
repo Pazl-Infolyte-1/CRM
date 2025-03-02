@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helper\Reply;
 use Carbon\Carbon;
 use Froiden\Envato\Traits\AppBoot;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -57,16 +58,18 @@ class Controller extends BaseController
 
             // To keep the session we need to move it to middleware
             $this->gdpr = gdpr_setting();
-            $this->company = company();
-
             $this->global = global_setting();
+
+            // WORKSUITESAAS
+            $this->company = companyOrGlobalSetting();
+
 
             $this->socialAuthSettings = social_auth_setting();
 
             $this->companyName = company() ? $this->company->company_name : $this->global->global_app_name;
 
             $this->appName = company() ? $this->company->app_name : $this->global->global_app_name;
-            $this->locale = company() ? $this->company->locale : $this->global->locale;
+            $this->locale = session('locale') ? session('locale') : (company() ? $this->company->locale : $this->global->locale);
 
             $this->taskBoardColumnLength = $this->company ? $this->company->taskboard_length : 10;
 
@@ -78,7 +81,7 @@ class Controller extends BaseController
 
             setlocale(LC_TIME, $this->locale . '_' . mb_strtoupper($this->locale));
 
-            if (config('app.env') !== 'development') {
+            if (config('app.env') == 'codecanyon') {
                 config(['app.debug' => $this->global->app_debug]);
             }
 
@@ -93,6 +96,13 @@ class Controller extends BaseController
     public function checkMigrateStatus()
     {
         return check_migrate_status();
+    }
+
+    public function returnAjax($view)
+    {
+        $html = view($view, $this->data)->render();
+
+        return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
     }
 
 }

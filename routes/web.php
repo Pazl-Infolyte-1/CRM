@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GdprController;
-use App\Http\Controllers\LeadController;
+use App\Http\Controllers\DealController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AwardController;
 use App\Http\Controllers\ImageController;
@@ -52,8 +52,7 @@ use App\Http\Controllers\TicketFileController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\EmployeeDocController;
-use App\Http\Controllers\ImmigrationController;
-use App\Http\Controllers\LeadCategoyController;
+use App\Http\Controllers\LeadCategoryController;
 use App\Http\Controllers\LeaveReportController;
 use App\Http\Controllers\LeavesQuotaController;
 use App\Http\Controllers\MessageFileController;
@@ -105,6 +104,7 @@ use App\Http\Controllers\TicketCustomFormController;
 use App\Http\Controllers\ClientSubCategoryController;
 use App\Http\Controllers\KnowledgeBaseFileController;
 use App\Http\Controllers\ContractDiscussionController;
+use App\Http\Controllers\DealNoteController;
 use App\Http\Controllers\DiscussionCategoryController;
 use App\Http\Controllers\ProductSubCategoryController;
 use App\Http\Controllers\ProjectTemplateTaskController;
@@ -115,9 +115,18 @@ use App\Http\Controllers\KnowledgeBaseCategoryController;
 use App\Http\Controllers\ProjectTemplateMemberController;
 use App\Http\Controllers\ProjectTemplateSubTaskController;
 use App\Http\Controllers\EmployeeShiftChangeRequestController;
+use App\Http\Controllers\EstimateRequestController;
+use App\Http\Controllers\GanttLinkController;
+use App\Http\Controllers\LeadContactController;
+use App\Http\Controllers\NoticeFileController;
+use App\Http\Controllers\InvoicePaymentDetailController;
+use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\WeeklyTimesheetController;
 
-Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
+
+Route::group(['middleware' => ['auth', 'multi-company-select', 'email_verified'], 'prefix' => 'account'], function () {
     Route::post('image/upload', [ImageController::class, 'store'])->name('image.store');
+
 
     Route::get('account-unverified', [DashboardController::class, 'accountUnverified'])->name('account_unverified');
     Route::get('checklist', [DashboardController::class, 'checklist'])->name('checklist');
@@ -125,11 +134,14 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('dashboard-advanced', [DashboardController::class, 'advancedDashboard'])->name('dashboard.advanced');
     Route::post('dashboard/widget/{dashboardType}', [DashboardController::class, 'widget'])->name('dashboard.widget');
     Route::post('dashboard/week-timelog', [DashboardController::class, 'weekTimelog'])->name('dashboard.week_timelog');
+    Route::get('dashboard/lead-data/{id}', [DashboardController  ::class, 'getLeadStage'])->name('dashboard.deal-stage-data');
 
     Route::get('attendances/clock-in-modal', [DashboardController::class, 'clockInModal'])->name('attendances.clock_in_modal');
     Route::post('attendances/store-clock-in', [DashboardController::class, 'storeClockIn'])->name('attendances.store_clock_in');
     Route::get('attendances/update-clock-in', [DashboardController::class, 'updateClockIn'])->name('attendances.update_clock_in');
+    Route::get('attendances/show_clocked_hours', [DashboardController::class, 'showClockedHours'])->name('attendances.show_clocked_hours');
     Route::get('dashboard/private_calendar', [DashboardController::class, 'privateCalendar'])->name('dashboard.private_calendar');
+    Route::get('/pusher/beams-auth', [DashboardController::class, 'beamAuth'])->name('dashboard.beam_auth');
 
     Route::get('settings/change-language', [SettingsController::class, 'changeLanguage'])->name('settings.change_language');
     Route::resource('settings', SettingsController::class)->only(['edit', 'update', 'index', 'change_language']);
@@ -146,8 +158,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('clients/import', [ClientController::class, 'importClient'])->name('clients.import');
     Route::post('clients/import', [ClientController::class, 'importStore'])->name('clients.import.store');
     Route::post('clients/import/process', [ClientController::class, 'importProcess'])->name('clients.import.process');
-    Route::resource('clients', ClientController::class);
     Route::get('clients/finance-count/{id}', [ClientController::class, 'financeCount'])->name('clients.finance_count');
+    Route::resource('clients', ClientController::class);
 
     Route::post('client-contacts/apply-quick-action', [ClientContactController::class, 'applyQuickAction'])->name('client-contacts.apply_quick_action');
     Route::resource('client-contacts', ClientContactController::class);
@@ -167,6 +179,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('getClientSubCategories/{id}', [ClientSubCategoryController::class, 'getSubCategories'])->name('get_client_sub_categories');
     Route::resource('clientSubCategory', ClientSubCategoryController::class);
 
+    // employee Promotion
+    Route::resource('promotions', PromotionController::class);
+
     // employee routes
     Route::post('employees/apply-quick-action', [EmployeeController::class, 'applyQuickAction'])->name('employees.apply_quick_action');
     Route::post('employees/assignRole', [EmployeeController::class, 'assignRole'])->name('employees.assign_role');
@@ -180,6 +195,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('employees/import/exception/{name}', [ImportController::class, 'getQueueException'])->name('import.process.exception');
     Route::post('employees/send-invite', [EmployeeController::class, 'sendInvite'])->name('employees.send_invite');
     Route::post('employees/create-link', [EmployeeController::class, 'createLink'])->name('employees.create_link');
+    Route::post('/get-exit-date-message', [EmployeeController::class, 'getExitDateMessage'])->name('getExitDateMessage');
     Route::resource('employees', EmployeeController::class);
     Route::resource('passport', PassportController::class);
     Route::resource('employee-visa', EmployeeVisaController::class);
@@ -248,6 +264,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
             Route::get('milestones/byProject/{id}', [ProjectMilestoneController::class, 'byProject'])->name('milestones.by_project');
             Route::resource('milestones', ProjectMilestoneController::class);
+            Route::post('/milestones/{id}/update-status', [ProjectMilestoneController::class, 'updateStatus'])->name('milestones.updateStatus');
+
 
             // Discussion category routes
             Route::resource('discussion-category', DiscussionCategoryController::class);
@@ -296,6 +314,16 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('products/cart', [ProductController::class, 'cart'])->name('products.cart');
     Route::get('products/empty-cart', [ProductController::class, 'emptyCart'])->name('products.empty_cart');
 
+    /* Product Import */
+    Route::group(
+        ['prefix' => 'products'],
+        function () {
+            Route::get('import', [ProductController::class, 'importProduct'])->name('products.import');
+            Route::post('import', [ProductController::class, 'importStore'])->name('products.import.store');
+            Route::post('import/process', [ProductController::class, 'importProcess'])->name('products.import.process');
+        }
+    );
+
     Route::resource('products', ProductController::class);
     Route::resource('productCategory', ProductCategoryController::class);
     Route::get('getProductSubCategories/{id}', [ProductSubCategoryController::class, 'getSubCategories'])->name('get_product_sub_categories');
@@ -334,6 +362,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('notices/apply-quick-action', [NoticeController::class, 'applyQuickAction'])->name('notices.apply_quick_action');
     Route::resource('notices', NoticeController::class);
 
+    /* Notice files */
+    Route::get('notice-files/download/{id}', [NoticeFileController::class, 'download'])->name('notice_files.download');
+    Route::resource('notice-files', NoticeFileController::class);
+
     /* User Appreciation */
     Route::group(
         ['prefix' => 'appreciations'],
@@ -362,7 +394,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     /* EVENTS */
     Route::post('event-monthly-on', [EventCalendarController::class, 'monthlyOn'])->name('events.monthly_on');
     Route::resource('events', EventCalendarController::class);
-
+    Route::post('updateStatus/{id}', [EventCalendarController::class, 'updateStatus'])->name('events.update_status');
+    Route::get('events/event-status-note/{id}', [EventCalendarController::class, 'eventStatusNote'])->name('events.event_status_note');
 
     /* Event Files */
     Route::get('event-files/download/{id}', [EventFileController::class, 'download'])->name('event-files.download');
@@ -371,16 +404,21 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     /* TASKS */
     Route::get('tasks/client-detail', [TaskController::class, 'clientDetail'])->name('tasks.clientDetail');
     Route::post('tasks/change-status', [TaskController::class, 'changeStatus'])->name('tasks.change_status');
+    Route::post('tasks/change-milestone', [TaskController::class, 'milestoneChange'])->name('tasks.change_milestone');
+
     Route::post('tasks/apply-quick-action', [TaskController::class, 'applyQuickAction'])->name('tasks.apply_quick_action');
     Route::post('tasks/store-pin', [TaskController::class, 'storePin'])->name('tasks.store_pin');
     Route::post('tasks/reminder', [TaskController::class, 'reminder'])->name('tasks.reminder');
     Route::post('tasks/destroy-pin/{id}', [TaskController::class, 'destroyPin'])->name('tasks.destroy_pin');
     Route::post('tasks/check-task/{taskID}', [TaskController::class, 'checkTask'])->name('tasks.check_task');
+    Route::post('tasks/send-approval', [TaskController::class, 'sendApproval'])->name('tasks.send_approval');
     Route::post('tasks/gantt-task-update/{id}', [TaskController::class, 'updateTaskDuration'])->name('tasks.gantt_task_update');
     Route::get('tasks/members/{id}', [TaskController::class, 'members'])->name('tasks.members');
     Route::get('tasks/project_tasks/{id}', [TaskController::class, 'projectTasks'])->name('tasks.project_tasks');
     Route::get('tasks/check-leaves', [TaskController::class, 'checkLeaves'])->name('tasks.checkLeaves');
-
+    Route::get('tasks/waiting-approval', [TaskController::class, 'waitingApproval'])->name('tasks.waiting-approval');
+    Route::get('tasks/show-waiting-approval-change-status-modal', [TaskController::class, 'statusReason'])->name('tasks.show_status_reason_modal');
+    Route::post('tasks/store-status-reason', [TaskController::class, 'storeStatusReason'])->name('tasks.store_comment_on_change_status');
 
     Route::group(['prefix' => 'tasks'], function () {
 
@@ -421,50 +459,73 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('holidays', HolidayController::class);
 
     // Lead Files
-    Route::group(['prefix' => 'leads'], function () {
-        Route::get('lead-files/download/{id}', [LeadFileController::class, 'download'])->name('lead-files.download');
-        Route::get('lead-files/layout', [LeadFileController::class, 'layout'])->name('lead-files.layout');
-        Route::resource('lead-files', LeadFileController::class);
+    Route::get('deal-files/download/{id}', [LeadFileController::class, 'download'])->name('deal-files.download');
+    Route::get('deal-files/layout', [LeadFileController::class, 'layout'])->name('deal-files.layout');
+    Route::resource('deal-files', LeadFileController::class);
 
-        Route::get('leads/follow-up/{leadID}', [LeadController::class, 'followUpCreate'])->name('leads.follow_up');
-        Route::post('leads/follow-up-store', [LeadController::class, 'followUpStore'])->name('leads.follow_up_store');
-        Route::get('leads/follow-up-edit/{id?}', [LeadController::class, 'editFollow'])->name('leads.follow_up_edit');
-        Route::post('leads/follow-up-update', [LeadController::class, 'updateFollow'])->name('leads.follow_up_update');
+    // Follow up
+    Route::get('deals/follow-up/{leadID}', [DealController::class, 'followUpCreate'])->name('deals.follow_up');
+    Route::post('deals/follow-up-store', [DealController::class, 'followUpStore'])->name('deals.follow_up_store');
+    Route::get('deals/follow-up-edit/{id?}', [DealController::class, 'editFollow'])->name('deals.follow_up_edit');
+    Route::post('deals/follow-up-update', [DealController::class, 'updateFollow'])->name('deals.follow_up_update');
+    Route::post('deals/follow-up-delete/{id}', [DealController::class, 'deleteFollow'])->name('deals.follow_up_delete');
 
-        Route::post('leads/follow-up-delete/{id}', [LeadController::class, 'deleteFollow'])->name('leads.follow_up_delete');
+    // Change status
+    Route::get('stage-change/{id}', [DealController::class, 'stageChange'])->name('deals.stage_change');
+    Route::post('save-stage-change', [DealController::class, 'saveStageChange'])->name('deals.save_stage_change');
+    Route::post('deals/change-stage', [DealController::class, 'changeStage'])->name('deals.change_stage');
+    Route::post('deals/apply-quick-action', [DealController::class, 'applyQuickAction'])->name('deals.apply_quick_action');
 
-        Route::post('leads/change-status', [LeadController::class, 'changeStatus'])->name('leads.change_status');
-        Route::post('leads/apply-quick-action', [LeadController::class, 'applyQuickAction'])->name('leads.apply_quick_action');
+    Route::get('deals/gdpr-consent', [DealController::class, 'consent'])->name('deals.gdpr_consent');
+    Route::post('deals/save-deal-consent/{deal}', [DealController::class, 'saveLeadConsent'])->name('deals.save_lead_consent');
+    Route::post('deals/change-follow-up-status', [DealController::class, 'changeFollowUpStatus'])->name('deals.change_follow_up_status');
 
-        Route::get('leads/gdpr-consent', [LeadController::class, 'consent'])->name('leads.gdpr_consent');
-        Route::post('leads/save-lead-consent/{lead}', [LeadController::class, 'saveLeadConsent'])->name('leads.save_lead_consent');
-        Route::post('leads/change-follow-up-status', [LeadController::class, 'changeFollowUpStatus'])->name('leads.change_follow_up_status');
+    // Lead Category
+    Route::post('/update-lead-category', [LeadCategoryController::class, 'updateLeadCategory'])->name('category.updateDefault');
+    Route::resource('leadCategory', LeadCategoryController::class);
 
-        Route::resource('leadCategory', LeadCategoyController::class);
+    // Lead Note
+    Route::get('lead-notes/ask-for-password/{id}', [LeadNoteController::class, 'askForPassword'])->name('lead-notes.ask_for_password');
+    Route::post('lead-notes/check-password', [LeadNoteController::class, 'checkPassword'])->name('lead-notes.check_password');
+    Route::post('lead-notes/apply-quick-action', [LeadNoteController::class, 'applyQuickAction'])->name('lead-notes.apply_quick_action');
 
-        // Lead Note
-        Route::get('lead-notes/ask-for-password/{id}', [LeadNoteController::class, 'askForPassword'])->name('lead_notes.ask_for_password');
-        Route::post('lead-notes/check-password', [LeadNoteController::class, 'checkPassword'])->name('lead_notes.check_password');
-        Route::post('lead-notes/apply-quick-action', [LeadNoteController::class, 'applyQuickAction'])->name('lead-notes.apply_quick_action');
+    Route::resource('lead-notes', LeadNoteController::class);
 
-        Route::resource('lead-notes', LeadNoteController::class);
+    // Deal Note
+    Route::post('deal-notes/apply-quick-action', [DealNoteController::class, 'applyQuickAction'])->name('deal-notes.apply_quick_action');
+    Route::resource('deal-notes', DealNoteController::class);
 
-        // lead board routes
-        Route::post('leadboards/collapseColumn', [LeadBoardController::class, 'collapseColumn'])->name('leadboards.collapse_column');
-        Route::post('leadboards/updateIndex', [LeadBoardController::class, 'updateIndex'])->name('leadboards.update_index');
-        Route::get('leadboards/loadMore', [LeadBoardController::class, 'loadMore'])->name('leadboards.load_more');
-        Route::resource('leadboards', LeadBoardController::class);
+    // deal board routes
+    Route::post('leadboards/get-stage-slug', [LeadBoardController::class, 'getStageSlug'])->name('leadboards.get_stage_slug');
+    Route::post('leadboards/collapseColumn', [LeadBoardController::class, 'collapseColumn'])->name('leadboards.collapse_column');
+    Route::post('leadboards/updateIndex', [LeadBoardController::class, 'updateIndex'])->name('leadboards.update_index');
+    Route::get('leadboards/loadMore', [LeadBoardController::class, 'loadMore'])->name('leadboards.load_more');
+    Route::resource('leadboards', LeadBoardController::class);
 
-        Route::post('lead-form/sortFields', [LeadCustomFormController::class, 'sortFields'])->name('lead-form.sortFields');
-        Route::resource('lead-form', LeadCustomFormController::class);
-        Route::get('import', [LeadController::class, 'importLead'])->name('leads.import');
-        Route::post('import', [LeadController::class, 'importStore'])->name('leads.import.store');
-        Route::post('import/process', [LeadController::class, 'importProcess'])->name('leads.import.process');
-        // leads route
+    Route::post('lead-form/sortFields', [LeadCustomFormController::class, 'sortFields'])->name('lead-form.sortFields');
+    Route::resource('lead-form', LeadCustomFormController::class);
 
+    Route::group(['prefix' => 'deals'], function () {
+        Route::get('import', [DealController::class, 'importLead'])->name('deals.import');
+        Route::post('import', [DealController::class, 'importStore'])->name('deals.import.store');
+        Route::post('import/process', [DealController::class, 'importProcess'])->name('deals.import.process');
     });
 
-    Route::resource('leads', LeadController::class);
+    Route::group(['prefix' => 'lead-contact'], function () {
+        Route::get('import', [LeadContactController::class, 'importLead'])->name('lead-contact.import');
+        Route::post('import', [LeadContactController::class, 'importStore'])->name('lead-contact.import.store');
+        Route::post('import/process', [LeadContactController::class, 'importProcess'])->name('lead-contact.import.process');
+    });
+
+    // deals route
+
+    Route::resource('lead-contact', LeadContactController::class);
+    Route::post('lead-contact/apply-quick-action', [LeadContactController::class, 'applyQuickAction'])->name('lead-contact.apply_quick_action');
+
+    Route::get('deals/get-stage/{id}', [DealController::class, 'getStages'])->name('deals.get-stage');
+    Route::get('deals/get-deals/{id}', [DealController::class, 'getDeals'])->name('deals.get-deals');
+    Route::get('deals/get-agent/{id}', [DealController::class, 'getAgents'])->name('deals.get_agents');
+    Route::resource('deals', DealController::class);
 
     // leaves files routes
     Route::get('leave-files/download/{id}', [LeaveFileController::class, 'download'])->name('leave-files.download');
@@ -481,6 +542,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('leaves/pre-approve-leave', [LeaveController::class, 'preApprove'])->name('leaves.pre_approve_leave');
     Route::post('leaves/apply-quick-action', [LeaveController::class, 'applyQuickAction'])->name('leaves.apply_quick_action');
     Route::get('leaves/view-related-leave/{id}', [LeaveController::class, 'viewRelatedLeave'])->name('leaves.view_related_leave');
+    Route::get('leaves/export-all-leave', [LeaveController::class, 'exportAllLeaves'])->name('leaves.export_all_leave');
     Route::resource('leaves', LeaveController::class);
 
     // Messages
@@ -506,6 +568,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('invoices/applied-credits/{id}', [InvoiceController::class, 'appliedCredits'])->name('invoices.applied_credits');
     Route::get('invoices/payment-reminder/{invoiceID}', [InvoiceController::class, 'remindForPayment'])->name('invoices.payment_reminder');
     Route::post('invoices/send-invoice/{invoiceID}', [InvoiceController::class, 'sendInvoice'])->name('invoices.send_invoice');
+    Route::post('invoices/approve-offline-invoice/{invoiceID}', [InvoiceController::class, 'approveOfflineInvoice'])->name('invoices.approve_offline_invoice');
     Route::post('invoices/apply-quick-action', [InvoiceController::class, 'applyQuickAction'])->name('invoices.apply_quick_action');
     Route::get('invoices/download/{id}', [InvoiceController::class, 'download'])->name('invoices.download');
     Route::get('invoices/add-item', [InvoiceController::class, 'addItem'])->name('invoices.add_item');
@@ -520,6 +583,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('invoices/add-shipping-address/{clientId}', [InvoiceController::class, 'addShippingAddress'])->name('invoices.add_shipping_address');
     Route::get('invoices/get-exchange-rate/{id}', [InvoiceController::class, 'getExchangeRate'])->name('invoices.get_exchange_rate');
 
+    Route::get('invoices/committed-modal', [InvoiceController::class, 'committedModal'])->name('invoices.committed_modal');
+
     Route::group(['prefix' => 'invoices'], function () {
         // Invoice recurring
         Route::post('recurring-invoice/change-status', [RecurringInvoiceController::class, 'changeStatus'])->name('recurring_invoice.change_status');
@@ -528,6 +593,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
         Route::resource('recurring-invoices', RecurringInvoiceController::class);
     });
     Route::resource('invoices', InvoiceController::class);
+
+    Route::resource('invoices-payment-details', InvoicePaymentDetailController::class);
 
     // Estimates
     Route::get('estimates/delete-image', [EstimateController::class, 'deleteEstimateItemImage'])->name('estimates.delete_image');
@@ -562,7 +629,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('payments/add-bulk-payments', [PaymentController::class, 'addBulkPayments'])->name('payments.add_bulk_payments');
     Route::post('payments/save-bulk-payments', [PaymentController::class, 'saveBulkPayments'])->name('payments.save_bulk_payments');
 
-    Route::resource('payments', PaymentController::class);
+    Route::resource('payments', PaymentController::class)->except(['edit', 'update']);
 
     // Credit notes
     Route::post('creditnotes/store_file', [CreditNoteController::class, 'storeFile'])->name('creditnotes.store_file');
@@ -580,11 +647,11 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     // Bank account
     Route::post('bankaccount/apply-quick-action', [BankAccountController::class, 'applyQuickAction'])->name('bankaccounts.apply_quick_action');
     Route::post('bankaccount/apply-transaction-quick-action', [BankAccountController::class, 'applyTransactionQuickAction'])->name('bankaccounts.apply_transaction_quick_action');
-    Route::get('bankaccount/create-transaction', [BankAccountController::class, 'createTransaction'])->name('bankaccounts.create_transaction');
+    Route::get('bankaccounts/create-transaction', [BankAccountController::class, 'createTransaction'])->name('bankaccounts.create_transaction');
     Route::post('bankaccount/store-transaction', [BankAccountController::class, 'storeTransaction'])->name('bankaccounts.store_transaction');
     Route::post('bankaccount/change-status', [BankAccountController::class, 'changeStatus'])->name('bankaccounts.change_status');
 
-    Route::get('bankaccount/view-transaction/{id}', [BankAccountController::class, 'viewTransaction'])->name('bankaccounts.view_transaction');
+    Route::get('bankaccounts/view-transaction/{id}', [BankAccountController::class, 'viewTransaction'])->name('bankaccounts.view_transaction');
     Route::post('bankaccount/destroy-transaction', [BankAccountController::class, 'destroyTransaction'])->name('bankaccounts.destroy_transaction');
     Route::get('bankaccount/generate-statement/{id}', [BankAccountController::class, 'generateStatement'])->name('bankaccounts.generate_statement');
     Route::get('bankaccount/get-bank-statement', [BankAccountController::class, 'getBankStatement'])->name('bankaccounts.get_bank_statement');
@@ -599,6 +666,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
         Route::get('category', [ExpenseController::class, 'getCategoryEmployee'])->name('expenses.get_category_employees');
         Route::post('change-status', [ExpenseController::class, 'changeStatus'])->name('expenses.change_status');
         Route::post('apply-quick-action', [ExpenseController::class, 'applyQuickAction'])->name('expenses.apply_quick_action');
+        Route::get('import', [ExpenseController::class, 'import'])->name('expenses.import');
+        Route::post('import', [ExpenseController::class, 'importStore'])->name('expenses.import.store');
+        Route::post('import/process', [ExpenseController::class, 'importProcess'])->name('expenses.import.process');
     });
     Route::resource('expenses', ExpenseController::class);
     Route::resource('expenseCategory', ExpenseCategoryController::class);
@@ -621,8 +691,15 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
         Route::post('employee_data', [TimelogController::class, 'employeeData'])->name('timelogs.employee_data');
         Route::post('user_time_logs', [TimelogController::class, 'userTimelogs'])->name('timelogs.user_time_logs');
         Route::post('approve_timelog', [TimelogController::class, 'approveTimelog'])->name('timelogs.approve_timelog');
+        Route::get('stopper-alert/{id}', [TimelogController::class, 'stopperAlert'])->name('timelogs.stopper_alert');
+
+        Route::get('show-reject-modal', [WeeklyTimesheetController::class, 'showRejectModal'])->name('weekly-timesheets.show_reject_modal');
+        Route::post('change-status', [WeeklyTimesheetController::class, 'changeStatus'])->name('weekly-timesheets.change_status');
+        Route::get('pending-approval', [WeeklyTimesheetController::class, 'pendingApproval'])->name('weekly-timesheets.pending_approval');
+        Route::resource('weekly-timesheets', WeeklyTimesheetController::class);
     });
     Route::resource('timelogs', TimelogController::class);
+    Route::post('/calculate-time', [TimelogController::class, 'calculateTime'])->name('calculateTime');
 
     // Contracts
     Route::post('contracts/apply-quick-action', [ContractController::class, 'applyQuickAction'])->name('contracts.apply_quick_action');
@@ -631,6 +708,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('companySign/sign/{id}', [ContractController::class, 'companySign'])->name('companySign.sign');
     Route::get('companySignStore/sign/{id}', [ContractController::class, 'companiesSign'])->name('companySignStore.sign');
     Route::post('contracts/project-detail/{id}', [ContractController::class, 'projectDetail'])->name('contracts.project_detail');
+    Route::get('contracts/company-sig/{id}', [ContractController::class, 'companySig'])->name('contracts.company_sig');
+
 
     Route::group(['prefix' => 'contracts'], function () {
         Route::resource('contractDiscussions', ContractDiscussionController::class);
@@ -661,6 +740,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('attendances/by-map-location', [AttendanceController::class, 'byMapLocation'])->name('attendances.by_map_location');
     Route::resource('attendances', AttendanceController::class);
     Route::get('attendance/{id}/{day}/{month}/{year}', [AttendanceController::class, 'addAttendance'])->name('attendances.add-user-attendance');
+    Route::post('attendances/check-half-day', [AttendanceController::class, 'checkHalfDay'])->name('attendances.check_half_day');
+    Route::get('check-qr-login/{hash}', [AttendanceController::class, 'qrClockInOut'])->name('settings.qr-login');
+    Route::post('change-qr-code-status', [AttendanceController::class, 'qrCodeStatus'])->name('settings.change-qr-code-status');
+
 
     Route::get('shifts/mark/{id}/{day}/{month}/{year}', [EmployeeShiftScheduleController::class, 'mark'])->name('shifts.mark');
     Route::get('shifts/export-all/{year}/{month}/{id}/{department}/{startDate}/{viewType}', [EmployeeShiftScheduleController::class, 'exportAllShift'])->name('shifts.export_all');
@@ -682,7 +765,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('tickets/updateOtherData/{id}', [TicketController::class, 'updateOtherData'])->name('tickets.update_other_data');
     Route::post('tickets/change-status', [TicketController::class, 'changeStatus'])->name('tickets.change-status');
     Route::post('tickets/refreshCount', [TicketController::class, 'refreshCount'])->name('tickets.refresh_count');
-    Route::get('tickets/agent-group/{id}', [TicketController::class, 'agentGroup'])->name('tickets.agent_group');
+    Route::get('tickets/agent-group/{id}/{exceptThis?}', [TicketController::class, 'agentGroup'])->name('tickets.agent_group');
     Route::resource('tickets', TicketController::class);
 
     // Ticket Custom Embed From
@@ -693,18 +776,24 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('ticket-files', TicketFileController::class);
 
     Route::resource('ticket-replies', TicketReplyController::class);
+    Route::post('ticket-replies/edit-note/{id}', [TicketReplyController::class, 'editNote'])->name('ticket-replies.edit_note');
 
     Route::post('task-report-chart', [TaskReportController::class, 'taskChartData'])->name('task-report.chart');
     Route::resource('task-report', TaskReportController::class);
 
     Route::post('time-log-report-chart', [TimelogReportController::class, 'timelogChartData'])->name('time-log-report.chart');
+    Route::get('time-log-consolidated-report', [TimelogReportController::class,'consolidateIndex'])->name('time-log-consolidated.report');
     Route::resource('time-log-report', TimelogReportController::class);
+    Route::post('time-log-report-time', [TimelogReportController::class, 'totalTime'])->name('time-log-report.time');
 
     Route::post('finance-report-chart', [FinanceReportController::class, 'financeChartData'])->name('finance-report.chart');
     Route::resource('finance-report', FinanceReportController::class);
 
     Route::resource('income-expense-report', IncomeVsExpenseReportController::class);
 
+    Route::get('leave-report/leave-quota', [LeaveReportController::class, 'leaveQuota'])->name('leave-report.leave_quota');
+    Route::get('leave-report/leave-quota/export-all-leave-quota/{id}/{year}/{month}', [LeavesQuotaController::class, 'exportAllLeaveQuota'])->name('leave_quota.export_all_leave_quota');
+    Route::get('leave-report/leave-quota/{id}/{year}/{month}', [LeaveReportController::class, 'employeeLeaveQuota'])->name('leave-report.employee-leave-quota');
     Route::resource('leave-report', LeaveReportController::class);
 
     Route::resource('attendance-report', AttendanceReportController::class);
@@ -713,6 +802,15 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('expense-report/expense-category-report', [ExpenseReportController::class, 'expenseCategoryReport'])->name('expense-report.expense_category_report');
 
     Route::resource('expense-report', ExpenseReportController::class);
+    Route::get('deal-report/lead', [LeadReportController::class, 'leadContact'])->name('lead-report.lead_contact');
+    Route::get('lead-report/total', [LeadReportController::class, 'totalContact'])->name('lead-report.total_contact');
+
+    Route::get('deal-report/chart', [LeadReportController::class, 'averageDealSizeReport'])->name('lead-report.chart');
+    Route::get('deal-report/profile', [LeadReportController::class, 'profile'])->name('lead-report.profile');
+    Route::get('deal-report/export/{year}/{pipeline}/{category}', [LeadReportController::class, 'exportDealReport'])->name('deal-report.export');
+
+
+
     Route::resource('lead-report', LeadReportController::class);
     Route::resource('sales-report', SalesReportController::class);
 
@@ -758,5 +856,16 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
     Route::get('quickbooks/{hash}/callback', [QuickbookController::class, 'callback'])->name('quickbooks.callback');
     Route::get('quickbooks', [QuickbookController::class, 'index'])->name('quickbooks.index');
+
+    // Estimate Request
+    Route::post('estimate-request/apply-quick-action', [EstimateRequestController::class, 'applyQuickAction'])->name('estimate-request.apply_quick_action');
+    Route::post('estimate-request/change-status/', [EstimateRequestController::class, 'changeStatus'])->name('estimate-request.change_status');
+    Route::get('estimate-request-confirm-rejected/{id}', [EstimateRequestController::class, 'rejectConfirmation'])->name('estimate-request.confirm_rejected');
+    Route::get('estimate-request/send-estimate-request', [EstimateRequestController::class, 'sendEstimateRequest'])->name('estimate-request.send_estimate_request');
+    Route::post('estimate-request/send_estimate_mail', [EstimateRequestController::class, 'sendEstimateMail'])->name('estimate-request.send_estimate_mail');
+    Route::resource('estimate-request', EstimateRequestController::class);
+
+    Route::post('gantt_link.task_update', [GanttLinkController::class, 'taskUpdateController'])->name('gantt_link.task_update');
+    Route::resource('gantt_link', GanttLinkController::class);
 
 });

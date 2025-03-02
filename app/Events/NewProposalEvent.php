@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-use App\Models\Invoice;
 use App\Models\Proposal;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;

@@ -1,21 +1,23 @@
 <link rel="stylesheet" href="{{ asset('vendor/css/dropzone.min.css') }}">
 <style>
     #message-new .ql-editor {
-      border: 1px solid #a3a3a3;
-      border-radius: 6px;
-      padding-left: 6px !important;
-      height: 100% !important;
+        border: 1px solid #a3a3a3;
+        border-radius: 6px;
+        padding-left: 6px !important;
+        height: 100% !important;
     }
+
     .ql-editor-disabled {
-      border-radius: 6px;
-      background-color: rgba(124, 0, 0, 0.2);
-      transition-duration: 0.5s;
+        border-radius: 6px;
+        background-color: rgba(124, 0, 0, 0.2);
+        transition-duration: 0.5s;
     }
-    .ql-toolbar{
+
+    .ql-toolbar {
         display: none !important;
     }
 
-    </style>
+</style>
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">@lang("modules.messages.startConversation")</h5>
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
@@ -35,10 +37,10 @@
                             || $messageSetting->allow_client_admin == 'yes' && in_array('admin', user_roles())
                             )
                                 <x-forms.radio fieldId="user-type-employee" :fieldLabel="__('app.member')"
-                                    fieldValue="employee" fieldName="user_type" checked="true">
+                                               fieldValue="employee" fieldName="user_type" checked="true">
                                 </x-forms.radio>
                                 <x-forms.radio fieldId="user-type-client" :fieldLabel="__('app.client')"
-                                    fieldValue="client" fieldName="user_type">
+                                               fieldValue="client" fieldName="user_type">
                                 </x-forms.radio>
                             @else
                                 <input type="hidden" name="user_type" value="employee">
@@ -53,12 +55,12 @@
                     </div>
                 </div>
             </div>
-            <input type = "hidden" name = "mention_user_id" id = "mentionUserIds" class ="mention_user_ids">
+            <input type="hidden" name="mention_user_id" id="mentionUserIds" class="mention_user_ids">
 
             <div class="col-md-12" id="member-list">
                 <div class="form-group">
                     <x-forms.select fieldId="selectEmployee" :fieldLabel="__('modules.messages.chooseMember')"
-                        fieldName="user_id" search="true" fieldRequired="true">
+                                    fieldName="user_id" search="true" fieldRequired="true">
                         <option value="">--</option>
                         @foreach ($employees as $item)
                             <x-user-option :user="$item" :pill="true"/>
@@ -76,8 +78,10 @@
                     <div class="form-group">
 
                         @if (isset($clientId))
-                            <x-forms.text :fieldReadOnly="true" :fieldLabel="__('modules.client.clientName')" fieldName="client_name"
-                            fieldId="client_name" fieldPlaceholder="" :fieldValue="$client->name" />
+                            <x-forms.text :fieldReadOnly="true"
+                                          :fieldLabel="__('modules.client.clientName')" fieldName="client_name"
+                                          fieldId="client_name" fieldPlaceholder=""
+                                          :fieldValue="$client->name"/>
                             <input type="hidden" name="client_id" id="client_id" value="{{ $clientId }}">
                         @else
                             <x-forms.select fieldId="client_id" :fieldLabel="__('modules.client.clientName')"
@@ -101,14 +105,15 @@
                     <x-forms.label :fieldLabel="__('app.message')" fieldRequired="true" fieldId="description">
                     </x-forms.label>
                     <div id="message-new"></div>
+                    <input type="hidden" name="types" value="modal"/>
                     <textarea name="message" id="new-message-text" class="d-none"></textarea>
                 </div>
             </div>
 
-            <div class="col-md-12 my-4">
+            <div class="col-md-12 my-5">
                 <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2"
-                    :fieldLabel="__('app.menu.addFile')" fieldName="file"
-                    fieldId="message-file-upload-dropzone" />
+                                       :fieldLabel="__('app.menu.addFile')" fieldName="file"
+                                       fieldId="message-file-upload-dropzone"/>
                 <input type="hidden" name="message_id" id="message_id">
                 <input type="hidden" name="type" id="message">
 
@@ -130,10 +135,10 @@
 
     $('#selectEmployee').selectpicker();
 
-     var atValues = @json($userData);
-     quillMention(atValues, '#message-new');
+    var atValues = @json($userData);
+    quillMention(atValues, '#message-new');
 
-    $("input[name=user_type]").click(function() {
+    $("input[name=user_type]").click(function () {
         if ($(this).val() == 'employee') {
             $('#member-list').removeClass('d-none');
             $('#client-list').addClass('d-none');
@@ -163,7 +168,7 @@
         acceptedFiles: DROPZONE_FILE_ALLOW,
         init: function () {
             taskDropzone1 = this;
-            this.on("success", function(file, response) {
+            this.on("success", function (file, response) {
                 $('#message_list').val(response.message_list);
                 setContent();
                 $.easyUnblockUI();
@@ -204,12 +209,12 @@
 
     });
 
-    $('#save-message').click(function() {
+    $('#save-message').click(function () {
         var note = document.getElementById('message-new').children[0].innerHTML;
         document.getElementById('new-message-text').value = note;
-        var mention_user_id = $('#message-new span[data-id]').map(function(){
-                            return $(this).attr('data-id')
-                        }).get();
+        var mention_user_id = $('#message-new span[data-id]').map(function () {
+            return $(this).attr('data-id')
+        }).get();
         $('#mentionUserIds').val(mention_user_id.join(','));
 
         var url = "{{ route('messages.store') }}";
@@ -221,8 +226,7 @@
             buttonSelector: "#save-message",
             type: "POST",
             data: $('#createConversationForm').serialize(),
-            success: function(response) {
-
+            success: function (response) {
                 $('#user_list').val(response.user_list);
                 $('#message_list').val(response.message_list);
                 $('#receiver_id').val(response.receiver_id);
@@ -237,19 +241,18 @@
                 }
 
                 $('.show-user-messages').removeClass('active');
-                $('#user-no-'+response.receiver_id+' a').addClass('active');
+                $('#user-no-' + response.receiver_id + ' a').addClass('active');
                 let receiverId = $('#chatBox').data('chat-for-user');
-                $('#user-no-'+receiverId+' a').addClass('active');
-
+                $('#user-no-' + receiverId + ' a').addClass('active');
             }
         })
     });
 
     function setContent() {
         @if (isset($client))
-            let clientId = $('#client_id').val();
-            var redirectUrl = "{{ route('messages.index') }}?clientId="+clientId;
-            window.location.href = redirectUrl;
+        let clientId = $('#client_id').val();
+        var redirectUrl = "{{ route('messages.index') }}?clientId=" + clientId;
+        window.location.href = redirectUrl;
         @endif
 
         document.getElementById('msgLeft').innerHTML = $('#user_list').val();
@@ -272,8 +275,8 @@
 
     // If request comes from project overview tab where client id is set, then it will select that client name default
     @if (isset($client))
-        $("#user-type-client").prop("checked", true);
-        $('#member-list, #client-list').toggleClass('d-none');
+    $("#user-type-client").prop("checked", true);
+    $('#member-list, #client-list').toggleClass('d-none');
     @endif
 
     init('#createConversationForm');

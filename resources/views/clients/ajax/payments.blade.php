@@ -52,7 +52,7 @@ $addPaymentPermission = user()->permission('add_payments');
         data['clientID'] = clientID;
     });
     const showTable = () => {
-        window.LaravelDataTables["payments-table"].draw(false);
+        window.LaravelDataTables["payments-table"].draw(true);
     }
 
     $('#quick-action-type').change(function() {

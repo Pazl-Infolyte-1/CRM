@@ -51,11 +51,18 @@
     <div class="content-wrapper">
 
         <!-- Add Task Export Buttons Start -->
-        <div class="d-flex flex-column">
+        <div class="d-grid d-lg-flex d-md-flex action-bar">
 
-            <div id="table-actions" class="flex-grow-1 align-items-center mt-4">
+            <div id="table-actions" class="flex-grow-1 align-items-center mb-2 mb-lg-0 mb-md-0">
             </div>
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
+                <a href="{{ route('leave-report.leave_quota') }}" class="btn btn-secondary f-14 show-leaves-quota" data-toggle="tooltip"
+                    data-original-title="@lang('app.menu.leavesQuota')"><i class="side-icon bi bi-pie-chart-fill"></i></a>
 
+                <a href="{{ route('leave-report.index') }}" class="btn btn-secondary f-14 btn-active leave-report" data-toggle="tooltip"
+                    data-original-title="@lang('app.menu.leaveReport')"><i class="side-icon bi bi-list-ul"></i></a>
+
+            </div>
         </div>
 
         <!-- Add Task Export Buttons End -->
@@ -126,7 +133,7 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["leave-report-table"].draw(false);
+            window.LaravelDataTables["leave-report-table"].draw(true);
         }
 
         $('#employee_id')

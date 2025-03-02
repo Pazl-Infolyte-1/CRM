@@ -14,8 +14,7 @@ return new class extends Migration
 
     public function up(): void
     {
-        Schema::create(
-            'mention_users', function (Blueprint $table) {
+        Schema::create('mention_users', function (Blueprint $table) {
 
                 $table->id();
                 $table->integer('task_comment_id')->unsigned()->nullable();
@@ -58,8 +57,7 @@ return new class extends Migration
                                 ->onUpdate('cascade');
                 $table->timestamps();
 
-            }
-        );
+        });
         $companies = Company::select('id')->get();
 
         foreach ($companies as $company) {

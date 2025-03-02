@@ -5,7 +5,7 @@
     <div class="col-sm-12">
         <x-form id="save-event-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     {{ $event->event_name }}
                 </h4>
                 <div class="row p-20">
@@ -79,40 +79,149 @@
                         </div>
                     </div>
 
+                    <div class="col-md-12">
+                        <x-forms.label class="my-3" fieldId="department" :fieldLabel="__('app.department')">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control multiple-users emp-event-department" multiple name="team_id[]" id="employee_department"
+                                    data-live-search="true">
+                                @foreach ($teams as $team)
+                                    <option
+                                    data-content="<span class='p-2 border badge badge-pill badge-light'>{{ $team->team_name }}</span>"
+                                    value="{{ $team->id }}" @if(in_array($team->id, $departments ?? [])) selected @endif>{{ $team->team_name }}</option>
+                                @endforeach
+                            </select>
+                        </x-forms.input-group>
+                    </div>
+
                     <div class="{{!in_array('client',user_roles()) ? 'col-md-6' : 'col-md-12'}}">
                         <div class="form-group my-3">
-                            <x-forms.label fieldId="selectAssignee" fieldRequired="true"
-                                :fieldLabel="__('app.select').' '.__('app.employee')">
-                            </x-forms.label>
-                            <x-forms.input-group>
-                                <select class="form-control multiple-users" multiple name="user_id[]"
-                                    id="selectAssignee" data-live-search="true" data-size="8">
-                                    @foreach ($employees as $emp)
-                                        <x-user-option :user="$emp" :pill=true :selected="in_array($emp->id, $attendeeArray)"/>
-                                    @endforeach
-                                </select>
-                            </x-forms.input-group>
+                            @if(in_array('client',user_roles()) || (!in_array('admin',user_roles()) && in_array('employee',user_roles()) && $viewEmployeePermission != 'all'))
+                                <x-forms.text :fieldLabel="__('app.select').' '.__('app.employee')" fieldReadOnly="true"
+                                fieldName="users" fieldId="selectAssignee" :fieldValue="$userIds->pluck('user.name')->implode(', ')" />
+
+                                @foreach ($userIds as $user)
+                                    <input type="hidden" name="user_id[]" value="{{ $user->user_id }}">
+                                @endforeach
+                            @else
+                                <x-forms.label fieldId="selectAssignee" fieldRequired="true"
+                                    :fieldLabel="__('app.select').' '.__('app.employee')">
+                                </x-forms.label>
+                                <x-forms.input-group>
+                                    @php
+                                        // Retrieve selected employee IDs and their statuses
+                                        $selectedEmployeeIds = $employees->pluck('id')->toArray();
+                                        $selectedEmployees = $employees->filter(function ($employee) use ($selectedEmployeeIds) {
+                                            return in_array($employee->id, $selectedEmployeeIds);
+                                        });
+
+                                        $hasDeactivatedSelected = $selectedEmployees->contains(function ($employee) {
+                                            return $employee->status === 'deactive';
+                                        });
+
+                                        // Get the active employees list
+                                        $activeEmployees = $employees->filter(function ($employee) {
+                                            return $employee->status === 'active';
+                                        });
+
+                                        if ($hasDeactivatedSelected) {
+                                            $deactivatedSelectedEmployees = $selectedEmployees->filter(function ($employee) use ($attendeeArray) {
+                                                return in_array($employee->id, $attendeeArray) && $employee->status === 'deactive';
+                                            });
+                                            $employeesToShow = $activeEmployees->merge($deactivatedSelectedEmployees);
+                                        } else {
+                                            $employeesToShow = $activeEmployees;
+                                        }
+                                    @endphp
+                                    <select class="form-control multiple-users" multiple name="user_id[]"
+                                        id="selectAssignee" data-live-search="true" data-size="8">
+                                        @foreach ($employeesToShow as $emp)
+                                            <x-user-option :user="$emp" :pill=true :selected="in_array($emp->id, $attendeeArray)"/>
+                                        @endforeach
+                                    </select>
+                                </x-forms.input-group>
+                            @endif
                         </div>
                     </div>
 
-                @if(!in_array('client', user_roles()))
+                @if(!in_array('client', user_roles()) && in_array('clients', user_modules()))
                     <div class="col-md-6">
                         <div class="form-group my-3">
-                            <x-forms.label fieldId="selectAssignee" fieldRequired="true"
-                                :fieldLabel="__('app.select').' '.__('app.client')">
-                            </x-forms.label>
-                            <x-forms.input-group>
-                                <select class="form-control multiple-users" multiple name="user_id[]"
-                                    id="selectAssignee2" data-live-search="true" data-size="8">
-                                    @foreach ($clients as $emp)
-                                        <x-user-option :user="$emp" :pill=true  :selected="in_array($emp->id, $attendeeArray)"/>
-                                    @endforeach
-                                </select>
-                            </x-forms.input-group>
+                            @if((!in_array('admin',user_roles()) && in_array('employee',user_roles()) && $viewClientPermission != 'all'))
+                                <x-forms.text :fieldLabel="__('app.select').' '.__('app.client')" fieldReadOnly="true"
+                                fieldName="clients" fieldId="selectAssignee2" :fieldValue="!($clientIds->isEmpty()) ? $clientIds->pluck('user.name')->implode(', ') : __('placeholders.noneSelectedText')" />
+
+                                @foreach ($clientIds as $client)
+                                    <input type="hidden" name="user_id[]" value="{{ $client->user_id }}">
+                                @endforeach
+                            @else
+                                <x-forms.label fieldId="selectAssignee2"
+                                    :fieldLabel="__('app.select').' '.__('app.client')">
+                                </x-forms.label>
+                                <x-forms.input-group>
+                                    <select class="form-control multiple-users" multiple name="user_id[]"
+                                        id="selectAssignee2" data-live-search="true" data-size="8">
+                                        @foreach ($clients as $emp)
+                                            <x-user-option :user="$emp" :pill=true  :selected="in_array($emp->id, $attendeeArray)"/>
+                                        @endforeach
+                                    </select>
+                                </x-forms.input-group>
+                            @endif
                         </div>
                     </div>
                 @endif
 
+                    <div class="col-md-6">
+                        <div class="form-group my-3">
+                            @if(in_array('client',user_roles()) || (!in_array('admin',user_roles()) && in_array('employee',user_roles()) && $viewEmployeePermission != 'all'))
+                                <x-forms.text :fieldLabel="__('app.host')" fieldReadOnly="true"
+                                fieldName="host_show" fieldId="host" :fieldValue="optional($event->user)->name ?? '--'" />
+
+                                <input type="hidden" name="host" value="{{ $event->host ?? '' }}">
+                            @else
+                                <x-forms.label fieldId="host" fieldRequired="false"
+                                    :fieldLabel="__('app.host')">
+                                </x-forms.label>
+                                <x-forms.input-group>
+                                    @php
+                                        $activeEmployees = $employees->filter(function ($employee) {
+                                        return $employee->status !== 'deactive';
+                                    });
+
+                                    $selectedEmployee = $employees->firstWhere('id', $event->host);
+
+                                    if ($selectedEmployee && $selectedEmployee->status === 'deactive') {
+                                        $employeesToShow = $activeEmployees->push($selectedEmployee);
+                                    } else {
+                                        $employeesToShow = $activeEmployees;
+                                    }
+                                    @endphp
+                                    <select class="form-control multiple-users" name="host"
+                                        id="selectHost" data-live-search="true" data-size="8">
+                                        <option value="">--</option>
+                                        @foreach ($employeesToShow as $item)
+                                            <x-user-option :user="$item" :pill=true :selected="($item->id == $event->host)"/>
+                                        @endforeach
+                                    </select>
+                                </x-forms.input-group>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group c-inv-select mb-4 my-3">
+                            <x-forms.label fieldId="status" :fieldLabel="__('app.status')">
+                            </x-forms.label>
+                            <div class="select-others height-35 rounded">
+                                <select class="form-control select-picker" data-live-search="true" data-size="8"
+                                    name="status" id="status">
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-yellow'></i> @lang('app.pending')" value="pending" @if ($event->status == 'pending') selected @endif></option>
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-light-green'></i> @lang('app.completed')" value="completed" @if ($event->status == 'completed') selected @endif></option>
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-red'></i> @lang('app.cancelled')" value="cancelled" @if ($event->status == 'cancelled') selected @endif></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="col-lg-12 mb-2">
                         <x-forms.checkbox :fieldLabel="__('modules.tasks.reminder')" fieldName="send_reminder"
@@ -160,23 +269,20 @@
                         <div div class="d-flex flex-wrap mt-3" id="event-file-list">
                             @forelse($event->files as $file)
                                 <x-file-card :fileName="$file->filename" :dateAdded="$file->created_at->diffForHumans()">
-                                    @if ($file->icon == 'images')
-                                        <img src="{{ $file->file_url }}">
-                                    @else
-                                        <i class="fa {{ $file->icon }} text-lightest"></i>
-                                    @endif
+                                    <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
                                         <x-slot name="action">
                                             <div class="dropdown ml-auto file-action">
-                                                <button class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                                                <button class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                                                     type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                     <i class="fa fa-ellipsis-h"></i>
                                                 </button>
 
                                                 <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                                     aria-labelledby="dropdownMenuLink" tabindex="0">
-                                                        @if ($file->icon = 'images')
-                                                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank"
-                                                                href="{{ $file->file_url }}">@lang('app.view')</a>
+                                                        @if ($file->icon == 'images')
+                                                            <a class="img-lightbox cursor-pointer d-block text-dark-grey f-13 pt-3 px-3" data-image-url="{{ $file->file_url }}" href="javascript:;">@lang('app.view')</a>
+                                                        @else
+                                                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank" href="{{ $file->file_url }}">@lang('app.view')</a>
                                                         @endif
                                                         <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "
                                                             href="{{ route('event-files.download', md5($file->id)) }}">@lang('app.download')</a>
@@ -210,8 +316,6 @@
 
     </div>
 </div>
-
-<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 
 <script>
     $(document).ready(function() {
@@ -284,6 +388,29 @@
                 $('#no-files').toggleClass('d-none');
             });
 
+        $('body').on('change', '#employee_department', function () {
+
+            let departmentIds = $(this).val();
+            if (departmentIds === '' || departmentIds.length === 0) {
+                departmentIds = 0;
+            }
+            let userId = '{{ $event->attendee->pluck("user.id")->implode(",") }}';
+
+            let url = "{{ route('departments.members', ':id') }}?userId="+userId;
+            url = url.replace(':id', departmentIds);
+
+            $.easyAjax({
+                url: url,
+                type: "GET",
+                container: '#save-project-data-form',
+                blockUI: true,
+                redirect: true,
+                success: function (data) {
+                    $('#selectAssignee').html(data.data);
+                    $('#selectAssignee').selectpicker('refresh');
+                }
+            })
+        });
 
             $('body').on('click', '.delete-file', function() {
                 var id = $(this).data('row-id');
@@ -342,7 +469,7 @@
             "color": "{{ $event->label_color }}"
         });
 
-        $("#selectAssignee, #selectAssignee2").selectpicker({
+        $("#selectAssignee, #selectAssignee2, #selectHost, .multiple-users").selectpicker({
             actionsBox: true,
             selectAllText: "{{ __('modules.permission.selectAll') }}",
             deselectAllText: "{{ __('modules.permission.deselectAll') }}",

@@ -45,14 +45,14 @@ class NewProjectStatus extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
 
         $url = route('projects.show', $this->projectStatus->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.newProjectStatus.text') . ' - ' . $this->projectStatus->status . '. ' . __('email.newProjectStatus.loginNow');
 
-        return $build
+        $build
             ->subject(__('email.newProjectStatus.subject') . ' - ' . config('app.name') . '.')
             ->markdown('mail.projectStatus.created', [
                 'url' => $url,
@@ -61,6 +61,10 @@ class NewProjectStatus extends BaseNotification
                 'notifiableName' => $notifiable->name,
                 'themeColor' => $this->company->header_color
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

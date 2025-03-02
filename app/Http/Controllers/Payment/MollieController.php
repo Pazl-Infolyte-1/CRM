@@ -11,6 +11,7 @@ use App\Traits\MakePaymentTrait;
 use Mollie\Laravel\Facades\Mollie;
 use App\Traits\PaymentGatewayTrait;
 use App\Http\Controllers\Controller;
+use App\Models\GlobalSetting;
 use App\Traits\MakeOrderInvoiceTrait;
 use Mollie\Api\Exceptions\ApiException;
 
@@ -31,7 +32,7 @@ class MollieController extends Controller
 
         $request->validate([
             'name' => 'required|string',
-            'email' => 'required|email',
+            'email' => 'required|email:rfc,strict',
         ]);
 
         $customer = Mollie::api()->customers()->create([
@@ -116,7 +117,7 @@ class MollieController extends Controller
 
                 $this->makePayment('Mollie', $payment->amount->value, $invoice, $payment->id, ($payment->isPaid() ? 'complete' : 'failed'));
 
-                return redirect(route('front.invoice', $invoice->hash));
+                return redirect(url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash));
 
             case 'order':
                 $order = Order::findOrFail($id);

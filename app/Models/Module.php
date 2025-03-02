@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Scopes\SuperAdminModuleScope as ScopesSuperAdminModuleScope;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\File;
 
@@ -28,13 +29,18 @@ use Illuminate\Support\Facades\File;
  * @method static \Illuminate\Database\Eloquent\Builder|Module whereUpdatedAt($value)
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Permission> $permissionsAll
  * @property-read int|null $permissions_all_count
-
  * @mixin \Eloquent
  */
 class Module extends BaseModel
 {
 
     protected $guarded = ['id'];
+
+    public static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new ScopesSuperAdminModuleScope());
+    }
 
     const MODULE_LIST = [
         [
@@ -298,7 +304,17 @@ class Module extends BaseModel
                     'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 1,
                     'name' => 'delete_immigration',
-                ]
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'view_increment_promotion',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_increment_promotion',
+                ],
             ]
         ],
         [
@@ -1010,24 +1026,51 @@ class Module extends BaseModel
                     'name' => 'delete_lead',
                 ],
                 [
-                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'display_name' => 'Manage Lead Custom Forms',
                     'is_custom' => 1,
-                    'name' => 'view_lead_agents',
+                    'name' => 'manage_lead_custom_forms',
+                ],
+
+                [
+                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
+                    'is_custom' => 1,
+                    'name' => 'view_lead_sources',
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_NONE,
                     'is_custom' => 1,
-                    'name' => 'add_lead_agent',
+                    'name' => 'add_lead_sources',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
+                    'is_custom' => 1,
+                    'name' => 'edit_lead_sources',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
+                    'is_custom' => 1,
+                    'name' => 'delete_lead_sources',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'add_lead_note',
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 1,
-                    'name' => 'edit_lead_agent',
+                    'name' => 'view_lead_note',
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 1,
-                    'name' => 'delete_lead_agent',
+                    'name' => 'edit_lead_note',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'delete_lead_note',
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
@@ -1051,9 +1094,53 @@ class Module extends BaseModel
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_NONE,
-                    'display_name' => 'Manage Lead Custom Forms',
                     'is_custom' => 1,
-                    'name' => 'manage_lead_custom_forms',
+                    'name' => 'add_deals',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'view_deals',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'edit_deals',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'delete_deals',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_deal_stages',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'change_deal_stages',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'view_lead_agents',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'add_lead_agent',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'edit_lead_agent',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'delete_lead_agent',
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_ADDED_NONE,
@@ -1093,26 +1180,6 @@ class Module extends BaseModel
                 [
                     'allowed_permissions' => Permission::ALL_ADDED_NONE,
                     'is_custom' => 1,
-                    'name' => 'view_lead_sources',
-                ],
-                [
-                    'allowed_permissions' => Permission::ALL_NONE,
-                    'is_custom' => 1,
-                    'name' => 'add_lead_sources',
-                ],
-                [
-                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
-                    'is_custom' => 1,
-                    'name' => 'edit_lead_sources',
-                ],
-                [
-                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
-                    'is_custom' => 1,
-                    'name' => 'delete_lead_sources',
-                ],
-                [
-                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
-                    'is_custom' => 1,
                     'name' => 'view_lead_proposals',
                 ],
                 [
@@ -1135,35 +1202,46 @@ class Module extends BaseModel
                     'is_custom' => 1,
                     'name' => 'manage_proposal_template',
                 ],
+
                 [
-                    'allowed_permissions' => Permission::ALL_NONE,
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 1,
-                    'name' => 'change_lead_status',
-                ],
-                [
-                    'allowed_permissions' => Permission::ALL_NONE,
-                    'is_custom' => 1,
-                    'name' => 'add_lead_note',
+                    'name' => 'add_deal_pipeline',
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 1,
-                    'name' => 'view_lead_note',
+                    'name' => 'view_deal_pipeline',
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 1,
-                    'name' => 'edit_lead_note',
+                    'name' => 'edit_deal_pipeline',
                 ],
                 [
                     'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 1,
-                    'name' => 'delete_lead_note',
+                    'name' => 'delete_deal_pipeline',
                 ],
                 [
-                    'allowed_permissions' => Permission::ALL_NONE,
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 1,
-                    'name' => 'manage_lead_status',
+                    'name' => 'add_deal_note',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'view_deal_note',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'edit_deal_note',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 1,
+                    'name' => 'delete_deal_note',
                 ],
             ]
         ],
@@ -1176,17 +1254,17 @@ class Module extends BaseModel
                     'name' => 'add_holiday',
                 ],
                 [
-                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 0,
                     'name' => 'view_holiday',
                 ],
                 [
-                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 0,
                     'name' => 'edit_holiday',
                 ],
                 [
-                    'allowed_permissions' => Permission::ALL_ADDED_NONE,
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
                     'is_custom' => 0,
                     'name' => 'delete_holiday',
                 ],
@@ -1596,6 +1674,11 @@ class Module extends BaseModel
                     'is_custom' => 0,
                     'name' => 'delete_order',
                 ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'view_project_orders',
+                ],
             ]
         ],
         [
@@ -1672,7 +1755,279 @@ class Module extends BaseModel
     ];
 
     // Will be used for roles and permission in saas
-    const SUPERADMIN_MODULE_LIST = [];
+    const SUPERADMIN_MODULE_LIST = [
+        [
+            'module_name' => 'packages',
+            'is_superadmin' => 1,
+            'permissions' => [
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'add_packages',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'view_packages',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'edit_packages',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'delete_packages',
+                ],
+            ]
+        ],
+        [
+            'module_name' => 'companies',
+            'is_superadmin' => 1,
+            'permissions' => [
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'add_companies',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'view_companies',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'edit_companies',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'delete_companies',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'update_company_package',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_company_impersonate',
+                ],
+            ]
+        ],
+        [
+            'module_name' => 'billing',
+            'is_superadmin' => 1,
+            'permissions' => [
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_billing',
+                ],
+
+            ]
+        ],
+        [
+            'module_name' => 'offlinerequest',
+            'is_superadmin' => 1,
+            'permissions' => [
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'view_request',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'accept_reject_request',
+                ],
+
+            ]
+        ],
+        [
+            'module_name' => 'admin_faq',
+            'is_superadmin' => 1,
+            'permissions' => [
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'add_admin_faq',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'view_admin_faq',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'edit_admin_faq',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'delete_admin_faq',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_faq_category',
+                ],
+            ]
+        ],
+        [
+            'module_name' => 'superadmin',
+            'is_superadmin' => 1,
+            'permissions' => [
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'add_superadmin',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'view_superadmin',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'edit_superadmin',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 0,
+                    'name' => 'delete_superadmin',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'change_superadmin_role',
+                ]
+            ]
+        ],
+        [
+            'module_name' => 'superadmin_ticket',
+            'is_superadmin' => 1,
+            'permissions' => [
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 0,
+                    'name' => 'add_superadmin_ticket',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 0,
+                    'name' => 'view_superadmin_ticket',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 0,
+                    'name' => 'edit_superadmin_ticket',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_4_ADDED_1_OWNED_2_BOTH_3_NONE_5,
+                    'is_custom' => 0,
+                    'name' => 'delete_superadmin_ticket',
+                ]
+            ]
+        ],
+        [
+            'module_name' => 'superadmin_settings', // Superadmin Setting Permissions
+            'is_superadmin' => 1,
+            'permissions' => [
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_front_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_app_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_notification_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_language_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_currency_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_payment_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_finance_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_custom_field_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_permission_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_storage_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_social_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_security_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_calendar_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_theme_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_custom_module_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_database_backup_settings',
+                ],
+                [
+                    'allowed_permissions' => Permission::ALL_NONE,
+                    'is_custom' => 1,
+                    'name' => 'manage_superadmin_update_settings',
+                ],
+
+            ],
+        ],
+    ];
 
     public function permissions(): HasMany
     {
@@ -1699,7 +2054,8 @@ class Module extends BaseModel
 
         if ($parentMinVersion >= File::get('version.txt')) {
 
-            $module = \Nwidart\Modules\Facades\Module::findOrFail(strtolower($module)); /* @phpstan-ignore-line */
+            $module = \Nwidart\Modules\Facades\Module::findOrFail(strtolower($module));
+            /* @phpstan-ignore-line */
             $module->disable();
 
             $message = 'To activate <strong>' . $module . '</strong> module, minimum version of <b>worksuite application</b> must be greater than equal to <b>' . $parentMinVersion . '</b> But your application version is <b>' . File::get('version.txt') . '</b>. Please upgrade the application to latest version';
@@ -1710,7 +2066,8 @@ class Module extends BaseModel
     public static function disabledModuleArray()
     {
         $moduleInactive = [];
-        $modulesAvailable = \Nwidart\Modules\Facades\Module::allDisabled(); /* @phpstan-ignore-line */
+        $modulesAvailable = \Nwidart\Modules\Facades\Module::allDisabled();
+        /* @phpstan-ignore-line */
 
         foreach ($modulesAvailable as $key => $module) {
             $moduleInactive[$key] = $module;

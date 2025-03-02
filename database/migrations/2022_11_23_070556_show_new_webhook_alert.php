@@ -3,7 +3,6 @@
 use App\Models\Company;
 use App\Models\Contract;
 use App\Models\ContractTemplate;
-use App\Models\GlobalSetting;
 use App\Models\LanguageSetting;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -20,21 +19,21 @@ return new class extends Migration {
     public function up()
     {
 
+        if (!Schema::hasColumn('file_storage', 'storage_location')) {
+            Schema::table('file_storage', function (Blueprint $table) {
+                $table->enum('storage_location', ['local', 'aws_s3', 'digitalocean'])->default('local');
+            });
+        }
+
         DB::statement("ALTER TABLE file_storage CHANGE COLUMN storage_location storage_location ENUM('local', 'aws_s3', 'digitalocean') NOT NULL DEFAULT 'local'");
 
-
-        $companies = Company::select('id')->get();
 
         if (!Schema::hasColumn('companies', 'show_new_webhook_alert')) {
             Schema::table('companies', function (Blueprint $table) {
                 $table->boolean('show_new_webhook_alert')->default(0);
             });
 
-
-            foreach ($companies as $company) {
-                $company->show_new_webhook_alert = 1;
-                $company->saveQuietly();
-            }
+            DB::statement("UPDATE `companies` SET `show_new_webhook_alert`='1'");
         }
 
 
@@ -60,6 +59,7 @@ return new class extends Migration {
         Schema::table('contracts', function (Blueprint $table) {
             $table->bigInteger('contract_number')->after('id')->nullable();
         });
+
         Schema::table('contract_templates', function (Blueprint $table) {
             $table->bigInteger('contract_template_number')->after('id')->nullable();
         });
@@ -109,26 +109,22 @@ return new class extends Migration {
         try {
             // Renaming the index names
             Schema::table('companies', function (Blueprint $table) {
-                $table->dropForeign('organisation_settings_currency_id_foreign');
-                $table->dropForeign('organisation_settings_default_task_status_foreign');
-                $table->dropForeign('organisation_settings_last_updated_by_foreign');
+                $table->dropForeign(['organisation_settings_currency_id_foreign', 'organisation_settings_default_task_status_foreign', 'organisation_settings_last_updated_by_foreign']);
                 $table->foreign('currency_id')->references('id')->on('currencies')->onUpdate('cascade')->onDelete('SET NULL');
-                $table->foreign(['default_task_status'])->references(['id'])->on('taskboard_columns')->onUpdate('CASCADE');
+                $table->foreign(['default_task_status'])->references(['id'])->on('taskboard_columns')->onUpdate('SET NULL');
                 $table->foreign(['last_updated_by'])->references(['id'])->on('users')->onUpdate('CASCADE')->onDelete('SET NULL');
             });
+
             //phpcs:ignore
         } catch (\Throwable $th) {
         }
+        Schema::table('companies', function (Blueprint $table) {
+            $table->dropForeign('companies_default_task_status_foreign');
+            $table->foreign('default_task_status')
+                ->references('id')->on('taskboard_columns')
+                ->onDelete('set null');
+        });
 
-        $currencyTables = GlobalSetting::CURRENCY_TABLES;
-
-        // We are restricting the currency id delete to prevent deleting records
-        foreach ($currencyTables as $currencyTable) {
-            Schema::table($currencyTable, function (Blueprint $table) {
-                $table->dropForeign(['currency_id']);
-                $table->foreign('currency_id')->references('id')->on('currencies')->onUpdate('cascade')->onDelete('cascade');
-            });
-        }
     }
 
 };

@@ -41,7 +41,7 @@
                 <div class="col-xl-4 col-lg-6 col-md-6">
                     <div
                         class="bg-white p-3 rounded b-shadow-4 d-flex justify-content-between align-items-center mb-4 mb-md-0 mb-lg-0">
-                        <div class="d-block text-capitalize">
+                        <div class="d-block ">
                             <h5 class="f-13 f-w-500 mb-20 text-darkest-grey">@lang('app.menu.invoices')</h5>
                             <div class="d-flex">
                                 <a href="{{ route('invoices.index') . '?status=paid' }}">
@@ -73,15 +73,18 @@
             @if (in_array('projects', user_modules()))
                 <div class="col-sm-12 col-lg-6 mt-4">
                     <x-cards.data :title="__('modules.dashboard.statusWiseProject')">
+                        @if (array_sum($statusWiseProject['values']) > 0)
+                            <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="status-wise-project" data-chart-data="{{ json_encode($statusWiseProject) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                        @endif
                         <x-pie-chart id="task-chart" :labels="$statusWiseProject['labels']"
                                      :values="$statusWiseProject['values']" :colors="$statusWiseProject['colors']"
-                                     height="250"
+                                     height="300"
                                      width="300"/>
                     </x-cards.data>
                 </div>
             @endif
 
-            @if (in_array('projects', user_modules()))
+            @if (in_array('projects', user_modules()) && $viewMilestonePermission != 'none')
                 <div class="col-sm-12 col-lg-6 mt-4">
                     <x-cards.data :title="__('modules.dashboard.pendingMilestone')" padding="false"
                                   otherClasses="h-200">

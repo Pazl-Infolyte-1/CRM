@@ -32,17 +32,21 @@ class TestEmail extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = getDomainSpecificUrl(route('login'));
         $content = __('email.test.text');
 
-        return $build
+        $build
             ->subject(__('email.test.subject'))
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
                 'actionText' => __('email.notificationAction')
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

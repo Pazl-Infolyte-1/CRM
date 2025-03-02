@@ -7,22 +7,50 @@ use App\Models\Leave;
 use App\Services\Google;
 use App\Events\LeaveEvent;
 use App\Models\Attendance;
+use App\Models\EmployeeLeaveQuota;
 use App\Models\Notification;
 use App\Models\GoogleCalendarModule;
+use Google\Service\Exception;
+use Google_Service_Calendar_Event;
+use App\Traits\EmployeeActivityTrait;
+use App\Helper\Files;
+use App\Models\LeaveFile;
+use Illuminate\Support\Facades\Artisan;
 
 class LeaveObserver
 {
+
+
+    use EmployeeActivityTrait;
 
     public function saving(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
             $leave->last_updated_by = user()->id;
         }
+
+
+        $employeeLeaveQuota = EmployeeLeaveQuota::whereUserId($leave->user_id)->whereLeaveTypeId($leave->leave_type_id)->first();
+        $employeeLeaveQuotaRemaining = $employeeLeaveQuota->leaves_remaining;
+
+        if ($employeeLeaveQuotaRemaining <= 0 && $leave->type->over_utilization == 'allow_paid') {
+            $leave->paid = 1;
+            $leave->over_utilized = 1;
+
+        } elseif ($employeeLeaveQuotaRemaining <= 0 && $leave->type->over_utilization == 'allow_unpaid') {
+            $leave->paid = 0;
+            $leave->over_utilized = 1;
+
+        } else {
+            $leave->paid = $leave->type->paid;
+        }
+
     }
 
     public function creating(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
+
             $leave->added_by = user()->id;
         }
 
@@ -30,18 +58,21 @@ class LeaveObserver
             $leave->company_id = company()->id;
         }
 
-        // Remove existing attendance
-        if ($leave->status == 'approved') {
-            Attendance::whereDate('clock_in_time', $leave->leave_date)->where('user_id', $leave->user_id)->delete();
-        }
-
     }
 
     public function created(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            if (user()) {
+                self::createEmployeeActivity(user()->id, 'leave-created', $leave->id, 'leave');
+            }
+
+            $this->deductEmployeeLeaveQuota($leave);
+
+            
             if (request()->duration == 'multiple') {
                 if (session()->has('leaves_duration')) {
+
                     event(new LeaveEvent($leave, 'created', request()->multi_date));
                 }
             }
@@ -55,17 +86,28 @@ class LeaveObserver
             }
 
         }
+
+
     }
 
     public function updating(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
+
             if ($leave->isDirty('status')) {
                 $leave->approved_by = user()->id;
                 $leave->approved_at = now()->toDateTimeString();
 
                 if ($leave->status == 'approved') {
-                    Attendance::whereDate('clock_in_time', $leave->leave_date)->where('user_id', $leave->user_id)->delete();
+                    if ($leave->duration === 'half day') {
+                        Attendance::whereDate('clock_in_time', $leave->leave_date)
+                            ->where('user_id', $leave->user_id)
+                            ->update(['half_day' => true]);
+                    }
+                }
+
+                if ($leave->getOriginal('status') == 'approved' && $leave->status != 'approved') {
+                    $this->updateOverutilizedStatus($leave);
                 }
             }
         }
@@ -74,9 +116,19 @@ class LeaveObserver
     public function updated(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            if (user()) {
+                self::createEmployeeActivity(user()->id, 'leave-updated', $leave->id, 'leave');
+            }
+
+            $this->incrementEmployeeLeaveQuota($leave);
+
 
             if ($leave->isDirty('status')) {
-                event(new LeaveEvent($leave, 'statusUpdated'));
+                if (!session()->has('leaves_notification'))
+                {
+                    event(new LeaveEvent($leave, 'statusUpdated'));
+                }
+
                 $leave->approved_by = user()->id;
                 $leave->approved_at = now()->toDateTimeString();
             }
@@ -104,7 +156,7 @@ class LeaveObserver
                 if ($leave->event_id) {
                     $google->service('Calendar')->events->delete('primary', $leave->event_id);
                 }
-            } catch (\Google\Service\Exception $error) {
+            } catch (Exception $error) {
                 if (is_null($error->getErrors())) {
                     // Delete google calendar connection data i.e. token, name, google_id
                     $googleAccount->name = null;
@@ -128,8 +180,23 @@ class LeaveObserver
         /* End of deleting event from google calendar */
 
         $leave->files()->each(function ($file) {
+            Files::deleteFile($file->hashname, LeaveFile::FILE_PATH);
+            Files::deleteDirectory(LeaveFile::FILE_PATH . '/' . $file->leave_id);
             $file->delete();
         });
+
+        if ($leave->status == 'approved') {
+            $this->updateOverutilizedStatus($leave);
+        }
+    }
+
+    public function deleted(Leave $leave)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'leave-deleted');
+            $this->incrementEmployeeLeaveQuota($leave);
+
+        }
     }
 
     protected function googleCalendarEvent($leave)
@@ -153,7 +220,7 @@ class LeaveObserver
             // Create event
             $google->connectUsing($googleAccount->token);
 
-            $eventData = new \Google_Service_Calendar_Event(array(
+            $eventData = new Google_Service_Calendar_Event(array(
                 'summary' => $user->name,
                 'location' => ' ',
                 'description' => $description,
@@ -185,7 +252,7 @@ class LeaveObserver
                 }
 
                 return $results->id;
-            } catch (\Google\Service\Exception $error) {
+            } catch (Exception $error) {
                 if (is_null($error->getErrors())) {
                     // Delete google calendar connection data i.e. token, name, google_id
                     $googleAccount->name = null;
@@ -198,6 +265,59 @@ class LeaveObserver
         }
 
         return $leave->event_id;
+    }
+
+    public function deductEmployeeLeaveQuota(Leave $leave)
+    {
+        Artisan::call('app:recalculate-leaves-quotas ' . $leave->company_id . ' ' . $leave->user_id . ' ' .$leave->leave_type_id);
+    }
+
+    public function incrementEmployeeLeaveQuota(Leave $leave)
+    {
+        Artisan::call('app:recalculate-leaves-quotas ' . $leave->company_id . ' ' . $leave->user_id . ' ' .$leave->leave_type_id);
+    }
+
+    public function updateOverutilizedStatus($leave)
+    {
+        if ($leave->type->monthly_limit > 0) {
+            $currentMonthLeaves = Leave::where('leave_type_id', $leave->leave_type_id)
+                ->where('user_id', $leave->user_id)
+                ->whereBetween('leave_date', [$leave->leave_date->startOfMonth(), $leave->leave_date->endOfMonth()])
+                ->whereIn('status', ['approved'])
+                ->get();
+
+            $currentMonthLeavesCount = ($currentMonthLeaves->where('duration', 'half day')->count() * 0.5) + $currentMonthLeaves->where('duration', '!=', 'half day')->count();
+
+            if ($currentMonthLeavesCount >= $leave->type->monthly_limit) {
+                $lastOverUtilisedLeave = Leave::where('leave_type_id', $leave->leave_type_id)
+                ->where('user_id', $leave->user_id)
+                ->where('status', 'approved')
+                ->orderBy('leave_date', 'desc')->first();
+
+                if ($lastOverUtilisedLeave) {
+                    $lastOverUtilisedLeave->over_utilized = 0;
+                    $lastOverUtilisedLeave->paid = $leave->type->paid;
+                    $lastOverUtilisedLeave->saveQuietly();
+                }
+            }
+
+        } else {
+            $employeeLeaveQuota = EmployeeLeaveQuota::whereUserId($leave->user_id)->whereLeaveTypeId($leave->leave_type_id)->first();
+            $employeeLeaveQuotaRemaining = $employeeLeaveQuota->leaves_remaining;
+
+            if ($employeeLeaveQuotaRemaining <= 0) {
+                $lastOverUtilisedLeave = Leave::where('leave_type_id', $leave->leave_type_id)
+                ->where('user_id', $leave->user_id)
+                ->where('status', 'approved')
+                ->orderBy('leave_date', 'desc')->first();
+
+                if ($lastOverUtilisedLeave) {
+                    $lastOverUtilisedLeave->over_utilized = 0;
+                    $lastOverUtilisedLeave->paid = $leave->type->paid;
+                    $lastOverUtilisedLeave->saveQuietly();
+                }
+            }
+        }
     }
 
 }

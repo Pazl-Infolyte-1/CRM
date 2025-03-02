@@ -7,7 +7,6 @@ use App\Traits\CustomFieldsTrait;
 use App\Traits\HasCompany;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -32,7 +31,7 @@ use Illuminate\Support\Facades\DB;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property int $hourly_rate
- * @property int $earnings
+ * @property float $earnings
  * @property int $approved
  * @property int|null $approved_by
  * @property int|null $invoice_id
@@ -94,7 +93,7 @@ class ProjectTimeLog extends BaseModel
         'end_time' => 'datetime',
     ];
 
-    protected $with = ['breaks'];
+    protected $with = ['breaks', 'activeBreak'];
 
     const CUSTOM_FIELD_MODEL = 'App\Models\ProjectTimeLog';
 
@@ -119,6 +118,11 @@ class ProjectTimeLog extends BaseModel
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class, 'task_id')->withTrashed();
+    }
+
+    public function tasksOnlyTrashed(): BelongsTo
+    {
+        return $this->belongsTo(Task::class, 'task_id')->onlyTrashed();
     }
 
     public function breaks(): HasMany
@@ -173,7 +177,7 @@ class ProjectTimeLog extends BaseModel
         $hours = floor($totalMinutes / 60);
         $minutes = ($totalMinutes % 60);
 
-        return sprintf('%02d'.__('app.hrs').' %02d'.__('app.mins'), $hours, $minutes);
+        return sprintf('%02d' . __('app.hrs') . ' %02d' . __('app.mins'), $hours, $minutes);
     }
 
     public function getTimerAttribute()
@@ -266,22 +270,40 @@ class ProjectTimeLog extends BaseModel
             ->first();
     }
 
+    //    public static function selfActiveTimer()
+    //    {
+    //        $selfActiveTimer = ProjectTimeLog::doesnthave('activeBreak')
+    //            ->where('user_id', user()->id)
+    //            ->whereNull('end_time')
+    //            ->first();
+    //
+    //        if (is_null($selfActiveTimer)) {
+    //            $selfActiveTimer = ProjectTimeLog::with('activeBreak')
+    //                ->where('user_id', user()->id)
+    //                ->whereNull('end_time')
+    //                ->orderByDesc('id')
+    //                ->first();
+    //        }
+    //
+    //        return $selfActiveTimer;
+    //    }
+
     public static function selfActiveTimer()
     {
-        $selfActiveTimer = ProjectTimeLog::doesnthave('activeBreak')
+        return ProjectTimeLog::with('activeBreak')
             ->where('user_id', user()->id)
             ->whereNull('end_time')
+            ->orderByDesc('id')
             ->first();
+    }
 
-        if (is_null($selfActiveTimer)) {
-            $selfActiveTimer = ProjectTimeLog::with('activeBreak')
-                ->where('user_id', user()->id)
-                ->whereNull('end_time')
-                ->orderBy('id', 'desc')
-                ->first();
-        }
-
-        return $selfActiveTimer;
+    public static function totalActiveTimer()
+    {
+        return ProjectTimeLog::with('activeBreak')
+            ->where('user_id', user()->id)
+            ->whereNull('end_time')
+            ->orderByDesc('id')
+            ->get();
     }
 
 }

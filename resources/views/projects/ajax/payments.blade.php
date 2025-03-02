@@ -119,7 +119,7 @@ $addPaymentPermission = user()->permission('add_payments');
     });
 
     const showTable = () => {
-        window.LaravelDataTables["payments-table"].draw(false);
+        window.LaravelDataTables["payments-table"].draw(true);
     }
 
     $('#clientID, #project_id, #status')

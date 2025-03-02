@@ -8,6 +8,8 @@ $valuesTotal = array_sum($values);
 </div>
 <script>
 var ctx = document.getElementById("{{ $attributes['id'] }}");
+var fullscreen = {{ $fullscreen ? 'true' : 'false' }};
+var legends = fullscreen ? 'bottom' : 'right';
 
 var myChart = new Chart(ctx, {
   type: 'pie',
@@ -38,6 +40,7 @@ var myChart = new Chart(ctx, {
     plugins: {
       legend: {
         position: 'right',
+        display: fullscreen,
       },
       title: {
         display: false,

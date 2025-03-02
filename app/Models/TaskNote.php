@@ -43,7 +43,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TaskNote extends BaseModel
 {
 
-    protected $with = ['user'];
+    protected $with = [];
 
     public function user(): BelongsTo
     {

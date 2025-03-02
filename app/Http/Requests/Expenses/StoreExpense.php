@@ -30,7 +30,6 @@ class StoreExpense extends CoreRequest
         $rules = [
             'item_name' => 'required',
             'purchase_date' => 'required',
-            'user_id' => 'required',
             'price' => 'required|numeric',
             'currency_id' => 'required'
         ];

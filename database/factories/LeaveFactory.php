@@ -3,8 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Leave;
-use App\Models\LeaveType;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

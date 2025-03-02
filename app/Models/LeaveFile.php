@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use App\Traits\IconTrait;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -40,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|LeaveFile whereUserId($value)
  * @mixin \Eloquent
  */
-class LeaveFile extends Model
+class LeaveFile extends BaseModel
 {
 
     use IconTrait;

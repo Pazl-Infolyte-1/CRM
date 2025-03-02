@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Scopes\ActiveScope;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -68,6 +69,16 @@ class TicketReply extends BaseModel
     public function ticket(): BelongsTo
     {
         return $this->belongsTo(Ticket::class);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'ticket_reply_users', 'ticket_reply_id', 'user_id');
+    }
+
+    public function ticketReplyUsers(): HasMany
+    {
+        return $this->hasMany(TicketReplyUser::class, 'ticket_reply_id');
     }
 
 }

@@ -10,17 +10,19 @@ class ClientSelectionDropdown extends Component
     public $clients;
     public $selected;
     public $fieldRequired;
-    
+    public $labelClass;
+
     /**
      * Create a new component instance.
      *
      * @return void
      */
-    public function __construct($clients, $selected = null, $fieldRequired = true)
+    public function __construct($clients, $selected = null, $fieldRequired = true, $labelClass = '')
     {
         $this->clients = $clients;
         $this->selected = $selected;
         $this->fieldRequired = $fieldRequired;
+        $this->labelClass = $labelClass;
     }
 
     /**

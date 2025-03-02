@@ -9,6 +9,7 @@ use Illuminate\Queue\SerializesModels;
 
 class AppreciationEvent
 {
+
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $userAppreciation;

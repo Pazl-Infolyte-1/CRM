@@ -25,13 +25,14 @@ return new class extends Migration {
             $leadModule = Module::firstOrCreate(['module_name' => 'leads']);
             $allTypePermission = PermissionType::ofType('all')->first();
 
-            $perm = Permission::firstOrCreate([
-                'name' => 'manage_lead_status',
-                'display_name' => ucwords(str_replace('_', ' ', 'manage_lead_status')),
-                'is_custom' => 1,
-                'module_id' => $leadModule->id,
-                'allowed_permissions' => Permission::ALL_NONE
-            ]);
+            $perm = Permission::updateOrCreate(
+                ['module_id' => $leadModule->id, 'name' => 'manage_lead_status'],
+                [
+                    'display_name' => ucwords(str_replace('_', ' ', 'manage_lead_status')),
+                    'is_custom' => 1,
+                    'allowed_permissions' => Permission::ALL_ADDED_NONE
+                ]
+            );
 
 
             $admins = RoleUser::join('roles', 'roles.id', '=', 'role_user.role_id')
@@ -53,13 +54,14 @@ return new class extends Migration {
             if (!is_null($invoiceModule)) {
                 $allTypePermission = PermissionType::ofType('all')->first();
 
-                $perm = Permission::firstOrCreate([
-                    'name' => 'manage_recurring_invoice',
-                    'display_name' => ucwords(str_replace('_', ' ', 'manage_recurring_invoice')),
-                    'is_custom' => 1,
-                    'module_id' => $invoiceModule->id,
-                    'allowed_permissions' => Permission::ALL_NONE
-                ]);
+                $perm = Permission::updateOrCreate(
+                    ['module_id' => $invoiceModule->id, 'name' => 'manage_recurring_invoice'],
+                    [
+                        'display_name' => ucwords(str_replace('_', ' ', 'manage_recurring_invoice')),
+                        'is_custom' => 1,
+                        'allowed_permissions' => Permission::ALL_ADDED_NONE
+                    ]
+                );
 
                 foreach ($admins as $item) {
                     UserPermission::firstOrCreate(

@@ -40,6 +40,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|TicketFile whereTicketReplyId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|TicketFile whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|TicketFile whereUserId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class TicketFile extends BaseModel

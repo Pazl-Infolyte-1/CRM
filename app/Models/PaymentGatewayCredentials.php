@@ -153,6 +153,26 @@ class PaymentGatewayCredentials extends BaseModel
 
     use HasCompany;
 
+    protected $guarded = ['id'];
+
+    protected $casts = [
+        'live_stripe_secret' => 'encrypted',
+        'live_razorpay_secret' => 'encrypted',
+        'sandbox_paypal_secret' => 'encrypted',
+        'test_stripe_secret' => 'encrypted',
+        'test_razorpay_secret' => 'encrypted',
+        'test_stripe_webhook_secret' => 'encrypted',
+        'paystack_secret' => 'encrypted',
+        'test_paystack_secret' => 'encrypted',
+        'mollie_api_key' => 'encrypted',
+        'payfast_merchant_key' => 'encrypted',
+        'authorize_transaction_key' => 'encrypted',
+        'square_access_token' => 'encrypted',
+        'test_flutterwave_secret' => 'encrypted',
+        'live_flutterwave_key' => 'encrypted',
+        'test_payfast_merchant_key' => 'encrypted',
+    ];
+
     public function getShowPayAttribute()
     {
         return in_array('active', [

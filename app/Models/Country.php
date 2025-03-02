@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Country as ModelsCountry;
-
 /**
  * App\Models\Country
  *

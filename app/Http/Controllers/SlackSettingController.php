@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Helper\Files;
 use App\Helper\Reply;
-use App\Http\Controllers\AccountBaseController;
 use App\Http\Requests\SlackWebhookRequest;
 use App\Models\EmailNotificationSetting;
 use App\Models\SlackSetting;
@@ -57,7 +56,8 @@ class SlackSettingController extends AccountBaseController
 
     public function sendTestNotification()
     {
-        $user = User::findOrFail($this->user->id);
+        $user = user();
+
         // Notify User
         $user->notify(new TestSlack());
 

@@ -2,18 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Models\AwardIcon;
 use App\Models\DatabaseBackupSetting;
 use App\Models\GdprSetting;
-use App\Models\GoogleCalendarModule;
 use App\Models\LanguageSetting;
-use App\Models\PaymentGatewayCredentials;
 use App\Models\PusherSetting;
 use App\Models\PushNotificationSetting;
 use App\Models\SocialAuthSetting;
 use App\Models\StorageSetting;
-use App\Models\TaskboardColumn;
+use App\Models\SuperAdmin\GlobalPaymentGatewayCredentials;
 use App\Models\TranslateSetting;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 
 class CoreDatabaseSeeder extends Seeder
@@ -34,6 +32,7 @@ class CoreDatabaseSeeder extends Seeder
         $this->appreciationIcon();
         TranslateSetting::create(['google_key' => null]);
         $this->pushNotification();
+        GlobalPaymentGatewayCredentials::create();
     }
 
     public function dashboardBackupSetting()
@@ -104,7 +103,7 @@ class CoreDatabaseSeeder extends Seeder
         ];
 
         foreach ($icons as $icon) {
-            \App\Models\AwardIcon::create($icon);
+            AwardIcon::create($icon);
         }
     }
 

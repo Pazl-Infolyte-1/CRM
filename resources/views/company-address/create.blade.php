@@ -94,7 +94,7 @@
 </style>
 
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.addNew') @lang('app.address')</h5>
+    <h5 class="modal-title">@lang('app.addNewAddress')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 <x-form id="createAddress" method="POST" class="ajax-form">
@@ -149,7 +149,7 @@
 
                 @if(!is_null(global_setting()->google_map_key))
                     <div class="col-lg-12">
-                        <h4 class="f-16 font-weight-500 text-capitalize">
+                        <h4 class="f-16 font-weight-500 ">
                             @lang('modules.accountSettings.businessMapLocation')</h4>
 
                         <div class="pac-card" id="pac-card">
@@ -197,14 +197,16 @@
 
                     </div>
                 @else
-                    <div class="col-md-12">
-                        <x-alert type="secondary">
-                            <span class="text-center">
-                                @lang('messages.googleMapMessage') <a
-                                    href="{{ route('app-settings.index') }}?tab=google-map-setting">@lang('app.googleMapSettings')</a>
-                            </span>
-                        </x-alert>
-                    </div>
+                    @if(isWorksuite())
+                        <div class="col-md-12">
+                            <x-alert type="secondary">
+                                <span class="text-center">
+                                    @lang('messages.googleMapMessage') <a
+                                        href="{{ route('app-settings.index') }}?tab=google-map-setting">@lang('app.googleMapSettings')</a>
+                                </span>
+                            </x-alert>
+                        </div>
+                 @endif
                 @endif
             </div>
         </div>

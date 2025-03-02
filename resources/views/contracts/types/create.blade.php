@@ -122,6 +122,10 @@
             let id = $(this).data('row-id');
             let value = $(this).html();
 
+            if (id == '' || id == undefined || id == null) {
+                return false;
+            }
+
             var url = "{{ route('contractTypes.update', ':id') }}";
             url = url.replace(':id', id);
 

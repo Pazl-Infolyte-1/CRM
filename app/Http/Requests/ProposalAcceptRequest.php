@@ -30,7 +30,7 @@ class ProposalAcceptRequest extends FormRequest
         if (request('type') == 'accept') {
 
             $rules['full_name'] = 'required';
-            $rules['email'] = 'required|email:rfc';
+            $rules['email'] = 'required|email:rfc,strict';
 
             $proposal = Proposal::findOrFail(request('id'));
 

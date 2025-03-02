@@ -27,7 +27,7 @@ class LeadNoteController extends AccountBaseController
     {
         abort_403(!(in_array(user()->permission('view_lead_note'), ['all', 'added'])));
 
-        return $dataTable->render('leads.notes.index', $this->data);
+        return $dataTable->render('lead-contact.notes.index', $this->data);
     }
 
     public function create()
@@ -39,13 +39,13 @@ class LeadNoteController extends AccountBaseController
         $this->pageTitle = __('app.addLeadNote');
         $this->leadId = request('lead');
 
+        $this->view = 'lead-contact.notes.create';
+
         if (request()->ajax()) {
-            $html = view('leads.notes.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'leads.notes.create';
-        return view('leads.create', $this->data);
+        return view('lead-contact.create', $this->data);
     }
 
     public function show($id)
@@ -67,14 +67,13 @@ class LeadNoteController extends AccountBaseController
         );
 
         $this->pageTitle = __('app.lead') . ' ' . __('app.note');
+        $this->view = 'lead-contact.notes.show';
 
         if (request()->ajax()) {
-            $html = view('leads.notes.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'leads.notes.show';
-        return view('leads.create', $this->data);
+        return view('lead-contact.create', $this->data);
 
     }
 
@@ -106,7 +105,7 @@ class LeadNoteController extends AccountBaseController
             }
         }
 
-        return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => route('leads.show', $note->lead_id) . '?tab=notes']);
+        return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => route('lead-contact.show', $note->lead_id) . '?tab=notes']);
     }
 
     public function edit($id)
@@ -128,13 +127,13 @@ class LeadNoteController extends AccountBaseController
         $this->noteMembers = $this->note->members->pluck('user_id')->toArray();
         $this->leadId = $this->note->lead_id;
 
+        $this->view = 'lead-contact.notes.edit';
+
         if (request()->ajax()) {
-            $html = view('leads.notes.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'leads.notes.edit';
-        return view('leads.create', $this->data);
+        return view('lead-contact.create', $this->data);
 
     }
 
@@ -164,7 +163,7 @@ class LeadNoteController extends AccountBaseController
             }
         }
 
-        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('leads.show', $note->lead_id) . '?tab=notes']);
+        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('lead-contact.show', $note->lead_id) . '?tab=notes']);
     }
 
     public function destroy($id)
@@ -204,7 +203,7 @@ class LeadNoteController extends AccountBaseController
     public function askForPassword($id)
     {
         $this->note = LeadNote::findOrFail($id);
-        return view('leads.notes.verify-password', $this->data);
+        return view('lead-contact.notes.verify-password', $this->data);
     }
 
     public function checkPassword(Request $request)

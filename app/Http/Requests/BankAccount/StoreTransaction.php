@@ -4,7 +4,6 @@ namespace App\Http\Requests\BankAccount;
 
 use App\Http\Requests\CoreRequest;
 use App\Models\BankAccount;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTransaction extends CoreRequest
 {
