@@ -3,10 +3,17 @@
 namespace App\Models;
 
 use App\Enums\Salutation;
-use App\Notifications\ResetPassword;
-use App\Scopes\ActiveScope;
-use App\Traits\HasMaskImage;
 use App\Traits\HasCompany;
+// WORKSUITESAAS
+use App\Models\SuperAdmin\SupportTicket;
+use App\Scopes\ActiveScope;
+use App\Scopes\CompanyScope;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use App\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Notifications\Notifiable;
+use App\Traits\HasMaskImage;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
@@ -14,17 +21,14 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Collection;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\Access\Authorizable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Laravel\Fortify\TwoFactorAuthenticatable;
+use IvanoMatteo\LaravelDeviceTracking\Traits\UseDevices;
 use Laravel\Fortify\TwoFactorAuthenticationProvider;
 use Trebol\Entrust\Traits\EntrustUserTrait;
 
@@ -177,6 +181,9 @@ use Trebol\Entrust\Traits\EntrustUserTrait;
  * @property-read int|null $appreciations_count
  * @property-read Collection|\App\Models\Appreciation[] $appreciationsGrouped
  * @property-read int|null $appreciations_grouped_count
+ * @property-read Collection|SupportTicket[] $supportTickets
+ * @property-read int|null $support_tickets_count
+ * @property-read \App\Models\UserAuth|null $userAuth
  * @property-read Collection|\App\Models\ProjectTimeLog[] $projectTimeLog
  * @property string|null $stripe_id
  * @property string|null $pm_type
@@ -192,37 +199,21 @@ use Trebol\Entrust\Traits\EntrustUserTrait;
  * @method static Builder|User whereStripeId($value)
  * @method static Builder|User whereTelegramUserId($value)
  * @method static Builder|User whereTrialEndsAt($value)
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
  * @property int|null $country_phonecode
  * @property-read Collection<int, \App\Models\TicketGroup> $agentGroup
  * @property-read int|null $agent_group_count
  * @property-read mixed $mobile_with_phone_code
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
  * @method static Builder|User whereCountryPhonecode($value)
- * @property-read Collection<int, \App\Models\TicketGroup> $agentGroup
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
- * @property-read Collection<int, \App\Models\TicketGroup> $agentGroup
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
  * @mixin \Eloquent
  */
-class User extends BaseModel implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
+class User extends BaseModel
 {
 
-    use Notifiable, EntrustUserTrait, Authenticatable, Authorizable, CanResetPassword, HasFactory, TwoFactorAuthenticatable;
+    use Notifiable, EntrustUserTrait, HasFactory, TwoFactorAuthenticatable;
     use HasCompany;
     use HasMaskImage;
+    # use UseDevices; Commmented interionally to reomve in saas and use in userAuth
+
 
     const ALL_ADDED_BOTH = ['all', 'added', 'both'];
 
@@ -232,7 +223,16 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         static::addGlobalScope(new ActiveScope());
     }
 
-    protected $with = ['clientDetails', 'employeeDetail', 'leaves'];
+    //    protected $with = ['session:id'];
+    protected $with = [
+    //        'clientDetails:id,company_name',
+    //        'employeeDetail.designation:id,name',
+    //        'employeeDetail.department:id,team_name',
+    //        'company:id,company_name',
+    //        'roles:name,display_name',
+       'session:id',
+       'clientContact'
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -248,11 +248,9 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
      *
      * @var array
      */
-    protected $hidden = [
-        'password', 'remember_token', 'created_at', 'updated_at',
-    ];
+    protected $hidden = ['created_at', 'updated_at', 'headers','location_details'];
 
-    public $dates = ['created_at', 'updated_at', 'last_login', 'two_factor_expires_at'];
+    public $dates = ['created_at', 'updated_at', 'last_login'];
 
     protected $casts = [
         'created_at' => 'datetime',
@@ -262,20 +260,25 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         'salutation' => Salutation::class,
     ];
 
-    protected $appends = ['image_url', 'modules', 'mobile_with_phonecode'];
+    protected $appends = ['image_url', 'modules', 'mobile_with_phonecode', 'name_salutation'];
+
+    public function getNameSalutationAttribute()
+    {
+        return ($this->salutation ? $this->salutation->label() . ' ' : '') . $this->name;
+    }
 
     public function getImageUrlAttribute()
     {
         $gravatarHash = !is_null($this->email) ? md5(strtolower(trim($this->email))) : md5($this->id);
 
-        return ($this->image) ? asset_url_local_s3('avatar/' . $this->image) : 'https://www.gravatar.com/avatar/' . $gravatarHash . '.png?s=200&d=mp';
+        return ($this->image) ? asset_url_local_s3('avatar/' . $this->image) : asset('img/gravatar.png');
     }
 
     public function maskedImageUrl(): Attribute
     {
         return Attribute::make(
             get: function () {
-                return ($this->image) ? $this->generateMaskedImageAppUrl('avatar/' . $this->image) : 'https://www.gravatar.com/avatar/' . md5($this->id) . '.png?s=200&d=mp';
+                return ($this->image) ? $this->generateMaskedImageAppUrl('avatar/' . $this->image) : asset('img/gravatar.png');
             },
         );
 
@@ -283,23 +286,24 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     public function hasGravatar($email)
     {
-        // Craft a potential url and test its headers
+        // Craft a potential URL for the Gravatar and test its headers
         $hash = md5(strtolower(trim($email)));
-
         $uri = 'http://www.gravatar.com/avatar/' . $hash . '?d=404';
         $headers = @get_headers($uri);
 
-        $has_valid_avatar = true;
+        // Check if the Gravatar URL returns a valid response
+        $hasValidAvatar = true;
 
         try {
             if (!preg_match('|200|', $headers[0])) {
-                $has_valid_avatar = false;
+                $hasValidAvatar = false;
             }
         } catch (\Exception $e) {
-            $has_valid_avatar = true;
+            // If an exception occurs, assume the Gravatar is valid
+            $hasValidAvatar = true;
         }
 
-        return $has_valid_avatar;
+        return $hasValidAvatar;
     }
 
     public function getMobileWithPhoneCodeAttribute()
@@ -318,9 +322,29 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
      */
     public function routeNotificationForSlack()
     {
-        $slack = $this->company->slackSetting;
+        $slack = null; // Initialize $slack variable
+        if($this->company == null && session('impersonate')){
+            $impersonateCompanyId = session('impersonate_company_id');
+            if ($impersonateCompanyId) {
+                // Fetch the company using the impersonated ID
+                $company = Company::find($impersonateCompanyId);
+                if ($company) {
+                    // Return the Slack webhook from the company's Slack settings
+                    $slack = $company->slackSetting;
+                }
+            }else{
+                $slack = '';
+            }
+        }elseif($this->company != null){
+            $slack = $this->company->slackSetting;
+        }
 
-        return $slack->slack_webhook;
+        // Check if $slack is not null before accessing its properties
+        if (!empty($slack)) {
+            return $slack->slack_webhook;
+        }
+        // Return null or handle the case where $slack is not set
+        return false;
     }
 
     public function routeNotificationForOneSignal()
@@ -385,9 +409,14 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->hasOne(ClientDetails::class, 'user_id');
     }
 
+    public function userAuth(): BelongsTo
+    {
+        return $this->belongsTo(UserAuth::class, 'user_auth_id');
+    }
+
     public function lead(): HasOne
     {
-        return $this->hasOne(Lead::class, 'user_id');
+        return $this->hasOne(Deal::class, 'user_id');
     }
 
     public function attendance(): HasMany
@@ -403,6 +432,11 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
     public function employeeDetail(): HasOne
     {
         return $this->hasOne(EmployeeDetails::class, 'user_id');
+    }
+
+    public function clientContact(): HasOne
+    {
+        return $this->hasOne(ClientContact::class, 'id','is_client_contact');
     }
 
     public function projects(): HasMany
@@ -460,6 +494,11 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->hasMany(LeadAgent::class, 'user_id');
     }
 
+    public function leadAgentCategory(): BelongsToMany
+    {
+        return $this->belongsToMany(LeadCategory::class, 'lead_agent_categories', 'lead_category_id', 'user_id');
+    }
+
     public function group(): HasMany
     {
         return $this->hasMany(EmployeeTeam::class, 'user_id');
@@ -485,6 +524,16 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->hasMany(EmployeeLeaveQuota::class);
     }
 
+    public function employeeLeaveTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(LeaveType::class, 'employee_leave_quotas');
+    }
+
+    public function leaveQuotaHistory(): HasMany
+    {
+        return $this->hasMany(EmployeeLeaveQuotaHistory::class);
+    }
+
     public function reportingTeam(): HasMany
     {
         return $this->hasMany(EmployeeDetails::class, 'reporting_to');
@@ -504,7 +553,12 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     public function tickets(): HasMany
     {
-        return $this->hasMany(Ticket::class, 'user_id')->orderBy('id', 'desc');
+        return $this->hasMany(Ticket::class, 'user_id')->orderByDesc('id');
+    }
+
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class, 'user_id')->orderBy('id', 'desc');
     }
 
     public function leaves(): HasMany
@@ -532,7 +586,19 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->hasMany(ProjectTimeLog::class, 'user_id');
     }
 
-    public static function allClients($exceptId = null, $active = false, $overRidePermission = null, $companyId = null)
+    // WORKSUITESAAS
+    public function approvedCompany()
+    {
+        $company = $this->belongsTo(Company::class, 'company_id');
+
+        if (global_setting()->company_need_approval) {
+            $company->where('companies.approved', 1);
+        }
+
+        return $company;
+    }
+
+    public static function allClients($exceptId = null, $active = true, $overRidePermission = null, $companyId = null)
     {
         if (!isRunningInConsoleOrSeeding() && !is_null($overRidePermission)) {
             $viewClientPermission = $overRidePermission;
@@ -546,25 +612,28 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
             return collect([]);
         }
 
-        $clients = User::with('clientDetails')
+        $clients = User::without('session')
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->join('client_details', 'users.id', '=', 'client_details.user_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.created_at', 'client_details.company_name', 'users.image', 'users.email_notifications', 'users.mobile', 'users.country_id')
+            ->select('users.id', 'users.name', 'users.email', 'users.created_at', 'client_details.company_name', 'users.image', 'users.email_notifications', 'users.mobile', 'users.country_id', 'users.salutation', 'users.status','users.is_client_contact')
+            ->whereNull('users.is_client_contact')
             ->where('roles.name', 'client');
+
 
         if (!is_null($exceptId)) {
             if (is_array($exceptId)) {
                 $clients->whereNotIn('users.id', $exceptId);
-
             }
             else {
                 $clients->where('users.id', '<>', $exceptId);
             }
         }
 
-        if (!$active) {
-
+        if ($active) {
+            $clients->where('users.status', 'active');
+        }
+        else {
             $clients->withoutGlobalScope(ActiveScope::class);
         }
 
@@ -610,7 +679,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         $users = User::withRole('employee')
             ->join('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
-            ->select('users.id', 'users.company_id', 'users.name', 'users.email', 'users.created_at', 'users.image', 'designations.name as designation_name', 'users.email_notifications', 'users.mobile', 'users.country_id');
+            ->select('users.id', 'users.company_id', 'users.name', 'users.email', 'users.created_at', 'users.image', 'designations.name as designation_name', 'users.email_notifications', 'users.mobile', 'users.country_id', 'users.status');
 
         if (!is_null($exceptId)) {
             if (is_array($exceptId)) {
@@ -667,9 +736,9 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
         }
 
-        if(!isRunningInConsoleOrSeeding() && user() && in_array('client', user_roles())) {
+        if (!isRunningInConsoleOrSeeding() && user() && in_array('client', user_roles())) {
             $clientEmployess = Project::where('client_id', user()->id)->join('project_members', 'project_members.project_id', '=', 'projects.id')
-            ->select('project_members.user_id')->get()->pluck('user_id');
+                ->select('project_members.user_id')->get()->pluck('user_id');
 
             $users->whereIn('users.id', $clientEmployess);
         }
@@ -786,6 +855,24 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return false;
     }
 
+    public static function firstSuperAdmin()
+    {
+        return User::withoutGlobalScopes(['active', CompanyScope::class])
+            ->where('is_superadmin', 1)
+            ->whereNull('company_id')
+            ->orderBy('id')
+            ->first();
+    }
+
+    public static function allSuperAdmin()
+    {
+        return User::withoutGlobalScopes(['active', CompanyScope::class])
+            ->withRole('superadmin')
+            ->where('is_superadmin', 1)
+            ->whereNull('company_id')
+            ->get();
+    }
+
     public function getModulesAttribute()
     {
         return user_modules();
@@ -793,7 +880,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     public function sticky(): HasMany
     {
-        return $this->hasMany(StickyNote::class, 'user_id')->orderBy('updated_at', 'desc');
+        return $this->hasMany(StickyNote::class, 'user_id')->orderByDesc('updated_at');
     }
 
     public function userChat(): HasMany
@@ -860,16 +947,14 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
     public function getUserOtherRoleAttribute()
     {
         $userRole = null;
-        $roles = cache()->remember(
+
+        $nonClientRoles = cache()->remember(
             'non-client-roles',
-            60 * 60 * 24,
-            function () {
-                return Role::where('name', '<>', 'client')
-                    ->orderBy('id', 'asc')->get();
-            }
+            now()->addDay(),
+            fn() => Role::where('name', '<>', 'client')->orderBy('id')->get()
         );
 
-        foreach ($roles as $role) {
+        foreach ($nonClientRoles as $role) {
             foreach ($this->role as $urole) {
                 if ($role->id == $urole->role_id) {
                     $userRole = $role->name;
@@ -889,36 +974,54 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
      */
     public function permission($permission)
     {
-        return Cache::rememberForever('permission-' . $permission . '-' . $this->id, function () use ($permission) {
-            $permissionType = UserPermission::join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
-                ->join('permission_types', 'user_permissions.permission_type_id', '=', 'permission_types.id')
-                ->select('permission_types.name')
-                ->where('permissions.name', $permission)
-                ->where('user_permissions.user_id', $this->id)
-                ->first();
+        $cacheKey = 'permission-' . $permission . '-' . $this->id;
 
-            return $permissionType ? $permissionType->name : false;
-        });
+        cache()->forget($cacheKey); // Clear the cache
+
+        if (cache()->has($cacheKey)) {
+            return cache($cacheKey);
+        }
+
+        $permissionType = UserPermission::join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->join('permission_types', 'user_permissions.permission_type_id', '=', 'permission_types.id')
+            ->select('permission_types.name')
+            ->where('permissions.name', $permission)
+            ->where('user_permissions.user_id', $this->id)
+            ->first();
+
+        $permissionType = $permissionType ? $permissionType->name : false;
+
+        cache([$cacheKey => $permissionType]);
+
+        return $permissionType;
 
     }
 
     public function permissionTypeId($permission)
     {
-        return Cache::rememberForever('permission-id-' . $permission . '-' . $this->id, function () use ($permission) {
+        $cacheKey = 'permission-id-' . $permission . '-' . $this->id;
 
-            $permissionType = UserPermission::join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
-                ->join('permission_types', 'user_permissions.permission_type_id', '=', 'permission_types.id')
-                ->select('permission_types.name', 'permission_types.id')
-                ->where('permissions.name', $permission)
-                ->where('user_permissions.user_id', $this->id)
-                ->first();
+        if (cache()->has($cacheKey)) {
+            return cache($cacheKey);
+        }
 
-            return $permissionType ? $permissionType->name : false;
-        });
+        $permissionType = UserPermission::join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->join('permission_types', 'user_permissions.permission_type_id', '=', 'permission_types.id')
+            ->select('permission_types.name', 'permission_types.id')
+            ->where('permissions.name', $permission)
+            ->where('user_permissions.user_id', $this->id)
+            ->first();
+
+        $permissionName = $permissionType ? $permissionType->name : false;
+
+        cache([$cacheKey => $permissionName]);
+
+        return $permissionName;
+
     }
 
     /**
-     * @return BelongsToMany
+     * @return \Yajra\DataTables\Html\Editor\Fields\BelongsToMany
      */
     public function permissionTypes(): BelongsToMany
     {
@@ -985,37 +1088,6 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         }
     }
 
-    public function generateTwoFactorCode()
-    {
-        $this->timestamps = false;
-        $this->two_factor_code = rand(100000, 999999);
-        $this->two_factor_expires_at = now()->addMinutes(10);
-        $this->save();
-    }
-
-    public function resetTwoFactorCode()
-    {
-        $this->timestamps = false;
-        $this->two_factor_code = null;
-        $this->two_factor_expires_at = null;
-        $this->save();
-    }
-
-    public function confirmTwoFactorAuth($code)
-    {
-        $codeIsValid = app(TwoFactorAuthenticationProvider::class)
-            ->verify(decrypt($this->two_factor_secret), $code);
-
-        if ($codeIsValid) {
-            $this->two_factor_confirmed = true;
-            $this->save();
-
-            return true;
-        }
-
-        return false;
-    }
-
     public function unreadMessages(): HasMany
     {
         return $this->hasMany(UserChat::class, 'from')->where('to', user()->id)->where('message_seen', 'no');
@@ -1033,15 +1105,15 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     public function userBadge()
     {
-        $itsYou = ' <span class="ml-2 badge badge-secondary pr-1">' . __('app.itsYou') . '</span>';
+        $itsYou = ' <span class="ml-1 badge badge-secondary pr-1">' . __('app.itsYou') . '</span>';
         /** @phpstan-ignore-next-line */
-        $salutation = ($this->salutation ? $this->salutation->label() . ' ' : '');
+        $name = $this->name_salutation;
 
         if (user() && user()->id == $this->id) {
-            return $salutation . $this->name . $itsYou;
+            return $name . $itsYou;
         }
 
-        return $salutation . $this->name;
+        return $name;
     }
 
     public function estimates(): HasMany
@@ -1064,7 +1136,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
     /**
      * Send the password reset notification.
      *
-     * @param  string  $token
+     * @param string $token
      * @return void
      */
     public function sendPasswordResetNotification($token)
@@ -1141,17 +1213,25 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
         }
 
-        if(!isRunningInConsoleOrSeeding() && user() && in_array('client', user_roles())) {
-            $clientEmployess = Project::where('client_id', user()->id)->join('project_members', 'project_members.project_id', '=', 'projects.id')
-            ->select('project_members.user_id')->get()->pluck('user_id');
+        if (!isRunningInConsoleOrSeeding() && user() && in_array('client', user_roles())) {
+            $clientEmployees = Project::where('client_id', user()->id)
+                ->join('project_members', 'project_members.project_id', '=', 'projects.id')
+                ->select('project_members.user_id')
+                ->get()
+                ->pluck('user_id');
 
-            $users->whereIn('users.id', $clientEmployess);
+            $users->whereIn('users.id', $clientEmployees);
         }
 
         $users->orderBy('users.name');
         $users->groupBy('users.id');
 
         return $users->get();
+    }
+
+    public function ticketReply(): BelongsToMany
+    {
+        return $this->belongsToMany(TicketReply::class, 'ticket_reply_users', 'user_id', 'ticket_reply_id');
     }
 
 }

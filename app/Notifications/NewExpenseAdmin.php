@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
 use App\Models\Expense;
-use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
@@ -44,11 +43,24 @@ class NewExpenseAdmin extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
-        if ($this->emailSetting->send_push == 'yes') {
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
             array_push($via, OneSignalChannel::class);
+        }
+
+        if ($this->expense->status == 'approved') {
+            $subject = __('email.newExpense.newSubject');
+        }
+        else {
+            $subject = __('email.newExpense.subject');
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, $subject, $this->expense->item_name);
         }
 
         return $via;
@@ -62,7 +74,7 @@ class NewExpenseAdmin extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('expenses.show', $this->expense->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
@@ -73,9 +85,9 @@ class NewExpenseAdmin extends BaseNotification
             $subject = __('email.newExpense.subject');
         }
 
-        $content = $subject . '<br>' . __('app.status') . ': ' . $this->expense->status . '<br>' . __('app.employee') . ': ' . $this->expense->user->name . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . currency_format($this->expense->price, $this->expense->currency->id);
+        $content = $subject . '<br>' . __('app.status') . ': ' . $this->expense->status . '<br>' . __('app.employee') . ': ' . $this->expense?->user?->name . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . currency_format($this->expense->price, $this->expense->currency->id);
 
-        return $build
+        $build
             ->subject($subject . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -84,6 +96,10 @@ class NewExpenseAdmin extends BaseNotification
                 'actionText' => __('email.newExpense.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**
@@ -106,24 +122,13 @@ class NewExpenseAdmin extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return SlackMessage
+     * @return \Illuminate\Notifications\Messages\SlackMessage
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
+        return $this->slackBuild($notifiable)
+            ->content(__('email.newExpense.subject') . ' - ' . $this->expense->item_name . ' - ' . currency_format($this->expense->price, $this->expense->currency->id) . "\n" . url('/login'));
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content(__('email.newExpense.subject') . ' - ' . $this->expense->item_name . ' - ' . currency_format($this->expense->price, $this->expense->currency->id) . "\n" . url('/login'));
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newExpense.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

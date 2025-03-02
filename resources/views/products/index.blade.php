@@ -94,8 +94,14 @@ $addOrderPermission = user()->permission('add_order');
                 @if ($addProductPermission == 'all' || $addProductPermission == 'added')
                     <x-forms.link-primary :link="route('products.create')" class="mr-3 openRightModal float-left"
                         icon="plus">
-                        @lang('app.addProduct')
+                        @lang('app.menu.addProducts')
                     </x-forms.link-primary>
+                @endif
+
+                @if ($addProductPermission == 'all' || $addProductPermission == 'added')
+                    <x-forms.link-secondary :link="route('products.import')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 d-none d-lg-block" icon="file-upload">
+                        @lang('app.importExcel')
+                    </x-forms.link-secondary>
                 @endif
             </div>
             <div id="emptyCartBox">
@@ -188,7 +194,7 @@ $addOrderPermission = user()->permission('add_order');
             data['unit_type_id'] = unitTypeID;
         });
         const showTable = () => {
-            window.LaravelDataTables["products-table"].draw(false);
+            window.LaravelDataTables["products-table"].draw(true);
         }
 
         $('#category_id, #sub_category, #unit_type_id').on('change keyup', function() {

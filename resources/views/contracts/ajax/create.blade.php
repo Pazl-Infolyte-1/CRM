@@ -2,13 +2,19 @@
     $manageContractTypePermission = user()->permission('manage_contract_type');
 @endphp
 
+@if (!in_array('clients', user_modules()))
+    <x-alert class="mb-3" type="danger" icon="exclamation-circle"><span>@lang('messages.enableClientModule')</span>
+        <x-forms.link-secondary icon="arrow-left" :link="route('contracts.index')">@lang('app.back')</x-forms.link-secondary>
+    </x-alert>
+@else
+
 <div class="row">
     <div class="col-sm-12">
 
         <x-form id="save-contract-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.menu.contract') @lang('app.details')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    @lang('app.contractDetails')</h4>
                 <input type="hidden" name="template_id" value="{{ $contractTemplate->id ?? '' }}">
 
                 <div class="row p-20">
@@ -147,7 +153,7 @@
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-top-grey">
                     @lang('modules.client.clientDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-6 col-lg-4 my-3" id="client_list_ids">
@@ -227,7 +233,7 @@
     </div>
 </div>
 
-
+@endif
 <script>
     $(document).ready(function () {
         const dp1 = datepicker('#start_date', {

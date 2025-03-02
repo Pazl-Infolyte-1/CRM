@@ -19,7 +19,7 @@ class PusherSettingsController extends AccountBaseController
         $this->pageTitle = 'app.menu.pusherSettings';
         $this->pageIcon = 'icon-settings';
         $this->middleware(function ($request, $next) {
-            abort_403(user()->permission('manage_notification_setting') !== 'all');
+            abort_403(user()->permission('manage_notification_setting') !== 'all' && (!user()->is_superadmin));
 
             return $next($request);
         });
@@ -38,7 +38,7 @@ class PusherSettingsController extends AccountBaseController
                     'useTLS' => $request->force_tls
                 ]
             );
-    
+
             try {
                 $checkPusher->trigger('test-pusher-channel', 'test-pusher-message', ['message' => 'done']);
             } catch(\Exception $e) {

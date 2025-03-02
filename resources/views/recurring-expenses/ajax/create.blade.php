@@ -22,8 +22,8 @@ foreach ($projects as $project) {
     <div class="col-sm-12">
         <x-form id="save-expense-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.expense') @lang('app.details')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    @lang('app.expenseDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-6 col-lg-4">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.expenses.itemName')"
@@ -36,8 +36,8 @@ foreach ($projects as $project) {
                         <x-forms.select :fieldLabel="__('modules.invoices.currency')" fieldName="currency"
                             fieldRequired="true" fieldId="currency">
                             @foreach ($currencies as $currency)
-                                <option @if ($currency->id == company()->currency_id) selected @endif value="{{ $currency->id }}" data-currency-name="{{$currency->currency_name}}">
-                                    {{ $currency->currency_name }} - ({{ $currency->currency_symbol }})
+                                <option @if ($currency->id == company()->currency_id) selected @endif value="{{ $currency->id }}" data-currency-name="{{$currency->currency_code}}">
+                                    {{ $currency->currency_code }} ({{ $currency->currency_symbol }})
                                 </option>
                             @endforeach
                         </x-forms.select>
@@ -51,8 +51,7 @@ foreach ($projects as $project) {
 
                     @if (user()->permission('add_expenses') == 'all')
                         <div class="col-md-6 col-lg-4">
-                            <x-forms.label class="mt-3" fieldId="user_id" :fieldLabel="__('app.employee')"
-                                fieldRequired="true">
+                            <x-forms.label class="mt-3" fieldId="user_id" :fieldLabel="__('app.employee')">
                             </x-forms.label>
                             <x-forms.input-group>
                                 <select class="form-control select-picker" name="user_id" id="user_id"
@@ -173,7 +172,7 @@ foreach ($projects as $project) {
                                         <input type="text" id="start_date" name="issue_date"
                                             class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
                                             placeholder="@lang('placeholders.date')"
-                                            value="{{ Carbon\Carbon::now(company()->timezone)->format(company()->date_format) }}">
+                                            value="{{ now(company()->timezone)->format(company()->date_format) }}">
                                     </div>
                                     <small class="form-text text-muted">@lang('modules.recurringInvoice.invoiceDate')</small>
                                 </div>
@@ -187,13 +186,14 @@ foreach ($projects as $project) {
                     </div>
 
                     <div class="col-md-4 mt-4 information-box">
-                        <p id="plan">@lang('modules.expensesRecurring.expenseGenerated') @lang('app.daily')</p>
-                        <p id="current_date">@lang('modules.expensesRecurring.currentExpenseDate') {{Carbon\Carbon::now()->translatedFormat(company()->date_format)}}</p>
-                        <p id="next_date">@lang('modules.expensesRecurring.nextExpenseDate') {{Carbon\Carbon::now()->addDay()->translatedFormat(company()->date_format)}}</p>
+                        <p id="plan">@lang('app.expenseGeneratedDaily')</p>
+                        <p id="current_date">@lang('modules.expensesRecurring.currentExpenseDate') {{now()->translatedFormat(company()->date_format)}}</p>
+                        <p id="next_date">@lang('modules.expensesRecurring.nextExpenseDate') {{now()->addDay()->translatedFormat(company()->date_format)}}</p>
                         <p>@lang('modules.recurringInvoice.soOn')</p>
                         <span id="billing"></span>
                     </div>
                 </div>
+                <x-forms.custom-field :fields="$fields"></x-forms.custom-field>
 
                 <x-form-actions>
                     <x-forms.button-primary id="save-expense-form" class="mr-3" icon="check">@lang('app.save')
@@ -281,14 +281,6 @@ foreach ($projects as $project) {
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     $('body').on('change keyup', '#rotation, #billing_cycle', function () {
         var billingCycle = $('#billing_cycle').val();

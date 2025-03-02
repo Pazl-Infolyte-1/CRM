@@ -41,7 +41,7 @@ class SearchController extends AccountBaseController
         case 'estimate':
             return Reply::redirect(route('estimates.index') . '?search_keyword=' . $request->search_keyword);
         case 'lead':
-            return Reply::redirect(route('leads.index') . '?search_keyword=' . $request->search_keyword);
+            return Reply::redirect(route('deals.index') . '?search_keyword=' . $request->search_keyword);
         default:
             // Code...
             break;

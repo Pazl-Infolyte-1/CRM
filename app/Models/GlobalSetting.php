@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Traits\HasMaskImage;
 use Carbon\Carbon;
+use App\Models\SuperAdmin\GlobalCurrency;
+use GuzzleHttp\Client;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -66,6 +68,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read mixed $favicon_url
  * @property-read mixed $icon
  * @property-read mixed $light_logo_url
+ * @property-read mixed $masked_default_logo
  * @property-read mixed $login_background_url
  * @property-read mixed $logo_url
  * @property-read mixed $moment_date_format
@@ -179,13 +182,53 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereAllowMaxNoOfFiles($value)
  * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereSignUpTerms($value)
  * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereTermsLink($value)
+ * @property string|null $purchased_on
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting wherePurchasedOn($value)
  * @mixin \Eloquent
+ * @property string $company_email
+ * @property string|null $company_phone
+ * @property int $front_design
+ * @property int $email_verification
+ * @property string|null $logo_front
+ * @property int $login_ui
+ * @property string|null $auth_css
+ * @property string|null $auth_css_theme_two
+ * @property string|null $new_company_locale
+ * @property int $frontend_disable
+ * @property string $setup_homepage
+ * @property string|null $custom_homepage_url
+ * @property string|null $expired_message
+ * @property int $enable_register
+ * @property int $registration_open
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereAuthCss($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereAuthCssThemeTwo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereCustomHomepageUrl($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereEmailVerification($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereEnableRegister($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereExpiredMessage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereFrontDesign($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereFrontendDisable($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereLoginUi($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereLogoFront($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereNewCompanyLocale($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereRegistrationOpen($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereSetupHomepage($value)
  */
 class GlobalSetting extends BaseModel
 {
+
     use HasMaskImage;
 
     const CHECKLIST_TOTAL = 6;
+    const SIGNED_ROUTE_EXPIRY = 7; // Days
+
+    const APP_LOGO_PATH = 'app-logo';
+
+    protected $casts = [
+        'google_map_key' => 'encrypted',
+        'google_client_secret' => 'encrypted'
+    ];
 
     public $dates = ['last_cron_run'];
 
@@ -340,7 +383,8 @@ class GlobalSetting extends BaseModel
         'login_background_url',
         'show_public_message',
         'moment_date_format',
-        'favicon_url'
+        'favicon_url',
+        'logo_front_url'
     ];
 
     const DATE_FORMATS = [
@@ -358,10 +402,6 @@ class GlobalSetting extends BaseModel
         'd-M-Y' => 'DD-MMM-YYYY',
         'd M Y' => 'DD MMM YYYY',
         'd F, Y' => 'DD MMMM, YYYY',
-        'D/M/Y' => 'ddd/MMM/YYYY',
-        'D.M.Y' => 'ddd.MMM.YYYY',
-        'D-M-Y' => 'ddd-MMM-YYYY',
-        'D M Y' => 'ddd MMM YYYY',
         'd D M Y' => 'DD ddd MMM YYYY',
         'D d M Y' => 'ddd DD MMM YYYY',
         'dS M Y' => 'Do MMM YYYY',
@@ -371,7 +411,12 @@ class GlobalSetting extends BaseModel
 
     public function currency(): BelongsTo
     {
-        return $this->belongsTo(Currency::class, 'currency_id');
+        // WORKSUITE SAAS
+        return $this->belongsTo(GlobalCurrency::class, 'currency_id');
+
+        if (isWorksuite()) {
+            return $this->belongsTo(Currency::class, 'currency_id');
+        }
     }
 
     public function getLogoUrlAttribute()
@@ -524,6 +569,24 @@ class GlobalSetting extends BaseModel
 
     }
 
+    public function maskedLogoFrontUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->logo_front)) {
+                    if (is_null($this->logo)) {
+                        return asset('front/img/worksuite-logo.png');
+                    }
+
+                    return $this->logo_url;
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo_front);
+            },
+        );
+
+    }
+
     public function getShowPublicMessageAttribute()
     {
         if (str_contains(request()->url(), request()->getHost() . '/public')) {
@@ -546,6 +609,19 @@ class GlobalSetting extends BaseModel
         }
 
         return asset_url_local_s3('favicon/' . $this->favicon);
+    }
+
+    public function getLogoFrontUrlAttribute()
+    {
+        if (is_null($this->logo_front)) {
+            if (is_null($this->logo)) {
+                return asset('front/img/worksuite-logo.png');
+            }
+
+            return $this->logo_url;
+        }
+
+        return asset_url_local_s3('app-logo/' . $this->logo_front);
     }
 
     public static function checkListCompleted()
@@ -588,11 +664,61 @@ class GlobalSetting extends BaseModel
         $days = [];
 
         for ($dayNumber = 0; $dayNumber < Carbon::DAYS_PER_WEEK; $dayNumber++) {
-            $dayName = Carbon::now()->startOfWeek(0)->addDays($dayNumber)->translatedFormat($full);
+            $dayName = now()->startOfWeek(0)->addDays($dayNumber)->translatedFormat($full);
             $days[] = $dayName;
         }
 
         return $days;
+    }
+
+    public static function validateGoogleRecaptcha($googleRecaptchaResponse)
+    {
+        $secretKey = global_setting()->google_recaptcha_v2_status == 'active' ? global_setting()->google_recaptcha_v2_secret_key : global_setting()->google_recaptcha_v3_secret_key;
+
+        $client = new Client();
+        $response = $client->post('https://www.google.com/recaptcha/api/siteverify', [
+            'form_params' => [
+                'secret' => $secretKey,
+                'response' => $googleRecaptchaResponse,
+                'remoteip' => $_SERVER['REMOTE_ADDR'],
+            ],
+        ]);
+
+        $body = json_decode($response->getBody());
+
+        return $body->success;
+    }
+
+    public static function validateAdmin()
+    {
+        // WORKSUITESAAS
+        if (isWorksuiteSaas()) {
+            abort_403(!user()->is_superadmin);
+        }
+        else {
+            abort_403(!in_array('admin', user_roles()));
+        }
+
+    }
+
+    public static function validateSuperAdmin($permission = null)
+    {
+
+        // WORKSUITESAAS
+        if (isWorksuiteSaas()) {
+
+            if (user()->is_superadmin) {
+                return false;
+            }
+
+            if (!is_null($permission)) {
+                return user()->permission($permission) !== 'all';
+            }
+
+            return true;
+        }
+
+        return !in_array('admin', user_roles());
     }
 
 }

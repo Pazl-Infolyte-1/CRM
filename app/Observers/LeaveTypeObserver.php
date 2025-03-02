@@ -6,6 +6,7 @@ use App\Models\LeaveType;
 use Illuminate\Support\Carbon;
 use App\Models\EmployeeDetails;
 use App\Models\EmployeeLeaveQuota;
+use Illuminate\Support\Facades\Artisan;
 
 class LeaveTypeObserver
 {
@@ -22,26 +23,53 @@ class LeaveTypeObserver
         if (!isRunningInConsoleOrSeeding()) {
             $employees = EmployeeDetails::select('id', 'user_id', 'joining_date')->get();
             $settings = company();
-            $leaves = $leaveType->no_of_leaves;
 
             foreach ($employees as $key => $employee) {
+                Artisan::call('app:recalculate-leaves-quotas ' . $settings->id . ' ' . $employee->user_id . ' ' .$leaveType->id);
+            }
+        }
+    }
 
-                if ($settings && $settings->leaves_start_from == 'year_start')
-                {
-                    $joiningDate = $employee->joining_date->copy()->addDay()->startOfMonth();
-                    $startingDate = Carbon::create($joiningDate->year + 1, $settings->year_starts_from)->startOfMonth();
-                    $differenceMonth = $joiningDate->diffInMonths($startingDate);
-                    $countOfMonthsAllowed = $differenceMonth > 12 ? $differenceMonth - 12 : $differenceMonth;
-                    $leaves = floor($leaveType->no_of_leaves / 12 * $countOfMonthsAllowed);
+    public function updated(LeaveType $leaveType)
+    {
+      
+        if (
+                request()->has('restore') && request()->restore == 'restore' ||
+                 ((session()->has('old_leaves') && session('old_leaves') == $leaveType->no_of_leaves) && (session()->has('old_leavetype') && session('old_leavetype') == $leaveType->leavetype))
+            ) {
+
+            if (session()->has('old_leaves')) {
+                session()->forget('old_leaves');
+            }
+
+            return true;
+        }
+        
+        if (!isRunningInConsoleOrSeeding()) {
+
+            if (!$leaveType->isDirty('over_utilization')) {
+           
+                $employeeLeaveQuotaUserIds = EmployeeLeaveQuota::where('leave_type_id', $leaveType->id)->where('leave_type_impact', 1)
+                    ->pluck('user_id')
+                    ->toArray();
+                   
+                $employees = EmployeeDetails::select('id', 'user_id', 'joining_date')->whereNotIn('user_id', $employeeLeaveQuotaUserIds)->get();
+    
+                $settings = company();
+    
+                foreach ($employees as $employee) {
+                    
+                    Artisan::call('app:recalculate-leaves-quotas ' . $settings->id . ' ' . $employee->user_id . ' ' .$leaveType->id);
+
                 }
 
-                EmployeeLeaveQuota::create(
-                    [
-                        'user_id' => $employee->user_id,
-                        'leave_type_id' => $leaveType->id,
-                        'no_of_leaves' => $leaves,
-                    ]
-                );
+                $keysToForget = ['old_leaves', 'old_leavetype'];
+
+                foreach ($keysToForget as $key) {
+                    if (session()->has($key)) {
+                        session()->forget($key);
+                    }
+                }
             }
         }
     }

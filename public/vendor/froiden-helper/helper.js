@@ -329,7 +329,7 @@
                         var helpBlockContainer = $(grp);
 
                         helpBlockContainer.append(
-                            '<div class="invalid-feedback">' +
+                            '<div class="d-block invalid-feedback">' +
                             response.errors[keys[i]] +
                             "</div>"
                         );
@@ -376,7 +376,7 @@
             var button = $(opt.container).find(selector);
 
             var text =
-                '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>' + (document.loading ? document.loading : 'Loading...');
+                '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ' + (document.loading ? document.loading : ' Loading...');
 
             if (button.width() < 20) {
                 text = "...";

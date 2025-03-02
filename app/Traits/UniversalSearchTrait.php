@@ -12,7 +12,7 @@ trait UniversalSearchTrait
      * @param string $title
      * @param string $route
      * @param string $type
-     * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
+     * @throws RelatedResourceNotFoundException
      */
     public function logSearchEntry($searchableId, $title, $route, $type, $company_id = null)
     {

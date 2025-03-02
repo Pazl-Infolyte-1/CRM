@@ -63,14 +63,11 @@ class ClientNoteController extends AccountBaseController
 
         }
 
+        $this->view = 'clients.notes.create';
 
         if (request()->ajax()) {
-            $html = view('clients.notes.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'clients.notes.create';
 
         return view('clients.create', $this->data);
     }
@@ -105,13 +102,11 @@ class ClientNoteController extends AccountBaseController
 
         $this->pageTitle = __('app.client') . ' ' . __('app.note');
 
-        if (request()->ajax()) {
-            $html = view('clients.notes.show', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'clients.notes.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('clients.create', $this->data);
 
@@ -197,13 +192,12 @@ class ClientNoteController extends AccountBaseController
         $this->noteMembers = $this->note->members->pluck('user_id')->toArray();
         $this->clientId = $this->note->client_id;
 
-        if (request()->ajax()) {
-            $html = view('clients.notes.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
 
         $this->view = 'clients.notes.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('clients.create', $this->data);
 

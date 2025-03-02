@@ -6,8 +6,8 @@
         <div class="row">
             <div class="col-md-12">
                 <a class="f-15 f-w-500" href="javascript:;" id="add-sub-task"><i
-                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                    @lang('modules.tasks.subTask')</a>
+                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.menu.addSubTask')
+                    </a>
             </div>
         </div>
 
@@ -23,7 +23,7 @@
                         <x-forms.button-cancel id="cancel-subtask" class="border-0 mr-3">@lang('app.cancel')
                         </x-forms.button-cancel>
                         <x-forms.button-primary id="save-subtask" icon="location-arrow">@lang('app.submit')
-                            </x-button-primary>
+                            </x-forms.button-primary>
                     </div>
                 </div>
             </div>

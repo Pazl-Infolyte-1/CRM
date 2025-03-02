@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\App;
 use App\Models\EstimateTemplateItem;
 use App\Models\EstimateTemplateItemImage;
 use App\DataTables\EstimateTemplateDataTable;
-use App\Http\Controllers\AccountBaseController;
 use App\Http\Requests\EstimateTemplate\StoreRequest;
 
 class EstimateTemplateController extends AccountBaseController
@@ -59,12 +58,12 @@ class EstimateTemplateController extends AccountBaseController
         $this->products = Product::all();
         $this->categories = ProductCategory::all();
 
+        $this->view = 'estimates-templates.ajax.create';
+
         if (request()->ajax()) {
-            $html = view('estimates-templates.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'estimates-templates.ajax.create';
         return view('estimates.create', $this->data);
     }
 
@@ -205,21 +204,29 @@ class EstimateTemplateController extends AccountBaseController
     public function edit($id)
     {
         $this->pageTitle = __('modules.estimates.updateEstimateTemplate');
+
+        $this->estimate = EstimateTemplate::with('items', 'clients')->findOrFail($id);
+        $this->editPermission = user()->permission('edit_estimates');
+
+        abort_403(!(
+            $this->editPermission == 'all'
+            || ($this->editPermission == 'added' && $this->estimate->added_by == user()->id)
+            || ($this->editPermission == 'owned' && $this->estimate->added_by != user()->id) || $this->editPermission == 'both'
+        ));
+
         $this->taxes = Tax::all();
         $this->currencies = Currency::all();
         $this->units = UnitType::all();
-        $this->estimate = EstimateTemplate::with('items', 'clients')->findOrFail($id);
         $this->products = Product::all();
         $this->categories = ProductCategory::all();
         $this->invoiceSetting = invoice_setting();
 
+        $this->view = 'estimates-templates.ajax.edit';
+
         if (request()->ajax()) {
-            $html = view('estimates-templates.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-
-        $this->view = 'estimates-templates.ajax.edit';
         return view('estimates-templates.create', $this->data);
     }
 
@@ -287,7 +294,17 @@ class EstimateTemplateController extends AccountBaseController
      */
     public function destroy($id)
     {
-        EstimateTemplate::findOrFail($id)->delete();
+        $this->deletePermission = user()->permission('delete_estimates');
+        $estimate = EstimateTemplate::findOrFail($id);
+
+        abort_403(!(
+            $this->deletePermission == 'all'
+            || ($this->deletePermission == 'added' && $estimate->added_by == user()->id)
+            || ($this->deletePermission == 'owned' && $estimate->added_by != user()->id) || $this->deletePermission == 'both'
+        ));
+
+        EstimateTemplate::destroy($id);
+
         return Reply::success(__('messages.estimateTemplateDeleted'));
     }
 
@@ -308,8 +325,8 @@ class EstimateTemplateController extends AccountBaseController
         $this->invoiceSetting = invoice_setting();
         $this->estimateTemplate = EstimateTemplate::with('items', 'clients', 'currency', 'units')->findOrFail($id);
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         if ($this->estimateTemplate->discount > 0) {
             if ($this->estimateTemplate->discount_type == 'percent') {
@@ -367,9 +384,6 @@ class EstimateTemplateController extends AccountBaseController
 
         $pdf->loadView('estimates-templates.pdf.' . $this->invoiceSetting->template, $this->data);
 
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->get_canvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10, array(0, 0, 0));
         $filename = __('modules.estimates.estimateTemplate') . '-' . $this->estimateTemplate->id;
 
         return [
@@ -385,14 +399,20 @@ class EstimateTemplateController extends AccountBaseController
 
         $exchangeRate = Currency::findOrFail($request->currencyId);
 
+        if($exchangeRate->exchange_rate == $request->exchangeRate){
+            $exRate = $exchangeRate->exchange_rate;
+        }else{
+            $exRate = floatval($request->exchangeRate ?: 1);
+        }
+
         if (!is_null($exchangeRate) && !is_null($exchangeRate->exchange_rate)) {
             if ($this->items->total_amount != '') {
                 /** @phpstan-ignore-next-line */
-                $this->items->price = floor($this->items->total_amount * $exchangeRate->exchange_rate);
+                $this->items->price = floor($this->items->total_amount / $exRate);
             }
             else {
 
-                $this->items->price = floatval($this->items->price) * floatval($exchangeRate->exchange_rate);
+                $this->items->price = floatval($this->items->price) / floatval($exRate);
             }
         }
         else {

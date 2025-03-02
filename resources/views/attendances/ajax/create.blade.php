@@ -5,34 +5,54 @@
     <div class="col-sm-12">
         <x-form id="save-attendance-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.menu.attendance') @lang('app.details')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                        @lang('app.attendanceDetails')</h4>
                 <div class="row p-20">
 
                     <div class="col-lg-3 col-md-6">
-                        <x-forms.select fieldId="department_id" :fieldLabel="__('app.department')"
-                            fieldName="department_id" search="true">
-                            <option value="0">--</option>
-                            @foreach ($departments as $team)
-                                <option value="{{ $team->id }}">{{ $team->team_name }}</option>
-                            @endforeach
-                        </x-forms.select>
+                        @if (isset($defaultAssign))
+                            <div class="form-group">
+                                <x-forms.label class="mt-3" fieldId=department_id :fieldLabel="__('app.department')" fieldRequired="true">
+                                </x-forms.label>
+                                <input type="hidden" name="department" id="department_id" value="{{ $defaultAssign->employeeDetail->department_id }}">
+                                <input type="text" value="{{ $defaultAssign->employeeDetail->department->team_name }}"
+                                    class="form-control height-35 f-15 readonly-background" readonly>
+                            </div>
+                        @else
+                            <x-forms.select fieldId="department_id" :fieldLabel="__('app.department')"
+                                fieldName="department_id" search="true">
+                                <option value="0">--</option>
+                                @foreach ($departments as $team)
+                                    <option value="{{ $team->id }}">{{ $team->team_name }}</option>
+                                @endforeach
+                            </x-forms.select>
+                        @endif
                     </div>
 
                     <div class="col-md-9">
-                        <div class="form-group my-3">
-                            <x-forms.label fieldId="selectEmployee" :fieldLabel="__('app.menu.employees')"
+                        @if (isset($defaultAssign))
+                            <div class="form-group">
+                                <x-forms.label class="mt-3" fieldId=selectEmployee :fieldLabel="__('app.name')" fieldRequired="true">
+                                </x-forms.label>
+                                <input type="hidden" name="user_id[]" id="selectEmployee" value="{{ $defaultAssign->id }}">
+                                <input type="text" value="{{ $defaultAssign->name }}"
+                                    class="form-control height-35 f-15 readonly-background" readonly>
+                            </div>
+                        @else
+                            <div class="form-group my-3">
+                                <x-forms.label fieldId="selectEmployee" :fieldLabel="__('app.menu.employees')"
                                 fieldRequired="true">
-                            </x-forms.label>
-                            <x-forms.input-group>
-                                <select class="form-control multiple-users" multiple name="user_id[]"
-                                    id="selectEmployee" data-live-search="true" data-size="8">
-                                    @foreach ($employees as $item)
-                                        <x-user-option :user="$item" :pill="true"/>
-                                    @endforeach
-                                </select>
-                            </x-forms.input-group>
-                        </div>
+                                </x-forms.label>
+                                <x-forms.input-group>
+                                    <select class="form-control multiple-users" multiple name="user_id[]"
+                                        id="selectEmployee" data-live-search="true" data-size="8">
+                                        @foreach ($employees as $item)
+                                            <x-user-option :user="$item" :pill="true"/>
+                                        @endforeach
+                                    </select>
+                                </x-forms.input-group>
+                            </div>
+                        @endif
                     </div>
 
                 </div>
@@ -135,6 +155,20 @@
                         </div>
                     </div>
 
+                    <div class="col-lg-4 col-md-6 col-xl-3" id="half_day_section" style="display: none;">
+                        <div class="form-group my-3">
+                            <x-forms.label fieldId="duration" :fieldLabel="__('modules.leaves.selectDuration')">
+                            </x-forms.label>
+                            <div class="d-flex">
+                                <x-forms.radio fieldId="first_half_day_yes" :fieldLabel="__('modules.leaves.firstHalf')" fieldName="half_day_duration"
+                                    fieldValue="first_half" checked="true">
+                                </x-forms.radio>
+                                <x-forms.radio fieldId="first_half_day_no" :fieldLabel="__('modules.leaves.secondHalf')" fieldValue="second_half"
+                                    fieldName="half_day_duration"></x-forms.radio>
+                            </div>
+                        </div>
+                    </div>
+
 
                 </div>
 
@@ -187,11 +221,17 @@
             }
         });
 
+        var dateFormat = "{{ $dateformat }}";
+
         $('#multi_date').daterangepicker({
             linkedCalendars: false,
             multidate: true,
             todayHighlight: true,
-            format: 'yyyy-mm-d'
+            // format: 'yyyy-mm-d'
+            locale: {
+                format: dateFormat,
+                separator: ' To ',
+            },
         });
 
         $('input[type=radio][name=mark_attendance_by]').change(function() {
@@ -200,7 +240,11 @@
                     linkedCalendars: false,
                     multidate: true,
                     todayHighlight: true,
-                    format: 'yyyy-mm-d',
+                    // format: 'yyyy-mm-d',
+                    locale: {
+                        format: dateFormat,
+                        separator: ' To ',
+                    },
                     maxDate: new Date(),
                 });
             }
@@ -234,14 +278,15 @@
             });
         });
 
-        $('#save-attendance-form').click(function() {
+        const saveAttendanceForm = () => {
+
             var dateRange = $('#multi_date').data('daterangepicker');
             startDate = dateRange.startDate.format('{{ company()->moment_date_format }}');
             endDate = dateRange.endDate.format('{{ company()->moment_date_format }}');
             var multiDate = [];
             multiDate = [startDate, endDate];
             $('#multi_date').val(multiDate);
-            const url = "{{ route('attendances.bulk_mark') }}";
+            const url = "{{ route('attendances.bulk_mark')}}";
 
             $.easyAjax({
                 url: url,
@@ -251,6 +296,106 @@
                 blockUI: true,
                 buttonSelector: "#save-attendance-form",
                 data: $('#save-attendance-data-form').serialize()
+            });
+        };
+
+        $('#save-attendance-form').click(function()
+        {
+            var dateRange = $('#multi_date').data('daterangepicker');
+            startDate = dateRange.startDate.format('{{ company()->moment_date_format }}');
+            endDate = dateRange.endDate.format('{{ company()->moment_date_format }}');
+            var multiDate = [];
+            multiDate = [startDate, endDate];
+            $('#multi_date').val(multiDate);
+            var url = "{{ route('attendances.check_half_day') }}?type=bulkMark";
+
+            $.easyAjax({
+                url: url,
+                container: '#save-attendance-data-form',
+                type: "POST",
+                disableButton: true,
+                blockUI: true,
+                buttonSelector: "#save-attendance-form",
+                data: $('#save-attendance-data-form').serialize(),
+                success: function(response) {
+                        if ((response.halfDayExist == true && response.requestedHalfDay == 'no') &&
+                        response.halfDayDurEnd == 'no' &&
+                        (response.fullDayExist == false && response.requestedFullDay == 'yes')) {
+                            Swal.fire({
+                                title: "@lang('messages.sweetAlertTitle')",
+                                text: "@lang('messages.halfDayAlreadyApplied')",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                focusConfirm: false,
+                                confirmButtonText: "@lang('messages.rejectIt')",
+                                cancelButtonText: "@lang('app.cancel')",
+                                customClass: {
+                                    confirmButton: 'btn btn-primary mr-3',
+                                    cancelButton: 'btn btn-secondary'
+                                },
+                                showClass: {
+                                    popup: 'swal2-noanimation',
+                                    backdrop: 'swal2-noanimation'
+                                },
+                                buttonsStyling: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    saveAttendanceForm();
+                                }
+                            });
+
+                        } else if ((response.fullDayExist == true && response.requestedFullDay == 'no') &&
+                        (response.halfDayExist == false && response.requestedHalfDay == 'yes')) {
+                            Swal.fire({
+                                title: "@lang('messages.sweetAlertTitle')",
+                                text: "@lang('messages.fullDayAlreadyApplied')",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                focusConfirm: false,
+                                confirmButtonText: "@lang('messages.rejectIt')",
+                                cancelButtonText: "@lang('app.cancel')",
+                                customClass: {
+                                    confirmButton: 'btn btn-primary mr-3',
+                                    cancelButton: 'btn btn-secondary'
+                                },
+                                showClass: {
+                                    popup: 'swal2-noanimation',
+                                    backdrop: 'swal2-noanimation'
+                                },
+                                buttonsStyling: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    saveAttendanceForm();
+                                }
+                            });
+                        } else if((response.halfDayExist == true && response.requestedHalfDay == 'no') &&
+                            (response.fullDayExist == true && response.requestedFullDay == 'no')){
+                                Swal.fire({
+                                title: "@lang('messages.sweetAlertTitle')",
+                                text: "@lang('messages.leaveAlreadyApplied')",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                focusConfirm: false,
+                                confirmButtonText: "@lang('messages.rejectIt')",
+                                cancelButtonText: "@lang('app.cancel')",
+                                customClass: {
+                                    confirmButton: 'btn btn-primary mr-3',
+                                    cancelButton: 'btn btn-secondary'
+                                },
+                                showClass: {
+                                    popup: 'swal2-noanimation',
+                                    backdrop: 'swal2-noanimation'
+                                },
+                                buttonsStyling: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    saveAttendanceForm();
+                                }
+                            });
+                        }else {
+                            saveAttendanceForm();
+                        }
+                }
             });
         });
 
@@ -262,5 +407,20 @@
         })
 
         init(RIGHT_MODAL);
+
+
+        function toggleHalfDaySection() {
+
+            if ($('input[name="half_day"]:checked').val() === 'yes') {
+                $('#half_day_section').show();
+            } else {
+                $('#half_day_section').hide();
+            }
+        }
+
+        $('input[name="half_day"]').change(toggleHalfDaySection);
+
+
+        toggleHalfDaySection();
     });
 </script>

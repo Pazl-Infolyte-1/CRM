@@ -5,7 +5,7 @@
         <x-form id="save-task-data-form">
             <input type="hidden" name="template_id" value="{{ $template->id }}" />
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.tasks.taskInfo')</h4>
                 <div class="row p-20">
                     <div class="col-lg-6 col-md-6">
@@ -71,6 +71,32 @@
                             <textarea name="description" id="description-text" class="d-none"></textarea>
                         </div>
                     </div>
+
+                    <div class="col-lg-6 col-md-6">
+                        <x-forms.label fieldId="task_labels" :fieldLabel="__('app.label')">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="select-picker form-control" multiple name="task_labels[]"
+                                    id="task_labels" data-live-search="true" data-size="8">
+                                @foreach ($labels as $label)
+                                    <option
+                                        data-content="<span class='badge badge-secondary' style='background-color: {{ $label->label_color }}'>{{ $label->label_name }}</span>"
+                                        value="{{ $label->id }}">
+                                        {{ $label->label_name }}</option>
+                                @endforeach
+                            </select>
+
+                            @if (user()->permission('task_labels') == 'all')
+                                <x-slot name="append">
+                                    <button id="createTaskLabel" type="button"
+                                            class="btn btn-outline-secondary border-grey"
+                                            data-toggle="tooltip"
+                                            data-original-title="{{ __('modules.taskLabel.addLabel') }}">@lang('app.add')</button>
+                                </x-slot>
+                            @endif
+                        </x-forms.input-group>
+                    </div>
+
                 </div>
 
 
@@ -122,6 +148,13 @@
                     window.location.href = response.redirectUrl;
                 }
             });
+        });
+
+        $('#createTaskLabel').click(function () {
+            var projectId = $('#project_id').val();
+            const url = "{{ route('task-label.create') }}";
+            $(MODAL_XL + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_XL, url);
         });
 
         $('#create_task_category').click(function() {

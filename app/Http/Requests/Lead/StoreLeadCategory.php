@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Lead;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLeadCategory extends CoreRequest
 {
@@ -26,7 +25,7 @@ class StoreLeadCategory extends CoreRequest
     public function rules()
     {
         return [
-            'category_name' => 'required'
+            'category_name' => 'required|unique:lead_category'
         ];
     }
 

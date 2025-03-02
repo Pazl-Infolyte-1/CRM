@@ -11,18 +11,18 @@
 <div class="row">
     <div class="col-sm-12">
         <x-form id="save-project-data-form">
-            <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.project') @lang('app.details')</h4>
+            <div class="bg-white rounded add-client">
+                <h4 class="p-20 mb-0 f-21 font-weight-normal  border-bottom-grey">
+                    @lang('app.projectDetails')</h4>
                 <input type="hidden" name="template_id" value="{{ $projectTemplate->id ?? '' }}">
-                <div class="row p-20">
-                    <div class="col-lg-6 col-md-6">
+                <div class="p-20 row">
+                    <div class="col-lg-4 col-md-4">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.taskShortCode')"
-                                      fieldName="project_code" fieldRequired="true" fieldId="project_code"
+                                      fieldName="project_code" fieldRequired="false" fieldId="project_code"
                                       :fieldPlaceholder="__('placeholders.writeshortcode')" :fieldValue="$project ? $project->project_short_code : ''"/>
                     </div>
 
-                    <div class="col-lg-6 col-md-6">
+                    <div class="col-lg-8 col-md-8">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.projects.projectName')"
                                       fieldName="project_name" fieldRequired="true" fieldId="project_name"
                                       :fieldPlaceholder="__('placeholders.project')"
@@ -44,7 +44,7 @@
 
                     <div class="col-md-6 col-lg-4">
                         <div class="form-group">
-                            <div class="d-flex mt-5">
+                            <div class="mt-5 d-flex">
                                 <x-forms.checkbox fieldId="without_deadline"
                                 :checked="($project && $project->deadline == null) ? true : false" :fieldLabel="__('modules.projects.withoutDeadline')"  fieldName="without_deadline"/>
                             </div>
@@ -79,42 +79,40 @@
                         </x-forms.input-group>
                     </div>
 
-                    @foreach ($teams as $team)
-                        {{-- @dump( $project->team_id === $team->id) --}}
-                    @endforeach
                     @if (!in_array('client', user_roles()))
                         <div class="col-md-4">
                             <x-forms.label class="my-3" fieldId="department" :fieldLabel="__('app.department')">
                             </x-forms.label>
                             <x-forms.input-group>
-                                <select class="form-control select-picker" name="team_id" id="employee_department"
+                                <select class="form-control multiple-users" multiple name="team_id[]" id="employee_department"
                                         data-live-search="true">
-                                    <option value="">--</option>
                                     @foreach ($teams as $team)
-                                        <option @if ($project && $project->team_id === $team->id) selected @endif value="{{ $team->id }}">{{ $team->team_name }}</option>
+                                        <option
+                                        data-content="<span class='p-2 border badge badge-pill badge-light'>{{ $team->team_name }}</span>"
+                                        @if ($project && $project->team_id == $team->id) selected @endif value="{{ $team->id }}">{{ $team->team_name }}</option>
                                     @endforeach
                                 </select>
                             </x-forms.input-group>
                         </div>
                     @endif
 
-                    <div class="col-md-4 @if (!isset($client) && is_null($client)) py-3 @endif">
+                    <div class="@if(!in_array('clients', user_modules())) d-none @endif col-md-4">
                         @if (isset($client) && !is_null($client))
                             <x-forms.label class="my-3" fieldId="client_id" :fieldLabel="__('app.client')">
                             </x-forms.label>
 
                             <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                            <input type="text" value="{{ $client->name }}"
+                            <input type="text" value="{{ $client->name_salutation }}"
                                    class="form-control height-35 f-15 readonly-background" readonly>
                         @else
-                            <x-client-selection-dropdown :clients="$clients" fieldRequired="false"
+                            <x-client-selection-dropdown labelClass="my-3" :clients="$clients" fieldRequired="false"
                                                          :selected="request('default_client') ?? null"/>
                         @endif
                     </div>
 
                     @if ($addProjectNotePermission == 'all' || $addProjectNotePermission == 'added')
                         <div class="col-md-12 col-lg-6">
-                            <div class="form-group my-3">
+                            <div class="my-3 form-group">
                                 <x-forms.label class="my-3" fieldId="project_summary"
                                                :fieldLabel="__('modules.projects.projectSummary')">
                                 </x-forms.label>
@@ -125,7 +123,7 @@
                         </div>
                     @else
                         <div class="col-md-12 col-lg-12">
-                            <div class="form-group my-3">
+                            <div class="my-3 form-group">
                                 <x-forms.label class="my-3" fieldId="project_summary"
                                                :fieldLabel="__('modules.projects.projectSummary')">
                                 </x-forms.label>
@@ -138,7 +136,7 @@
 
                     @if ($addProjectNotePermission == 'all' || $addProjectNotePermission == 'added')
                         <div class="col-md-12 col-lg-6">
-                            <div class="form-group my-3">
+                            <div class="my-3 form-group">
                                 <x-forms.label class="my-3" fieldId="notes"
                                                :fieldLabel="__('modules.projects.note')">
                                 </x-forms.label>
@@ -149,10 +147,52 @@
                         </div>
                     @endif
 
+                    <div class="col-md-12 col-lg-4">
+                        <div class="form-group my-3">
+                            <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
+                                for="usr">@lang('modules.projects.viewPublicGanttChart')</label>
+                            <div class="d-flex">
+                                <x-forms.radio fieldId="public_gantt_chart-yes" :fieldLabel="__('app.enable')" fieldName="public_gantt_chart"
+                                    fieldValue="enable" checked="true">
+                                </x-forms.radio>
+                                <x-forms.radio fieldId="public_gantt_chart-no" :fieldLabel="__('app.disable')" fieldValue="disable"
+                                    fieldName="public_gantt_chart" ></x-forms.radio>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 col-lg-4">
+                        <div class="form-group my-3">
+                            <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
+                                for="usr">@lang('app.public') @lang('modules.tasks.taskBoard')</label>
+                            <div class="d-flex">
+                                <x-forms.radio fieldId="public_taskboard-yes" :fieldLabel="__('app.enable')" fieldName="public_taskboard"
+                                    fieldValue="enable" checked="true">
+                                </x-forms.radio>
+                                <x-forms.radio fieldId="public_taskboard-no" :fieldLabel="__('app.disable')" fieldValue="disable"
+                                    fieldName="public_taskboard" ></x-forms.radio>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 col-lg-4">
+                        <div class="form-group my-3">
+                            <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
+                                for="usr">@lang('modules.projects.needApproval')</label>
+                            <div class="d-flex">
+                                <x-forms.radio fieldId="need_approval_by_admin-yes" :fieldLabel="__('app.enable')" fieldName="need_approval_by_admin"
+                                    fieldValue="1">
+                                </x-forms.radio>
+                                <x-forms.radio fieldId="need_approval_by_admin-no" :fieldLabel="__('app.disable')" fieldValue="0"
+                                    fieldName="need_approval_by_admin" checked="true"></x-forms.radio>
+                            </div>
+                        </div>
+                    </div>
+
                     @if ($addPublicProjectPermission == 'all')
                         <div class="col-sm-12">
                             <div class="form-group">
-                                <div class="d-flex mt-2">
+                                <div class="mt-2 d-flex">
                                     <x-forms.checkbox fieldId="is_public"
                                                       :fieldLabel="__('modules.projects.createPublicProject')"
                                                       fieldName="public"/>
@@ -163,7 +203,7 @@
 
                     @if ($addProjectMemberPermission == 'all' || $addProjectMemberPermission == 'added')
                         <div class="col-md-12" id="add_members">
-                            <div class="form-group my-3">
+                            <div class="my-3 form-group">
                                 <x-forms.label class="my-3" fieldId="selectEmployee" fieldRequired="true"
                                                :fieldLabel="__('modules.projects.addMemberTitle')">
                                 </x-forms.label>
@@ -172,11 +212,13 @@
                                     <select class="form-control multiple-users" multiple name="user_id[]"
                                             id="selectEmployee" data-live-search="true" data-size="8">
                                         @foreach ($employees as $item)
+                                            {{-- @if ($item->status === 'active' || (request()->has('default_assign') && request('default_assign') == $item->id) || (isset($projectTemplateMembers) && in_array($item->id, $projectTemplateMembers)) || (isset($projectMembers) && in_array($item->id, $projectMembers))) --}}
                                             <x-user-option
                                                 :user="$item"
                                                 :pill="true"
                                                 :selected="(request()->has('default_assign') && request('default_assign') == $item->id) || (isset($projectTemplateMembers) && in_array($item->id, $projectTemplateMembers)) || (isset($projectMembers) && in_array($item->id, $projectMembers))"
                                             />
+                                            {{-- @endif --}}
                                         @endforeach
                                     </select>
 
@@ -196,13 +238,13 @@
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
+                <h4 class="p-20 mb-0 f-21 font-weight-normal  border-top-grey">
                     <a href="javascript:;" class="text-dark toggle-project-other-details"><i
                             class="fa fa-chevron-down"></i>
                         @lang('modules.client.clientOtherDetails')</a>
                 </h4>
 
-                <div class="row p-20 d-none" id="other-project-details">
+                <div class="p-20 row d-none" id="other-project-details">
                     @if ($addProjectFilePermission == 'all' || $addProjectFilePermission == 'added')
                         <div class="col-lg-12">
                             <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2"
@@ -239,7 +281,7 @@
 
                     <div class="col-md-6 col-lg-3">
                         <div class="form-group">
-                            <div class="d-flex mt-5">
+                            <div class="mt-5 d-flex">
                                 <x-forms.checkbox fieldId="manual_timelog" :checked="($project ? $project->manual_timelog == 'enable' : ($projectTemplate ? $projectTemplate->manual_timelog == 'enable' : ''))" :fieldLabel="__('modules.projects.manualTimelog')"  fieldName="manual_timelog"/>
                             </div>
                         </div>
@@ -247,7 +289,7 @@
 
                     <div class="col-md-6 col-lg-3">
                         <div class="form-group">
-                            <div class="d-flex mt-5">
+                            <div class="mt-5 d-flex">
                                 <x-forms.checkbox fieldId="miroboard_checkbox" :checked="($project ? $project->enable_miroboard : '')"
                                                   :fieldLabel="__('modules.projects.enableMiroboard')"
                                                   fieldName="miroboard_checkbox"/>
@@ -256,9 +298,9 @@
                     </div>
 
                     <div class="col-md-6 col-lg-6 {{!is_null($project) && $project->enable_miroboard ? '' : 'd-none'}}" id="miroboard_detail">
-                        <div class="form-group my-3">
+                        <div class="my-3 form-group">
                             <div class="row">
-                                <div class="col-md-6 mt-6">
+                                <div class="mt-6 col-md-6">
                                     <x-forms.text class="mr-0 mr-lg-2 mr-md-2"
                                                   :fieldLabel="__('modules.projects.miroBoardId')"
                                                   fieldName="miro_board_id" fieldRequired="true"
@@ -266,7 +308,7 @@
                                 </div>
                                 <div class="col-md-6 col-lg-6">
                                     <div class="form-group">
-                                        <div class="d-flex mt-5">
+                                        <div class="mt-5 d-flex">
                                             <x-forms.checkbox fieldId="client_access"
                                             :fieldLabel="__('modules.projects.clientMiroAccess')" :checked="$project ? $project->client_access : ''"
                                             fieldName="client_access"/>
@@ -281,7 +323,7 @@
 
                     <div class="col-md-6 col-lg-4" id="clientNotification">
                         <div class="form-group">
-                            <div class="d-flex mt-5">
+                            <div class="mt-5 d-flex">
                                 <x-forms.checkbox fieldId="client_task_notification" :checked="($project ? $project->allow_client_notification == 'enable' : '')"
                                                   :fieldLabel="__('modules.projects.clientTaskNotification')"
                                                   fieldName="client_task_notification"/>
@@ -323,6 +365,7 @@
             var check = $('#without_deadline').is(":checked") ? true : false;
             if (check == true) {
                 $('#deadlineBox').hide();
+
             } else {
                 $('#deadlineBox').show();
             }
@@ -406,6 +449,16 @@
                 return selected + " {{ __('app.membersSelected') }} ";
             }
         });
+        $("#save-project-data-form .multiple-users").selectpicker({
+            actionsBox: true,
+            selectAllText: "{{ __('modules.permission.selectAll') }}",
+            deselectAllText: "{{ __('modules.permission.deselectAll') }}",
+            multipleSeparator: " ",
+            selectedTextFormat: "count > 8",
+            countSelectedText: function (selected, total) {
+                return selected + " {{ __('app.membersSelected') }} ";
+            }
+        });
         var userValues = @json($userData);
         quillMention(userValues, '#project_summary');
 
@@ -439,8 +492,10 @@
             const check = $('#without_deadline').is(":checked") ? true : false;
             if (check == true) {
                 $('#deadlineBox').hide();
+                $('#without_deadline').closest('.col-md-6.col-lg-4').removeClass('col-md-6 col-lg-4').addClass('col-md-8');
             } else {
                 $('#deadlineBox').show();
+                $('#without_deadline').closest('.col-md-8').removeClass('col-md-8').addClass('col-md-6 col-lg-4');
             }
         });
 
@@ -532,20 +587,16 @@
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id) {
-        let checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
-
     $('#save-project-data-form').on('change', '#employee_department', function () {
         let id = $(this).val();
-        if (id === '') {
+        if (id === '' || id.length === 0) {
             id = 0;
         }
+        let userId = @json($projectTemplateMembers ?? []);
         let url = "{{ route('departments.members', ':id') }}";
+        if (userId.length > 0) {
+            url += "?userId=" + userId.join(",");
+        }
         url = url.replace(':id', id);
 
         $.easyAjax({

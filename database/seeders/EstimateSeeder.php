@@ -28,7 +28,7 @@ class EstimateSeeder extends Seeder
             ->where('users.company_id', $companyId)
             ->first();
 
-        $unit = UnitType::select('id')->where('.company_id', $companyId)->first();
+        $unit = UnitType::select('id')->where('company_id', $companyId)->first();
         $currency = Currency::select('id')->where('company_id', $companyId)->first();
         $estimate = new Estimate();
         $estimate->company_id = $companyId;

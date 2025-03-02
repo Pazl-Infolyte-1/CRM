@@ -7,7 +7,7 @@
     $addProjectNotePermission = user()->permission('add_project_note');
 @endphp
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('app.copy') @lang('app.project')</h5>
+    <h5 class="modal-title" id="modelHeading">@lang('app.copyProject')</h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
 </div>
@@ -54,7 +54,7 @@
         <div class="row border-top-grey mt-3 d-none" id="task-status">
             <div class="col-md-12">
                 <div class="form-group my-3">
-                    <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('app.task') @lang('app.status')</label>
+                    <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('app.taskStatus')</label>
                     @foreach ($taskboardColumns as $item)
                         <x-forms.checkbox  :fieldId="$item->slug" :fieldLabel="$item->column_name" fieldName="task_status[]"
                             :fieldValue="$item->id" :checked="($item->slug == 'incomplete') ? true : false">
@@ -66,7 +66,7 @@
         <div class="row border-top-grey mt-3">
             <div class="col-md-12">
                 <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.taskShortCode')"
-                            fieldName="project_code" fieldRequired="true" fieldId="project_code"
+                            fieldName="project_code" fieldRequired="false" fieldId="project_code"
                             :fieldPlaceholder="__('placeholders.writeshortcode')" :fieldValue="$project ? $project->project_short_code : ''"/>
             </div>
             <div class="col-md-12">
@@ -106,6 +106,23 @@
                     </div>
                 </div>
             @endif
+            @if (!in_array('client', user_roles()))
+                <div class="col-md-4">
+                    <x-forms.label class="my-3" fieldId="department" :fieldLabel="__('app.department')">
+                    </x-forms.label>
+                    <x-forms.input-group>
+                        <select class="form-control multiple-users" multiple name="team_id[]" id="employee_department"
+                            data-live-search="true">
+                            @foreach ($teams as $team)
+                                <option data-content="<span class='badge badge-pill badge-light border p-2'>{{ $team->team_name }}</span>"
+                                @selected(in_array($team->id, $departmentIds)) value="{{ $team->id }}">
+                                    {{ $team->team_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </x-forms.input-group>
+                </div>
+            @endif
             @if ($addProjectMemberPermission == 'all' || $addProjectMemberPermission == 'added')
                 <div class="col-md-12">
                     <div class="form-group my-3">
@@ -130,13 +147,13 @@
             @elseif(in_array('employee', user_roles()))
                 <input type="hidden" name="user_id[]" value="{{ user()->id }}">
             @endif
-            <div class="col-md-12 @if (!isset($client) && is_null($client)) py-3 @endif">
+            <div class="@if(!in_array('clients', user_modules())) d-none @endif col-md-12 @if (!isset($client) && is_null($client)) py-3 @endif">
                 @if (isset($client) && !is_null($client))
                     <x-forms.label class="my-3" fieldId="client_id" :fieldLabel="__('app.client')">
                     </x-forms.label>
 
                     <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                    <input type="text" value="{{ $client->name }}"
+                    <input type="text" value="{{ $client->name_salutation }}"
                            class="form-control height-35 f-15 readonly-background" readonly>
                 @else
                     <x-forms.select fieldName="client_id" fieldId="client_id"
@@ -152,7 +169,7 @@
         </div>
         <div class="modal-footer">
             <x-forms.button-cancel data-dismiss="modal" class="border-0 mr-3">@lang('app.close')</x-forms.button-cancel>
-            <x-forms.button-primary id="save-copy-project" icon="check">@lang('app.copy') @lang('app.project')</x-forms.button-primary>
+            <x-forms.button-primary id="save-copy-project" icon="check">@lang('app.copyProject')</x-forms.button-primary>
         </div>
     </x-form>
 </div>
@@ -231,5 +248,39 @@
         countSelectedText: function (selected, total) {
             return selected + " {{ __('app.membersSelected') }} ";
         }
+    });
+
+    $(document).ready(function() {
+        $(".multiple-users").selectpicker({
+                actionsBox: true,
+                selectAllText: "{{ __('modules.permission.selectAll') }}",
+                deselectAllText: "{{ __('modules.permission.deselectAll') }}",
+                multipleSeparator: " ",
+                selectedTextFormat: "count > 8",
+                countSelectedText: function(selected, total) {
+                    return selected + " {{ __('app.membersSelected') }} ";
+                }
+        });
+    });
+    $('#createDuplicateProject').on('change', '#employee_department', function () {
+        let id = $(this).val();
+        if (id === '' || id.length === 0) {
+            id = 0;
+        }
+        let userId = '{{ $project->members->pluck("user.id")->implode(",") }}';
+        let url = "{{ route('departments.members', ':id') }}?userId="+userId;
+        url = url.replace(':id', id);
+
+        $.easyAjax({
+            url: url,
+            type: "GET",
+            container: '#save-project-data-form',
+            blockUI: true,
+            redirect: true,
+            success: function (data) {
+                $('#selectEmployee').html(data.data);
+                $('#selectEmployee').selectpicker('refresh');
+            }
+        })
     });
 </script>

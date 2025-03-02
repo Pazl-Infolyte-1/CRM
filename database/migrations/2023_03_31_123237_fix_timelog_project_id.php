@@ -4,8 +4,6 @@ use App\Models\Company;
 use App\Models\ProjectTimeLog;
 use App\Models\Task;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {

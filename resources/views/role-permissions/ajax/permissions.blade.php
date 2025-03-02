@@ -10,8 +10,15 @@
         <th width="16%"></th>
     </x-slot>
     @foreach ($modulesData as $moduleData)
-        <tr>
-            <td>@lang('modules.module.'.$moduleData->module_name)
+            @php
+                $notPermited = !in_array($moduleData->module_name, $employeeModules) ? 'disabled' : null;
+            @endphp
+        <tr>    
+            <td>@lang('modules.module.'.$moduleData->module_name)  
+                @if($notPermited)
+                    <i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="@lang('messages.moduleDisabled')" data-html="true" data-trigger="hover"></i>
+                @endif
+
             </td>
             @foreach ($moduleData->permissions as $permission)
                 @php
@@ -19,7 +26,7 @@
                     $permissionType = $role->permissionType($permission->id);
                 @endphp
                 <td>
-                    <select class="select-picker role-permission-select border-0"
+                    <select class="select-picker role-permission-select border-0" {{ $notPermited }}
                             data-permission-id="{{ $permission->id }}" data-role-id="{{ $role->id }}">
                         @if (!is_null($allowedPermissions))
                             @foreach ($allowedPermissions as $key => $item)
@@ -41,7 +48,7 @@
 
             <td class="text-center bg-light border-left">
                 <div class="p-2">
-                    @if ($moduleData->custom_permissions_count > 0)
+                    @if ($moduleData->custom_permissions_count > 0 && in_array($moduleData->module_name,$employeeModules))
                         <a href="javascript:;" data-module-id="{{ $moduleData->id }}" data-role-id="{{ $role->id }}"
                             class="text-dark-grey show-custom-permission dropdown-toggle">
                             @lang('app.more') <i class="fa fa-chevron-down"></i>

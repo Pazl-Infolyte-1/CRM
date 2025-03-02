@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helper\Reply;
 use App\Http\Requests\TicketEmailSetting\UpdateRequest;
 use App\Models\TicketEmailSetting;
-use Illuminate\Http\Request;
 
 class TicketEmailSettingController extends AccountBaseController
 {

@@ -84,7 +84,8 @@
     width: 100%;
 }
 .inv-note td{
-    width: 50%;    
+    width: 50%;
+    word-break: break-word;
 }
 .inv-unpaid td:nth-child(2){
     text-align: right;

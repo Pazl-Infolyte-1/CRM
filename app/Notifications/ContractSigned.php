@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Http\Controllers\ContractController;
 use App\Models\Contract;
 use App\Models\ContractSign;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\HtmlString;
 
 class ContractSigned extends BaseNotification
@@ -51,7 +50,7 @@ class ContractSigned extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $contract = parent::build();
+        $contract = parent::build($notifiable);
         $publicUrlController = new ContractController();
         $pdfOption = $publicUrlController->downloadView($this->contract->id);
         $pdf = $pdfOption['pdf'];

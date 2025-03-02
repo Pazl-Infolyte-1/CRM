@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helper\Reply;
 use App\Http\Requests\UploadInstallRequest;
+use App\Models\GlobalSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,11 @@ class UpdateAppController extends AccountBaseController
         $this->pageTitle = 'app.menu.updates';
         $this->pageIcon = 'ti-reload';
         $this->activeSettingMenu = 'update_settings';
+
+        $this->middleware(function ($request, $next) {
+            abort_403(GlobalSetting::validateSuperAdmin());
+            return $next($request);
+        });
     }
 
     public function index()
@@ -32,9 +38,9 @@ class UpdateAppController extends AccountBaseController
             if (str_contains($this->mysql_version, 'Maria')) {
                 $this->databaseType = 'Maria Version';
             }
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             $this->mysql_version = null;
-            dd($e->getMessage());
+            $this->databaseType = 'MySQL Version';
         }
 
         $this->reviewed = file_exists(storage_path('reviewed'));
@@ -59,6 +65,7 @@ class UpdateAppController extends AccountBaseController
     {
         $filePath = $request->filePath;
         File::delete($filePath);
+
         return Reply::success(__('messages.deleteSuccess'));
     }
 

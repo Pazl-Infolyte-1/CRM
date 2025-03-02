@@ -28,6 +28,7 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|CreditNoteItemImage whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|CreditNoteItemImage whereSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder|CreditNoteItemImage whereUpdatedAt($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class CreditNoteItemImage extends BaseModel

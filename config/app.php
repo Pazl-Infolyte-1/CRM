@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Facade;
-use Illuminate\Support\ServiceProvider;
 
 return [
 
@@ -17,9 +16,13 @@ return [
     */
 
     // This will determine if the application worksuite or worksuite-saas
-    'app_name' => 'worksuite',
+    'app_name' => 'worksuite-saas',
 
-    'name' => 'Worksuite',
+    'name' => 'Worksuite Saas',
+
+
+    // We will use this for email copyright message
+    'global_app_name' => 'Worksuite Saas',
     /*
     |--------------------------------------------------------------------------
     | Application Name
@@ -32,6 +35,8 @@ return [
     */
 
     'app_configuration_mode' => env('APP_CONFIGURATION_MODE', 'browser'),
+
+    'non_saas_to_saas_enabled' => env('NON_SAAS_TO_SAAS_ENABLED', false),
 
 
     /*
@@ -46,6 +51,8 @@ return [
     'redirect_https' => env('REDIRECT_HTTPS', false),
     'seed_record_count' => env('SEED_RECORD_COUNT', 5),
     'extra_company_seed_count' => env('EXTRA_COMPANY_SEED_COUNT', 0),
+    'main_application_subdomain' => env('MAIN_APPLICATION_SUBDOMAIN'),
+    'short_domain_name' => env('SHORT_DOMAIN_NAME', false),
     /*
     |--------------------------------------------------------------------------
     | Application Environment
@@ -98,6 +105,7 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'main_app_url' => env('APP_URL', 'http://localhost'),
 
     'asset_url' => env('ASSET_URL', null),
 
@@ -214,7 +222,6 @@ return [
         Illuminate\Filesystem\FilesystemServiceProvider::class,
         Illuminate\Foundation\Providers\FoundationServiceProvider::class,
         Illuminate\Hashing\HashServiceProvider::class,
-        \App\Providers\SessionDriverConfigProvider::class,
         Illuminate\Notifications\NotificationServiceProvider::class,
         Illuminate\Pagination\PaginationServiceProvider::class,
         Illuminate\Pipeline\PipelineServiceProvider::class,
@@ -225,10 +232,10 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
-        \App\Providers\TranslateSettingConfigProvider::class,
         \Illuminate\Mail\MailServiceProvider::class,
         \App\Providers\FileStorageCustomConfigProvider::class,
-        \App\Providers\SmtpConfigProvider::class,
+        \App\Providers\CustomConfigProvider::class,
+        Webklex\PDFMerger\Providers\PDFMergerServiceProvider::class,
 
         /*
          * Package Service Providers...
@@ -247,6 +254,9 @@ return [
         Barryvdh\TranslationManager\ManagerServiceProvider::class,
         Macellan\Zip\ZipServiceProvider::class,
         Froiden\LaravelInstaller\Providers\LaravelInstallerServiceProvider::class,
+
+        // WORKSUITESAAS
+        App\Providers\SuperAdmin\EventServiceProvider::class,
     ],
 
     /*
@@ -264,6 +274,7 @@ return [
         'ApiRoute' => Froiden\RestAPI\Facades\ApiRoute::class,
         'DataTables' => Yajra\DataTables\Facades\DataTables::class,
         'Zip' => Macellan\Zip\ZipFacade::class,
+        'PDFMerger' => Webklex\PDFMerger\Facades\PDFMergerFacade::class
     ])->toArray(),
 
     'debug_blacklist' => [

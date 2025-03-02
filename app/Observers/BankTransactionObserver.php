@@ -21,7 +21,7 @@ class BankTransactionObserver
             $bankTransaction->added_by = user()->id;
         }
 
-        if(company()) {
+        if (company()) {
             $bankTransaction->company_id = company()->id;
         }
 
@@ -31,14 +31,14 @@ class BankTransactionObserver
     {
         $bankAccount = BankAccount::find($bankTransaction->bank_account_id);
 
-        if(!is_null($bankAccount) && !is_null($bankTransaction)){
+        if (!is_null($bankAccount) && !is_null($bankTransaction)) {
             $bankBalance = $bankAccount->bank_balance;
 
-            if(is_null($bankTransaction->type) || $bankTransaction->type == 'Cr'){
+            if (is_null($bankTransaction->type) || $bankTransaction->type == 'Cr') {
                 $bankBalance += $bankTransaction->amount;
             }
 
-            if($bankTransaction->type == 'Dr'){
+            if ($bankTransaction->type == 'Dr') {
                 $bankBalance -= $bankTransaction->amount;
             }
 

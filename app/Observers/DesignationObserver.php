@@ -20,13 +20,13 @@ class DesignationObserver
         if (company()) {
             $leaveTypes = LeaveType::all();
 
-            foreach($leaveTypes as $leaveType){
+            foreach ($leaveTypes as $leaveType) {
 
-                if(!is_null($leaveType->designation)){
+                if (!is_null($leaveType->designation)) {
                     $designation = json_decode($leaveType->designation);
                     array_push($designation, $model->id);
                 }
-                else{
+                else {
                     $designation = array($model->id);
                 }
 
@@ -41,14 +41,14 @@ class DesignationObserver
         if (company()) {
             $leaveTypes = LeaveType::all();
 
-            foreach($leaveTypes as $leaveType){
+            foreach ($leaveTypes as $leaveType) {
 
-                if(!is_null($leaveType->department)){
+                if (!is_null($leaveType->department)) {
 
                     $designation = json_decode($leaveType->designation);
 
                     // Search value and delete
-                    if(($key = array_search($model->id, $designation)) !== false) {
+                    if (($key = array_search($model->id, $designation)) !== false) {
                         unset($designation[$key]);
                     }
 

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\DataTables\DepartmentDataTable;
 use App\Helper\Reply;
-use App\Models\BaseModel;
 use App\Models\Team;
 use App\Http\Requests\Team\StoreDepartment;
 use App\Http\Requests\Team\UpdateDepartment;
@@ -47,13 +46,15 @@ class DepartmentController extends AccountBaseController
     {
         $this->departments = Team::allDepartments();
 
-        if (request()->ajax()) {
-            $html = view('departments.ajax.create', $this->data)->render();
+        $this->view = 'departments.ajax.create';
 
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->model == true) {
+            return view('employees.create_department', $this->data);
         }
 
-        $this->view = 'departments.ajax.create';
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('departments.create', $this->data);
     }
@@ -71,13 +72,15 @@ class DepartmentController extends AccountBaseController
         $group->parent_id = $request->parent_id;
         $group->save();
 
+        $this->departments = Team::allDepartments();
+
         $redirectUrl = urldecode($request->redirect_url);
 
         if ($redirectUrl == '') {
             $redirectUrl = route('departments.index');
         }
 
-        return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => $redirectUrl]);
+        return Reply::successWithData(__('messages.recordSaved'), ['departments' => $this->departments, 'redirectUrl' => $redirectUrl]);
     }
 
     public function show($id)
@@ -85,13 +88,12 @@ class DepartmentController extends AccountBaseController
         $this->department = Team::findOrFail($id);
         $this->parent = Team::where('id', $this->department->parent_id)->first();
 
-        if (request()->ajax()) {
-            $html = view('departments.ajax.show', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
 
         $this->view = 'departments.ajax.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('departments.create', $this->data);
     }
@@ -110,13 +112,11 @@ class DepartmentController extends AccountBaseController
             return !in_array($value->parent_id, $childDepartments);
         });
 
-        if (request()->ajax()) {
-            $html = view('departments.ajax.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'departments.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('departments.create', $this->data);
     }
@@ -328,24 +328,37 @@ class DepartmentController extends AccountBaseController
 
         $options = '';
         $userData = [];
+        $userId = explode(',', request()->get('userId'));
 
         if ($id == 0) {
-            $members = User::allEmployees();
+            $members = User::allEmployees(null,true);
 
             foreach ($members as $item) {
                 $self_select = (user() && user()->id == $item->id) ? '<span class=\'ml-2 badge badge-secondary\'>' . __('app.itsYou') . '</span>' : '';
 
-                $options .= '<option  data-content="<span class=\'badge badge-pill badge-light border\'><div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div></span>  ' . $item->name . '' . $self_select . '" value="' . $item->id . '"> ' . $item->name . '</option>';
+                $options .= '<option  data-content="<span class=\'badge badge-pill badge-light border\'><div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div> ' . $item->name . '</span>' . $self_select . '" value="' . $item->id . '"> ' . $item->name . '</option>';
             }
         }
         else {
-            $members = User::departmentUsers($id);
+            $members = collect([]);
+            $departmentIds = explode(',', $id);
+
+            foreach ($departmentIds as $departmentId) {
+                $members = $members->concat(User::departmentUsers($departmentId));
+            }
 
             foreach ($members as $item) {
+                $selected = '';
+
+                if (isset($userId)){
+                    if (in_array($item->id, $userId)) {
+                        $selected = 'selected';
+                    }
+                }
 
                 $self_select = (user() && user()->id == $item->id) ? '<span class=\'ml-2 badge badge-secondary\'>' . __('app.itsYou') . '</span>' : '';
 
-                $options .= '<option  data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div>  ' . $item->name . '' . $self_select . '" value="' . $item->id . '"> ' . $item->name . ' </option>';
+                $options .= '<option ' . $selected . ' data-content="<span class=\'badge badge-pill badge-light border\'><div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div>  ' . $item->name . '</span>' . $self_select . '" value="' . $item->id . '"> ' . $item->name . ' </option>';
                 $url = route('employees.show', [$item->id]);
 
                 $userData[] = ['id' => $item->id, 'value' => $item->name, 'image' => $item->image_url, 'link' => $url];

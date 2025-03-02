@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Notice;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreNotice extends CoreRequest
 {
@@ -26,7 +25,17 @@ class StoreNotice extends CoreRequest
     public function rules()
     {
         return [
-            'heading' => 'required'
+            'heading' => 'required',
+            'employees.0' => 'required_if:to,employee',
+            'clients.0' => 'required_if:to,client',
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'employees.0.required_if' => __('messages.atleastOneValidation'),
+            'clients.0.required_if' => __('messages.atleastOneValidation')
         ];
     }
 

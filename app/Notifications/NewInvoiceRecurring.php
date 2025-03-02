@@ -48,7 +48,7 @@ class NewInvoiceRecurring extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $newInvoiceRecurring = parent::build();
+        $newInvoiceRecurring = parent::build($notifiable);
 
         if (($this->invoice->project && !is_null($this->invoice->project->client)) || !is_null($this->invoice->client_id)) {
             // For Sending pdf to email
@@ -61,9 +61,9 @@ class NewInvoiceRecurring extends BaseNotification
                 $url = route('invoices.show', $this->invoice->id);
                 $url = getDomainSpecificUrl($url, $this->company);
 
-                $content = __('email.invoice.text');
+                $content = __('email.invoice.text') . '<br>' . __('app.invoiceNumber') . ': ' .$this->invoice->invoice_number;
 
-                $newInvoiceRecurring  ->subject(__('email.invoice.subject') . ' - ' . config('app.name') . '.')
+                $newInvoiceRecurring  ->subject(__('email.invoice.subject') . ' (' . $this->invoice->invoice_number . ') - ' . config('app.name') . '.')
                     ->markdown('mail.email', [
                         'url' => $url,
                         'content' => $content,

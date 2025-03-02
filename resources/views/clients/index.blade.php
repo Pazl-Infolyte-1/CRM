@@ -60,7 +60,7 @@
         <x-filters.more-filter-box>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" data-container="body" name="status" id="status">
@@ -73,7 +73,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.category')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.category')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="filter_category_id" data-live-search="true"
@@ -88,7 +88,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                <label class="f-14 text-dark-grey mb-12 "
                     for="usr">@lang('modules.productCategory.subCategory')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -104,7 +104,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others select-filter-project">
                         <select class="form-control select-picker" id="project_id" data-live-search="true"
@@ -119,7 +119,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                <label class="f-14 text-dark-grey mb-12 "
                     for="usr">@lang('modules.contracts.contractType')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -135,7 +135,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.country')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.country')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="country_id" data-live-search="true"
@@ -151,7 +151,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.verify') <i class="fa fa-question-circle" data-toggle="popover" data-placement="top" data-content="@lang('messages.clientFilterVerification')" data-html="true" data-trigger="hover"></i></label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.verify') <i class="fa fa-question-circle" data-toggle="popover" data-placement="top" data-content="@lang('messages.clientFilterVerification')" data-html="true" data-trigger="hover"></i></label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="verification" data-container="body" data-size="8">
@@ -271,7 +271,7 @@
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["clients-table"].draw(false);
+            window.LaravelDataTables["clients-table"].draw(true);
         }
 
         $('#client, #status, #filter_category_id, #filter_sub_category_id, #project_id, #contract_type_id, #country_id, #verification')

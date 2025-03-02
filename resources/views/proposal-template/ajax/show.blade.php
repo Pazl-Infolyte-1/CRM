@@ -78,12 +78,12 @@
                     <td class="f-14 text-dark">
                         @if ($invoice->lead && ($invoice->lead->client_name || $invoice->lead->client_email || $invoice->lead->mobile || $invoice->lead->company_name || $invoice->lead->address) && (invoice_setting()->show_client_name == 'yes' || invoice_setting()->show_client_email == 'yes' || invoice_setting()->show_client_phone == 'yes' || invoice_setting()->show_client_company_name == 'yes' || invoice_setting()->show_client_company_address == 'yes'))
                         <p class="mb-0 text-left">
-                            <span class="text-dark-grey text-capitalize">
+                            <span class="text-dark-grey ">
                                 @lang("modules.invoices.billedTo")
                             </span><br>
 
                             @if ($invoice->lead && $invoice->lead->client_name && invoice_setting()->show_client_name == 'yes')
-                                {{ $invoice->lead->client_name }}<br>
+                                {{ $invoice->lead->client_name_salutation }}<br>
                             @endif
                             @if ($invoice->lead && $invoice->lead->client_email && invoice_setting()->show_client_email == 'yes')
                                 {{ $invoice->lead->client_email }}<br>

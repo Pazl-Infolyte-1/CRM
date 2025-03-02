@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\Leave;
 use App\Models\EmailNotificationSetting;
-use Illuminate\Notifications\Messages\SlackMessage;
 
 class LeaveStatusApprove extends BaseNotification
 {
@@ -41,7 +40,7 @@ class LeaveStatusApprove extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         return $via;
@@ -55,18 +54,28 @@ class LeaveStatusApprove extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('leaves.show', $this->leave->id);
+
+        if ($this->leave->duration == "multiple") {
+            $url .= '?type=single';
+        }
+
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.leave.approve') . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . '<br>' . __('app.status') . ': ' . $this->leave->status . '<br>';
+        if (session()->has('dateRange')) {
+            $contentDate = session('dateRange');
+        } else {
+            $contentDate = $this->leave->leave_date->format($this->company->date_format);
+        }
 
-        if(!is_null($this->leave->approve_reason))
-        {
+        $content = __('email.leave.approve') . '<br>' . __('app.date') . ': ' . $contentDate . '<br>' . __('app.status') . ': ' . $this->leave->status . '<br>';
+
+        if (!is_null($this->leave->approve_reason)) {
             $content .= __('messages.reasonForLeaveApproval') . ': ' . $this->leave->approve_reason;
         }
 
-        return $build
+        $build
             ->subject(__('email.leaves.statusSubject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -75,6 +84,10 @@ class LeaveStatusApprove extends BaseNotification
                 'actionText' => __('email.leaves.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
 
     }
 
@@ -92,21 +105,9 @@ class LeaveStatusApprove extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->image($slack->slack_logo_url)
-                ->content(__('email.leave.approve') . "\n" . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) ."\n" . __('app.status') . ': ' . $this->leave->status);
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
+        return $this->slackBuild($notifiable)
             ->content(__('email.leave.approve') . "\n" . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . "\n" . __('app.status') . ': ' . $this->leave->status);
-
 
     }
 

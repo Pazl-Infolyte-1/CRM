@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @package App\Models
  * @property int $id
- * @property int $lead_id
  * @property int $user_id
  * @property string $filename
  * @property string $hashname
@@ -25,7 +24,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $last_updated_by
  * @property-read mixed $file_url
  * @property-read mixed $icon
- * @property-read \App\Models\Lead $lead
  * @method static \Illuminate\Database\Eloquent\Builder|ProductFiles newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProductFiles newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProductFiles query()
@@ -48,6 +46,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
  * @method static \Illuminate\Database\Eloquent\Builder|ProductFiles whereCompanyId($value)
+ * @property int $default_status
+ * @method static \Illuminate\Database\Eloquent\Builder|ProductFiles whereDefaultStatus($value)
  * @mixin \Eloquent
  */
 class ProductFiles extends BaseModel

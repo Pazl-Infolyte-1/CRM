@@ -37,7 +37,6 @@ class AppreciationSeeder extends Seeder
             'Best Quality Control',
             'Best Technical Writer',
             'Most Valuable Employee',
-            'Employee of the month',
             'Star Performer Award'
         ];
 

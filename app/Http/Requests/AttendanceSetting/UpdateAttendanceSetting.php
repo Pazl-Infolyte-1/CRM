@@ -3,7 +3,6 @@
 namespace App\Http\Requests\AttendanceSetting;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateAttendanceSetting extends CoreRequest
 {

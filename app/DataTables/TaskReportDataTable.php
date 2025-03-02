@@ -2,10 +2,9 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
+use App\Helper\Common;
 use App\Models\Task;
 use App\Models\TaskboardColumn;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 
@@ -32,16 +31,7 @@ class TaskReportDataTable extends BaseDataTable
         return datatables()
             ->eloquent($query)
             ->editColumn('due_date', function ($row) {
-                if (!is_null($row->due_date)) {
-                    if ($row->due_date->endOfDay()->isPast()) {
-                        return '<span class="text-danger">' . $row->due_date->translatedFormat($this->company->date_format) . '</span>';
-                    }
-                    elseif ($row->due_date->setTimezone($this->company->timezone)->isToday()) {
-                        return '<span class="text-success">' . __('app.today') . '</span>';
-                    }
-
-                    return '<span>' . $row->due_date->translatedFormat($this->company->date_format) . '</span>';
-                }
+                return Common::dateColor($row->due_date);
             })
             ->editColumn('users', function ($row) {
                 if (count($row->users) == 0) {
@@ -116,9 +106,7 @@ class TaskReportDataTable extends BaseDataTable
 
                 return '<a href="' . route('tasks.show', [$row->id]) . '" class="text-darkest-grey openRightModal">' . $row->task_short_code . '</a>';
             })
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['board_column', 'project_name', 'clientName', 'due_date', 'users', 'heading', 'short_code'])
             ->removeColumn('project_id')
             ->removeColumn('image')
@@ -137,11 +125,11 @@ class TaskReportDataTable extends BaseDataTable
         $endDate = null;
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
         }
 
         $projectId = $request->projectId;
@@ -275,6 +263,7 @@ class TaskReportDataTable extends BaseDataTable
             __('app.task') => ['data' => 'heading', 'name' => 'heading', 'exportable' => false, 'title' => __('app.task')],
             __('app.menu.tasks') => ['data' => 'task', 'name' => 'heading', 'visible' => false, 'title' => __('app.menu.tasks')],
             __('app.project') => ['data' => 'project_name', 'name' => 'projects.project_name', 'title' => __('app.project')],
+            __('app.client') => ['data' => 'clientName', 'name' => 'client.name', 'title' => __('app.client')],
             __('modules.tasks.assigned') => ['data' => 'name', 'name' => 'name', 'visible' => false, 'title' => __('modules.tasks.assigned')],
             __('app.dueDate') => ['data' => 'due_date', 'name' => 'due_date', 'title' => __('app.dueDate')],
             __('modules.tasks.assignTo') => ['data' => 'users', 'name' => 'member.name', 'exportable' => false, 'title' => __('modules.tasks.assignTo')],

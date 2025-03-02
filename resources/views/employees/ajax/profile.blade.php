@@ -19,11 +19,11 @@
 @php
 
 $showFullProfile = false;
-
+$employeeDetail = $employee->employeeDetail;
 if ($viewPermission == 'all'
-    || ($viewPermission == 'added' && $employee->employeeDetail->added_by == user()->id)
-    || ($viewPermission == 'owned' && $employee->employeeDetail->user_id == user()->id)
-    || ($viewPermission == 'both' && ($employee->employeeDetail->user_id == user()->id || $employee->employeeDetail->added_by == user()->id))
+    || ($viewPermission == 'added' && $employeeDetail->added_by == user()->id)
+    || ($viewPermission == 'owned' && $employeeDetail->user_id == user()->id)
+    || ($viewPermission == 'both' && ($employeeDetail->user_id == user()->id || $employeeDetail->added_by == user()->id))
 ) {
     $showFullProfile = true;
 }
@@ -49,7 +49,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                             <div class="row">
                                 <div class="col-10">
                                     <h4 class="card-title f-15 f-w-500 text-darkest-grey mb-0">
-                                        {{ ($employee->salutation ? $employee->salutation->label() . ' ' : '') . $employee->name }}
+                                        {{ $employee->name_salutation }}
                                         @isset($employee->country)
                                             <x-flag :country="$employee->country" />
                                         @endisset
@@ -79,10 +79,11 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 {{ !is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->designation) ? $employee->employeeDetail->designation->name : '' }}
                                 &bull;
                                 {{ isset($employee->employeeDetail) && !is_null($employee->employeeDetail->department) && !is_null($employee->employeeDetail->department) ? $employee->employeeDetail->department->team_name : '' }}
+                                 <span class="card-text f-12 text-dark-grey m-lg-2">| {{__('app.role')}}: {{$employee->roles()->withoutGlobalScopes()->latest()->first()->display_name}}</span>
                             </p>
 
-                            @if ($employee->status == 'active')
-                                <p class="card-text f-11 text-lightest">@lang('app.lastLogin')
+
+                                <p class="card-text f-11 text-lightest mb-1">@lang('app.lastLogin')
 
                                     @if (!is_null($employee->last_login))
                                         {{ $employee->last_login->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}
@@ -91,8 +92,9 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                     @endif
                                 </p>
 
-                            @else
-                                <p class="card-text f-12 text-lightest">
+                            @if ($employee->status != 'active')
+
+                                <p class="card-text f-12 text-dark-grey">
                                     <x-status :value="__('app.inactive')" color="red" />
                                 </p>
                             @endif
@@ -101,22 +103,22 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 <div class="card-footer bg-white border-top-grey pl-0">
                                     <div class="d-flex flex-wrap justify-content-between">
                                         <span>
-                                            <label class="f-11 text-dark-grey mb-12 text-capitalize"
-                                                for="usr">@lang('app.open') @lang('app.menu.tasks')</label>
+                                            <label class="f-11 text-dark-grey mb-12 "
+                                                for="usr">@lang('app.openTasks')</label>
                                             <p class="mb-0 f-18 f-w-500">{{ $employee->open_tasks_count }}</p>
                                         </span>
                                         <span>
-                                            <label class="f-11 text-dark-grey mb-12 text-capitalize"
+                                            <label class="f-11 text-dark-grey mb-12 "
                                                 for="usr">@lang('app.menu.projects')</label>
                                             <p class="mb-0 f-18 f-w-500">{{ $employee->member_count }}</p>
                                         </span>
                                         <span>
-                                            <label class="f-11 text-dark-grey mb-12 text-capitalize"
+                                            <label class="f-11 text-dark-grey mb-12 "
                                                 for="usr">@lang('modules.employees.hoursLogged')</label>
                                             <p class="mb-0 f-18 f-w-500">{{ $hoursLogged }}</p>
                                         </span>
                                         <span>
-                                            <label class="f-11 text-dark-grey mb-12 text-capitalize"
+                                            <label class="f-11 text-dark-grey mb-12 "
                                                 for="usr">@lang('app.menu.tickets')</label>
                                             <p class="mb-0 f-18 f-w-500">{{ $employee->agents_count }}</p>
                                         </span>
@@ -146,13 +148,12 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 :value="(isset($employee->employeeDetail) && !is_null($employee->employeeDetail->department) && !is_null($employee->employeeDetail->department)) ? ($employee->employeeDetail->department->team_name) : '--'" />
 
                             <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                                     @lang('modules.employees.gender')</p>
                                 <p class="mb-0 text-dark-grey f-14 w-70">
                                     <x-gender :gender='$employee->gender' />
                                 </p>
                             </div>
-
 
                             @php
                                 $currentyearJoiningDate = \Carbon\Carbon::parse(now(company()->timezone)->year.'-'.$employee->employeeDetail->joining_date->translatedFormat('m-d'));
@@ -160,9 +161,28 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                     $currentyearJoiningDate = $currentyearJoiningDate->addYear();
                                 }
                                 $diffInHoursJoiningDate = now(company()->timezone)->floatDiffInHours($currentyearJoiningDate, false);
+
+                                $currentDay = \Carbon\Carbon::parse(now(company()->timezone)->toDateTimeString())->startOfDay()->setTimezone('UTC');
+                                $joiningDay = $employee->employeeDetail->joining_date;
+
+                                $totalWorkYears = $joiningDay->copy()->diffInYears($currentDay);
+                                $totalWorkMonths = $joiningDay->copy()->diffInMonths($currentDay);
                             @endphp
 
-                            <x-cards.data-row :label="__('modules.employees.workAnniversary')" :value="(!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->joining_date)) ? (($diffInHoursJoiningDate > -23 && $diffInHoursJoiningDate <= 0) ? __('app.today') : $currentyearJoiningDate->longRelativeToNowDiffForHumans()) : '--'" />
+                        <x-cards.data-row
+                            :label="__('modules.employees.workAnniversary')"
+                            :value="!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->joining_date)
+                                ? (
+                                    ($diffInHoursJoiningDate > -23 && $diffInHoursJoiningDate <= 0 && $totalWorkYears == 0 )
+                                    ? __('modules.dashboard.joinedToday')
+                                    : (
+                                        ($totalWorkYears > 0 && $totalWorkMonths % 12 == 0)
+                                        ? __('app.completed') . ' ' . $totalWorkYears . ' ' . __('app.year')
+                                        : $currentyearJoiningDate->longRelativeToNowDiffForHumans()
+                                    )
+                                )
+                                : '--'"
+                        />
 
                             <x-cards.data-row :label="__('modules.employees.dateOfBirth')"
                                               :value="(!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->date_of_birth)) ? $employee->employeeDetail->date_of_birth->translatedFormat('d F') : '--'" />
@@ -198,7 +218,9 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 :value="$employee->employeeDetail->notice_period_end_date ? Carbon\Carbon::parse($employee->employeeDetail->notice_period_end_date)->translatedFormat(company()->date_format) : '--'" />
 
                                 <x-cards.data-row :label="__('modules.employees.maritalStatus')"
-                                :value="$employee?->employeeDetail?->marital_status ? __('modules.leaves.' . $employee->employeeDetail->marital_status) : '--'" />
+                                :value="$employee?->employeeDetail?->marital_status ? $employee->employeeDetail->marital_status->label() : '--'" />
+
+                                <x-cards.data-row :label="__('app.menu.businessAddresses')" :value="$companyAddress ? $companyAddress->location : '--'" />
 
                                 <x-cards.data-row :label="__('modules.employees.marriageAnniversaryDate')"
                                 :value="$employee->employeeDetail->marriage_anniversary_date ? Carbon\Carbon::parse($employee->employeeDetail->marriage_anniversary_date)->translatedFormat('d F') : '--'" />
@@ -218,6 +240,9 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
 
                                 <x-cards.data-row :label="__('modules.employees.joiningDate')"
                                 :value="(!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->joining_date)) ? $employee->employeeDetail->joining_date->translatedFormat(company()->date_format) : '--'" />
+
+                                <x-cards.data-row :label="__('modules.employees.lastDate')"
+                                :value="(!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->last_date)) ? $employee->employeeDetail->last_date->translatedFormat(company()->date_format) : '--'" />
 
 
                                 {{-- Custom fields data --}}
@@ -304,19 +329,25 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                             <div class="row">
                                 @if (in_array('tasks', user_modules()))
                                     <div class="col-md-12 mb-4">
-                                        <x-cards.data :title="__('app.menu.tasks')" padding="false">
+                                        <x-cards.data :title="__('app.menu.tasks')" padding="false" class="pb-3">
+                                            @if (array_sum($taskChart['values']) > 0)
+                                                <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart" data-chart-data="{{ json_encode($taskChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                                            @endif
                                             <x-pie-chart id="task-chart" :labels="$taskChart['labels']"
                                                 :values="$taskChart['values']" :colors="$taskChart['colors']" height="250"
-                                                width="300" />
+                                                width="250" />
                                         </x-cards.data>
                                     </div>
                                 @endif
                                 @if (in_array('tickets', user_modules()))
                                     <div class="col-md-12 mb-4">
-                                        <x-cards.data :title="__('app.menu.tickets')" padding="false">
+                                        <x-cards.data :title="__('app.menu.tickets')" padding="false" class="pb-3">
+                                            @if (array_sum($ticketChart['values']) > 0)
+                                                <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="ticket-chart" data-chart-data="{{ json_encode($ticketChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                                            @endif
                                             <x-pie-chart id="ticket-chart" :labels="$ticketChart['labels']"
                                                 :values="$ticketChart['values']" :colors="$ticketChart['colors']"
-                                                height="250" width="300" />
+                                                height="250" width="250" />
                                         </x-cards.data>
                                     </div>
                                 @endif

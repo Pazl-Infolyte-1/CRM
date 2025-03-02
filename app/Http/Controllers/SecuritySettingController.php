@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Helper\Reply;
 use App\Http\Requests\GoogleCaptcha\UpdateGoogleCaptchaSetting;
-use App\Models\Company;
 use App\Models\GlobalSetting;
 use App\Models\SmtpSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
-use GuzzleHttp\Client;
 
 class SecuritySettingController extends AccountBaseController
 {
@@ -31,10 +29,9 @@ class SecuritySettingController extends AccountBaseController
      */
     public function index()
     {
-
-        $this->user = user();
+        $this->user = User::with('userAuth')->find(user()->id);
         $this->smtpSetting = smtp_setting();
-        $this->setting = company();
+        $this->setting = companyOrGlobalSetting();
 
         $this->view = 'security-settings.ajax.google-recaptcha';
 
@@ -42,7 +39,7 @@ class SecuritySettingController extends AccountBaseController
 
         switch ($tab) {
         case 'recaptcha':
-            abort_403(user()->permission('manage_security_setting') !== 'all');
+            abort_403(user()->permission('manage_superadmin_security_settings') != 'all' && !user()->is_superadmin);
             $this->view = 'security-settings.ajax.google-recaptcha';
                 break;
         default:
@@ -121,24 +118,6 @@ class SecuritySettingController extends AccountBaseController
     {
         $this->key = request()->key;
         return view('security-settings.verify-recaptcha-v3', $this->data);
-    }
-
-    public function validateGoogleRecaptcha($googleRecaptchaResponse, $secret)
-    {
-        $client = new Client();
-        $response = $client->post('https://www.google.com/recaptcha/api/siteverify',
-            [
-                'form_params' => [
-                    'secret' => $secret,
-                    'response' => $googleRecaptchaResponse,
-                    'remoteip' => $_SERVER['REMOTE_ADDR']
-                ]
-            ]
-        );
-
-        $body = json_decode((string)$response->getBody());
-
-        return $body->success;
     }
 
 }

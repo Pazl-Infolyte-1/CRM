@@ -10,7 +10,7 @@
         <x-setting-card>
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
-                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                         @lang($pageTitle)</h2>
                 </div>
             </x-slot>
@@ -51,7 +51,7 @@
                     <x-setting-form-actions>
                         <x-forms.button-primary id="save-form" class="mr-3" icon="check">@lang('app.save')
                         </x-forms.button-primary>
-                        </x-settingsform-actions>
+                        </x-setting-form-actions>
                 </div>
                 <!-- Buttons End -->
             </x-slot>

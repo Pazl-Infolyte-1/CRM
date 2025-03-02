@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
 class UpdateThemeSetting extends CoreRequest
 {
 
@@ -25,7 +23,14 @@ class UpdateThemeSetting extends CoreRequest
     public function rules()
     {
         return [
-            'primary_color.*' => 'required',
+            'primary_color.*' => [
+                'required',
+                'regex:/^#([a-f0-9]{6}|[a-f0-9]{3})$/i'
+            ],
+            'global_header_color' => [
+                'required',
+                'regex:/^#([a-f0-9]{6}|[a-f0-9]{3})$/i'
+            ],
             'app_name' => 'required'
         ];
     }

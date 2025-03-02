@@ -20,6 +20,7 @@ class ClientSubCategoryController extends AccountBaseController
         $this->subcategories = ClientSubCategory::all();
         $this->categories = ClientCategory::all();
         $this->deletePermission = user()->permission('manage_client_subcategory');
+
         return view('clients.create-subcategory', $this->data);
     }
 
@@ -33,7 +34,8 @@ class ClientSubCategoryController extends AccountBaseController
         $category->category_id = $request->category_id;
         $category->category_name = $request->category_name;
         $category->save();
-        $categories = ClientCategory::all();
+        $categories = ClientSubCategory::where('category_id', $request->selected_category)->get();
+
         return Reply::successWithData(__('messages.recordSaved'), ['data' => $categories]);
     }
 
@@ -44,14 +46,14 @@ class ClientSubCategoryController extends AccountBaseController
      */
     public function update(Request $request, $id)
     {
-        abort_403 (user()->permission('manage_client_subcategory') != 'all');
+        abort_403(user()->permission('manage_client_subcategory') != 'all');
 
         $category = ClientSubCategory::findOrFail($id);
 
         $category->category_name = strip_tags($request->category_name);
         $category->save();
 
-        $categoryData = ClientSubCategory::all();
+        $categoryData = ClientSubCategory::where('category_id', $request->selectedCategory)->get();
 
         return Reply::successWithData(__('messages.updateSuccess'), ['data' => $categoryData]);
     }
@@ -60,20 +62,22 @@ class ClientSubCategoryController extends AccountBaseController
      * @param int $id
      * @return array|void
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        abort_403 (user()->permission('manage_client_subcategory') != 'all');
+        abort_403(user()->permission('manage_client_subcategory') != 'all');
 
         ClientSubCategory::findOrFail($id);
 
         ClientSubCategory::destroy($id);
-        $categoryData = ClientSubCategory::all();
+        $categoryData = ClientSubCategory::where('category_id', $request->selectedCategory)->get();
+
         return Reply::successWithData(__('messages.deleteSuccess'), ['data' => $categoryData]);
     }
 
     public function getSubCategories($id)
     {
         $sub_categories = ClientSubCategory::where('category_id', $id)->get();
+
         return Reply::dataOnly(['status' => 'success', 'data' => $sub_categories]);
     }
 

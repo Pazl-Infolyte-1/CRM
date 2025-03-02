@@ -4,11 +4,12 @@ namespace App\Notifications;
 
 use App\Http\Controllers\InvoiceController;
 use App\Models\EmailNotificationSetting;
+use App\Models\GlobalSetting;
 use App\Models\Invoice;
-use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
+use Illuminate\Support\Facades\App;
 
 class PaymentReminder extends BaseNotification
 {
@@ -53,11 +54,17 @@ class PaymentReminder extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
-        if ($this->emailSetting->send_push == 'yes') {
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
             array_push($via, OneSignalChannel::class);
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.paymentReminder.subject'), $this->invoice->invoice_number);
         }
 
         return $via;
@@ -72,29 +79,33 @@ class PaymentReminder extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         // For Sending pdf to email
         $invoiceController = new InvoiceController();
 
         if ($pdfOption = $invoiceController->domPdfObjectForDownload($this->invoice->id)) {
             $pdf = $pdfOption['pdf'];
             $filename = $pdfOption['fileName'];
+            $build->attachData($pdf->output(), $filename . '.pdf');
 
-            $url = route('front.invoice', [$this->invoice->hash]);
+            App::setLocale($notifiable->locale ?? $this->company->locale ?? 'en');
+
+            $url = url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$this->invoice->hash]);
             $paymentUrl = getDomainSpecificUrl($url, $this->company);
 
             $content = __('app.invoiceNumber') . ' : ' . $this->invoice->invoice_number . '<p>
                 <b style="color: green">' . __('app.dueDate') . ' : ' . $this->invoice->due_date->format($this->company->date_format) . '</b>
             </p>';
 
-            $build->subject(__('email.paymentReminder.subject') . ' - ' . config('app.name') . '.')
+            $build->subject(__('email.paymentReminder.subject') . ' (' . $this->invoice->invoice_number . ') - ' . config('app.name') . '.')
                 ->greeting(__('email.hello') . ' ' . $this->user->name . '!')
                 ->markdown('mail.payment.reminder', [
                     'paymentUrl' => $paymentUrl,
                     'content' => $content,
                     'themeColor' => $this->company->header_color
                 ]);
-            $build->attachData($pdf->output(), $filename . '.pdf');
+
+            parent::resetLocale();
 
             return $build;
         }
@@ -120,24 +131,14 @@ class PaymentReminder extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return SlackMessage
+     * @return \Illuminate\Notifications\Messages\SlackMessage
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.paymentReminder.subject') . '*' . "\n" . __('app.invoice') . ' - ' . $this->invoice->invoice_number);
-        }
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.paymentReminder.subject') . '*' . "\n" . __('app.invoice') . ' - ' . $this->invoice->invoice_number);
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.paymentReminder.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

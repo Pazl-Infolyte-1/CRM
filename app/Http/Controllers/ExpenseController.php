@@ -5,22 +5,25 @@ namespace App\Http\Controllers;
 use App\DataTables\ExpensesDataTable;
 use App\Helper\Files;
 use App\Helper\Reply;
+use App\Http\Requests\Admin\Employee\ImportProcessRequest;
+use App\Http\Requests\Admin\Employee\ImportRequest;
 use App\Http\Requests\Expenses\StoreExpense;
+use App\Imports\ExpenseImport;
+use App\Jobs\ImportExpenseJob;
 use App\Models\BankAccount;
 use App\Models\Currency;
 use App\Models\Expense;
 use App\Models\ExpensesCategory;
 use App\Models\ExpensesCategoryRole;
 use App\Models\Project;
-use App\Models\RoleUser;
 use App\Models\User;
 use App\Scopes\ActiveScope;
-use Carbon\Carbon;
+use App\Traits\ImportExcel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ExpenseController extends AccountBaseController
 {
+    use ImportExcel;
 
     public function __construct()
     {
@@ -62,7 +65,7 @@ class ExpenseController extends AccountBaseController
     public function show($id)
     {
         $this->expense = Expense::with(['user', 'project', 'category', 'transactions' => function($q){
-            $q->orderBy('id', 'desc')->limit(1);
+            $q->orderByDesc('id')->limit(1);
         }, 'transactions.bankAccount'])->findOrFail($id)->withCustomFields();
 
         $this->viewPermission = user()->permission('view_expenses');
@@ -74,18 +77,19 @@ class ExpenseController extends AccountBaseController
         || ($this->viewPermission == 'added' && $this->expense->added_by == user()->id)
         || ($viewProjectPermission == 'owned' || $this->expense->user_id == user()->id)));
 
-        if ($this->expense->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->expense->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $this->expense->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $this->pageTitle = $this->expense->item_name;
+        $this->view = 'expenses.ajax.show';
 
         if (request()->ajax()) {
-            $html = view('expenses.ajax.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'expenses.ajax.show';
         return view('expenses.show', $this->data);
 
     }
@@ -124,9 +128,9 @@ class ExpenseController extends AccountBaseController
         $this->projectId = request('project_id') ? request('project_id') : null;
 
         if (!is_null($this->projectId)) {
-            $employees = Project::with('projectMembers')->where('id', $this->projectId)->first();
-            $this->projectName = $employees->project_name;
-            $this->employees = $employees->projectMembers;
+            $this->project = Project::with('projectMembers')->where('id', $this->projectId)->first();
+            $this->projectName = $this->project->project_name;
+            $this->employees = $this->project->projectMembers;
 
         } else {
             $this->employees = User::allEmployees(null, true);
@@ -134,28 +138,32 @@ class ExpenseController extends AccountBaseController
 
         $expense = new Expense();
 
-        if ($expense->getCustomFieldGroupsWithFields()) {
-            $this->fields = $expense->getCustomFieldGroupsWithFields()->fields;
-        }
+        $getCustomFieldGroupsWithFields = $expense->getCustomFieldGroupsWithFields();
 
-        if (request()->ajax()) {
-            $html = view('expenses.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $this->view = 'expenses.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
         return view('expenses.show', $this->data);
 
     }
 
     public function store(StoreExpense $request)
     {
+        $currencySetting = Currency::findOrFail($request->currency_id);
+
         $userRole = session('user_roles');
         $expense = new Expense();
         $expense->item_name = $request->item_name;
-        $expense->purchase_date = Carbon::createFromFormat($this->company->date_format, $request->purchase_date)->format('Y-m-d');
+        $expense->purchase_date = companyToYmd($request->purchase_date);
         $expense->purchase_from = $request->purchase_from;
-        $expense->price = round($request->price, 2);
+        $expense->price = round($request->price, $currencySetting->no_of_decimal);
         $expense->currency_id = $request->currency_id;
         $expense->category_id = $request->category_id;
         $expense->user_id = $request->user_id;
@@ -209,7 +217,7 @@ class ExpenseController extends AccountBaseController
 
         $this->currencies = Currency::all();
         $this->categories = ExpenseCategoryController::getCategoryByCurrentRole();
-        $this->employees = User::allEmployees();
+        $this->employees = User::allEmployees(null, false);
         $this->pageTitle = __('modules.expenses.updateExpense');
         $this->linkExpensePermission = user()->permission('link_expense_bank_account');
         $this->viewBankAccountPermission = user()->permission('view_bankaccount');
@@ -239,27 +247,31 @@ class ExpenseController extends AccountBaseController
 
         $expense = new Expense();
 
-        if ($expense->getCustomFieldGroupsWithFields()) {
-            $this->fields = $expense->getCustomFieldGroupsWithFields()->fields;
-        }
+        $getCustomFieldGroupsWithFields = $expense->getCustomFieldGroupsWithFields();
 
-        if (request()->ajax()) {
-            $html = view('expenses.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $this->view = 'expenses.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
         return view('expenses.show', $this->data);
 
     }
 
     public function update(StoreExpense $request, $id)
     {
+        $currencySetting = Currency::findOrFail($request->currency_id);
+
         $expense = Expense::findOrFail($id);
         $expense->item_name = $request->item_name;
-        $expense->purchase_date = Carbon::createFromFormat($this->company->date_format, $request->purchase_date)->format('Y-m-d');
+        $expense->purchase_date = companyToYmd($request->purchase_date);
         $expense->purchase_from = $request->purchase_from;
-        $expense->price = round($request->price, 2);
+        $expense->price = round($request->price, $currencySetting->no_of_decimal);
         $expense->currency_id = $request->currency_id;
         $expense->user_id = $request->user_id;
         $expense->category_id = $request->category_id;
@@ -331,7 +343,10 @@ class ExpenseController extends AccountBaseController
     {
         abort_403(user()->permission('delete_employees') != 'all');
 
-        Expense::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->delete();
+        // Did this to call observer
+        foreach (Expense::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->get() as $delete) {
+            $delete->delete();
+        }
     }
 
     protected function changeBulkStatus($request)
@@ -351,7 +366,7 @@ class ExpenseController extends AccountBaseController
         // Get employee category
         if (!is_null($request->userId)) {
             $categories = ExpensesCategory::with('roles')->whereHas('roles', function($q) use ($request) {
-                $user = User::findOrFail($request->userId);
+                $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($request->userId);
 
                 $roleId = (count($user->role) > 1) ? $user->role[1]->role_id : $user->role[0]->role_id;
                 $q->where('role_id', $roleId);
@@ -418,22 +433,23 @@ class ExpenseController extends AccountBaseController
             }
         }
         else {
-            $employees = User::allEmployees(null, true);
+            $employees = User::allEmployees(null, false);
         }
 
         $data = null;
 
         if ($employees) {
             foreach ($employees as $employee) {
+                if($employee->status == 'active' || $employee->id == $request->userId){
+                    $data .= '<option ';
 
-                $data .= '<option ';
+                    $content = ($employee->status == 'deactive') ? "<span class='badge badge-pill badge-danger border align-center ml-2 px-2'>Inactive</span>" : '';
+                    $selected = $employee->id == $request->userId ? 'selected' : '';
+                    $itsYou = $employee->id == user()->id ? "<span class='ml-2 badge badge-secondary pr-1'>". __('app.itsYou') .'</span>' : '';
 
-                $selected = $employee->id == $request->userId ? 'selected' : '';
-                $itsYou = $employee->id == user()->id ? "<span class='ml-2 badge badge-secondary pr-1'>". __('app.itsYou') .'</span>' : '';
-
-                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $employee->image_url . '\' ></div> '.$employee->name.$itsYou.'"
-                value="' . $employee->id . '"'.$selected.'>'.$employee->name.'</option>';
-
+                    $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $employee->image_url . '\' ></div> '.$employee->name.$itsYou.$content.'"
+                    value="' . $employee->id . '"'.$selected.'>'.$employee->name.'</option>';
+                }
             }
         }
         else {
@@ -448,6 +464,42 @@ class ExpenseController extends AccountBaseController
         }
 
         return Reply::dataOnly(['status' => 'success', 'employees' => $data]);
+    }
+
+    public function import()
+    {
+        $this->pageTitle = __('app.importExcel') . ' ' . __('app.menu.expenses');
+
+        $addPermission = user()->permission('add_expenses');
+        abort_403(!in_array($addPermission, ['all', 'added']));
+
+        $this->view = 'expenses.ajax.import';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
+        return view('expenses.show', $this->data);
+    }
+
+    public function importStore(ImportRequest $request)
+    {
+        $rvalue = $this->importFileProcess($request, ExpenseImport::class);
+
+        if($rvalue == 'abort'){
+            return Reply::error(__('messages.abortAction'));
+        }
+
+        $view = view('expenses.ajax.import_progress', $this->data)->render();
+
+        return Reply::successWithData(__('messages.importUploadSuccess'), ['view' => $view]);
+    }
+
+    public function importProcess(ImportProcessRequest $request)
+    {
+        $batch = $this->importJobProcess($request, ExpenseImport::class, ImportExpenseJob::class);
+
+        return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);
     }
 
 }

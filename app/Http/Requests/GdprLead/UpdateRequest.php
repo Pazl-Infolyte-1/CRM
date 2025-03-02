@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\GdprLead;
 
-use App\Models\Lead;
+use App\Models\Deal;
 use App\Http\Requests\CoreRequest;
 
 class UpdateRequest extends CoreRequest
@@ -25,12 +25,12 @@ class UpdateRequest extends CoreRequest
      */
     public function rules()
     {
-        $lead = Lead::whereRaw('md5(id) = ?', $this->route('lead'))->firstOrFail();
+        $lead = Deal::whereRaw('md5(id) = ?', $this->route('lead'))->firstOrFail();
 
         $rules = [
             'company_name' => 'required',
             'client_name' => 'required',
-            'client_email' => 'required|email:rfc|unique:leads,client_email,'.$lead->id.',id,company_id,' . company()->id,
+            'client_email' => 'required|email:rfc,strict|unique:leads,client_email,'.$lead->id.',id,company_id,' . company()->id,
         ];
 
         return $rules;

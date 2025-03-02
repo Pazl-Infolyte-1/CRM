@@ -11,11 +11,14 @@
 
                         <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                             aria-labelledby="dropdownMenuLink" tabindex="0">
-                            @if ($editExpensePermission == 'all' || ($editExpensePermission == 'added' && user()->id == $expense->added_by))
+                            @php
+                                $trashBtn = (!is_null($expense->project) && is_null($expense->project->deleted_at)) ? true : (is_null($expense->project) ? true : false) ;
+                            @endphp
+
+                            @if ($trashBtn && $editExpensePermission == 'all' || ($editExpensePermission == 'added' && user()->id == $expense->added_by))
                                 <a class="dropdown-item openRightModal" href="{{ route('expenses.edit', [$expense->id]) }}">@lang('app.edit')
                                         </a>
-                            @endif
-
+                                        @endif
                                 @if ($deleteExpensePermission == 'all' || ($deleteExpensePermission == 'added' && user()->id == $expense->added_by))
                                     <a class="dropdown-item delete-table-row" href="javascript:;" data-expense-id="{{ $expense->id }}">@lang('app.delete')
                                     </a>
@@ -36,16 +39,15 @@
             <x-cards.data-row :label="__('modules.expenses.purchaseFrom')" :value="$expense->purchase_from ?? '--'" />
 
             <x-cards.data-row :label="__('app.project')"
-                :value="(!is_null($expense->project_id) ? $expense->project->project_name : '--')" />
+                :value="(!is_null($expense->project) && !is_null($expense->project->withTrashed()) ? $expense->project->project_name : '--')" />
 
             @php
-                $bankName = isset($expense->transactions[0]) && $expense->transactions[0]->bankAccount->bank_name ? $expense->transactions[0]->bankAccount->bank_name.' |' : ''
+                $bankName = !is_null($expense->bankAccount) ? ($expense->bankAccount->bank_name . ' | ' . $expense->bankAccount->account_name ?? '') : '--';
             @endphp
-            <x-cards.data-row :label="__('app.menu.bankaccount')"
-            :value="(count($expense->transactions) > 0  ? $bankName.' '.$expense->transactions[0]->bankAccount->account_name : '--')" />
+            <x-cards.data-row :label="__('app.menu.bankaccount')" :value="$bankName !== '' ? $bankName : '--'" />
 
             <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                <p class="mb-0 text-lightest f-14 w-30 text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 ">
                     @lang('app.bill')</p>
                 <p class="mb-0 text-dark-grey f-14">
                     @if (!is_null($expense->bill))
@@ -60,19 +62,18 @@
             </div>
 
             <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                <p class="mb-0 text-lightest f-14 w-30 text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 ">
                     @lang('app.employee')</p>
                 <p class="mb-0 text-dark-grey f-14">
                     <x-employee :user="$expense->user" />
                 </p>
             </div>
-
             <x-cards.data-row :label="__('app.description')"
             :value="!empty($expense->description) ? $expense->description : '--'"
             html="true"/>
 
             <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                <p class="mb-0 text-lightest f-14 w-30 text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 ">
                     @lang('app.status')</p>
                 <p class="mb-0 text-dark-grey f-14">
                     @if ($expense->status == 'pending')
@@ -87,7 +88,7 @@
 
             @if ($expense->status == 'approved')
                 <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                    <p class="mb-0 text-lightest f-14 w-30 text-capitalize">
+                    <p class="mb-0 text-lightest f-14 w-30 ">
                         @lang('modules.expenses.approvedBy')</p>
                     <p class="mb-0 text-dark-grey f-14">
                         <x-employee :user="$expense->approver" />

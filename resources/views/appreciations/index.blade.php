@@ -46,7 +46,7 @@
     <x-filters.more-filter-box>
 
         <div class="more-filter-items">
-            <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.appreciations.appreciationType')</label>
+            <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.appreciations.appreciationType')</label>
             <div class="select-filter mb-4">
                 <select class="form-control select-picker" name="award_type" id="award_type" data-container="body">
                     <option value="all">@lang('app.all')</option>
@@ -59,7 +59,7 @@
         </div>
 
         <div class="more-filter-items">
-            <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.appreciations.awardTo')</label>
+            <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.appreciations.awardTo')</label>
             <div class="select-filter mb-4">
                 <div class="select-others">
                     <select class="form-control select-picker" id="awardTo" data-live-search="true"
@@ -157,7 +157,7 @@ $manageAwardPermission = user()->permission('manage_award');
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["user-appreciation-table"].draw(false);
+            window.LaravelDataTables["user-appreciation-table"].draw(true);
         }
 
         $('#search-text-field, #award_type, #awardTo').on('change keyup', function() {

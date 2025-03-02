@@ -2,25 +2,29 @@
 
 namespace App\Jobs;
 
+use App\Models\EmployeeDetails;
 use App\Models\Role;
 use App\Models\User;
+use App\Traits\ExcelImportable;
+use App\Traits\UniversalSearchTrait;
+use Carbon\Exceptions\InvalidFormatException;
+use Exception;
+use App\Models\UserAuth;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
-use Illuminate\Support\Carbon;
-use App\Models\EmployeeDetails;
-use App\Models\UniversalSearch;
-use Illuminate\Support\Facades\DB;
-use App\Traits\UniversalSearchTrait;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ImportEmployeeJob implements ShouldQueue, ShouldBeUnique
 {
 
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels, UniversalSearchTrait;
+    use ExcelImportable;
 
     private $row;
     private $columns;
@@ -45,59 +49,75 @@ class ImportEmployeeJob implements ShouldQueue, ShouldBeUnique
      */
     public function handle()
     {
-        if (!empty(array_keys($this->columns, 'name')) && !empty(array_keys($this->columns, 'email')) && filter_var($this->row[array_keys($this->columns, 'email')[0]], FILTER_VALIDATE_EMAIL)) {
+        if ($this->isColumnExists('name') && $this->isColumnExists('email') && $this->isEmailValid($this->getColumnValue('email'))) {
 
-            $user = User::where('email', $this->row[array_keys($this->columns, 'email')[0]])->first();
-
-            if ($user) {
-                $this->job->fail(__('messages.duplicateEntryForEmail') . $this->row[array_keys($this->columns, 'email')[0]]);
+            if (!checkCompanyCanAddMoreEmployees($this->company?->id)) {
+                $this->job->fail(__('superadmin.updatePlanNote'));
                 return;
             }
 
-            $employeeDetails = EmployeeDetails::where('employee_id', $this->row[array_keys($this->columns, 'employee_id')[0]])->first();
+            $user = User::where('email', $this->getColumnValue('email'))->first();
+
+            if ($user) {
+                $this->failJobWithMessage(__('messages.duplicateEntryForEmail') . $this->getColumnValue('email'));
+
+                return;
+            }
+
+            $employeeDetails = EmployeeDetails::where('employee_id', $this->getColumnValue('employee_id'))->first();
 
             if ($employeeDetails) {
-                $this->job->fail(__('messages.duplicateEntryForEmployeeId') . $this->row[array_keys($this->columns, 'employee_id')[0]]);
+                $this->failJobWithMessage(__('messages.duplicateEntryForEmployeeId') . $this->getColumnValue('employee_id'));
             }
+
             else {
                 DB::beginTransaction();
                 try {
                     $user = new User();
                     $user->company_id = $this->company?->id;
-                    $user->name = $this->row[array_keys($this->columns, 'name')[0]];
-                    $user->email = $this->row[array_keys($this->columns, 'email')[0]];
-                    $user->password = bcrypt(123456);
-                    $user->mobile = !empty(array_keys($this->columns, 'mobile')) ? $this->row[array_keys($this->columns, 'mobile')[0]] : null;
-                    $user->gender = !empty(array_keys($this->columns, 'gender')) ? strtolower($this->row[array_keys($this->columns, 'gender')[0]]) : null;
+                    $user->name = $this->getColumnValue('name');
+                    $user->email = $this->getColumnValue('email');
+                    if (isWorksuite())
+                    {
+                        $user->password = bcrypt(123456);
+                    }
+                    $user->mobile = $this->isColumnExists('mobile') ? $this->getColumnValue('mobile') : null;
+                    $user->gender = $this->isColumnExists('gender') ? strtolower($this->getColumnValue('gender')) : null;
+                    if (isWorksuiteSaas())
+                    {
+                        $userAuth = UserAuth::createUserAuthCredentials($this->row[array_keys($this->columns, 'email')[0]], 123456);
+                        $user->user_auth_id = $userAuth->id;
+                    }
+
                     $user->save();
 
                     if ($user->id) {
                         $employee = new EmployeeDetails();
                         $employee->company_id = $this->company?->id;
                         $employee->user_id = $user->id;
-                        $employee->address = !empty(array_keys($this->columns, 'address')) ? $this->row[array_keys($this->columns, 'address')[0]] : null;
-                        $employee->employee_id = !empty(array_keys($this->columns, 'employee_id')) ? $this->row[array_keys($this->columns, 'employee_id')[0]] : (EmployeeDetails::max('id') + 1);
-                        $employee->joining_date = !empty(array_keys($this->columns, 'joining_date')) ? Carbon::createFromFormat('Y-m-d', $this->row[array_keys($this->columns, 'joining_date')[0]]) : null;
-                        $employee->hourly_rate = !empty(array_keys($this->columns, 'hourly_rate')) ? preg_replace('/[^0-9.]/', '', $this->row[array_keys($this->columns, 'hourly_rate')[0]]) : null;
+                        $employee->address = $this->isColumnExists('address') ? $this->getColumnValue('address') : null;
+                        $employee->employee_id = $this->isColumnExists('employee_id') ? $this->getColumnValue('employee_id') : (EmployeeDetails::max('id') + 1);
+                        $employee->joining_date = $this->isColumnExists('joining_date') ? Carbon::createFromFormat('Y-m-d', $this->getColumnValue('joining_date')) : null;
+                        $employee->hourly_rate = $this->isColumnExists('hourly_rate') ? preg_replace('/[^0-9.]/', '', $this->getColumnValue('hourly_rate')) : null;
                         $employee->save();
                     }
 
                     $employeeRole = Role::where('name', 'employee')->first();
                     $user->attachRole($employeeRole);
                     $user->assignUserRolePermission($employeeRole->id);
-                    $this->logSearchEntry($user->id, $user->name, 'employees.show', 'employee', $user->company_id);
+                    $this->logSearchEntry($user->id, $user->name, 'employees.show', 'employee');
                     DB::commit();
-                } catch (\Carbon\Exceptions\InvalidFormatException $e) {
+                } catch (InvalidFormatException $e) {
                     DB::rollBack();
-                    $this->job->fail(__('messages.invalidDate') . json_encode($this->row, true));
-                } catch (\Exception $e) {
+                    $this->failJob(__('messages.invalidDate'));
+                } catch (Exception $e) {
                     DB::rollBack();
-                    $this->job->fail($e->getMessage());
+                    $this->failJobWithMessage($e->getMessage());
                 }
             }
         }
         else {
-            $this->job->fail(__('messages.invalidData') . json_encode($this->row, true));
+            $this->failJob(__('messages.invalidData'));
         }
     }
 

@@ -17,7 +17,7 @@ $viewClientDocumentPermission = user()->permission('view_client_document');
                 <div class="row">
                     <div class="col-md-12 mb-3">
                         <x-forms.link-primary link="javascript:;" class="mr-3 float-left d-none actionBtn emergency-contacts-btn" icon="plus">
-                            @lang('app.create') @lang('app.new')
+                            @lang('app.createNew')
                         </x-forms.link-primary>
                     </div>
                 </div>

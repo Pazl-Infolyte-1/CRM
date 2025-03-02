@@ -22,7 +22,7 @@
     <!-- HEADING START -->
     <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar">
         <div class="px-lg-4 px-md-4 px-3 py-3">
-            <h4 class="mb-0 f-21 font-weight-normal text-capitalize"><i class="bi bi-cart3"></i> @lang('app.cart')</h4>
+            <h4 class="mb-0 f-21 font-weight-normal "><i class="bi bi-cart3"></i> @lang('app.cart')</h4>
         </div>
     </div>
 
@@ -39,7 +39,7 @@
              <x-form-actions class="c-inv-btns d-block d-lg-flex d-md-flex">
                 <div class="d-flex mb-3 mb-lg-0 mb-md-0">
 
-                    <x-forms.button-cancel :link="route('products.index')" class="border-0 mr-3">@lang('app.view') @lang('app.menu.products')
+                    <x-forms.button-cancel :link="route('products.index')" class="border-0 mr-3">@lang('app.viewProducts')
                     </x-forms.button-cancel>
 
                 </div>

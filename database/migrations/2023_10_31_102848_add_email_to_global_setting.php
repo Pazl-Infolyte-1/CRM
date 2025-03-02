@@ -2,12 +2,12 @@
 
 use App\Models\Company;
 use App\Models\GlobalSetting;
+use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
 
     /**
      * Run the migrations.
@@ -28,6 +28,16 @@ return new class extends Migration
             if ($firstCompany) {
                 $globalSetting = GlobalSetting::first();
                 $globalSetting->email = $firstCompany->company_email;
+                $globalSetting->last_license_verified_at = now()->subDays(2);
+                $globalSetting->saveQuietly();
+            }
+        }
+        elseif (isWorksuiteSaas()) {
+            $superAdmin = User::withoutGlobalScopes()->where('is_superadmin', '1')->first();
+
+            if ($superAdmin) {
+                $globalSetting = GlobalSetting::first();
+                $globalSetting->email = $superAdmin->email;
                 $globalSetting->last_license_verified_at = now()->subDays(2);
                 $globalSetting->saveQuietly();
             }

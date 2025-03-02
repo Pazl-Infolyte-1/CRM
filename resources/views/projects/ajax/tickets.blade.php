@@ -111,7 +111,7 @@
         data['searchText'] = $('#search-text-field').val();
     });
     const showTable = () => {
-        window.LaravelDataTables["ticket-table"].draw(false);
+        window.LaravelDataTables["ticket-table"].draw(true);
     }
 
     $('#search-text-field').on('keyup', function() {

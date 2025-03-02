@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Appreciation\AppreciationType;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRequest extends CoreRequest
 {

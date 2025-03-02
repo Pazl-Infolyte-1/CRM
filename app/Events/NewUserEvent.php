@@ -14,11 +14,13 @@ class NewUserEvent
 
     public $user;
     public $password;
+    public $clientSignup;
 
-    public function __construct(User $user, $password)
+    public function __construct(User $user, $password, $clientSignup = false)
     {
         $this->user = $user;
         $this->password = $password;
+        $this->clientSignup = $clientSignup;
     }
 
 }

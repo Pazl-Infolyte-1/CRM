@@ -40,21 +40,25 @@ use App\Http\Controllers\AttendanceSettingController;
 use App\Http\Controllers\ContractSettingController;
 use App\Http\Controllers\CustomLinkSettingController;
 use App\Http\Controllers\LeadSourceSettingController;
-use App\Http\Controllers\LeadStatusSettingController;
 use App\Http\Controllers\SocialAuthSettingController;
 use App\Http\Controllers\TicketEmailSettingController;
 use App\Http\Controllers\TicketReplyTemplatesController;
 use App\Http\Controllers\DatabaseBackupSettingController;
 use App\Http\Controllers\GoogleCalendarSettingController;
+use App\Http\Controllers\LeadPipelineSettingController;
+use App\Http\Controllers\LeadStageSettingController;
 use App\Http\Controllers\OfflinePaymentSettingController;
 use App\Http\Controllers\PaymentGatewayCredentialController;
 use App\Http\Controllers\NotificationSettingController;
 use App\Http\Controllers\QuickbookSettingsController;
+use App\Http\Controllers\ShiftRotationController;
 use App\Http\Controllers\SignUpSettingController;
 use App\Http\Controllers\TaxSettingController;
 use App\Http\Controllers\UnitTypeController;
 use App\Http\Controllers\UpdateAppController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('account/settings/google-auth', [GoogleAuthController::class, 'index'])->name('googleAuth');
 
 Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function () {
 
@@ -118,6 +122,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
     Route::get('agent-groups', [TicketAgentController::class, 'agentGroups'])->name('ticket_agents.agent_groups');
 
     Route::resource('ticket-settings', TicketSettingController::class);
+    Route::post('ticket-settings-status/update-status/{companyId}', [TicketSettingController::class, 'updateTicketSettingStatus'])->name('ticket-setting.update_status');
+    Route::post('/ticket-agent-settings/{companyId}', [TicketSettingController::class, 'updateTicketSettingForAgent'])->name('ticket-agent-settings.update');
     Route::resource('ticket-groups', TicketGroupController::class);
     Route::resource('ticketTypes', TicketTypeController::class);
     Route::resource('ticketChannels', TicketChannelController::class);
@@ -132,8 +138,22 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
     Route::post('project-settings/{id?}', [ProjectSettingController::class, 'statusUpdate'])->name('project-settings.statusUpdate');
     Route::put('project-settings/change-status/{id?}', [ProjectSettingController::class, 'changeStatus'])->name('project-settings.changeStatus');
     Route::post('project-settings/set-default/{id?}', [ProjectSettingController::class, 'setDefault'])->name('project-settings.setDefault');
+    // Route::get('check-qr-login', [AttendanceSettingController::class, 'qrClockInOut'])->name('settings.qr-login');
+    // Route::post('change-qr-code-status', [AttendanceSettingController::class, 'qrCodeStatus'])->name('settings.change-qr-code-status');
 
     Route::resource('attendance-settings', AttendanceSettingController::class);
+
+    // Shift Rotation routes
+    Route::post('shift-rotations/change-status', [ShiftRotationController::class, 'changeStatus'])->name('shift-rotations.change_status');
+    Route::get('shift-rotations/automate-shift', [ShiftRotationController::class, 'automateShift'])->name('shift-rotations.automate_shift');
+    Route::post('shift-rotations/remove_employee', [ShiftRotationController::class, 'removeEmployee'])->name('shift-rotations.remove_employee');
+    Route::post('shift-rotations/store-automate-shift', [ShiftRotationController::class, 'storeAutomateShift'])->name('shift-rotations.store_automate_shift');
+    Route::get('shift-rotations/manage-rotation-employee/{id}', [ShiftRotationController::class, 'manageEmployees'])->name('shift-rotations.manage_rotation_employee');
+    Route::post('shift-rotations/change-employee-rotation', [ShiftRotationController::class, 'changeEmployeeRotation'])->name('shift-rotations.change_employee_rotation');
+    Route::get('shift-rotations/run-rotation', [ShiftRotationController::class, 'runRotation'])->name('shift-rotations.run_rotation_get');
+    Route::post('shift-rotations/run-rotation', [ShiftRotationController::class, 'runRotation'])->name('shift-rotations.run_rotation_post');
+    Route::resource('shift-rotations', ShiftRotationController::class);
+
     Route::resource('leaves-settings', LeaveSettingController::class);
     Route::post('leaves-settings/change-permission', [LeaveSettingController::class, 'changePermission'])->name('leaves-settings.changePermission');
 
@@ -175,12 +195,19 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
 
     /* Lead Settings */
     Route::resource('lead-settings', LeadSettingController::class);
+    Route::post('lead-settings-status/update-status/{companyId}', [LeadSettingController::class, 'updateLeadSettingStatus'])->name('lead-setting.update_status');
     Route::resource('lead-source-settings', LeadSourceSettingController::class);
 
-    Route::get('lead-status-update/{statusId}', [LeadStatusSettingController::class, 'statusUpdate'])->name('leadSetting.statusUpdate');
-    Route::resource('lead-status-settings', LeadStatusSettingController::class);
+    Route::get('lead-stage-update/{statusId}', [LeadStageSettingController::class, 'statusUpdate'])->name('lead-stage-setting.stageUpdate');
+    Route::resource('lead-stage-setting', LeadStageSettingController::class);
+
+    Route::get('lead-pipeline-update/{statusId}', [LeadPipelineSettingController::class, 'statusUpdate'])->name('lead-pipeline-update.stageUpdate');
+    Route::resource('lead-pipeline-setting', LeadPipelineSettingController::class);
 
     Route::resource('lead-agent-settings', LeadAgentSettingController::class);
+    Route::post('lead-agent-settings/update-category/{id}', [LeadAgentSettingController::class, 'updateCategory'])->name('lead_agents.update_category');
+    Route::post('lead-agent-settings/update-status/{id}', [LeadAgentSettingController::class, 'updateStatus'])->name('lead_agents.update_status');
+    Route::get('agent-category', [LeadAgentSettingController::class, 'agentCategories'])->name('lead_agent.categories');
 
     /* Contract Setting */
     Route::resource('contract-settings', ContractSettingController::class);
@@ -191,7 +218,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
 
     // Google Calendar Settings
     Route::resource('google-calendar-settings', GoogleCalendarSettingController::class);
-    Route::get('google-auth', [GoogleAuthController::class, 'index'])->name('googleAuth');
     Route::delete('google-auth', [GoogleAuthController::class, 'destroy'])->name('googleAuth.destroy');
 
 
@@ -240,6 +266,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     // Update App
     Route::post('update-settings/deleteFile', [UpdateAppController::class, 'deleteFile'])->name('update-settings.deleteFile');
     Route::get('update-settings/install', [UpdateAppController::class, 'install'])->name('update-settings.install');
-    Route::get('update-settings/manual-update', [UpdateAppController::class, 'manual'])->name('update-settings.manual');
     Route::resource('update-settings', UpdateAppController::class);
+
 });

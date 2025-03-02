@@ -9,7 +9,7 @@ $addProductSubCategoryPermission = user()->permission('manage_product_sub_catego
     <div class="col-sm-12">
         <x-form id="save-product-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('app.menu.editProducts') </h4>
                 <div class="row p-20">
                     <div class="col-lg-12">
@@ -135,6 +135,13 @@ $addProductSubCategoryPermission = user()->permission('manage_product_sub_catego
                             <div class="col-lg-12 col-xl-12  mt-2 downloadable {{$product->downloadable ? '' : 'd-none'}}">
                                 <x-forms.file class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.downloadableFile')"
                                     fieldName="downloadable_file" fieldId="downloadable_file" fieldRequired="true" :fieldValue="$product->download_file_url" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <x-forms.text fieldId="sku" :fieldLabel="__('app.sku')"
+                                    fieldName="sku" :fieldPlaceholder="__('placeholders.sku')"
+                                    :fieldValue="$product->sku">
+                                </x-forms.text>
                             </div>
 
                             <div class="col-md-12 mt-3">

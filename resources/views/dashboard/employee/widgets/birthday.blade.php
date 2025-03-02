@@ -1,7 +1,7 @@
 @if (in_array('birthday', $activeWidgets) && in_array('employees', user_modules()))
     <!-- EMP DASHBOARD BIRTHDAY START -->
     <div class="col-sm-12">
-        <x-cards.data class="e-d-info mb-3" :title="__('modules.dashboard.birthday')" padding="false"
+        <x-cards.data class="e-d-info mb-2" :title="__('modules.dashboard.birthday')" padding="false"
                       otherClasses="h-200">
             <x-table>
                 @forelse ($upcomingBirthdays as $upcomingBirthday)

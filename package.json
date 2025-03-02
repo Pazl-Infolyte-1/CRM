@@ -27,7 +27,7 @@
         "cropperjs": "^1.5.12",
         "dropify": "^0.2.2",
         "flag-icon-css": "^4.1.7",
-        "frappe-charts": "^1.5.5",
+        "frappe-charts": "^1.6.2",
         "laravel-echo": "^1.11.2",
         "moment-timezone": "^0.5.37",
         "pusher-js": "^7.0.3",

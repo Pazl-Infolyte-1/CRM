@@ -38,10 +38,10 @@ class ProductSubCategoryController extends AccountBaseController
         $category->save();
 
         $categoryData = ProductCategory::get();
-        $subCategoryData = ProductSubCategory::get();
         $category = '';
         $subCategory = '';
         $categoryID = $request->categoryID;
+        $subCategoryData = ProductSubCategory::where('category_id', $categoryID)->get();
 
         foreach ($categoryData as $data) {
             $selected = ($categoryID == $data->id) ? 'selected' : '';

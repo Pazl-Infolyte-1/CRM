@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Events\RemovalRequestAdminLeadEvent;
 use App\Events\RemovalRequestApprovedRejectLeadEvent;
 use App\Models\RemovalRequestLead;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 class RemovalRequestLeadObserver
@@ -24,7 +25,7 @@ class RemovalRequestLeadObserver
                 if ($removal->lead) {
                     event(new RemovalRequestApprovedRejectLeadEvent($removal));
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::info($e);
             }
         }

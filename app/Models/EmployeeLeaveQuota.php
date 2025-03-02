@@ -32,6 +32,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EmployeeLeaveQuota extends BaseModel
 {
 
+    protected $casts = [
+        'carry_forward_status' => 'array',
+    ];
+
     protected $guarded = ['id'];
 
     public function user(): BelongsTo
@@ -41,7 +45,7 @@ class EmployeeLeaveQuota extends BaseModel
 
     public function leaveType(): BelongsTo
     {
-        return $this->belongsTo(LeaveType::class, 'leave_type_id');
+        return $this->belongsTo(LeaveType::class, 'leave_type_id')->withTrashed();
     }
 
 }

@@ -1,9 +1,19 @@
+@push('styles')
+    @foreach ($frontWidgets as $item)
+    @if(!is_null($item->header_script))
+        {!! $item->header_script !!}
+    @endif
+
+    @endforeach
+@endpush
 <x-auth>
+    @includeIf('sections.2fa-css')
+
     <form id="two-factor-challenge-form"
         action="{{ Session::get('login.authenticate_via') == 'email' ? route('check_code') : route('two-factor.login') }}"
         class="ajax-form" method="POST">
         @csrf
-        <h3 class="text-capitalize mb-5 f-w-500">
+        <h3 class=" mb-5 f-w-500">
             <i class="fa fa-lock mr-3"></i>@lang('app.twoFactorVerification')
         </h3>
 
@@ -17,10 +27,11 @@
             </div>
         @endif
 
-        <div class="form-group text-left code">
+        <div class="form-group text-center code">
             <label id="2fa-code-label" for="code">@lang('app.twoFactorCode')</label>
-            <input type="number" name="code" class="form-control height-50 f-15 light_text"
-                   id="code">
+
+            @includeIf('sections.2fa-input-field')
+
             <input type="hidden" value="{{ Session::get('login.id') }}" name="user_id">
         </div>
         <div class="form-group text-left recovery_code d-none">
@@ -52,18 +63,29 @@
         </div>
 
         <button type="submit" id="submit-login"
-                class="btn-primary f-w-500 rounded w-100 height-50 f-18">
+                class="btn btn-primary f-w-500 rounded w-100 height-50 f-18 otp-submit">
             @lang('app.verify') <i class="fa fa-arrow-right pl-1"></i>
         </button>
 
         <div class="forgot_pswd mt-3">
             <a href="{{ route('login') }}" class="justify-content-center">@lang('app.login')</a>
         </div>
+        <input type="hidden" name="locale" value="{{ session()->has('locale') ? session('locale') : global_setting()->locale }}">
     </form>
 
     <x-slot name="scripts">
+        @includeIf('sections.2fa-js')
 
         <script>
+            $("form").submit(function () {
+                const button = $('form').find('#submit-login');
+
+                const text = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{__('app.loading')}}';
+
+                button.prop("disabled", true);
+                button.html(text);
+            });
+
             $('#resend-code').click(function() {
                 resendCode();
             });
@@ -126,6 +148,12 @@
 
         </script>
 
+        @foreach ($frontWidgets as $item)
+        @if(!is_null($item->footer_script))
+            {!! $item->footer_script !!}
+        @endif
+
+        @endforeach
     </x-slot>
 
 </x-auth>

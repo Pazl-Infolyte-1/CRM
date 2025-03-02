@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use App\Models\User;
 use App\Helper\Reply;
 use App\Models\Ticket;
-use App\Models\Country;
 use App\Models\TicketTag;
 use App\Models\TicketType;
 use App\Models\TicketGroup;
+use App\Models\TicketSettingForAgents;
 use App\Models\TicketReply;
 use Illuminate\Http\Request;
 use App\Models\TicketChannel;
@@ -21,7 +20,7 @@ use App\Models\TicketReplyTemplate;
 use App\Http\Requests\Tickets\StoreTicket;
 use App\Http\Requests\Tickets\UpdateTicket;
 use App\Models\Project;
-
+use App\Scopes\ActiveScope;
 class TicketController extends AccountBaseController
 {
 
@@ -115,23 +114,29 @@ class TicketController extends AccountBaseController
         $this->countries = countries();
         $this->lastTicket = Ticket::orderBy('id', 'desc')->first();
         $this->pageTitle = __('modules.tickets.addTicket');
+
         $ticket = new Ticket();
 
-        if ($ticket->getCustomFieldGroupsWithFields()) {
-            $this->fields = $ticket->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $ticket->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
+
 
         if (request()->default_client) {
             $this->client = User::find(request()->default_client);
         }
 
-        if (request()->ajax()) {
-            $html = view('tickets.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (isset(request()->default_assign)) {
+            $this->defaultAssign = User::findOrFail(request()->default_assign);
         }
 
         $this->view = 'tickets.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('tickets.create', $this->data);
 
@@ -145,7 +150,7 @@ class TicketController extends AccountBaseController
         $ticket->status = 'open';
         $ticket->user_id = ($request->requester_type == 'employee') ? $request->user_id : $request->client_id;
 
-
+        $ticket->agent_id = $request->agent_id;
         $ticket->type_id = $request->type_id;
         $ticket->priority = $request->priority;
         $ticket->channel_id = $request->channel_id;
@@ -189,31 +194,66 @@ class TicketController extends AccountBaseController
 
     public function show($ticketNumber)
     {
-        $this->viewTicketPermission = user()->permission('view_tickets');
-        $this->ticket = Ticket::with('project')
+        $managePermission = user()->permission('manage_ticket_agent');
+        $this->ticket = Ticket::with('project', 'reply.user.employeeDetail.designation:id,name', 'reply.files')
             ->where('ticket_number', $ticketNumber)
-            ->first();
+            ->firstOrFail();
 
-        abort_if(!$this->ticket, 404);
+        // abort_403(!$this->ticket->canViewTicket());
 
         $this->ticket = $this->ticket->withCustomFields();
         $this->pageTitle = __('app.menu.ticket') . '#' . $this->ticket->ticket_number;
 
-        abort_403(!(
-            $this->viewTicketPermission == 'all'
-            || ($this->viewTicketPermission == 'added' && user()->id == $this->ticket->added_by)
-            || ($this->viewTicketPermission == 'owned' && (user()->id == $this->ticket->user_id || $this->ticket->agent_id == user()->id))
-            || ($this->viewTicketPermission == 'both' && (user()->id == $this->ticket->user_id || $this->ticket->agent_id == user()->id || $this->ticket->added_by == user()->id))
-        ));
+        $userData = [];
+        $groups = TicketGroup::with('enabledAgents', 'enabledAgents.user')->findOrfail($this->ticket->group_id);
+
+        $users = User::withoutGlobalScope(ActiveScope::class)->findOrFail($this->ticket->user_id);
+
+        foreach ($groups->enabledAgents as $agent) {
+            $user = $agent->user;
+            $url = route('employees.show', [$user->id]);
+
+            $userData[] = ['id' => $user->id, 'value' => $user->name, 'image' => $user->image_url, 'link' => $url];
+        }
+
+        $url = route('employees.show', [$users->id]);
+        $userData[] = ['id' => $users->id, 'value' => $users->name, 'image' => $users->image_url, 'link' => $url];
+        $this->userData = $userData;
 
         $this->groups = TicketGroup::with('enabledAgents', 'enabledAgents.user')->get();
         $this->types = TicketType::all();
         $this->channels = TicketChannel::all();
         $this->templates = TicketReplyTemplate::all();
+        $this->employees = User::withRole('employee')
+            ->join('employee_details', 'employee_details.user_id', '=', 'users.id')
+            ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
+            ->select('users.id', 'users.company_id', 'users.name', 'users.email', 'users.created_at', 'users.image', 'designations.name as designation_name', 'users.email_notifications', 'users.mobile', 'users.country_id', 'users.status')->get();
+
+        $this->agents = TicketAgentGroups::query();
+
+            if ($managePermission == 'added') {
+                $this->agents->where('added_by', user()->id);
+            } elseif ($managePermission == 'owned') {
+                $this->agents->where('agent_id', user()->id);
+            } elseif ($managePermission == 'both') {
+                $this->agents->where(function($q) {
+                    $q->where('agent_id', user()->id)
+                      ->orWhere('added_by', user()->id);
+                });
+            } elseif ($managePermission == 'none') {
+                $this->agents->where('agent_id', user()->id);
+            }
+
+            $this->agents = $this->agents->get();
+
+        $this->ticketAgents = $this->employees->whereIn('id', $this->agents->pluck('agent_id'));
+        // for the above
         $this->ticketChart = $this->ticketChartData($this->ticket->user_id);
 
-        if ($this->ticket->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->ticket->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $this->ticket->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         return view('tickets.edit', $this->data);
@@ -235,37 +275,43 @@ class TicketController extends AccountBaseController
 
     public function update(UpdateTicket $request, $id)
     {
-
         $ticket = Ticket::findOrFail($id);
         $ticket->status = $request->status;
         $ticket->save();
 
-        $message = trim_editor($request->message);
-
-        if ($message != '') {
+        if ($request->type == 'reply') {
             $reply = new TicketReply();
             $reply->message = $request->message;
             $reply->ticket_id = $ticket->id;
             $reply->user_id = $this->user->id; // Current logged in user
+            $reply->type = $request->type;
             $reply->save();
 
             return Reply::successWithData(__('messages.ticketReplySuccess'), ['reply_id' => $reply->id]);
         }
 
+        if ($request->type == 'note') {
+            $reply = new TicketReply();
+            $reply->message = $request->message2;
+            $reply->ticket_id = $ticket->id;
+            $reply->user_id = $this->user->id; // Current logged in user
+            $reply->type = $request->type;
+
+            $reply->save();
+
+            $reply->users()->sync(request()->user_id);
+
+            return Reply::successWithData(__('messages.noteAddedSuccess'), ['reply_id' => $reply->id]);
+        }
+
         return Reply::dataOnly(['status' => 'success']);
     }
 
-    public function   destroy($id)
+    public function destroy($id)
     {
         $ticket = Ticket::findOrFail($id);
 
-        $this->deleteTicketPermission = user()->permission('delete_tickets');
-        abort_403(!(
-            $this->deleteTicketPermission == 'all'
-            || ($this->deleteTicketPermission == 'added' && user()->id == $ticket->added_by)
-            || ($this->deleteTicketPermission == 'owned' && (user()->id == $ticket->agent_id || user()->id == $ticket->user_id))
-            || ($this->deleteTicketPermission == 'both' && (user()->id == $ticket->agent_id || user()->id == $ticket->added_by || user()->id == $ticket->user_id))
-        ));
+        abort_403(!$ticket->canDeleteTicket());
 
         Ticket::destroy($id);
 
@@ -287,6 +333,7 @@ class TicketController extends AccountBaseController
             ->where('group_id', request()->group_id)
             ->pluck('agent_id')
             ->toArray();
+
         $ticketData = $ticket->where('company_id', company()->id)
             ->where('group_id', request()->group_id)
             ->whereIn('agent_id', $agentGroupData)
@@ -301,18 +348,19 @@ class TicketController extends AccountBaseController
 
             if (!empty($diffAgent)) {
                 $ticket->agent_id = current($diffAgent);
-
-            } else {
+            }
+            else {
                 $agentDuplicateCount = array_count_values($ticketData);
 
-                if(!empty($agentDuplicateCount)) {
+                if (!empty($agentDuplicateCount)) {
                     $minVal = min($agentDuplicateCount);
                     $agentId = array_search($minVal, $agentDuplicateCount);
                     $ticket->agent_id = $agentId;
                 }
 
             }
-        } else {
+        }
+        else {
             $ticket->agent_id = request()->agent_id;
         }
 
@@ -336,16 +384,42 @@ class TicketController extends AccountBaseController
     {
         $viewPermission = user()->permission('view_tickets');
 
-        $tickets = Ticket::with('agent');
+        $tickets = Ticket::with('agent','group.enabledAgents');
 
         if (!is_null($request->startDate) && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $tickets->where(DB::raw('DATE(`updated_at`)'), '>=', $startDate);
         }
 
         if (!is_null($request->endDate) && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $tickets->where(DB::raw('DATE(`updated_at`)'), '<=', $endDate);
+        }
+
+        $tagIds = is_array($request->tagId) ? $request->tagId : explode(',', $request->tagId);
+        $totalTagLists = TicketTagList::all();
+        $totaltags = ($totalTagLists->count() + 1) - count($tagIds);
+
+        if (is_array($request->tagId) && $request->tagId[0] !== 'all') {
+            $tickets->join('ticket_tags', 'ticket_tags.ticket_id', 'tickets.id')
+              ->whereIn('ticket_tags.tag_id', $tagIds)
+              ->groupBy('tickets.id');
+        } elseif(is_array($request->tagId) && $request->tagId[0] !== 'all' && $totaltags > 0){
+            $tickets->join('ticket_tags', 'ticket_tags.ticket_id', 'tickets.id')
+                ->whereIn('ticket_tags.tag_id', $tagIds)
+                ->groupBy('tickets.id');
+        } elseif(is_array($request->tagId) && $request->tagId[0] == 'all' && $totaltags > 0 && count($tagIds) !== 1){
+            $tickets->leftJoin('ticket_tags', 'ticket_tags.ticket_id', '=', 'tickets.id')
+                ->where(function ($query) use ($tagIds) {
+                    $query->whereIn('ticket_tags.tag_id', $tagIds)
+                        ->orWhereNull('ticket_tags.tag_id');
+                })->groupBy('tickets.id');
+        }elseif(is_array($request->tagId) && $request->tagId[0] == 'all' && count($tagIds) == 1){
+            $tickets->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('ticket_tags')
+                        ->whereColumn('ticket_tags.ticket_id', 'tickets.id');
+                });
         }
 
         if (!is_null($request->agentId) && $request->agentId != 'all') {
@@ -364,23 +438,100 @@ class TicketController extends AccountBaseController
             $tickets->where('type_id', '=', $request->typeId);
         }
 
-        if ($viewPermission == 'added') {
-            $tickets->where('added_by', '=', user()->id);
+        if (!is_null($request->groupId) && $request->groupId != 'all') {
+            $tickets->where('group_id', '=', $request->groupId);
         }
 
-        if ($viewPermission == 'owned') {
-            $tickets->where(function ($query) {
-                $query->where('user_id', '=', user()->id)
-                    ->orWhere('agent_id', '=', user()->id);
+        if (!is_null($request->projectID) && $request->projectID != 'all') {
+            $tickets->whereHas('project', function ($q) use ($request) {
+                $q->withTrashed()->where('tickets.project_id', $request->projectID);
             });
         }
 
-        if ($viewPermission == 'both') {
-            $tickets->where(function ($query) {
-                $query->where('user_id', '=', user()->id)
-                    ->orWhere('added_by', '=', user()->id)
-                    ->orWhere('agent_id', '=', user()->id);
-            });
+        $userAssignedInGroup = false;
+        if(in_array('employee', user_roles()) && !in_array('admin', user_roles()) && !in_array('client', user_roles())){
+            $userAssignedInGroup = TicketGroup::whereHas('enabledAgents', function ($query) {
+                $query->where('agent_id', user()->id)->orWhereNull('agent_id');
+            })->exists();
+        }
+
+        if($userAssignedInGroup == false){
+
+            if ($viewPermission == 'added') {
+                $tickets->where('added_by', '=', user()->id);
+            }
+
+            if ($viewPermission == 'owned') {
+                $tickets->where(function ($query) {
+                    $query->where('user_id', '=', user()->id)
+                        ->orWhere('agent_id', '=', user()->id);
+                });
+            }
+
+            if ($viewPermission == 'both') {
+                $tickets->where(function ($query) {
+                    $query->where('user_id', '=', user()->id)
+                        ->orWhere('added_by', '=', user()->id)
+                        ->orWhere('agent_id', '=', user()->id);
+                });
+            }
+        }else{
+
+            $ticketSetting = TicketSettingForAgents::first();
+
+            if($ticketSetting?->ticket_scope == 'group_tickets'){
+
+                $userGroupIds = TicketGroup::whereHas('enabledAgents', function ($query) {
+                    $query->where('agent_id', user()->id);
+                })->pluck('id')->toArray();
+
+                $ticketSettingGroupIds = is_array($ticketSetting?->group_id) ? $ticketSetting?->group_id : explode(',', $ticketSetting?->group_id);
+
+                // Find the common group IDs
+                $commonGroupIds = array_intersect($userGroupIds, $ticketSettingGroupIds);
+
+                if($commonGroupIds){
+                    $tickets->where(function ($query) use ($commonGroupIds) {
+                        $query->where(function ($subQuery) use ($commonGroupIds) {
+                            // Conditions related to user and agent
+                            $subQuery->where('user_id', '=', user()->id)
+                                ->orWhere('added_by', '=', user()->id)
+                                ->orWhere('agent_id', '=', user()->id)
+                                ->orWhere('agent_id', '!=', user()->id)
+                                ->whereIn('group_id', $commonGroupIds);
+                        })
+                        // Add orWhere for tickets where agent_id is null
+                        ->orWhere(function ($subQuery) use ($commonGroupIds) {
+                            $subQuery->whereNull('agent_id')
+                                ->whereIn('group_id', $commonGroupIds);
+                        });
+                    });
+                }else{
+                    $tickets->where(function ($query) use ($userGroupIds) {
+                        $query->where(function ($subQuery) use ($userGroupIds) {
+                            // Conditions related to user and agent
+                            $subQuery->where('user_id', '=', user()->id)
+                                ->orWhere('added_by', '=', user()->id)
+                                ->orWhere('agent_id', '=', user()->id)
+                                ->orWhere('agent_id', '!=', user()->id)
+                                ->whereIn('group_id', $userGroupIds);
+                        })
+                        // Add orWhere for tickets where agent_id is null
+                        ->orWhere(function ($subQuery) use ($userGroupIds) {
+                            $subQuery->whereNull('agent_id')
+                                ->whereIn('group_id', $userGroupIds);
+                        });
+                    });
+                }
+            }
+
+            if($ticketSetting?->ticket_scope == 'assigned_tickets'){
+                $tickets->where(function ($query) {
+                    $query->where('agent_id', '=', user()->id)
+                        ->orWhere('user_id', '=', user()->id)
+                        ->orWhere('added_by', '=', user()->id);
+                });
+            }
         }
 
         $tickets = $tickets->get();
@@ -416,22 +567,16 @@ class TicketController extends AccountBaseController
 
     public function changeStatus(Request $request)
     {
-        $ticket = Ticket::find($request->ticketId);
-        $this->editTicketPermission = user()->permission('edit_tickets');
+        $ticket = Ticket::findOrFail($request->ticketId);
 
-        abort_403(!(
-            $this->editTicketPermission == 'all'
-            || ($this->editTicketPermission == 'added' && user()->id == $ticket->added_by)
-            || ($this->editTicketPermission == 'owned' && (user()->id == $ticket->user_id || $ticket->agent_id == user()->id))
-            || ($this->editTicketPermission == 'both' && (user()->id == $ticket->user_id || $ticket->agent_id == user()->id || $ticket->added_by == user()->id))
-        ));
+        abort_403(!$ticket->canEditTicket());
 
         $ticket->update(['status' => $request->status]);
 
         return Reply::successWithData(__('messages.updateSuccess'), ['status' => 'success']);
     }
 
-    public function agentGroup($id)
+    public function agentGroup($id, $exceptThis = null)
     {
         $groups = TicketGroup::with('enabledAgents', 'enabledAgents.user');
         $groups = $groups->where('id', $id)->first();
@@ -440,16 +585,18 @@ class TicketController extends AccountBaseController
         $groupData = [];
         $userData = [];
 
-        if (isset($groups) && count($groups->enabledAgents) > 0)
-        {
+        if (isset($groups) && count($groups->enabledAgents) > 0) {
             $data = [];
+            foreach ($groups->enabledAgents as $agent) {
 
-            foreach ($groups->enabledAgents as $agent)
-            {
-                    $selected = (!is_null($ticket) && $agent->user->id == $ticket->agent_id) ? true : false;
+                if($agent->user->id == (int)$exceptThis) {
+                    continue;
+                }
 
-                    $url = route('employees.show', [$agent->user->id]);
-                    $userData[] = ['id' => $agent->user->id, 'value' => $agent->user->name, 'image' => $agent->user->image_url, 'link' => $url];
+                $selected = !is_null($ticket) && $agent->user->id == $ticket->agent_id;
+
+                $url = route('employees.show', [$agent->user->id]);
+                $userData[] = ['id' => $agent->user->id, 'value' => $agent->user->name, 'image' => $agent->user->image_url, 'link' => $url];
 
                 $data[] = view('components.user-option', [
                     'user' => $agent->user,
@@ -461,12 +608,18 @@ class TicketController extends AccountBaseController
 
             $groupData = $userData;
         }
-        else
-        {
+        else {
             $data = '<option value="">--</option>';
         }
 
-        return Reply::dataOnly(['data' => $data , 'groupData' => $groupData]);
+        if($exceptThis !== "null"){
+            $users = User::findOrFail($exceptThis);
+            $url = route('clients.show', [$users->id]);
+            $userData[] = ['id' => $users->id, 'value' => $users->name, 'image' => $users->image_url, 'link' => $url];
+            $groupData = $userData;
+        }
+
+        return Reply::dataOnly(['data' => $data, 'groupData' => $groupData]);
 
 
     }

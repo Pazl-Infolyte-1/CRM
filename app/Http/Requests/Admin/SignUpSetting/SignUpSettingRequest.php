@@ -24,8 +24,7 @@ class SignUpSettingRequest extends CoreRequest
     {
         $data = [];
 
-        if($this->has('sign_up_terms') && $this->sign_up_terms == 'yes')
-        {
+        if ($this->has('sign_up_terms') && $this->sign_up_terms == 'yes') {
             $data['terms_link'] = 'required_if:sign_up_terms,yes|url';
         }
 

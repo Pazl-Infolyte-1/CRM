@@ -1,4 +1,4 @@
-<div class="chartHeading mt-3 bg-white text-capitalize d-flex justify-content-between p-20 rounded-top">
+<div class="chartHeading mt-3 bg-white  d-flex justify-content-between p-20 rounded-top">
     <h3 class="f-21 f-w-500 mb-0">@lang('modules.department.dragAndDrop')</h3>
 </div>
 
@@ -17,6 +17,6 @@
     @endforeach
     <ul id="pre-state"></ul>
     <ul id="drophere" ondragstart="return false;" ondrop="return false;">
-        <li ><span id="NewNode" class="node-cpe">@lang('app.new') @lang('app.hierarchy')</span></span></li>
+        <li ><span id="NewNode" class="node-cpe">@lang('app.newHierarchy')</span></span></li>
     </ul>
 </div>

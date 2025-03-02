@@ -2,10 +2,12 @@
 
 namespace App\View\Components\Forms;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class File extends Component
 {
+
     public $fieldLabel;
     public $fieldValue;
     public $fieldName;
@@ -21,7 +23,7 @@ class File extends Component
      *
      * @return void
      */
-    public function __construct($fieldId, $fieldName, $fieldLabel,  $fieldValue = null,$fieldHelp = null, $fieldRequired = false, $fieldHeight = 100, $popover = null, $allowedFileExtensions = null)
+    public function __construct($fieldId, $fieldName, $fieldLabel, $fieldValue = null, $fieldHelp = null, $fieldRequired = false, $fieldHeight = 100, $popover = null, $allowedFileExtensions = null)
     {
         $this->fieldLabel = $fieldLabel;
         $this->fieldValue = $fieldValue;
@@ -37,7 +39,7 @@ class File extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|string
+     * @return View|string
      */
     public function render()
     {

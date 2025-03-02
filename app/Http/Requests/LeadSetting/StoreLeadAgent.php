@@ -3,7 +3,6 @@
 namespace App\Http\Requests\LeadSetting;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLeadAgent extends CoreRequest
 {
@@ -26,7 +25,15 @@ class StoreLeadAgent extends CoreRequest
     public function rules()
     {
         return [
-            'agent_name' => 'required'
+            'agent_id' => 'required',
+            'category_id.0' => 'required'
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'category_id.0.required' => __('messages.atleastOneCategory'),
         ];
     }
 

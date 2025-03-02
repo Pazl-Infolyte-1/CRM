@@ -5,7 +5,7 @@
         <x-form id="save-task-data-form" method="PUT">
             <input type="hidden" name="template_id" value="{{ $template->id }}" />
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.tasks.taskInfo')</h4>
                 <div class="row p-20">
                     <div class="col-lg-6 col-md-6">
@@ -86,13 +86,41 @@
                             <textarea name="description" id="description-text" class="d-none"></textarea>
                         </div>
                     </div>
-                    <x-form-actions>
-                        <x-forms.button-primary id="save-task-form" class="mr-3" icon="check">@lang('app.save')
-                        </x-forms.button-primary>
-                        <x-forms.button-cancel :link="route('project-template.show', $template->id.'?tab=tasks')" class="border-0">@lang('app.cancel')
-                        </x-forms.button-cancel>
-                    </x-form-actions>
+
+                    <div class="col-lg-6 col-md-12">
+                        <x-forms.label fieldId="task_labels" :fieldLabel="__('app.label')">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="select-picker form-control" multiple name="task_labels[]"
+                                    id="task_labels" data-live-search="true" data-size="8">
+                                @foreach ($labels as $label)
+                                    <option
+                                        data-content="<span class='badge badge-secondary' style='background-color: {{ $label->label_color }}'>{{ $label->label_name }}</span>"
+                                        @if(in_array($label->id, $selectedLabels)) selected @endif value="{{ $label->id }}">
+                                        {{ $label->label_name }}</option>
+                                @endforeach
+                            </select>
+
+                            @if (user()->permission('task_labels') == 'all')
+                                <x-slot name="append">
+                                    <button id="createTaskLabel" type="button"
+                                            class="btn btn-outline-secondary border-grey"
+                                            data-toggle="tooltip"
+                                            data-original-title="{{ __('modules.taskLabel.addLabel') }}">@lang('app.add')</button>
+                                </x-slot>
+                            @endif
+                        </x-forms.input-group>
+                    </div>
+
                 </div>
+
+                <x-form-actions>
+                    <x-forms.button-primary id="save-task-form" class="mr-3" icon="check">@lang('app.save')
+                    </x-forms.button-primary>
+                    <x-forms.button-cancel :link="route('project-template.show', $template->id.'?tab=tasks')" class="border-0">@lang('app.cancel')
+                    </x-forms.button-cancel>
+                </x-form-actions>
+
             </div>
         </x-form>
 
@@ -115,6 +143,13 @@
 
         quillImageLoad('#description');
 
+        $('#createTaskLabel').click(function () {
+            var projectId = $('#project_id').val();
+            const url = "{{ route('task-label.create') }}?project_template_task_id={{$task ? $task->id : ''}}";
+            $(MODAL_XL + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_XL, url);
+        });
+
         $('#save-task-form').click(function() {
             var note = document.getElementById('description').children[0].innerHTML;
             document.getElementById('description-text').value = note;
@@ -133,7 +168,7 @@
                     if ($(RIGHT_MODAL).hasClass('in')) {
                         document.getElementById('close-task-detail').click();
                         if ($('#allTasks-table').length) {
-                            window.LaravelDataTables["allTasks-table"].draw(false);
+                            window.LaravelDataTables["allTasks-table"].draw(true);
                         } else {
                             window.location.href = response.redirectUrl;
                         }

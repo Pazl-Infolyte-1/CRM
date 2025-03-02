@@ -8,7 +8,9 @@
             cursor: not-allowed;
             background: #c2c2c2;
         }
-
+        .hide{
+            display: none;
+        }
     </style>
 @endsection
 
@@ -40,7 +42,9 @@
     @endif
 
     <div class="buttons">
-
+        <ul  class="hide" id="messageWait">
+            <ol>Please wait a few moments as the application prepares for you. </ol>
+        </ul>
         @if (!isset($permissions['errors']))
             <a class="button" href="{{ route('LaravelInstaller::database') }}">
                 {{ trans('installer_messages.next') }}
@@ -51,12 +55,14 @@
                 {{ trans('installer_messages.checkPermissionAgain') }}
             </a>
         @endif
+
     </div>
 
 @stop
 
 @section('scripts')
     <script src="{{ asset('installer/js/jQuery-2.2.0.min.js') }}"></script>
+
     <script>
         $('.button').click(function () {
             const button = $('.button');
@@ -64,6 +70,7 @@
             const text = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting..';
 
             $(button).addClass('disabled');
+            $('#messageWait').show()
             button.html(text);
         });
     </script>

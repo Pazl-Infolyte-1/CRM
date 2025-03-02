@@ -1,153 +1,151 @@
 @extends('layouts.app')
 
 @push('datatable-styles')
-    <script src="{{ asset('vendor/jquery/frappe-charts.min.iife.js') }}"></script>
     @include('sections.datatable_css')
 @endpush
 
 @section('filter-section')
+    <!-- FILTER START -->
+    <div class="d-flex filter-box project-header bg-white">
 
-
-    <x-filters.filter-box>
-        <!-- DATE START -->
-        <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.duration')</p>
-            <div class="select-status d-flex">
-                <input type="text" class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
-                    id="datatableRange2" placeholder="@lang('placeholders.dateRange')">
-            </div>
+        <div class="mobile-close-overlay w-100 h-100" id="close-client-overlay"></div>
+        <div class="project-menu d-lg-flex" id="mob-client-detail">
+            <a class="d-none close-it" href="javascript:;" id="close-client-detail">
+                <i class="fa fa-times"></i>
+            </a>
+            <x-tab :href="route('lead-report.profile') . '?tab=profile'" :text="__('modules.deal.profile')" class="profile" />
+            <x-tab :href="route('lead-report.chart') . '?tab=chart'" :text="__('modules.leadContact.leadReport')" class="files active-tab" ajax="false" />
         </div>
-        <!-- DATE END -->
+        <a class="mb-0 d-block d-lg-none text-dark-grey ml-auto mr-2 border-left-grey"
+            onclick="openClientDetailSidebar()"><i class="fa fa-ellipsis-v "></i></a>
+    </div>
 
-        <!-- CLIENT START -->
-        <div class="select-box d-flex  py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.leadAgent')</p>
-            <div class="select-status">
-                <select class="form-control select-picker" name="agent" id="agent" data-live-search="true"
-                    data-size="8">
-                    <option value="all">@lang('app.all')</option>
-                    @foreach ($agents as $agent)
+    @if ($activeTab == 'profile')
+        <x-filters.filter-box>
+            <!-- DATE START -->
+            <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0">
+                <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.duration')</p>
+                <div class="select-status d-flex">
+                    <input type="text" class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
+                        id="datatableRange2" placeholder="@lang('placeholders.dateRange')">
+                </div>
+            </div>
+
+            <!-- DATE END -->
+
+            <!-- CLIENT START -->
+            <div class="select-box d-flex  py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+                <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.leadAgent')</p>
+                <div class="select-status">
+                    <select class="form-control select-picker" name="agent" id="agent" data-live-search="true"
+                        data-size="8">
+                        <option value="all">@lang('app.all')</option>
+                    @php  $uniqueAgents = $agents->unique('user_id'); @endphp
+
+
+                        @foreach ($uniqueAgents as $agent) {
                         <x-user-option :user="$agent->user" />
-                    @endforeach
-                </select>
+
+                        }
+                        @endforeach
+                    </select>
+                </div>
             </div>
-        </div>
-        <!-- CLIENT END -->
+            <!-- CLIENT END -->
 
-        <!-- RESET START -->
-        <div class="select-box d-flex py-1 px-lg-2 px-md-2 px-0">
-            <x-forms.button-secondary class="btn-xs d-none" id="reset-filters" icon="times-circle">
-                @lang('app.clearFilters')
-            </x-forms.button-secondary>
-        </div>
-        <!-- RESET END -->
+            <!-- RESET START -->
+            <div class="select-box d-flex py-1 px-lg-2 px-md-2 px-0">
+                <x-forms.button-secondary class="btn-xs d-none" id="reset-filters" icon="times-circle">
+                    @lang('app.clearFilters')
+                </x-forms.button-secondary>
+            </div>
+            <!-- RESET END -->
 
-    </x-filters.filter-box>
+        </x-filters.filter-box>
+    @endif
 
+    <!-- FILTER END -->
 @endsection
 
 @section('content')
-    <!-- CONTENT WRAPPER START -->
-    <div class="content-wrapper">
-        <!-- Add Task Export Buttons Start -->
-        <div class="d-flex flex-column">
-            <div id="table-actions" class="flex-grow-1 align-items-center mt-4">
-            </div>
-
-        </div>
-
-        <!-- Add Task Export Buttons End -->
-        <!-- Task Box Start -->
-        <div class="d-flex flex-column w-tables rounded mt-4 bg-white">
-
-            {!! $dataTable->table(['class' => 'table table-hover border-0 w-100']) !!}
-
-        </div>
-        <!-- Task Box End -->
+    <div class="content-wrapper border-top-0 client-detail-wrapper">
+        @include($view)
     </div>
-    <!-- CONTENT WRAPPER END -->
-
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('vendor/jquery/Chart.min.js') }}"></script>
+    <script src="{{ asset('vendor/jquery/frappe-charts.min.iife.js') }}"></script>
+
     @include('sections.datatable_js')
 
-    <script type="text/javascript">
-
-        function getDate()  {
-            var start = moment().clone().startOf('month');
-            var end = moment();
-
-            $('#datatableRange2').daterangepicker({
-                locale: daterangeLocale,
-                linkedCalendars: false,
-                startDate: start,
-                endDate: end,
-                ranges: daterangeConfig
-            }, cb);
-        }
-        $(function() {
-            getDate()
-            $('#datatableRange2').on('apply.daterangepicker', function(ev, picker) {
-                showTable();
-            });
-
-        });
-
-    </script>
-
-
     <script>
-        $('#lead-report-table').on('preXhr.dt', function(e, settings, data) {
+        $("body").on("click", ".project-menu .ajax-tab", function(event) {
+            event.preventDefault();
 
-            var dateRangePicker = $('#datatableRange2').data('daterangepicker');
-            var startDate = $('#datatableRange2').val();
+            $('.project-menu .p-sub-menu').removeClass('active');
+            $(this).addClass('active');
 
-            if (startDate == '') {
-                startDate = null;
-                endDate = null;
-            } else {
-                startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
-                endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
-            }
+            const requestUrl = this.href;
 
-            var agent = $('#agent').val();
-
-            data['startDate'] = startDate;
-            data['endDate'] = endDate;
-            data['agent'] = agent;
-        });
-        const showTable = () => {
-            window.LaravelDataTables["lead-report-table"].draw(false);
-        }
-
-        $('#agent').on('change keyup',
-            function() {
-                if ($('#agent').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                    showTable();
-                } else {
-                    $('#reset-filters').addClass('d-none');
-                    showTable();
+            $.easyAjax({
+                url: requestUrl,
+                blockUI: true,
+                container: ".content-wrapper",
+                historyPush: true,
+                success: function(response) {
+                    if (response.status == "success") {
+                        $('.content-wrapper').html(response.html);
+                        init('.content-wrapper');
+                    }
                 }
             });
-
-        $('#reset-filters').click(function() {
-            $('#filter-form')[0].reset();
-            getDate()
-
-            $('.filter-box .select-picker').selectpicker("refresh");
-            $('#reset-filters').addClass('d-none');
-            showTable();
         });
 
-        $('#reset-filters-2').click(function() {
-            $('#filter-form')[0].reset();
+        const activeTab = "{{ $activeTab }}";
+        $('.project-menu .' + activeTab).addClass('active');
 
-            $('.filter-box .select-picker').selectpicker("refresh");
-            $('#reset-filters').addClass('d-none');
-            showTable();
+        $('body').on('click', '.delete-table-row', function() {
+            var id = $(this).data('id');
+            Swal.fire({
+                title: "@lang('messages.sweetAlertTitle')",
+                text: "@lang('messages.recoverRecord')",
+                icon: 'warning',
+                showCancelButton: true,
+                focusConfirm: false,
+                confirmButtonText: "@lang('messages.confirmDelete')",
+                cancelButtonText: "@lang('app.cancel')",
+                customClass: {
+                    confirmButton: 'btn btn-primary mr-3',
+                    cancelButton: 'btn btn-secondary'
+                },
+                showClass: {
+                    popup: 'swal2-noanimation',
+                    backdrop: 'swal2-noanimation'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var url = "{{ route('deals.destroy', ':id') }}";
+                    url = url.replace(':id', id);
+
+                    var token = "{{ csrf_token() }}";
+
+                    $.easyAjax({
+                        type: 'POST',
+                        url: url,
+                        data: {
+                            '_token': token,
+                            '_method': 'DELETE'
+                        },
+                        success: function(response) {
+                            if (response.status == "success") {
+                                window.location.href = "{{ route('deals.index') }}";
+                            }
+                        }
+                    });
+                }
+            });
         });
-
     </script>
 @endpush

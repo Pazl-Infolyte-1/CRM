@@ -656,7 +656,7 @@
 
                     @if ($estimate->client && $estimate->client->name && $invoiceSetting->show_client_name == 'yes')
                     <div>
-                        <span class="bold">{{ $estimate->client->name }}</span>
+                        <span class="bold">{{ $estimate->client->name_salutation }}</span>
                     </div>
                     @endif
 
@@ -668,7 +668,7 @@
 
                     @if ($estimate->client && $estimate->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                     <div>
-                        <span>@if(isset($estimate->clientdetails->user->country))+{{$estimate->clientdetails->user->country->phonecode}} @endif  {{ $estimate->client->mobile }}</span>
+                        <span>{{ $estimate->client->mobile_with_phonecode }}</span>
                     </div>
                     @endif
 
@@ -688,9 +688,11 @@
                 @endif
 
                 @if($invoiceSetting->show_gst == 'yes' && !is_null($estimate->client->clientDetails->gst_number))
+                    <br><br>
                     <div>
-                        <span> @lang('app.gstIn'): {{ $estimate->client->clientDetails->gst_number }} </span>
+                        <span> {{ $estimate->client->clientDetails->tax_name }}: {{ $estimate->client->clientDetails->gst_number }} </span>
                     </div>
+                    <br><br>
                 @endif
             </section>
 
@@ -735,7 +737,7 @@
                     </tr>
 
                     <?php $count = 0; ?>
-                    @foreach ($estimate->items as $item)
+                    @foreach ($estimate->items->sortBy('field_order') as $item)
                         @if ($item->type == 'item')
                             <tr data-iterate="item">
                                 <td>{{ ++$count }}</td>
@@ -743,7 +745,7 @@
                                 <td>
                                     {{ $item->item_name }}
                                     @if (!is_null($item->item_summary))
-                                        <p class="item-summary mb-3">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                        <p class="item-summary mb-3 note-text">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                     @endif
                                     @if ($item->estimateItemImage)
                                         <p class="mt-2">
@@ -776,7 +778,13 @@
                     </tr>
                     @if ($discount != 0 && $discount != '')
                         <tr data-iterate="tax">
-                            <th>@lang("modules.invoices.discount"):</th>
+                            <th>@lang("modules.invoices.discount"):
+                                @if($estimate->discount_type == 'percent')
+                        {{$estimate->discount}}%
+                    @else
+                        {{ currency_format($estimate->discount, $estimate->currency_id) }}
+                    @endif
+                    </th>
                             <td>{{ currency_format($discount, $estimate->currency_id, false) }}</td>
                         </tr>
                     @endif
@@ -788,7 +796,7 @@
                     @endforeach
                     <tr class="amount-total">
                         <th>@lang("modules.invoices.total"):</th>
-                        <td>{{ currency_format($estimate->total, $estimate->currency_id, false) }} {!! htmlentities($estimate->currency->currency_code) !!}</td>
+                        <td>{{ currency_format($estimate->total, $estimate->currency_id, false) }}</td>
                     </tr>
                 </table>
 
@@ -802,6 +810,9 @@
                         <br>@lang('app.note') <br> {!! nl2br($estimate->note) !!}
                     @endif
                     <br><br>@lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}
+                    @if (isset($invoiceSetting->other_info))
+                        <br><br>{!! nl2br($invoiceSetting->other_info) !!}
+                    @endif
                 </div>
             </section>
             @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)

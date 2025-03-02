@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\EmailNotificationSetting;
 use App\Models\Project;
 use App\Models\ProjectMember;
-use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
@@ -46,11 +45,17 @@ class NewProjectMember extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
-        if ($this->emailSetting->send_push == 'yes') {
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
             array_push($via, OneSignalChannel::class);
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.newProjectMember.subject'), $this->project->project_name);
         }
 
         return $via;
@@ -65,13 +70,13 @@ class NewProjectMember extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('projects.show', $this->project->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newProjectMember.text') . ' - ' . ($this->project->project_name) . '<br>';
+        $content = __('email.newProjectMember.text') . ' - ' . ($this->project->project_name) . '<br><br>' . __('email.newProjectMember.text2');
 
-        return $build
+        $build
             ->subject(__('email.newProjectMember.subject') . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
@@ -80,6 +85,10 @@ class NewProjectMember extends BaseNotification
                 'actionText' => __('email.newProjectMember.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**
@@ -100,24 +109,12 @@ class NewProjectMember extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return SlackMessage
+     * @return \Illuminate\Notifications\Messages\SlackMessage
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
-
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newProjectMember.subject') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . $this->project->project_name);
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newProjectMember.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.newProjectMember.subject') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . $this->project->project_name);
     }
 
     public function toOneSignal()

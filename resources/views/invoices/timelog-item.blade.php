@@ -36,7 +36,7 @@
                             <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                 @foreach ($units as $unit)
                                     <option
-                                    @if ($unit->default == 1) selected @endif
+                                    @selected($unit->default == 1)
                                     value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                 @endforeach
                             </select>
@@ -119,7 +119,7 @@
                             <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                 @foreach ($units as $unit)
                                     <option
-                                    @if ($unit->default == 1) selected @endif
+                                    @selected ($unit->default == 1)
                                     value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                 @endforeach
                             </select>

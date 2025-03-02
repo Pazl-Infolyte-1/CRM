@@ -24,22 +24,38 @@ class UpdateProfile extends CoreRequest
      */
     public function rules()
     {
-        $setting = company();
-        return [
-            'email' => 'required|email:rfc|regex:/(.+)@(.+)\.(.+)/i|unique:users,email,'.$this->route('profile').',id,company_id,' . company()->id,
-            'name'  => 'required|max:50',
-            'password'  => 'nullable|min:8|max:50',
+        $setting = companyOrGlobalSetting();
+        $rules = [
+            'name' => 'required|max:50',
+            'password' => 'nullable|min:8|max:50',
             'image' => 'image|max:2048',
             'mobile' => 'nullable|numeric',
             'date_of_birth' => 'nullable|date_format:"' . $setting->date_format . '"|before_or_equal:'.now($setting->timezone)->format($setting->date_format),
+            'twitter_id' => 'nullable|unique:user_auths,twitter_id,' . $this->route('profile'),
         ];
+
+        if (user()->email != $this->email) {
+            $rules['email'] = [
+                'required',
+                'email:rfc,strict',
+                'unique:user_auths,email,' . user()->user_auth_id . ',id',
+            ];
+        }
+
+        return $rules;
     }
 
+    /**
+     * Get the validation messages that apply to the request.
+     *
+     * @return array
+     */
     public function messages()
     {
         return [
-          'image.image' => 'Profile picture should be an image'
+            'image.image' => 'Profile picture should be an image',
         ];
     }
 
 }
+

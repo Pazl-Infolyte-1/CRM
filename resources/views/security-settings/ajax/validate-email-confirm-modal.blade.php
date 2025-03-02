@@ -1,3 +1,4 @@
+
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">@lang('app.authenticationRequired')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
@@ -6,7 +7,7 @@
 <div class="modal-body">
     <x-form id="reset-password-form" class="ajax-form" method="POST">
         <div class="row">
-            <div class="col-lg-12">
+            <div class="col-lg-12 text-center">
                 <x-alert type="info" icon="info-circle">
                     @lang('messages.codeSent')
                 </x-alert>
@@ -14,7 +15,7 @@
                     :fieldLabel="__('app.twoFactorCodeEmail')">
                 </x-forms.label>
                 <x-forms.input-group>
-                    <input type="number" name="code" id="code" autocomplete="off" class="form-control height-50 f-14">
+                    @includeIf('sections.2fa-input-field')
                 </x-forms.input-group>
             </div>
         </div>
@@ -22,9 +23,9 @@
 </div>
 <div class="modal-footer">
     <x-forms.button-cancel data-dismiss="modal" class="border-0 mr-3">@lang('app.cancel')</x-forms.button-cancel>
-    <x-forms.button-primary id="submit-login" icon="check">@lang('modules.twofactor.validate2FA')</x-forms.button-primary>
+    <x-forms.button-primary id="submit-login" icon="check" class="otp-submit">@lang('modules.twofactor.validate2FA')</x-forms.button-primary>
 </div>
-
+@includeIf('sections.2fa-js')
 <script>
     $('#submit-login').click(function() {
 
@@ -38,7 +39,7 @@
             type: "POST",
             data: $('#reset-password-form').serialize(),
             success: function(response) {
-                if (response.status == 'success') {
+                if (response.status === 'success') {
                     window.location.reload();
                 }
             }

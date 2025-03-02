@@ -2,9 +2,7 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\Award;
-use App\Models\Discussion;
 use App\Scopes\ActiveScope;
 
 class EmployeeAppreciationDataTable extends BaseDataTable

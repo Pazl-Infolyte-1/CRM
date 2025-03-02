@@ -2,9 +2,7 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\ProjectTimeLog;
-use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
@@ -58,16 +56,26 @@ class TimeLogReportDataTable extends BaseDataTable
             })
             ->editColumn('total_hours', function ($row) {
                 if (is_null($row->end_time)) {
+                    $totalMinutes = (($row->activeBreak) ? $row->activeBreak->start_time->diffInMinutes($row->start_time) : now()->diffInMinutes($row->start_time)) - $row->breaks->sum('total_minutes');
+           }else {
+                    $totalMinutes = $row->total_minutes - $row->breaks->sum('total_minutes');
+                }
 
-                    $totalMinutes = now()->diffInMinutes($row->start_time) - $row->breaks->sum('total_minutes');
+                // Convert total minutes to hours and minutes
+                $hours = intdiv($totalMinutes, 60);
+                $minutes = $totalMinutes % 60;
 
-                    $timeLog = CarbonInterval::formatHuman($totalMinutes - $row->breaks->sum('total_minutes')); /** @phpstan-ignore-line */
+                // Format output based on hours and minutes
+                $formattedTime = $hours > 0
+                    ? $hours . 'h' . ($minutes > 0 ? ' ' . sprintf('%02dm', $minutes) : '')
+                    : ($minutes > 0 ? sprintf('%dm', $minutes) : '0s');
+
+                $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . $formattedTime . '</span>';
+
+                if (is_null($row->end_time)) {
                     $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.active') . '" class="fa fa-hourglass-start" ></i>';
                 }
                 else {
-                    $totalMinutes = $row->total_minutes - $row->breaks->sum('total_minutes');
-                    $timeLog = CarbonInterval::formatHuman($totalMinutes - $row->breaks->sum('total_minutes')); /** @phpstan-ignore-line */
-
                     if ($row->approved) {
                         $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.approved') . '" class="fa fa-check-circle text-primary"></i>';
                     }
@@ -90,6 +98,9 @@ class TimeLogReportDataTable extends BaseDataTable
                 }
 
                 return $project;
+            })
+            ->addColumn('client', function ($row) {
+                return $row->project->client->name ?? '--';
             })
             ->editColumn('task', function ($row) {
 
@@ -117,9 +128,7 @@ class TimeLogReportDataTable extends BaseDataTable
                 return $name;
             })
             ->addIndexColumn()
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->editColumn('short_code', function ($row) {
 
                 if (is_null($row->task_short_code)) {
@@ -161,7 +170,7 @@ class TimeLogReportDataTable extends BaseDataTable
 
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
 
             if (!is_null($startDate)) {
                 $model = $model->where(DB::raw('DATE(project_time_logs.`start_time`)'), '>=', $startDate);
@@ -169,7 +178,7 @@ class TimeLogReportDataTable extends BaseDataTable
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
 
             if (!is_null($endDate)) {
                 $model = $model->where(function ($query) use ($endDate) {
@@ -195,12 +204,8 @@ class TimeLogReportDataTable extends BaseDataTable
         }
 
         if (!is_null($approved) && $approved !== 'all') {
-            if ($approved == 2) {
-                $model->whereNull('project_time_logs.end_time');
-            }
-            else {
-                $model->where('project_time_logs.approved', '=', $approved);
-            }
+
+            $model->where('project_time_logs.approved', '=', $approved);
         }
 
         if (!is_null($invoice) && $invoice !== 'all') {
@@ -221,7 +226,7 @@ class TimeLogReportDataTable extends BaseDataTable
             });
         }
 
-        $model->orderBy('project_time_logs.id', 'desc');
+        $model->whereNull('tasks.deleted_at')->orderBy('project_time_logs.id', 'desc');
 
         return $model;
     }
@@ -272,6 +277,8 @@ class TimeLogReportDataTable extends BaseDataTable
             __('modules.timeLogs.endTime') => ['data' => 'end_time', 'name' => 'end_time', 'title' => __('modules.timeLogs.endTime')],
             __('modules.timeLogs.totalHours') => ['data' => 'total_hours', 'name' => 'total_hours', 'title' => __('modules.timeLogs.totalHours')],
             __('modules.timeLogs.totalMinutes') => ['data' => 'total_minutes', 'visible' => false, 'title' => __('modules.timeLogs.totalMinutes')],
+            __('modules.employees.memo') => ['data' => 'memo', 'visible' => false, 'title' => __('modules.employees.memo')],
+            __('app.client') => ['data' => 'client', 'visible' => false, 'title' => __('app.client')],
             __('app.earnings') => ['data' => 'earnings', 'name' => 'earnings', 'title' => __('app.earnings')]
         ];
     }

@@ -58,7 +58,8 @@ class TaskCommentObserver
 
             }
 
-        } else {
+        }
+        else {
 
             event(new TaskCommentEvent($task, $comment, $task->users, 'null'));
         }
@@ -89,7 +90,8 @@ class TaskCommentObserver
 
                         $newMention[] = $value;
                     }
-                } else {
+                }
+                else {
 
                     $newMention[] = $value;
                 }

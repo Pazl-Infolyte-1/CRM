@@ -27,7 +27,7 @@ class AutoDeleteDatabaseBackup extends Command
     /**
      * Execute the console command.
      *
-     * @return void
+     * @return int
      */
     public function handle()
     {
@@ -44,7 +44,7 @@ class AutoDeleteDatabaseBackup extends Command
             // Loop through each file
             foreach ($files as $file) {
                 // Check if the file is a .zip file and exists on the disk
-                if (substr($file, -4) === '.zip' && $disk->exists($file)) {
+                if (str_ends_with($file, '.zip') && $disk->exists($file)) {
                     // Parse the date the file was last modified
                     $date = Carbon::parse($disk->lastModified($file));
                     // Get the current date and time
@@ -60,6 +60,8 @@ class AutoDeleteDatabaseBackup extends Command
                 }
             }
         }
+
+        return Command::SUCCESS;
     }
 
 }

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * App\Models\Proposal
  *
  * @property int $id
- * @property int $lead_id
+ * @property int $deal_id
  * @property \Illuminate\Support\Carbon $valid_till
  * @property int|null $unit_id
  * @property float $sub_total
@@ -34,7 +34,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read mixed $icon
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\ProposalItem[] $items
  * @property-read int|null $items_count
- * @property-read \App\Models\Lead $lead
  * @property-read \App\Models\ProposalSign|null $signature
  * @method static \Illuminate\Database\Eloquent\Builder|Proposal newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Proposal newQuery()
@@ -71,6 +70,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder|Proposal whereUnitId($value)
  * @property int $send_status
  * @method static \Illuminate\Database\Eloquent\Builder|Proposal whereSendStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Proposal whereDealId($value)
  * @mixin \Eloquent
  */
 class Proposal extends BaseModel
@@ -97,7 +97,12 @@ class Proposal extends BaseModel
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Lead::class);
+        return $this->belongsTo(Deal::class, 'deal_id');
+    }
+
+    public function deal(): BelongsTo
+    {
+        return $this->belongsTo(Deal::class);
     }
 
     public function unit(): BelongsTo
@@ -108,6 +113,15 @@ class Proposal extends BaseModel
     public function signature(): HasOne
     {
         return $this->hasOne(ProposalSign::class);
+    }
+
+    public static function lastProposalNumber()
+    {
+        $lastProposal = Proposal::orderByRaw('LENGTH(original_proposal_number) DESC')
+            ->orderBy('original_proposal_number', 'desc')
+            ->first();
+
+        return $lastProposal ? $lastProposal->original_proposal_number : '0';
     }
 
 }

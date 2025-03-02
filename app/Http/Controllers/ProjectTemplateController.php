@@ -54,13 +54,12 @@ class ProjectTemplateController extends AccountBaseController
         $this->pageTitle = __('app.menu.addProjectTemplate');
         $this->categories = ProjectCategory::all();
         $this->employees = User::allEmployees();
+        $this->view = 'project-templates.ajax.create';
 
         if (request()->ajax()) {
-            $html = view('project-templates.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'project-templates.ajax.create';
         return view('project-templates.create', $this->data);
     }
 
@@ -148,8 +147,7 @@ class ProjectTemplateController extends AccountBaseController
         }
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         $this->activeTab = $tab ?: 'overview';
@@ -191,12 +189,11 @@ class ProjectTemplateController extends AccountBaseController
 
         $this->categories = ProjectCategory::all();
 
-        if (request()->ajax()) {
-            $html = view('project-templates.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'project-templates.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('project-templates.create', $this->data);
 

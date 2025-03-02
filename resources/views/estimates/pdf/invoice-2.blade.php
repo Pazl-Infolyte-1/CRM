@@ -327,6 +327,7 @@
 
         .word-break {
             word-wrap:break-word;
+            word-break: break-all;
         }
 
         .f-13 {
@@ -390,7 +391,7 @@
                 <span class="clearfix"></span>
 
                 @if($invoiceSetting->show_gst == 'yes' && !is_null($invoiceSetting->gst_number))
-                    <div>@lang('app.gstIn'): {{ $invoiceSetting->gst_number }}</div>
+                    <br><br><div>{{ $estimate->client->clientDetails->tax_name }}: {{ $invoiceSetting->gst_number }}</div><br><br>
                 @endif
             </div>
 
@@ -401,6 +402,10 @@
                 <tr>
                     <td>@lang('modules.estimates.validTill'):</td>
                     <td>{{ $estimate->valid_till ? $estimate->valid_till->translatedFormat($company->date_format) : '--' }}</td>
+                </tr>
+                <tr>
+                    <td>@lang('app.createdOn'):</td>
+                    <td>{{ $estimate->created_at ? $estimate->created_at->translatedFormat($company->date_format) : '--' }}</td>
                 </tr>
                 <tr>
                     <td>@lang('app.status'):</td>
@@ -443,7 +448,7 @@
 
                 @if ($estimate->client && $estimate->client->name && $invoiceSetting->show_client_name == 'yes')
                 <div>
-                    <span class="bold">{{ $estimate->client->name }}</span>
+                    <span class="bold">{{ $estimate->client->name_salutation }}</span>
                 </div>
                 @endif
 
@@ -455,7 +460,7 @@
 
                 @if ($estimate->client && $estimate->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                 <div>
-                    <span>@if(isset($estimate->clientdetails->user->country))+{{$estimate->clientdetails->user->country->phonecode}} @endif  {{ $estimate->client->mobile }}</span>
+                    <span>{{ $estimate->client->mobile_with_phonecode }}</span>
                 </div>
                 @endif
 
@@ -475,9 +480,11 @@
             @endif
 
             @if($invoiceSetting->show_gst == 'yes' && !is_null($estimate->client->clientDetails->gst_number))
+                <br><br>
                 <div>
-                    <span> @lang('app.gstIn'): {{ $estimate->client->clientDetails->gst_number }} </span>
+                    <span> {{ $estimate->client->clientDetails->tax_name }}: {{ $estimate->client->clientDetails->gst_number }} </span>
                 </div>
+                <br><br>
             @endif
         </section>
         <div class="clearfix"></div>
@@ -506,14 +513,14 @@
                 </tr>
 
                 <?php $count = 0; ?>
-                @foreach($estimate->items as $item)
+                @foreach($estimate->items->sortBy('field_order') as $item)
                     @if($item->type == 'item')
                         <tr data-iterate="item">
                             <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
-                            <td>
+                            <td class="word-break">
                                 {{ $item->item_name }}
                                 @if(!is_null($item->item_summary))
-                                    <p class="item-summary">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                    <p class="item-summary word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                 @endif
                                 @if ($item->estimateItemImage)
                                     <p class="mt-2">
@@ -541,7 +548,13 @@
                 </tr>
                 @if($discount != 0 && $discount != '')
                 <tr data-iterate="tax">
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">@lang("modules.invoices.discount"):</td>
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">@lang("modules.invoices.discount"):
+                        @if($estimate->discount_type == 'percent')
+                        {{$estimate->discount}}%
+                    @else
+                        {{ currency_format($estimate->discount, $estimate->currency_id) }}
+                    @endif
+                    </td>
                     <td>-{{ currency_format($discount, $estimate->currency_id, false) }}</td>
                 </tr>
                 @endif
@@ -556,7 +569,7 @@
                         @lang("modules.invoices.total"):
                     </td>
                     <td>
-                        {{ currency_format($estimate->total, $estimate->currency_id, false) }} {!! htmlentities($estimate->currency->currency_code) !!}
+                        {{ currency_format($estimate->total, $estimate->currency_id, false) }}
                     </td>
                 </tr>
             </table>
@@ -570,6 +583,12 @@
             @endif
 
             <div class="word-break item-summary description">@lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}</div>
+
+            @if (isset($invoiceSetting->other_info))
+                <div class="word-break item-summary description">
+                    {!! nl2br($invoiceSetting->other_info) !!}
+                </div>
+            @endif
         </section>
 
         @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)

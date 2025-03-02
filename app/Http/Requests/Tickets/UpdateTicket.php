@@ -25,10 +25,16 @@ class UpdateTicket extends CoreRequest
     public function rules()
     {
         return [
-            /*
-            'message' => 'required',
-            'priority' => 'required'
-            */
+            'user_id' => 'required_if:type,note',
+            'message2' => 'required_if:type,note',
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'user_id' => __('messages.agentFieldRequired'),
+            'message2' => __('messages.descriptionFieldRequired'),
         ];
     }
 

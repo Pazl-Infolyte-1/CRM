@@ -1,13 +1,13 @@
 @component('mail::message')
 # <center> @lang('email.paymentReminder.subject') </center>
 
-# @lang('app.invoice') @lang('app.details') -
+# @lang('app.invoiceDetails') -
 
 @component('mail::text', ['text' => $content])
 @endcomponent
 
 @component('mail::button', ['url' => $paymentUrl, 'themeColor' => $themeColor])
-    @lang('app.view') @lang('app.invoice')
+    @lang('app.viewInvoices')
 @endcomponent
 
 @lang('email.regards'),<br>

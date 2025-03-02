@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
+use App\Traits\HasMaskImage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 /**
  * App\Models\OfflinePaymentMethod
@@ -32,12 +34,14 @@ use App\Traits\HasCompany;
 class OfflinePaymentMethod extends BaseModel
 {
 
-    use HasCompany;
+    use HasCompany,HasMaskImage;
 
     protected $table = 'offline_payment_methods';
     protected $casts = [
         'created_at' => 'datetime',
     ];
+
+    protected $appends = ['image_url'];
 
     public static function activeMethod()
     {
@@ -48,5 +52,22 @@ class OfflinePaymentMethod extends BaseModel
     {
         return $query->where('status', 'yes');
     }
+
+    public function getImageUrlAttribute()
+    {
+
+        return ($this->image) ? asset_url_local_s3('offline-method/' . $this->image) : '-';
+    }
+
+    public function maskedImageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                return ($this->image) ? $this->generateMaskedImageAppUrl('offline-method/' . $this->image) : '-';
+            },
+        );
+
+    }
+
 
 }

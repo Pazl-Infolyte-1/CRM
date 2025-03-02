@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use Carbon\Carbon;
+use App\Models\GlobalSetting;
 use Illuminate\Support\HtmlString;
 
 class InvoiceReminder extends BaseNotification
@@ -47,17 +47,17 @@ class InvoiceReminder extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $setting = $this->company;
         $invoice_setting = $this->company->invoiceSetting->send_reminder;
         $invoice_number = $this->invoice->invoice_number;
 
-        $url = route('front.invoice', $this->invoice->hash);
+        $url = url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->invoice->hash);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.invoiceReminder.text') . ' ' . Carbon::now($setting->timezone)->addDays($invoice_setting)->toFormattedDateString() . '<br>' . new HtmlString($invoice_number) . '<br>' . __('email.messages.loginForMoreDetails');
+        $content = __('email.invoiceReminder.text') . ' ' . now($setting->timezone)->addDays($invoice_setting)->toFormattedDateString() . '<br>' . new HtmlString($invoice_number) . '<br>' . __('email.messages.loginForMoreDetails');
 
-        return $build
+        $build
             ->subject(__('email.invoiceReminder.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -66,6 +66,10 @@ class InvoiceReminder extends BaseNotification
                 'actionText' => __('email.invoiceReminder.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

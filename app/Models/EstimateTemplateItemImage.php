@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use App\Traits\IconTrait;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\EstimateTemplateItemImage
@@ -32,6 +30,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplateItemImage whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplateItemImage whereSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplateItemImage whereUpdatedAt($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class EstimateTemplateItemImage extends BaseModel

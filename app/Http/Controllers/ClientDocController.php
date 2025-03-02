@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClientDocument;
-use Illuminate\Http\Request;
 use App\Helper\Files;
 use App\Helper\Reply;
 use App\Http\Requests\ClientDocs\CreateRequest;
@@ -52,7 +51,7 @@ class ClientDocController extends AccountBaseController
         $file->size = $request->file->getSize();
         $file->save();
 
-        $this->files = ClientDocument::where('user_id', $request->user_id)->orderBy('id', 'desc')->get();
+        $this->files = ClientDocument::where('user_id', $request->user_id)->orderByDesc('id')->get();
         $view = view('clients.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.recordSaved'), ['status' => 'success', 'view' => $view]);
@@ -102,7 +101,7 @@ class ClientDocController extends AccountBaseController
 
         ClientDocument::destroy($id);
 
-        $this->files = ClientDocument::where('user_id', $file->user_id)->orderBy('id', 'desc')->get();
+        $this->files = ClientDocument::where('user_id', $file->user_id)->orderByDesc('id')->get();
 
         $view = view('clients.files.show', $this->data)->render();
 

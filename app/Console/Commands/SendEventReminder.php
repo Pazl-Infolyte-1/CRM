@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Event;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class SendEventReminder extends Command
 {
@@ -33,25 +34,40 @@ class SendEventReminder extends Command
 
     public function handle()
     {
-        $companies = Company::select('id', 'timezone')->get();
+        $output = new ConsoleOutput();
 
-        foreach ($companies as $company) {
+        // Retrieve all companies that have events with send_reminder set to 'yes'
+        $companiesWithEvents = Company::whereHas('events', function ($query) {
+            $query->where('send_reminder', 'yes');
+        })->active()->get();
+
+        if ($companiesWithEvents->isEmpty()) {
+            $output->writeln('<info>No Company with event found</info>');
+
+            return Command::SUCCESS;
+        }
+
+        // Now you have a collection of companies with associated events that have send_reminder set to 'yes'
+        foreach ($companiesWithEvents as $company) {
 
             $events = Event::with('attendee')
                 ->select('id', 'event_name', 'label_color', 'where', 'description', 'start_date_time', 'end_date_time', 'repeat', 'send_reminder', 'remind_time', 'remind_type', 'company_id')
-                ->where('start_date_time', '>=', Carbon::now($company->timezone))
+                ->where('start_date_time', '>=', now($company->timezone))
                 ->where('send_reminder', 'yes')
                 ->where('company_id', $company->id)
                 ->get();
 
+
             foreach ($events as $event) {
                 $reminderDateTime = $this->calculateReminderDateTime($event, $company);
 
-                if ($reminderDateTime->equalTo(Carbon::now($company->timezone)->startOfMinute())) {
+                if ($reminderDateTime->equalTo(now($company->timezone)->startOfMinute())) {
                     event(new EventReminderEvent($event));
                 }
             }
         }
+
+        return Command::SUCCESS;
 
     }
 

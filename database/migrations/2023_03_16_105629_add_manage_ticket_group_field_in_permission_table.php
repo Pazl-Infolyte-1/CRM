@@ -7,8 +7,6 @@ use App\Models\Company;
 use App\Models\Permission;
 use App\Models\PermissionRole;
 use App\Models\UserPermission;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
@@ -34,7 +32,7 @@ return new class extends Migration
                     'allowed_permissions' => Permission::ALL_NONE,
                 ];
 
-            $permission = new Permission();
+            $permission = Permission::where('name', $permissionType['name'])->first() ?: new Permission();
             $permission->name = $permissionType['name'];
             $permission->display_name = $permissionType['display_name'];
             $permission->module_id = $module->id;
@@ -48,7 +46,7 @@ return new class extends Migration
 
                 $role = Role::where('name', 'admin')->where('company_id', $company->id)->first();
 
-                $permissionRole = new PermissionRole();
+                $permissionRole = PermissionRole::where('permission_id', $permission->id)->where('role_id', $role->id)->first() ?: new PermissionRole();
                 $permissionRole->permission_id = $permission->id;
                 $permissionRole->role_id = $role->id;
                 $permissionRole->permission_type_id = 4;

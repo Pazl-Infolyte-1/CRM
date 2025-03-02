@@ -42,6 +42,16 @@
                                 href="{{ route('ticket-settings.index') }}?tab=reply-template" role="tab"
                                 aria-controls="nav-replyTemplates" aria-selected="true">@lang('app.menu.replyTemplates')
                             </a>
+
+                            <a class="nav-item nav-link f-15 method"
+                                href="{{ route('ticket-settings.index') }}?tab=round-robin" role="tab"
+                                aria-controls="nav-leadAgent" aria-selected="true">@lang('modules.deal.dealMethod')
+                            </a>
+
+                            <a class="nav-item nav-link f-15 ticket-agent-setting"
+                                href="{{ route('ticket-settings.index') }}?tab=ticket-agent-setting" role="tab"
+                                aria-controls="nav-ticketSetting" aria-selected="true">@lang('modules.deal.ticketVisibilitySetting')
+                            </a>
 {{--
                             <a class="nav-item nav-link f-15 email-sync"
                                 href="{{ route('ticket-settings.index') }}?tab=email-sync" role="tab"
@@ -58,27 +68,25 @@
 
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="addTicketType" class="type-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('modules.tickets.ticketType')
+                            @lang('app.addNewTicketType')
                         </x-forms.button-primary>
 
                         <x-forms.button-primary icon="plus" id="addAgent" class="agent-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew')
-                            @lang('modules.tickets.agents')
+                            @lang('app.addNewAgents')
                         </x-forms.button-primary>
 
                         <x-forms.button-primary icon="plus" id="addChannel" class="channel-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew')
-                            @lang('app.menu.ticketChannel')
+                            @lang('app.addNewTicketChannel')
                         </x-forms.button-primary>
 
                         <x-forms.button-primary icon="plus" id="addReplyTemplate"
                             class="reply-template-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('app.menu.template')
+                            @lang('modules.projectTemplate.addNewTemplate')
                         </x-forms.button-primary>
 
                         <x-forms.button-primary icon="plus" id="addGroup"
                             class="group-manage-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('app.menu.group')
+                            @lang('app.addNewGroup')
                         </x-forms.button-primary>
                     </div>
 
@@ -403,6 +411,13 @@
         });
 
         /* change agent group */
+        $(".change-agent-group").selectpicker({
+            multipleSeparator: ", ",
+            selectedTextFormat: "count > 6",
+            countSelectedText: function(selected, total) {
+                return selected + " {{ __('app.groupSelected') }} ";
+            }
+        });
         $('.change-agent-group').change(function() {
 
             var agentId = $(this).data('agent-id');

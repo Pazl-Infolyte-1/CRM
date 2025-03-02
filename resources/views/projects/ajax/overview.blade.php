@@ -7,6 +7,7 @@ $editProjectPermission = user()->permission('edit_projects');
 $addPaymentPermission = user()->permission('add_payments');
 $projectBudgetPermission = user()->permission('view_project_budget');
 $memberIds = $project->members->pluck('user_id')->toArray();
+$viewTasksPermission = user()->permission('view_tasks');
 @endphp
 
 <div class="d-lg-flex">
@@ -39,7 +40,7 @@ $memberIds = $project->members->pluck('user_id')->toArray();
                 <div class="ml-lg-3 ml-md-0 ml-0 mr-3 mr-lg-0 mr-md-3">
                     <div class="dropdown">
                         <button
-                            class="btn btn-lg bg-white border height-35 f-15 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
+                            class="btn btn-lg bg-white border height-35 f-15 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
                             type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             @lang('app.action') <i class="icon-options-vertical icons"></i>
                         </button>
@@ -55,8 +56,7 @@ $memberIds = $project->members->pluck('user_id')->toArray();
                                 || ($editProjectPermission == 'both' && (user()->id == $project->client_id || user()->id == $project->added_by))
                                 || ($editProjectPermission == 'both' && in_array(user()->id, $memberIds) && in_array('employee', user_roles())))
                                 <a class="dropdown-item openRightModal"
-                                    href="{{ route('projects.edit', $project->id) }}">@lang('app.edit')
-                                    @lang('app.project')
+                                    href="{{ route('projects.edit', $project->id) }}">@lang('app.editProject')
                                 </a>
 
                                 <a class="dropdown-item"
@@ -65,8 +65,8 @@ $memberIds = $project->members->pluck('user_id')->toArray();
                                 </a>
 
                                 <a class="dropdown-item"
-                                    href="{{ route('front.taskboard', $project->hash) }}" target="_blank">
-                                    @lang('app.public') @lang('modules.tasks.taskBoard')
+                                    href="{{ url()->temporarySignedRoute('front.taskboard', now()->addDays(\App\Models\GlobalSetting::SIGNED_ROUTE_EXPIRY), $project->hash) }}" target="_blank">
+                                    @lang('app.publicTaskBoard')
                                 </a>
                                 <hr class="my-1">
                             @endif
@@ -75,12 +75,12 @@ $memberIds = $project->members->pluck('user_id')->toArray();
 
                             @if ($projectPin)
                                 <a class="dropdown-item" href="javascript:;" id="pinnedItem"
-                                    data-pinned="pinned">@lang('app.unpin')
-                                    @lang('app.project')</a>
+                                    data-pinned="pinned">@lang('app.unpinProject')
+                                    </a>
                             @else
                                 <a class="dropdown-item" href="javascript:;" id="pinnedItem"
-                                    data-pinned="unpinned">@lang('app.pin')
-                                    @lang('app.project')</a>
+                                    data-pinned="unpinned">@lang('app.pinProject')
+                                    </a>
                             @endif
                         </div>
                     </div>
@@ -133,7 +133,7 @@ $memberIds = $project->members->pluck('user_id')->toArray();
             <!-- PROJECT PROGRESS END -->
             <!-- CLIENT START -->
             <div class="col-md-6 mb-4">
-                @if (!is_null($project->client))
+                @if ((!is_null($project->client) && in_array('clients', user_modules())) || in_array('client', user_roles()))
                     <x-cards.data :title="__('app.client')"
                         otherClasses="d-block d-xl-flex d-lg-block d-md-flex  justify-content-between align-items-center">
 
@@ -143,16 +143,16 @@ $memberIds = $project->members->pluck('user_id')->toArray();
 
                                     <div class="card-img m-0">
                                         <img class="" src=" {{ $project->client->image_url }}"
-                                            alt="{{ $project->client->name }}">
+                                            alt="{{ $project->client->name_salutation }}">
                                     </div>
                                     <div class="card-body border-0 p-0 ml-4 ml-xl-4 ml-lg-3 ml-md-3">
                                         <h4 class="card-title f-15 font-weight-normal mb-0">
                                             @if (!in_array('client', user_roles()))
                                                <a href="{{ route('clients.show', $project->client_id) }}" class="text-dark">
-                                                    {{ $project->client->name }}
+                                                    {{ $project->client->name_salutation }}
                                                 </a>
                                             @else
-                                                {{ $project->client->name }}
+                                                {{ $project->client->name_salutation }}
                                             @endif
                                         </h4>
                                         <p class="card-text f-14 text-lightest mb-0">
@@ -160,7 +160,7 @@ $memberIds = $project->members->pluck('user_id')->toArray();
                                         </p>
                                         @if ($project->client->country_id)
                                             <span
-                                                class="card-text f-12 text-lightest text-capitalize d-flex align-items-center">
+                                                class="card-text f-12 text-lightest  d-flex align-items-center">
                                                 <span
                                                     class='flag-icon flag-icon-{{ strtolower($project->client->country->iso) }} mr-2'></span>
                                                 {{ $project->client->country->nicename }}
@@ -174,22 +174,20 @@ $memberIds = $project->members->pluck('user_id')->toArray();
 
                         @if( (in_array('admin', user_roles()) && $messageSetting->allow_client_admin == 'yes') ||
                         (in_array('employee', user_roles()) && $messageSetting->allow_client_employee == 'yes') )
-                        <div class="p-client-msg mt-4 mt-xl-0 mt-lg-4 mt-md-0">
-                            <button type="button" class="btn-secondary rounded f-15" id="new-chat"
-                                data-client-id="{{ $project->client->id }}"> <i class="fab fa-whatsapp mr-1"></i>
-                                @lang('app.message')</button>
-                        </div>
+                            <div class="p-client-msg mt-4 mt-xl-0 mt-lg-4 mt-md-0">
+                                <button type="button" class="btn-secondary rounded f-15" id="new-chat"
+                                    data-client-id="{{ $project->client->id }}"> <i class="fab fa-whatsapp mr-1"></i>
+                                    @lang('app.message')</button>
+                            </div>
+                        @endif
+
+                    </x-cards.data>
+                @else
+                    <x-cards.data
+                        otherClasses="d-flex d-xl-flex d-lg-block d-md-flex  justify-content-between align-items-center">
+                        <x-cards.no-record icon="user" :message="__('messages.noClientAddedToProject')" />
+                    </x-cards.data>
                 @endif
-
-
-                </x-cards.data>
-            @else
-                <x-cards.data
-                    otherClasses="d-flex d-xl-flex d-lg-block d-md-flex  justify-content-between align-items-center">
-                    <x-cards.no-record icon="user" :message="__('messages.noClientAddedToProject')" />
-                </x-cards.data>
-                @endif
-
             </div>
             <!-- CLIENT END -->
         </div>
@@ -198,40 +196,50 @@ $memberIds = $project->members->pluck('user_id')->toArray();
         <!-- TASK STATUS AND BUDGET START -->
         <div class="row mb-4">
             <!-- TASK STATUS START -->
-            <div class="col-lg-6 col-md-12">
-                <x-cards.data :title="__('app.menu.tasks')" padding="false">
-                    <x-pie-chart id="task-chart" :labels="$taskChart['labels']" :values="$taskChart['values']"
-                        :colors="$taskChart['colors']" height="220" width="250" />
-                </x-cards.data>
-            </div>
+            @if($viewTasksPermission != 'none')
+                <div class="col-lg-6 col-md-12">
+                    <x-cards.data :title="__('app.menu.tasks')" padding="false" class="pb-3">
+                        @if (array_sum($taskChart['values']) > 0)
+                            <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart" data-chart-data="{{ json_encode($taskChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
+                        @endif
+                        <x-pie-chart id="task-chart" :labels="$taskChart['labels']" :values="$taskChart['values']"
+                            :colors="$taskChart['colors']" height="200" width="200" />
+                    </x-cards.data>
+                </div>
+            @endif
             <!-- TASK STATUS END -->
             <!-- BUDGET VS SPENT START -->
+            @if($projectBudgetPermission == 'all' || ($viewProjectTimelogPermission == 'all' && $viewTasksPermission != 'none') || $viewPaymentPermission == 'all' || $viewExpensePermission == 'all')
             <div class="col-lg-6 col-md-12">
-                <div class="row mb-4">
+                <div class="row">
                     <div class="col-sm-12">
                         <h4 class="f-18 f-w-500 mb-4">@lang('app.statistics')</h4>
                     </div>
-                    @if ($projectBudgetPermission == 'all')
-                        <div class="col">
-                            <x-cards.widget :title="__('modules.projects.projectBudget')"
-                                :value="((!is_null($project->project_budget) && $project->currency) ? currency_format($project->project_budget, $project->currency->id) : '0')"
-                                icon="coins" />
-                        </div>
-                    @endif
+                </div>
+                @if($projectBudgetPermission == 'all' || ($viewProjectTimelogPermission == 'all' && $viewTasksPermission != 'none'))
+                    <div class="row mb-4">
+                        @if ($projectBudgetPermission == 'all')
+                            <div class="col">
+                                <x-cards.widget :title="__('modules.projects.projectBudget')"
+                                    :value="((!is_null($project->project_budget) && $project->currency) ? currency_format($project->project_budget, $project->currency->id) : '0')"
+                                    icon="coins" />
+                            </div>
+                        @endif
 
+                        @if ($viewProjectTimelogPermission == 'all' && $viewTasksPermission != 'none')
+                            <div class="col">
+                                <x-cards.widget :title="__('modules.projects.hoursLogged')" :value="$hoursLogged"
+                                    icon="clock" />
+                            </div>
+                        @endif
+                    </div>
+                @endif
+                <div class="row">
                     @if ($viewPaymentPermission == 'all')
                         <div class="col">
-                            <x-cards.widget :title="__('app.earnings')"
+                            <x-cards.widget :title="(in_array('client', user_roles())) ? __('app.spending') : __('app.earnings')"
                                 :value="(!is_null($project->currency) ? currency_format($earnings, $project->currency->id) : currency_format($earnings, company()->currency_id))"
                                 icon="coins" />
-                        </div>
-                    @endif
-                </div>
-                <div class="row">
-                    @if ($viewProjectTimelogPermission == 'all')
-                        <div class="col">
-                            <x-cards.widget :title="__('modules.projects.hoursLogged')" :value="$hoursLogged"
-                                icon="clock" />
                         </div>
                     @endif
 
@@ -242,8 +250,16 @@ $memberIds = $project->members->pluck('user_id')->toArray();
                                 icon="coins" />
                         </div>
                     @endif
+                    @if ($viewPaymentPermission == 'all' && !in_array('client', user_roles()))
+                        <div class="col">
+                            <x-cards.widget :title="__('modules.projects.profit')"
+                                    :value="(!is_null($project->currency) ? currency_format($profit, $project->currency->id) : currency_format($profit, company()->currency_id))"
+                                    icon="coins" />
+                        </div>
+                    @endif
                 </div>
             </div>
+            @endif
             <!-- BUDGET VS SPENT END -->
         </div>
         <!-- TASK STATUS AND BUDGET END -->
@@ -251,24 +267,26 @@ $memberIds = $project->members->pluck('user_id')->toArray();
         <!-- TASK STATUS AND BUDGET START -->
         <div class="row mb-4">
             <!-- BUDGET VS SPENT START -->
-            <div class="col-md-12">
-                <x-cards.data>
-                    <div class="row {{ $projectBudgetPermission == 'all' ? 'row-cols-lg-2' : '' }}">
-                        @if ($viewProjectTimelogPermission == 'all')
-                            <div class="col">
-                                <h4 class="f-18 f-w-500 mb-0">@lang('modules.projects.hoursLogged')</h4>
-                                <x-stacked-chart id="task-chart2" :chartData="$hoursBudgetChart" height="250" />
-                            </div>
-                        @endif
-                        @if ($projectBudgetPermission == 'all')
-                            <div class="col">
-                                <h4 class="f-18 f-w-500 mb-0">@lang('modules.projects.projectBudget')</h4>
-                                <x-stacked-chart id="task-chart3" :chartData="$amountBudgetChart" height="250" />
-                            </div>
-                        @endif
-                    </div>
-                </x-cards.data>
-            </div>
+            @if($projectBudgetPermission == 'all' || ($viewProjectTimelogPermission == 'all'  && $viewTasksPermission != 'none'))
+                <div class="col-md-12">
+                    <x-cards.data>
+                        <div class="row {{ $projectBudgetPermission == 'all' ? 'row-cols-lg-2' : '' }}">
+                            @if ($viewProjectTimelogPermission == 'all'  && $viewTasksPermission != 'none')
+                                <div class="col">
+                                    <h4 class="f-18 f-w-500 mb-0">@lang('modules.projects.hoursLogged')</h4>
+                                    <x-stacked-chart id="task-chart2" :chartData="$hoursBudgetChart" height="250" />
+                                </div>
+                            @endif
+                            @if ($projectBudgetPermission == 'all')
+                                <div class="col">
+                                    <h4 class="f-18 f-w-500 mb-0">@lang('modules.projects.projectBudget')</h4>
+                                    <x-stacked-chart id="task-chart3" :chartData="$amountBudgetChart" height="250" />
+                                </div>
+                            @endif
+                        </div>
+                    </x-cards.data>
+                </div>
+            @endif
             <!-- BUDGET VS SPENT END -->
         </div>
         <!-- TASK STATUS AND BUDGET END -->

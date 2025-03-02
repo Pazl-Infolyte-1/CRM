@@ -29,22 +29,34 @@
                         </div>
 
                         <div class="col-lg-4">
+                            <label class="f-14 mb-12 mt-3 text-dark-grey mr-1">@lang('modules.leaves.leaveAllotmentType')</label>
+                            <select name="leavetype" class="select-picker form-control" disabled>
+                                <option value="monthly" {{ $leaveType->leavetype == 'monthly' ? 'selected' : '' }}>@lang('app.monthlyLeaveType')</option>
+                                <option value="yearly" {{ $leaveType->leavetype == 'yearly' ? 'selected' : '' }}>@lang('app.yearlyLeaveType')</option>
+                            </select>
+                        </div>
+
+                        <div class="col-lg-4" id="yearly-leave-field" style="display: none;">
+                            <x-forms.number :fieldLabel="__('modules.leaves.noOfYearlyLeaves')"
+                                fieldName="yearly_leave_number" fieldId="yearly_leave_number" fieldValue="$leaveType->no_of_leaves" minValue="0" :popover="__('messages.leave.noOfYearlyLeaves')"/>
+                        </div>
+
+                        <div class="col-lg-4" id="monthly-leave-field">
+                            <x-forms.number :fieldLabel="__('modules.leaves.noOfMonthlyLeaves')"
+                                fieldName="monthly_leave_number" fieldId="monthly_leave_number" fieldValue="$leaveType->no_of_leaves" minValue="0" :popover="__('messages.leave.noOfMonthlyLeaves')"/>
+                        </div>
+
+                        <div class="col-lg-4" id="monthly-leave-limit">
+                            <x-forms.number :fieldLabel="__('modules.leaves.monthLimit')"
+                                fieldName="monthly_limit" fieldId="monthly_limit" :fieldValue="$leaveType->monthly_limit"
+                                fieldRequired="true" :fieldHelp="__('modules.leaves.monthLimitInfo')" minValue="0" :popover="__('messages.leave.monthlyLimit')"/>
+                        </div>
+
+                        <div class="col-lg-4">
                             <x-forms.select fieldId="paid" fieldLabel="Leave Paid Status" fieldName="paid" search="true" :popover="__('messages.leave.paidStatus')">
                                 <option value="1" {{ $leaveType->paid == 1 ? 'selected' : '' }}>@lang('app.paid')</option>
                                 <option value="0" {{ $leaveType->paid == 0 ? 'selected' : '' }}>@lang('app.unpaid')</option>
                             </x-forms.select>
-                        </div>
-
-                        <div class="col-lg-4">
-                            <x-forms.number :fieldLabel="__('modules.leaves.noOfLeaves')"
-                                fieldName="leave_number" fieldId="leave_number" :fieldValue="$leaveType->no_of_leaves"
-                                fieldRequired="true" minValue="0" :popover="__('messages.leave.noOfLeaves')"/>
-                        </div>
-
-                        <div class="col-lg-4">
-                            <x-forms.number :fieldLabel="__('modules.leaves.monthLimit')"
-                                fieldName="monthly_limit" fieldId="monthly_limit" :fieldValue="$leaveType->monthly_limit"
-                                fieldRequired="true" :fieldHelp="__('modules.leaves.monthLimitInfo')" minValue="0" :popover="__('messages.leave.monthlyLimit')"/>
                         </div>
 
                         <div class="col-lg-4">
@@ -97,18 +109,36 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <div class="form-group my-3">
                                 <div class="d-flex align-items-center">
                                     <label class="f-14 mb-12 mt-2 text-dark-grey mr-1">@lang('modules.leaves.unusedLeaves')</label>
                                     &nbsp;<i class="fa fa-question-circle text-dark-grey" data-toggle="popover" data-placement="top" data-html="true"
                                             data-content="{{__('messages.leave.unusedLeave')}}" data-trigger="hover"></i>
-                                    <div class="col-md-4">
+                                    <div class="col-md-7">
                                         <x-forms.input-group>
-                                            <select name="unused_leave" class="select-picker form-control">
+                                            <select name="unused_leave" class="select-picker form-control" disabled>
                                                 <option value="carry forward" @if($leaveType->unused_leave == 'carry forward') selected @endif>@lang('modules.leaves.carryForward')</option>
                                                 <option value="lapse" @if($leaveType->unused_leave == 'lapse') selected @endif>@lang('modules.leaves.lapse')</option>
                                                 <option value="paid" @if($leaveType->unused_leave == 'paid') selected @endif>@lang('app.paid')</option>
+                                            </select>
+                                        </x-forms.input-group>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="form-group my-3">
+                                <div class="d-flex align-items-center">
+                                    <label class="f-14 mb-12 mt-2 text-dark-grey mr-1">@lang('modules.leaves.overutilization')</label>
+                                    &nbsp;<i class="fa fa-question-circle text-dark-grey" data-toggle="popover" data-placement="top" data-html="true"
+                                            data-content="{{__('messages.leave.overutilization')}}" data-trigger="hover"></i>
+                                    <div class="col-md-7">
+                                        <x-forms.input-group>
+                                            <select name="over_utilization" class="select-picker form-control">
+                                                <option value="not_allowed" @if($leaveType->over_utilization == 'not_allowed') selected @endif>@lang('modules.leaves.doNotAllow')</option>
+                                                <option value="allow_paid" @if($leaveType->over_utilization == 'allow_paid') selected @endif>@lang('modules.leaves.allowPaid')</option>
+                                                <option value="allow_unpaid" @if($leaveType->over_utilization == 'allow_unpaid') selected @endif>@lang('modules.leaves.allowUnpaid')</option>
                                             </select>
                                         </x-forms.input-group>
                                     </div>
@@ -159,12 +189,9 @@
                                         data-content="{{__('messages.leave.maritalStatus')}}" data-trigger="hover"></i>
                                 <select class="form-control multiple-option" multiple name="marital_status[]"
                                     id="marital_status" data-live-search="true" data-size="8">
-                                    @foreach ($allMaritalStatus as $status)
-                                        <option value="{{ $status }}"
-                                            @if (is_array($maritalStatus) && in_array($status, $maritalStatus))
-                                                selected
-                                            @endif
-                                        >@lang('modules.leaves.'.$status)</option>
+                                    @foreach (\App\Enums\MaritalStatus::cases() as $status)
+                                        <option @selected(is_array($maritalStatus) && in_array($status->value, $maritalStatus))
+                                            value="{{ $status->value }}">{{ $status->label() }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -235,7 +262,6 @@
     <x-forms.button-primary id="save-leave-setting" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
 
-<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 <script>
     $(document).ready(function () {
         setTimeout(function () {
@@ -247,6 +273,31 @@
 
     $('#colorpicker').colorpicker({
         "color": "{{ $leaveType->color }}"
+    });
+
+    function setLeaveFields() {
+        var leaveType = "{{ $leaveType->leavetype }}";
+        if (leaveType == 'monthly') {
+            $('#monthly-leave-field').show();
+            $('#monthly_leave_number').attr('required', true).val('{{ $leaveType->no_of_leaves }}');
+            $('#yearly-leave-field').hide();
+            $('#yearly_leave_number').attr('required', false).val(0);
+            $('#monthly-leave-limit').hide();
+            $('#monthly_limit').attr('required', false).val(0);
+        } else if (leaveType == 'yearly') {
+            $('#monthly-leave-field').hide();
+            $('#monthly_leave_number').attr('required', false).val(0);
+            $('#monthly-leave-limit').show();
+            $('#monthly_limit').attr('required', true);
+            $('#yearly-leave-field').show();
+            $('#yearly_leave_number').attr('required', true).val('{{ $leaveType->no_of_leaves }}');
+        }
+    }
+
+    setLeaveFields();
+
+    $('#leavetype').change(function() {
+        setLeaveFields();
     });
 
     $(".multiple-option").selectpicker({

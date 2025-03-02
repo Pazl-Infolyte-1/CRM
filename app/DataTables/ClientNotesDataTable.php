@@ -2,7 +2,6 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\ClientNote;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -33,9 +32,7 @@ class ClientNotesDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">';
@@ -79,27 +76,24 @@ class ClientNotesDataTable extends BaseDataTable
                 if ($row->ask_password == 1) {
                     return '<a href="javascript:;" class="ask-for-password" data-client-note-id="' . $row->id . '" style="color:black;">' . $row->title . '</a>';
                 }
-                else {
-                    return '<a href="' . route('client-notes.show', $row->id) . '" class="openRightModal " style="color:black;">' . $row->title . '</a>';
-                }
+
+                return '<a href="' . route('client-notes.show', $row->id) . '" class="openRightModal " style="color:black;">' . $row->title . '</a>';
 
             })
             ->editColumn('type', function ($row) {
                 if ($row->type == '0') {
                     return '<span class="badge badge-secondary"><i class="fa fa-globe"></i> ' . __('app.public') . '</span>';
                 }
-                else {
-                    return '<span class="badge badge-primary"><i class="fa fa-lock"></i> ' . __('app.private') . '</span>';
-                }
+
+                return '<span class="badge badge-primary"><i class="fa fa-lock"></i> ' . __('app.private') . '</span>';
             })
-            ->editColumn('id', function ($row) {
-                return $row->id;
+            ->editColumn('created_at', function ($row) {
+                return $row->created_at->timezone(company()->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format);
             })
+            ->editColumn('id', fn($row) => $row->id)
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'check', 'title', 'type']);
     }
 
@@ -200,6 +194,7 @@ class ClientNotesDataTable extends BaseDataTable
             __('app.id') => ['data' => 'id', 'name' => 'id', 'visible' => false, 'title' => __('app.id')],
             __('modules.client.noteTitle') => ['data' => 'title', 'name' => 'title', 'title' => __('modules.client.noteTitle')],
             __('modules.client.noteType') => ['data' => 'type', 'name' => 'type', 'title' => __('modules.client.noteType')],
+            __('app.createdOn') => ['data' => 'created_at', 'name' => 'created_at', 'title' => __('app.createdOn')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

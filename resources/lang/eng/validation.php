@@ -344,4 +344,5 @@ return array(
         'effective_after' => 'Effective After',
     ],
     'selectAtLeastOne' => 'Select at least one',
+    'notAllowed' => 'The :attribute is not allowed',
 );

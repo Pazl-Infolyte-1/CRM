@@ -7,7 +7,7 @@
                 <div id="calendar"></div>
                 <x-slot name="action">
                     <div class="dropdown ml-auto calendar-action">
-                        <button id="event-btn" class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle cal-event" type="button"
+                        <button id="event-btn" class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle cal-event" type="button"
                                 aria-haspopup="true" aria-expanded="false">
                             <i class="fa fa-ellipsis-h"></i>
                         </button>
@@ -61,6 +61,16 @@
                                     <label
                                         class="form-check-label form_custom_label text-dark-grey pl-2 mr-3 justify-content-start cursor-pointer checkmark-20 pt-2 text-wrap"
                                         for="customCheck5">@lang('app.menu.leaves')</label>
+                                </div>
+                            @endif
+                            @if(in_array('leads', user_modules()) && $leadAgent)
+                                <div class="custom-control custom-checkbox cal-filter">
+                                    <input type="checkbox" value="follow_ups"
+                                           class="form-check-input filter-check" name="calendar[]"
+                                           id="customCheck5" @if(in_array('follow_ups',$event_filter)) checked @endif>
+                                    <label
+                                        class="form-check-label form_custom_label text-dark-grey pl-2 mr-3 justify-content-start cursor-pointer checkmark-20 pt-2 text-wrap"
+                                        for="customCheck5">@lang('modules.dashboard.followUps')</label>
                                 </div>
                             @endif
                         </div>

@@ -2,8 +2,8 @@
     <div class="col-sm-12">
         <x-form id="save-client-note-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.client') @lang('app.note') @lang('app.details')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    @lang('app.clientNoteDetails')</h4>
 
                 <input type="hidden" name="client_id" value="{{ $clientId }}">
 

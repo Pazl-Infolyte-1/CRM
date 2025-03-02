@@ -26,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class AwardIcon extends BaseModel
 {
 
-    protected $fillable = ['company_id','title', 'icon'];
+    protected $fillable = ['company_id', 'title', 'icon'];
 
     public function award(): HasOne
     {

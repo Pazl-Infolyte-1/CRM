@@ -4,9 +4,9 @@
             ->startOfDay()
             ->setTimezone('UTC');
     @endphp
-    <div class="col-sm-12 mt-2">
+    <div class="col-sm-12">
         @if (in_array('admin', user_roles()))
-            <x-cards.data class="e-d-info mb-3" :title="__('modules.dashboard.probationDate')" padding="false">
+            <x-cards.data class="e-d-info mb-2" :title="__('modules.dashboard.probationDate')" padding="false">
                 <x-table>
                         @forelse ($probations as $probation)
                             @php
@@ -50,7 +50,7 @@
             </x-cards.data>
         @else
             @if ($probation)
-                <x-cards.data class="e-d-info mb-3" :title="__('modules.dashboard.probationDate')" padding="false">
+                <x-cards.data class="e-d-info mb-2" :title="__('modules.dashboard.probationDate')" padding="false">
                     <x-table>
                         <tr>
                             @php

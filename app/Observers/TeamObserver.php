@@ -21,12 +21,12 @@ class TeamObserver
         if (company()) {
             $leaveTypes = LeaveType::all();
 
-            foreach($leaveTypes as $leaveType){
-                if(!is_null($leaveType->department)){
+            foreach ($leaveTypes as $leaveType) {
+                if (!is_null($leaveType->department)) {
                     $department = json_decode($leaveType->department);
                     array_push($department, $model->id);
                 }
-                else{
+                else {
                     $department = array($model->id);
                 }
 
@@ -41,13 +41,13 @@ class TeamObserver
         if (company()) {
             $leaveTypes = LeaveType::all();
 
-            foreach($leaveTypes as $leaveType){
+            foreach ($leaveTypes as $leaveType) {
 
-                if(!is_null($leaveType->department)){
+                if (!is_null($leaveType->department)) {
                     $department = json_decode($leaveType->department);
 
                     // Search value and delete
-                    if(($key = array_search($model->id, $department)) !== false) {
+                    if (($key = array_search($model->id, $department)) !== false) {
                         unset($department[$key]);
                     }
 

@@ -2,6 +2,7 @@
 
 namespace App\View\Components;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class SubMenuItem extends Component
@@ -17,7 +18,7 @@ class SubMenuItem extends Component
      *
      * @return void
      */
-    public function __construct($text, $link, $permission = true,$addon = false)
+    public function __construct($text, $link, $permission = true, $addon = false)
     {
         $this->text = $text;
         $this->link = $link;
@@ -29,7 +30,7 @@ class SubMenuItem extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|string
+     * @return View|string
      */
     public function render()
     {

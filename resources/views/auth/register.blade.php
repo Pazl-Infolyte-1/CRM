@@ -1,7 +1,22 @@
+@push('styles')
+    @foreach ($frontWidgets as $item)
+    @if(!is_null($item->header_script))
+        {!! $item->header_script !!}
+    @endif
+
+    @endforeach
+@endpush
+
 <x-auth>
-    <form id="login-form" action="{{ route('login') }}" class="ajax-form" method="POST">
+
+    @if (!$global->registration_open)
+        <div class="alert alert-info">
+            <div class="text-capitalize f-w-500">{!! preg_replace('~^<p>(.*?)</p>$~', '$1', $signUpMessage->message)!!}</div>
+        </div>
+    @else
+        <form id="login-form" action="{{ route('login') }}" class="ajax-form" method="POST">
         {{ csrf_field() }}
-        <h3 class="text-capitalize mb-4 f-w-500">@lang('app.signUpAsClient')</h3>
+        <h3 class=" mb-4 f-w-500">@lang('app.signUpAsClient')</h3>
 
         @if ($errors->any())
             <div class="alert alert-danger">
@@ -77,8 +92,9 @@
            class="btn-secondary f-w-500 rounded w-100 height-50 f-15 mt-3">
             @lang('app.login')
         </a>
+        <input type="hidden" name="locale" value="{{ session()->has('locale') ? session('locale') : global_setting()->locale }}">
     </form>
-
+    @endif
     <x-slot name="scripts">
         @if ($globalSetting->google_recaptcha_status == 'active' && $globalSetting->google_recaptcha_v2_status == 'active')
             <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async
@@ -151,6 +167,13 @@
 
             });
         </script>
+
+        @foreach ($frontWidgets as $item)
+        @if(!is_null($item->footer_script))
+            {!! $item->footer_script !!}
+        @endif
+
+        @endforeach
     </x-slot>
 
 </x-auth>

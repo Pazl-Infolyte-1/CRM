@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMapping
+class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapping
 {
 
     use Exportable;
@@ -63,7 +63,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->format('Y-m-d'))
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->format('Y-m-d'))
             ->orderBy('attendances.clock_in_time', 'asc')
-            ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.half_day', 'company_addresses.location')->get();
+            ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.half_day', 'company_addresses.location', 'attendances.auto_clock_out', 'attendances.half_day_type')->get();
 
         $leavesDates = Leave::where('user_id', $userId)
             ->where('leave_date', '>=', $startDate)
@@ -72,7 +72,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
             ->select('leave_date', 'reason', 'duration')->get();
 
         $period = CarbonPeriod::create($startDate, $endDate); // Get All Dates from start to end date
-        $holidays = Holiday::getHolidayByDates($startDate, $endDate); // Getting Holiday Data
+        $holidays = Holiday::getHolidayByDates($startDate, $endDate, $userId); // Getting Holiday Data
 
         $attendances = collect($attendances)->each(function ($item) {
             $item->status = '';
@@ -92,6 +92,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
             $att->clock_out_time = null;
             $att->late = null;
             $att->half_day = null;
+            $att->half_day_type = null;
 
             if ($date->lessThan(now()) && !$attendances->whereBetween('date', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])->count()) {
                 // If date is not in attendance..
@@ -108,7 +109,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
                 // Check holidays
                 foreach ($holidays as $holiday) {
 
-                    if (\Carbon\Carbon::createFromFormat('Y-m-d', $holiday->holiday_date)->startOfDay()->equalTo($date)) {
+                    if (Carbon::createFromFormat('Y-m-d', $holiday->holiday_date)->startOfDay()->equalTo($date)) {
                         $att->status = 'Holiday';
                         $att->occassion = $holiday->occassion;
                     }
@@ -151,12 +152,18 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
         foreach ($attendances->sortBy('date') as $attendance) {
 
             $date = Carbon::createFromFormat('Y-m-d H:i:s', $attendance->date)->timezone(company()->timezone)->format(company()->date_format);
-            $to = $attendance->clock_out_time ? \Carbon\Carbon::parse( $attendance->clock_out_time) : null;
-            $from = $attendance->clock_in_time ? \Carbon\Carbon::parse( $attendance->clock_in_time) : null;
+            $to = $attendance->clock_out_time ? Carbon::parse($attendance->clock_out_time) : null;
+            $from = $attendance->clock_in_time ? Carbon::parse($attendance->clock_in_time) : null;
             $clock_in = $attendance->clock_in_time ? Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_in_time)->timezone(company()->timezone)->format(company()->time_format) : 0;
             $clock_out = $attendance->clock_out_time ? Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_out_time)->timezone(company()->timezone)->format(company()->time_format) : 0;
             $diff_time = ($to && $from) ? $to->diffInMinutes($from) : 0;
             $location = $attendance->location;
+
+            if($clock_out != 0 && $attendance->auto_clock_out == 1) {
+                $clock_out .= ' ' . __('Modules.attendance.autoClockOut');
+            }
+
+            $status = __('app.present');
 
             if ($attendance->status != null) {
 
@@ -172,13 +179,29 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
 
             }
             else if ($attendance->late == 'yes' && $attendance->half_day == 'yes') {
-                $status = __('app.lateHalfday');
+                $halfDayType = '';
+
+                if ($attendance->half_day_type == 'first_half') {
+                    $halfDayType = '('. __('modules.leaves.1stHalf') .')';
+                } elseif ($attendance->half_day_type == 'second_half') {
+                    $halfDayType = '('. __('modules.leaves.2ndHalf') .')';
+                }
+
+                $status =  __('app.halfday') . $halfDayType . __('app.lateHalfday');
             }
             else if ($attendance->late == 'yes') {
                 $status = __('app.presentlate');
             }
             else if ($attendance->half_day == 'yes') {
-                $status = __('app.halfday');
+                $halfDayType = '';
+
+                if ($attendance->half_day_type == 'first_half') {
+                    $halfDayType = '('. __('modules.leaves.1stHalf') .')';
+                } elseif ($attendance->half_day_type == 'second_half') {
+                    $halfDayType = '('. __('modules.leaves.2ndHalf') .')';
+                }
+
+                $status = __('app.halfday') . $halfDayType;
             }
 
             if ($diff_time > 0 || $clock_out != 0) {
@@ -230,7 +253,8 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
         $diff = $employeedata['total_hours'];
 
         if (is_int($diff)) {
-            $diff = CarbonInterval::formatHuman($employeedata['total_hours']); /** @phpstan-ignore-line */
+            $diff = CarbonInterval::formatHuman($employeedata['total_hours']);
+            /** @phpstan-ignore-line */
         }
 
         $view_status = ($diff > 0) ? $diff : $employeedata['comments']['status'];
@@ -248,7 +272,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
     public function checkHolidays($attendances, $date, $occassion)
     {
         foreach ($attendances as $attendance) {
-            if ($date->format('Y-m-d') == \Carbon\Carbon::parse($attendance->clock_in_time)->format('Y-m-d')) {
+            if ($date->format('Y-m-d') == Carbon::parse($attendance->clock_in_time)->format('Y-m-d')) {
                 $attendance->status = 'Holiday';
                 $attendance->occassion = $occassion;
             }

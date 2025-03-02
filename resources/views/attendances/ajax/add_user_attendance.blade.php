@@ -5,7 +5,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">
-        @lang('app.mark')  @lang('app.menu.attendance')
+        @lang('modules.attendance.markAttendance')
     </h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
@@ -68,6 +68,22 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                 </div>
 
                 <div class="row">
+                    <div class="col-lg-6 col-md-6 col-xl-4" id="half_day_section" style="display: none;">
+                        <div class="form-group my-3">
+                            <x-forms.label fieldId="duration" :fieldLabel="__('modules.leaves.selectDuration')">
+                            </x-forms.label>
+                            <div class="d-flex">
+                                <x-forms.radio fieldId="first_half_day_yes" :fieldLabel="__('modules.leaves.firstHalf')" fieldName="half_day_duration"
+                                    fieldValue="first_half"  checked="true">
+                                </x-forms.radio>
+                                <x-forms.radio fieldId="first_half_day_no" :fieldLabel="__('modules.leaves.secondHalf')" fieldValue="second_half"
+                                    fieldName="half_day_duration"></x-forms.radio>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
 
                     <div class="col-lg-4 col-md-6">
                         <x-forms.select fieldId="location" :fieldLabel="__('app.location')" fieldName="location"
@@ -112,6 +128,20 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
     $(document).ready(function() {
 
+        if ($('#halfday').is(':checked')) {
+            $('#half_day_section').show();
+        } else {
+            $('#half_day_section').hide();
+        }
+
+        $('#halfday').change(function() {
+            if ($(this).is(':checked')) {
+                $('#half_day_section').show();
+            } else {
+                $('#half_day_section').hide();
+            }
+        });
+
         $('#clock-in-time').timepicker({
             @if(company()->time_format == 'H:i')
             showMeridian: false,
@@ -145,6 +175,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                     if(response.status == 'success'){
                         $(MODAL_XL).modal('hide');
                         $(MODAL_LG).modal('hide');
+                        showTable();
                     }
                 }
             })

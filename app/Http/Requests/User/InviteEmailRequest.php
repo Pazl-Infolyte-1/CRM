@@ -26,7 +26,7 @@ class InviteEmailRequest extends FormRequest
     {
         return [
             'email' => 'required|min:1',
-            'email.*' => 'required|email',
+            'email.*' => 'required|email:rfc,strict',
         ];
     }
 

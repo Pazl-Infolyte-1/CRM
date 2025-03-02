@@ -36,8 +36,14 @@ class OrderUpdated extends BaseNotification
     {
         $via = ($this->emailSetting->send_email == 'yes' && $notifiable->email_notifications && $notifiable->email != '') ? ['mail', 'database'] : ['database'];
 
-        if ($this->emailSetting->send_push == 'yes') {
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
             array_push($via, OneSignalChannel::class);
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.order.updateSubject'), $this->order->order_number);
         }
 
         return $via;
@@ -51,7 +57,7 @@ class OrderUpdated extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
 
         if ($this->order) {
             $url = route('orders.show', $this->order->id);
@@ -59,7 +65,7 @@ class OrderUpdated extends BaseNotification
 
             $content = __('email.order.updateText');
 
-            return $build
+            $build
                 ->subject(__('email.order.updateSubject') . ' - ' . config('app.name') . '.')
                 ->markdown('mail.email', [
                     'url' => $url,
@@ -68,6 +74,10 @@ class OrderUpdated extends BaseNotification
                     'actionText' => __('email.order.action'),
                     'notifiableName' => $notifiable->name
                 ]);
+
+            parent::resetLocale();
+
+            return $build;
         }
     }
 

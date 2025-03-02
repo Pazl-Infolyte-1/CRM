@@ -13,7 +13,7 @@ body.dark-theme{
     .bg-white, .card, .form-control, .qs-datepicker-container, .qs-overlay, .unpaid, .custom-file-label, .p-client-msg .btn-secondary, .w-task-board-panel, .b-p-header .b-p-badge, .content-wrapper, .admin-dashboard, .page-title, .main-container, .settings-box, .input-group .bootstrap-select.form-control .dropdown-toggle, .bootstrap-select > .dropdown-toggle, .bootstrap-timepicker-widget table td a:hover, .btn-cancel, .select-picker.role-permission-select, .fc .fc-button-primary, .daterangepicker td.off, .dropzone, textarea,iframe .form-body, .tabs .-secondary, .set-btns, .list-group-item, .bg-light, .bg-grey, .dropzone .dz-preview.dz-image-preview , .c-inv-desc select, .bg-light-grey, .matched .sample {
         background-color: #181C34 !important;
     }
-    .text-dark, .text-dark-grey, .text-darkest-grey,  .table tr td, .sidebar-brand-box .sidebar-brand-dropdown .profile-box a, .qs-datepicker-container, .qs-day, .table tr td a, .tabs .nav .nav-item, .login_box h3, .form-control, .forgot_pswd a, .login_box .form-group label, .page-item.disabled .page-link, .pagination li a, .dropdown-item, a:hover, .filter-option-inner-inner, .badge-light, .bootstrap-timepicker-widget table td a, .ql-snow .ql-picker, .ql-snow .ql-stroke, .form_custom_label, .dropdown-menu.datepicker-dropdown, .select-picker.role-permission-select, .tagify__tag>div>*, .tagify__tag__removeBtn, .dropdown-menu.dashboard-settings, .daterangepicker td.in-range, .text-muted, .input-group-text, .bootstrap-select .dropdown-toggle::after, .btn-primary:hover .text-white, .fc .fc-col-header-cell-cushion, .swal2-title, .swal2-content, .login_box a, .bg-grey, .bg-grey span, .desktop-description, .item_name, .quantity, .cost_per_item  {
+    .text-dark, .text-dark-grey, .text-darkest-grey,  .table tr td, .sidebar-brand-box .sidebar-brand-dropdown .profile-box a, .qs-datepicker-container, .qs-day, .table tr td a, .tabs .nav .nav-item, .login_box h3, .login_header h3, .form-control, .forgot_pswd a, .login_box .form-group label, .page-item.disabled .page-link, .pagination li a, .dropdown-item, a:hover, .filter-option-inner-inner, .badge-light, .bootstrap-timepicker-widget table td a, .ql-snow .ql-picker, .ql-snow .ql-stroke, .form_custom_label, .dropdown-menu.datepicker-dropdown, .select-picker.role-permission-select, .tagify__tag>div>*, .tagify__tag__removeBtn, .dropdown-menu.dashboard-settings, .daterangepicker td.in-range, .text-muted, .input-group-text, .bootstrap-select .dropdown-toggle::after, .btn-primary:hover .text-white, .fc .fc-col-header-cell-cushion, .swal2-title, .swal2-content, .login_box a, .bg-grey, .bg-grey span, .desktop-description, .item_name, .quantity, .cost_per_item, .ticket-message:hover p {
         color: #D5D8DF !important;
     }
     .chart-container .axis, .chart-container .chart-label, .data-point-value{
@@ -49,7 +49,7 @@ body.dark-theme{
     .modal.show {
         background-color: rgb(0 0 0 / 47%);
     }
-    
+
     .menu-collapse:before{
         background: none;
     }
@@ -197,7 +197,7 @@ body.dark-theme{
     .alert .text-dark-grey {
         color: #616e80 !important;
     }
-    
+
     .dropdown-item.active .text-muted {
         color: #6c757d !important;
     }
@@ -217,7 +217,7 @@ body.dark-theme{
     .spinner-border {
         border: 0.25em solid #d5d8df;
     }
-      
+
 }
 body.dark-theme::-webkit-scrollbar,
 body.dark-theme .t-d-inner-panel::-webkit-scrollbar,

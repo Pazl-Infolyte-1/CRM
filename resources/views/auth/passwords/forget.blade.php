@@ -1,7 +1,15 @@
+@push('styles')
+    @foreach ($frontWidgets as $item)
+    @if(!is_null($item->header_script))
+        {!! $item->header_script !!}
+    @endif
+
+    @endforeach
+@endpush
 <x-auth>
     <form id="forgot-password-form" action="{{ route('password.email') }}" class="ajax-form" method="POST">
         {{ csrf_field() }}
-        <h3 class="text-capitalize mb-4 f-w-500">@lang('app.recoverPassword')</h3>
+        <h3 class=" mb-4 f-w-500">@lang('app.recoverPassword')</h3>
 
         <div class="alert alert-success m-t-10 d-none" id="success-msg"></div>
         <div class="group">
@@ -21,6 +29,7 @@
         <div class="forgot_pswd mt-3">
             <a href="{{ route('login') }}" class="justify-content-center">@lang('app.login')</a>
         </div>
+        <input type="hidden" name="locale" value="{{ session()->has('locale') ? session('locale') : global_setting()->locale }}">
     </form>
 
     <x-slot name="scripts">
@@ -46,6 +55,13 @@
             });
 
         </script>
+
+        @foreach ($frontWidgets as $item)
+        @if(!is_null($item->footer_script))
+            {!! $item->footer_script !!}
+        @endif
+
+        @endforeach
     </x-slot>
 
 </x-auth>

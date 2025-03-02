@@ -11,8 +11,9 @@
         <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.duration')</p>
             <div class="select-status">
-                <input type="text" class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
-                    id="datatableRange" placeholder="@lang('placeholders.dateRange')">
+                <input type="text"
+                       class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
+                       id="datatableRange" placeholder="@lang('placeholders.dateRange')">
             </div>
         </div>
         <!-- DATE END -->
@@ -25,7 +26,8 @@
                     <option value="not finished">@lang('modules.tasks.hideCompletedTask')</option>
                     <option value="all">@lang('app.all')</option>
                     @foreach ($taskBoardStatus as $status)
-                        <option value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : $status->column_name }}</option>
+                        <option
+                            value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : $status->column_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -42,7 +44,7 @@
                         </span>
                     </div>
                     <input type="text" class="form-control f-14 p-1 border-additional-grey" id="search-text-field"
-                        placeholder="@lang('app.startTyping')">
+                           placeholder="@lang('app.startTyping')">
                 </div>
             </form>
         </div>
@@ -59,11 +61,12 @@
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" name="project_id" id="project_id" data-live-search="true" data-container="body"
-                            data-size="8">
+                        <select class="form-control select-picker" name="project_id" id="project_id"
+                                data-live-search="true" data-container="body"
+                                data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($projects as $project)
                                 <option value="{{ $project->id }}">{{ $project->project_name }}</option>
@@ -73,26 +76,29 @@
                 </div>
             </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.client')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.client')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" id="clientID" data-live-search="true" data-container="body" data-size="8">
+                        <select class="form-control select-picker" id="clientID" data-live-search="true"
+                                data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($clients as $client)
-                                <x-user-option :user="$client" />
+                                <x-user-option :user="$client"/>
                             @endforeach
                         </select>
                     </div>
                 </div>
             </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.assignTo')</label>
+                <label class="f-14 text-dark-grey mb-12 "
+                       for="usr">@lang('modules.tasks.assignTo')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" id="assignedTo" data-live-search="true" data-container="body" data-size="8">
+                        <select class="form-control select-picker" id="assignedTo" data-live-search="true"
+                                data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($employees as $employee)
-                                <x-user-option :user="$employee" />
+                                <x-user-option :user="$employee"/>
                             @endforeach
                         </select>
                     </div>
@@ -100,13 +106,15 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.assignBy')</label>
+                <label class="f-14 text-dark-grey mb-12 "
+                       for="usr">@lang('modules.tasks.assignBy')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" id="assignedBY" data-live-search="true" data-container="body" data-size="8">
+                        <select class="form-control select-picker" id="assignedBY" data-live-search="true"
+                                data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($employees as $employee)
-                                <x-user-option :user="$employee" />
+                                <x-user-option :user="$employee"/>
                             @endforeach
                         </select>
                     </div>
@@ -114,10 +122,11 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.label')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.label')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" id="label" data-live-search="true" data-container="body" data-size="8">
+                        <select class="form-control select-picker" id="label" data-live-search="true"
+                                data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($taskLabels as $label)
                                 <option
@@ -130,11 +139,12 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize"
-                    for="usr">@lang('modules.taskCategory.taskCategory')</label>
+                <label class="f-14 text-dark-grey mb-12 "
+                       for="usr">@lang('modules.taskCategory.taskCategory')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" id="category_id" data-live-search="true" data-container="body" data-size="8">
+                        <select class="form-control select-picker" id="category_id" data-live-search="true"
+                                data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($taskCategories as $categ)
                                 <option value="{{ $categ->id }}">{{ $categ->category_name }}</option>
@@ -145,10 +155,11 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.billableTask')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.billableTask')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" id="billable_task" data-live-search="true" data-container="body" data-size="8">
+                        <select class="form-control select-picker" id="billable_task" data-live-search="true"
+                                data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             <option value="1">@lang('app.yes')</option>
                             <option value="0">@lang('app.no')</option>
@@ -164,7 +175,7 @@
 @endsection
 
 @php
-$addTaskPermission = user()->permission('add_tasks');
+    $addTaskPermission = user()->permission('add_tasks');
 @endphp
 
 @section('content')
@@ -174,22 +185,23 @@ $addTaskPermission = user()->permission('add_tasks');
         <div class="d-flex">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
-                    <x-forms.link-primary :link="route('tasks.create')" class="mr-3 openRightModal float-left" icon="plus">
-                        @lang('app.add')
-                        @lang('app.task')
+                    <x-forms.link-primary :link="route('tasks.create')" class="mr-3 openRightModal float-left"
+                                          icon="plus">
+                        @lang('app.addTask')
                     </x-forms.link-primary>
                 @endif
             </div>
 
             <div class="btn-group" role="group">
                 <a href="{{ route('tasks.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
-                    data-original-title="@lang('app.menu.tasks')"><i class="side-icon bi bi-list-ul"></i></a>
+                   data-original-title="@lang('app.menu.tasks')"><i class="side-icon bi bi-list-ul"></i></a>
 
                 <a href="{{ route('taskboards.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
-                    data-original-title="@lang('modules.tasks.taskBoard')"><i class="side-icon bi bi-layout-three-columns"></i></a>
+                   data-original-title="@lang('modules.tasks.taskBoard')"><i
+                        class="side-icon bi bi-layout-three-columns"></i></a>
 
                 <a href="{{ route('task-calendar.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
-                    data-original-title="@lang('app.menu.calendar')"><i class="side-icon bi bi-calendar"></i></a>
+                   data-original-title="@lang('app.menu.calendar')"><i class="side-icon bi bi-calendar"></i></a>
             </div>
         </div>
 
@@ -210,7 +222,8 @@ $addTaskPermission = user()->permission('add_tasks');
                 <div class="select-status mr-3 d-none quick-action-field" id="change-status-action">
                     <select name="status" class="form-control select-picker">
                         @foreach ($taskBoardStatus as $status)
-                            <option value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : $status->column_name }}</option>
+                            <option
+                                value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : $status->column_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -227,7 +240,7 @@ $addTaskPermission = user()->permission('add_tasks');
     @include('sections.datatable_js')
 
     <script>
-        $('#allTasks-table').on('preXhr.dt', function(e, settings, data) {
+        $('#allTasks-table').on('preXhr.dt', function (e, settings, data) {
 
             var dateRangePicker = $('#datatableRange').data('daterangepicker');
             var startDate = $('#datatableRange').val();
@@ -266,12 +279,12 @@ $addTaskPermission = user()->permission('add_tasks');
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["allTasks-table"].draw(false);
+            window.LaravelDataTables["allTasks-table"].draw(true);
         }
 
         $('#billable_task, #status, #clientID, #category_id, #assignedBY, #assignedTo, #label, #project_id')
             .on('change keyup',
-                function() {
+                function () {
                     if ($('#status').val() != "not finished") {
                         $('#reset-filters').removeClass('d-none');
                         showTable();
@@ -302,14 +315,14 @@ $addTaskPermission = user()->permission('add_tasks');
                     }
                 });
 
-        $('#search-text-field').on('keyup', function() {
+        $('#search-text-field').on('keyup', function () {
             if ($('#search-text-field').val() != "") {
                 $('#reset-filters').removeClass('d-none');
                 showTable();
             }
         });
 
-        $('#reset-filters,#reset-filters-2').click(function() {
+        $('#reset-filters,#reset-filters-2').click(function () {
             $('#filter-form')[0].reset();
 
             $('.filter-box #status').val('not finished');
@@ -318,7 +331,7 @@ $addTaskPermission = user()->permission('add_tasks');
             showTable();
         });
 
-        $('#quick-action-type').change(function() {
+        $('#quick-action-type').change(function () {
             const actionValue = $(this).val();
             if (actionValue != '') {
                 $('#quick-action-apply').removeAttr('disabled');
@@ -335,7 +348,7 @@ $addTaskPermission = user()->permission('add_tasks');
             }
         });
 
-        $('#quick-action-apply').click(function() {
+        $('#quick-action-apply').click(function () {
             const actionValue = $('#quick-action-type').val();
             if (actionValue == 'delete') {
                 Swal.fire({
@@ -366,7 +379,7 @@ $addTaskPermission = user()->permission('add_tasks');
             }
         });
 
-        $('body').on('click', '.delete-table-row', function() {
+        $('body').on('click', '.delete-table-row', function () {
             var id = $(this).data('user-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
@@ -399,7 +412,7 @@ $addTaskPermission = user()->permission('add_tasks');
                             '_token': token,
                             '_method': 'DELETE'
                         },
-                        success: function(response) {
+                        success: function (response) {
                             if (response.status == "success") {
                                 showTable();
                             }
@@ -410,7 +423,7 @@ $addTaskPermission = user()->permission('add_tasks');
         });
 
         const applyQuickAction = () => {
-            var rowdIds = $("#allTasks-table input:checkbox:checked").map(function() {
+            var rowdIds = $("#allTasks-table input:checkbox:checked").map(function () {
                 return $(this).val();
             }).get();
 
@@ -423,7 +436,7 @@ $addTaskPermission = user()->permission('add_tasks');
                 disableButton: true,
                 buttonSelector: "#quick-action-apply",
                 data: $('#quick-action-form').serialize(),
-                success: function(response) {
+                success: function (response) {
                     if (response.status == 'success') {
                         showTable();
                         resetActionButtons();
@@ -432,7 +445,7 @@ $addTaskPermission = user()->permission('add_tasks');
             })
         };
 
-        $('#allTasks-table').on('change', '.change-status', function() {
+        $('#allTasks-table').on('change', '.change-status', function () {
             var url = "{{ route('tasks.change_status') }}";
             var token = "{{ csrf_token() }}";
             var id = $(this).data('task-id');
@@ -448,8 +461,8 @@ $addTaskPermission = user()->permission('add_tasks');
                         status: status,
                         sortBy: 'id'
                     },
-                    success: function(data) {
-                        window.LaravelDataTables["allTasks-table"].draw(false);
+                    success: function (data) {
+                        window.LaravelDataTables["allTasks-table"].draw(true);
                     }
                 });
 

@@ -20,8 +20,9 @@
         <x-slot name="thead">
             <th>#</th>
             <th>@lang('app.labelName')</th>
+            <th>@lang('modules.sticky.colors')</th>
             <th>@lang('app.description')</th>
-            <th>@lang('app.project')</th>
+            @if (in_array('projects', user_modules())) <th>@lang('app.project')</th> @endif
             <th class="text-right">@lang('app.action')</th>
         </x-slot>
 
@@ -29,21 +30,27 @@
             <tr id="label-{{ $item->id }}">
                 <td>{{ $key + 1 }}</td>
                 <td data-row-id="{{ $item->id }}" data-column="label_name" contenteditable="true">
-                    {{ $item->label_name }}
+                    {!! $item->label_name !!}
                 </td>
-                <td data-row-id="{{ $item->id }}" data-column="description" contenteditable="true">{{ $item->description }}
+                <td data-row-id="{{ $item->id }}" data-column="label_color" contenteditable="true">
+                    {!! $item->label_color !!}
                 </td>
-                <td data-row-id="{{ $item->id }}" data-column="project">
-                    <select class="form-control select-picker change-project" name="project" id="project_id"
-                    data-live-search="true" data-size="8" data-label-id="{{ $item->id }}">
-                        <option value="">--</option>
-                        @foreach ($projects as $project)
-                            <option @if ($project->id == $item->project_id) selected @endif value="{{ $project->id }}">
-                                {{ $project->project_name }}
-                            </option>
-                        @endforeach
-                    </select>
+                <td data-row-id="{{ $item->id }}" data-column="description" contenteditable="true">{!! $item->description !!}
                 </td>
+                @if (in_array('projects', user_modules()))
+                    <td data-row-id="{{ $item->id }}" data-column="project">
+                        <select class="form-control select-picker change-project" name="project" id="project_id"
+                        data-live-search="true" data-size="8" data-label-id="{{ $item->id }}">
+                            <option value="">--</option>
+                            @foreach ($projects as $project)
+                                <option @selected($project->id == $item->project_id) value="{{ $project->id }}">
+                                    {{ $project->project_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </td>
+                    <input type="hidden" name="parent_project_id" value="{{ $projectId }}">
+                @endif
                 <td class="text-right">
                     @if (user()->permission('task_labels') == 'all')
                         <x-forms.button-secondary data-label-id="{{ $item->id }}" icon="trash" class="delete-label">
@@ -69,16 +76,18 @@
                     fieldRequired="true">
                 </x-forms.text>
             </div>
-            <div class="col-md-6">
-                <x-forms.select fieldId="project_id" :fieldLabel="__('app.project')" fieldName="project_id"
-                search="true">
-                    <option value="">--</option>
-                    @foreach($projects as $project)
-                        <option @if ($project->id == $projectId) selected @endif value="{{ $project->id }}">{{ $project->project_name }}</option>
-                    @endforeach
-                </x-forms.select>
-                <input type="hidden" name="parent_project_id" value="{{ $projectId }}">
-            </div>
+            @if (in_array('projects', user_modules()))
+                <div class="col-md-6">
+                    <x-forms.select fieldId="project_id" :fieldLabel="__('app.project')" fieldName="project_id"
+                    search="true">
+                        <option value="">--</option>
+                        @foreach($projects as $project)
+                            <option @selected($project->id == $projectId) value="{{ $project->id }}">{{ $project->project_name }}</option>
+                        @endforeach
+                    </x-forms.select>
+                    <input type="hidden" name="parent_project_id" value="{{ $projectId }}">
+                </div>
+            @endif
             <div class="col-sm-12 col-md-12">
                 <x-forms.textarea :fieldLabel="__('app.description')" fieldName="description" fieldId="description">
                 </x-forms.textarea>
@@ -110,6 +119,7 @@
                 </div>
             </div>
             <input type="hidden" name="task_id" id="task_id" value="{{$taskId}}">
+            <input type="hidden" name="project_template_task_id" id="project_template_task_id" value="{{$projectTemplateTaskId}}">
         </div>
     </x-form>
 </div>
@@ -130,6 +140,7 @@
 
     $('.delete-label').click(function() {
         var taskId = $('#task_id').val();
+        var projectTemplateTaskId = $('#project_template_task_id').val();
         var id = $(this).data('label-id');
         var url = "{{ route('task-label.destroy', ':id') }}";
         url = url.replace(':id', id);
@@ -160,6 +171,7 @@
                     url: url,
                     data: {
                         'taskId': taskId,
+                        'projectTemplateTaskId': projectTemplateTaskId,
                         '_token': token,
                         '_method': 'DELETE'
                     },
@@ -186,8 +198,8 @@
             success: function(response) {
                 if (response.status == 'success') {
                     $('#task_labels').html(response.data);
-                    $('#task_labels').selectpicker('refresh');
                     $(MODAL_XL).modal('hide');
+                    $('#task_labels').selectpicker('refresh');
                 }
             }
         })
@@ -200,40 +212,50 @@
         if ($(this).data("initialText") !== $(this).html()) {
             let id = $(this).data('row-id');
             let tableId = $(this).parent().attr('id');
-            var url = "{{ route('task-label.update', ':id') }}";
-            url = url.replace(':id', id);
-            var token = "{{ csrf_token() }}";
 
-            $('#'+tableId).each(function() {
-                let labelName =  $(this).find("td:nth-child(2)").html();
-                let description =  $(this).find("td:nth-child(3)").html();
+            if(id){
+                var url = "{{ route('task-label.update', ':id') }}";
+                url = url.replace(':id', id);
+                var token = "{{ csrf_token() }}";
+                var projectId = "{{ $projectId }}";
+                let selectedLabels = $('#task_labels').val();
 
-                $.easyAjax({
-                    url: url,
-                    container: '#row-' + id,
-                    type: "POST",
-                    data: {
-                        'label_name': labelName,
-                        'description': description,
-                        '_token': token,
-                        '_method': 'PUT'
-                    },
-                    blockUI: true,
-                    success: function(response) {
-                        if (response.status == 'success') {
-                            $('#task_labels').html(response.data);
-                            $('#task_labels').selectpicker('refresh');
+                $('#'+tableId).each(function() {
+                    let labelName =  $(this).find("td:nth-child(2)").html();
+                    let labelColor =  $(this).find("td:nth-child(3)").html();
+                    let description =  $(this).find("td:nth-child(4)").html();
 
+                    $.easyAjax({
+                        url: url,
+                        container: '#row-' + id,
+                        type: "POST",
+                        data: {
+                            'label_name': labelName,
+                            'color': labelColor,
+                            'description': description,
+                            'parent_project_id': projectId,
+                            '_token': token,
+                            '_method': 'PUT'
+                        },
+                        blockUI: true,
+                        success: function(response) {
+                            if (response.status == 'success') {
+                                $('#task_labels').selectpicker('refresh');
+                                $('#task_labels').html(response.data);
+                                $('#task_labels').val(selectedLabels);
+                                $('#task_labels').selectpicker('refresh');
+
+                            }
                         }
-                    }
-                })
+                    })
 
-            });
+                });
+            }
 
         }
     });
 
-    $.fn.projectLabel = function(projectId){
+    $.fn.projectLabel = function(projectId, selectedLabels){
         let id = projectId;
 
         if (id === '') {
@@ -249,6 +271,7 @@
             redirect: true,
             success: function (data) {
                 $('#task_labels').html(data.data);
+                $('#task_labels').val(selectedLabels);
                 $('#task_labels').selectpicker('refresh');
             }
         })
@@ -256,34 +279,42 @@
 
     $('#example').on('change keyup', '#project_id',function() {
         var id = $(this).data('label-id');
-        var url = "{{ route('task-label.update', ':id') }}";
-            url = url.replace(':id', id);
-        var token = "{{ csrf_token() }}";
-        var projectId = $(this).val();
-        var taskId = $('#task_id').val();
-        var labelId = $('#label_id').val();
 
-        if (id != "") {
-            $.easyAjax({
-                url: url,
-                container: '#row-' + id,
-                type: "POST",
-                data: {
-                    'task_id': taskId,
-                    'label_id': id,
-                    'project_id': projectId,
-                    '_token': token,
-                    '_method': 'PUT'
-                },
-                blockUI: true,
-                success: function(response) {
-                    if (response.status == 'success') {
-                        $('#task_labels').html(response.data);
-                        $('#task_labels').selectpicker('refresh');
-                        $.fn.projectLabel(projectId);
+        if(id){
+            var url = "{{ route('task-label.update', ':id') }}";
+            url = url.replace(':id', id);
+            var token = "{{ csrf_token() }}";
+            var projectId = $(this).val();
+            var taskId = $('#task_id').val();
+            var labelId = $('#label_id').val();
+            var parentProjectId = "{{ $projectId }}";
+            let selectedLabels = $('#task_labels').val();
+
+            if (id != "") {
+                $.easyAjax({
+                    url: url,
+                    container: '#row-' + id,
+                    type: "POST",
+                    data: {
+                        'task_id': taskId,
+                        'label_id': id,
+                        'project_id': projectId,
+                        'parent_project_id': parentProjectId,
+                        '_token': token,
+                        '_method': 'PUT'
+                    },
+                    blockUI: true,
+                    success: function(response) {
+                        if (response.status == 'success') {
+                            $('#task_labels').selectpicker('refresh');
+                            $('#task_labels').html(response.data);
+                            $('#task_labels').val(selectedLabels);
+                            $('#task_labels').selectpicker('refresh');
+                            $.fn.projectLabel(parentProjectId, selectedLabels);
+                        }
                     }
-                }
-            })
+                })
+            }
         }
 
     });

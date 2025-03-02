@@ -8,9 +8,9 @@ use App\Models\BaseModel;
 use App\Models\Currency;
 use App\Models\Project;
 use App\Models\ProjectMilestone;
-use App\Models\ProjectTimeLogBreak;
-use Carbon\Carbon;
 use Carbon\CarbonInterval;
+use Illuminate\Http\Request;
+
 
 class ProjectMilestoneController extends AccountBaseController
 {
@@ -21,6 +21,7 @@ class ProjectMilestoneController extends AccountBaseController
         $this->pageTitle = 'app.menu.projects';
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('projects', $this->user->modules));
+
             return $next($request);
         });
     }
@@ -39,6 +40,7 @@ class ProjectMilestoneController extends AccountBaseController
         $project = Project::findOrFail($id);
 
         abort_403(!($addProjectMilestonePermission == 'all' || $project->project_admin == user()->id));
+
         return view('projects.milestone.create', $this->data);
     }
 
@@ -56,8 +58,9 @@ class ProjectMilestoneController extends AccountBaseController
         $milestone->cost = ($request->cost == '') ? '0' : $request->cost;
         $milestone->currency_id = $request->currency_id;
         $milestone->status = $request->status;
-        $milestone->start_date = $request->start_date == null ? $request->start_date : Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
-        $milestone->end_date = $request->end_date == null ? $request->end_date : Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d');
+        $milestone->add_to_budget = $request->add_to_budget;
+        $milestone->start_date = $request->start_date == null ? $request->start_date : companyToYmd($request->start_date);
+        $milestone->end_date = $request->end_date == null ? $request->end_date : companyToYmd($request->end_date);
         $milestone->save();
 
         $project = Project::findOrFail($request->project_id);
@@ -69,19 +72,21 @@ class ProjectMilestoneController extends AccountBaseController
         }
 
         $this->logProjectActivity($project->id, 'messages.newMilestoneCreated');
+
         return Reply::success(__('messages.milestoneSuccess'));
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
     {
         $this->milestone = ProjectMilestone::findOrFail($id);
         $this->currencies = Currency::all();
+
         return view('projects.milestone.edit', $this->data);
     }
 
@@ -94,31 +99,61 @@ class ProjectMilestoneController extends AccountBaseController
     public function update(StoreMilestone $request, $id)
     {
         $milestone = ProjectMilestone::findOrFail($id);
+
+        // find the current cost of milestone
+        $oldCost = $milestone->getOriginal('cost');
+
         $milestone->project_id = $request->project_id;
         $milestone->milestone_title = $request->milestone_title;
         $milestone->summary = $request->summary;
         $milestone->cost = ($request->cost == '') ? '0' : $request->cost;
         $milestone->currency_id = $request->currency_id;
         $milestone->status = $request->status;
-        $milestone->start_date = $request->start_date == null ? $request->start_date : Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
-        $milestone->end_date = $request->end_date == null ? $request->end_date : Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d');
+        $milestone->start_date = $request->start_date == null ? $request->start_date : companyToYmd($request->start_date);
+        $milestone->end_date = $request->end_date == null ? $request->end_date : companyToYmd($request->end_date);
         $milestone->save();
 
+        $project = Project::findOrFail($milestone->project_id);
+
+        // get the latest cost of milestone
+        $newCost = $milestone->cost;
+        $costDifference = $newCost - $oldCost;
+
+        // Update the project budget if the add_to_budget flag is set to 'yes'
+        if ($milestone->add_to_budget == 'yes') {
+
+            // Update project budget
+            $project->project_budget += $costDifference;
+            $project->save();
+        }
+
         $this->logProjectActivity($milestone->project_id, 'messages.milestoneUpdated');
+
         return Reply::success(__('messages.milestoneSuccess'));
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
         $milestone = ProjectMilestone::findOrFail($id);
+
+        // Retrieve the associated project
+        $project = Project::findOrFail($milestone->project_id);
+
+        // Update project budget by subtracting the cost of the milestone
+        if ($milestone->add_to_budget == 'yes') {
+            $project->project_budget -= $milestone->cost;
+            $project->save();
+        }
+
         ProjectMilestone::destroy($id);
         $this->logProjectActivity($milestone->project_id, 'messages.milestoneDeleted');
+
         return Reply::success(__('messages.deleteSuccess'));
     }
 
@@ -128,7 +163,7 @@ class ProjectMilestoneController extends AccountBaseController
 
         $this->milestone = ProjectMilestone::with('tasks', 'tasks.users', 'tasks.boardColumn', 'tasks.createBy', 'tasks.timeLogged', 'project')->findOrFail($id);
 
-        $project = Project::findOrFail($this->milestone->project_id);
+        $project = Project::withTrashed()->findOrFail($this->milestone->project_id);
 
         abort_403(!(
             $viewMilestonePermission == 'all'
@@ -140,8 +175,7 @@ class ProjectMilestoneController extends AccountBaseController
 
         $totalTaskTime = 0;
 
-        foreach($this->milestone->tasks as $totalTime)
-        {
+        foreach ($this->milestone->tasks as $totalTime) {
             $totalMinutes = $totalTime->timeLogged->sum('total_minutes');
             $breakMinutes = $totalTime->breakMinutes();
             $totalMinutes = $totalMinutes - $breakMinutes;
@@ -165,6 +199,15 @@ class ProjectMilestoneController extends AccountBaseController
         }
 
         return Reply::dataOnly(['status' => 'success', 'data' => $options]);
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $milestone = ProjectMilestone::findOrFail($id);
+        $milestone->status = $request->input('status');
+        $milestone->save();
+
+        return response()->json(['status' => 'success', 'message' =>  __('messages.updateSuccess')]);
     }
 
 }

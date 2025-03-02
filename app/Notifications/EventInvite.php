@@ -4,8 +4,6 @@ namespace App\Notifications;
 
 use App\Models\Event;
 use App\Models\EmailNotificationSetting;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Messages\SlackMessage;
 
 class EventInvite extends BaseNotification
 {
@@ -40,7 +38,13 @@ class EventInvite extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
+        }
+
+        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
+            $pushNotification = new \App\Http\Controllers\DashboardController();
+            $pushUsersIds = [[$notifiable->id]];
+            $pushNotification->sendPushNotifications($pushUsersIds, __('email.newEvent.subject'), $this->event->event_name);
         }
 
         return $via;
@@ -48,12 +52,12 @@ class EventInvite extends BaseNotification
 
     /**
      * @param mixed $notifiable
-     * @return MailMessage
+     * @return \Illuminate\Notifications\Messages\MailMessage
      * @throws \Exception
      */
     public function toMail($notifiable)
     {
-        $eventInvite = parent::build();
+        $eventInvite = parent::build($notifiable);
         $vCalendar = new \Eluceo\iCal\Component\Calendar('www.example.com');
         $vEvent = new \Eluceo\iCal\Component\Event();
         $vEvent
@@ -67,7 +71,7 @@ class EventInvite extends BaseNotification
         $url = route('events.show', $this->event->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newEvent.text') . '<br><br>' . __('modules.events.eventName') . ': <strong>' . $this->event->event_name . '<strong><br>' . __('modules.events.startOn') . ': ' . $this->event->start_date_time->translatedFormat($this->company->date_format . ' - ' . $this->company->time_format) . '<br>' . __('modules.events.endOn') . ': ' . $this->event->end_date_time->translatedFormat($this->company->date_format . ' - ' . $this->company->time_format);
+        $content = __('email.newEvent.text') . '<br><br><strong>' . __('modules.events.eventName') . ': <strong>' . $this->event->event_name . '<strong><br>' . __('modules.events.startOn') . ': ' . $this->event->start_date_time->translatedFormat($this->company->date_format . ' - ' . $this->company->time_format) . '<br>' . __('modules.events.endOn') . ': ' . $this->event->end_date_time->translatedFormat($this->company->date_format . ' - ' . $this->company->time_format)   . '<br>' . __('app.location') . ': <strong>' . $this->event->where . '<strong>';
 
         $eventInvite->subject(__('email.newEvent.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
@@ -79,8 +83,8 @@ class EventInvite extends BaseNotification
             ]);
 
         $eventInvite->attachData($vFile, 'cal.ics', [
-                'mime' => 'text/calendar',
-            ]);
+            'mime' => 'text/calendar',
+        ]);
 
         return $eventInvite;
     }
@@ -103,20 +107,9 @@ class EventInvite extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
+        return $this->slackBuild($notifiable)
+            ->content(__('email.newEvent.subject') . "\n" . __('modules.events.eventName') . ': ' . $this->event->event_name . "\n" . __('modules.events.startOn') . ': ' . $this->event->start_date_time->format($this->company->date_format . ' - ' . $this->company->time_format) . "\n" . __('modules.events.endOn') . ': ' . $this->event->end_date_time->format($this->company->date_format . ' - ' . $this->company->time_format));
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content(__('email.newEvent.subject') . "\n" . __('modules.events.eventName') . ': ' . $this->event->event_name . "\n" . __('modules.events.startOn') . ': ' . $this->event->start_date_time->format($this->company->date_format . ' - ' . $this->company->time_format) . "\n" . __('modules.events.endOn') . ': ' . $this->event->end_date_time->format($this->company->date_format . ' - ' . $this->company->time_format));
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newEvent.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
 }

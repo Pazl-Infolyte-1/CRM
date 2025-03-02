@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helper\Reply;
-use App\Models\Lead;
-use App\Models\LeadSource;
-use App\Models\LeadStatus;
+use App\Models\Deal;
 use Illuminate\Http\Request;
 use App\Http\Requests\Gdpr\RemoveLeadRequest;
 use App\Http\Requests\GdprLead\UpdateRequest;
@@ -24,7 +22,7 @@ class PublicLeadGdprController extends AccountBaseController
             return Reply::error('messages.unAuthorisedUser');
         }
 
-        $lead = Lead::whereRaw('md5(id) = ?', $id)->firstOrFail();
+        $lead = Deal::whereRaw('md5(id) = ?', $id)->firstOrFail();
         $lead->company_name = $request->company_name;
         $lead->website = $request->website;
         $lead->address = $request->address;
@@ -47,10 +45,10 @@ class PublicLeadGdprController extends AccountBaseController
 
         abort_if(!$this->gdprSetting->consent_leads, 404);
 
-        $lead = Lead::where('hash', $hash)->firstOrFail();
+        $lead = Deal::where('hash', $hash)->firstOrFail();
         $this->consents = PurposeConsent::with(['lead' => function($query) use($lead) {
             $query->where('lead_id', $lead->id)
-                ->orderBy('created_at', 'desc');
+                ->orderByDesc('created_at');
         }])->get();
 
         $this->lead = $lead;
@@ -60,7 +58,7 @@ class PublicLeadGdprController extends AccountBaseController
 
     public function updateConsent(Request $request, $id)
     {
-        $lead = Lead::whereRaw('md5(id) = ?', $id)->firstOrFail();
+        $lead = Deal::whereRaw('md5(id) = ?', $id)->firstOrFail();
 
         $allConsents = $request->has('consent_customer') ? $request->consent_customer : [];
 
@@ -85,7 +83,7 @@ class PublicLeadGdprController extends AccountBaseController
             return Reply::error('messages.unAuthorisedUser');
         }
 
-        $lead = Lead::findOrFail($request->lead_id);
+        $lead = Deal::findOrFail($request->lead_id);
 
         $removal = new RemovalRequestLead();
         $removal->lead_id = $request->lead_id;

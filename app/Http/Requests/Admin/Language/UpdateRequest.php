@@ -29,6 +29,7 @@ class UpdateRequest extends CoreRequest
             'language_code'  => 'required|alpha_dash|max:10|unique:language_settings,language_code,'.$this->route('id').',id',
             'status'  => 'required',
             'flag' => 'required',
+            'is_rtl' => 'required',
         ];
     }
 

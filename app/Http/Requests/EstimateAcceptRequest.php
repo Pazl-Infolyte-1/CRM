@@ -27,7 +27,7 @@ class EstimateAcceptRequest extends FormRequest
         $rules = [
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email:rfc',
+            'email' => 'required|email:rfc,strict',
         ];
 
         if(request('signature_type') == 'upload'){

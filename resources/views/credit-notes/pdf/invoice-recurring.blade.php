@@ -271,6 +271,10 @@
             max-width: 150px !important;
         }
 
+        .word-break {
+            word-wrap: break-word;
+            word-break: break-all;
+        }
     </style>
 </head>
 
@@ -338,7 +342,7 @@
 
                             @if ($invoiceSetting->show_project == 1 && isset($creditNote->project))
                                 <br><br>
-                                <span class="text-grey text-capitalize">@lang('modules.invoices.projectName')</span><br>
+                                <span class="text-grey ">@lang('modules.invoices.projectName')</span><br>
                                 {{ $creditNote->project->project_name }}
                             @endif
                         @endif
@@ -371,7 +375,7 @@
                 @if ($creditNote)
                     <div class="">@lang('app.credit-note'): {{ $creditNote->cn_number }}</div>
                 @endif
-                <div class="date">@lang('app.menu.issues') @lang('app.date'):
+                <div class="date">@lang('app.menu.issuesDate'):
                     {{ $invoice->issue_date->translatedFormat(company()->date_format) }}</div>
                 @if ($invoice->status === 'unpaid')
                     <div class="date">@lang('app.dueDate'):
@@ -398,9 +402,9 @@
                         <tr style="page-break-inside: avoid;">
                             <td class="no">{{ ++$count }}</td>
                             <td class="desc">
-                                <h3>{{ $item->item_name }}</h3>
+                                <h3 class="word-break">{{ $item->item_name }}</h3>
                                 @if (!is_null($item->item_summary))
-                                    <p class="item-summary">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                    <p class="item-summary word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                 @endif
                             </td>
                             <td class="qty">
@@ -425,7 +429,13 @@
                         <td class="no">&nbsp;</td>
                         <td class="qty">&nbsp;</td>
                         <td class="qty">&nbsp;</td>
-                        <td class="desc">@lang('modules.invoices.discount')</td>
+                        <td class="desc">@lang('modules.invoices.discount'):
+                            @if($creditNote->discount_type == 'percent')
+                                {{$creditNote->discount}}%
+                            @else
+                                {{ currency_format($creditNote->discount, $creditNote->currency_id) }}
+                            @endif
+                        </td>
                         <td class="unit">{{ number_format((float) $discount, 2, '.', '') }}</td>
                     </tr>
                 @endif
@@ -452,12 +462,12 @@
                     </tr>
                 @endif
                 <tr dontbreak="true">
-                    <td colspan="4">@lang('modules.invoices.total') @lang('modules.invoices.paid')</td>
+                    <td colspan="4">@lang('app.totalPaid')</td>
                     <td style="text-align: center">{{ number_format((float) $invoice->getPaidAmount(), 2, '.', '') }}
                     </td>
                 </tr>
                 <tr dontbreak="true">
-                    <td colspan="4">@lang('modules.invoices.total') @lang('modules.invoices.due')</td>
+                    <td colspan="4">@lang('app.totalDue')</td>
                     <td style="text-align: center">{{ number_format((float) $invoice->amountDue(), 2, '.', '') }}</td>
                 </tr>
             </tfoot>
@@ -474,6 +484,9 @@
                 @lang('modules.invoiceSettings.invoiceTerms')
                 <br>
                 {!! nl2br($invoiceSetting->invoice_terms) !!}
+            @endif
+            @if (isset($invoiceSetting->other_info))
+                <br>{!! nl2br($invoiceSetting->other_info) !!}
             @endif
 
         </p>

@@ -2,10 +2,12 @@
 
 namespace App\View\Components\Forms;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class LinkSecondary extends Component
 {
+
     public $icon;
     public $link;
 
@@ -14,7 +16,7 @@ class LinkSecondary extends Component
      *
      * @return void
      */
-    public function __construct( $link, $icon = '')
+    public function __construct($link, $icon = '')
     {
         $this->icon = $icon;
         $this->link = $link;
@@ -23,7 +25,7 @@ class LinkSecondary extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|string
+     * @return View|string
      */
     public function render()
     {

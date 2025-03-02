@@ -92,13 +92,13 @@
         <div class="d-flex justify-content-between action-bar">
 
             <div id="table-actions" class="d-flex align-items-center">
-                @if ($addContractPermission == 'all' || $addContractPermission == 'added')
+                @if (in_array('clients', user_modules()) && ($addContractPermission == 'all' || $addContractPermission == 'added'))
                     <x-forms.link-primary :link="route('contracts.create')" class="mr-3 openRightModal" icon="plus">
                         @lang('modules.contracts.createContract')
                     </x-forms.link-primary>
                 @endif
 
-                @if ($manageContractTemplatePermission == 'all' || $manageContractTemplatePermission == 'added')
+                @if (in_array('clients', user_modules()) && ($manageContractTemplatePermission == 'all' || $manageContractTemplatePermission == 'added'))
                     <x-forms.link-secondary :link="route('contract-template.index')" class="mr-3 mb-2 mb-lg-0 mb-md-0 float-left"
                         icon="layer-group">
                         @lang('app.menu.contractTemplate')
@@ -171,7 +171,7 @@
 
         });
         const showTable = () => {
-            window.LaravelDataTables["contracts-table"].draw(false);
+            window.LaravelDataTables["contracts-table"].draw(true);
         }
 
         $('#client, #contract_type').on('change keyup', function() {

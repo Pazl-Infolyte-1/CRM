@@ -18,6 +18,7 @@ class ClientCategoryController extends AccountBaseController
     {
         $this->categories = ClientCategory::all();
         $this->deletePermission = user()->permission('manage_client_category');
+
         return view('clients.create_category', $this->data);
     }
 
@@ -32,6 +33,7 @@ class ClientCategoryController extends AccountBaseController
         $category->category_name = strip_tags($request->category_name);
         $category->save();
         $categoryData = ClientCategory::all();
+
         return Reply::successWithData(__('messages.recordSaved'), ['data' => $categoryData]);
     }
 
@@ -44,7 +46,7 @@ class ClientCategoryController extends AccountBaseController
     public function update(Request $request, $id)
     {
         $this->editPermission = user()->permission('manage_client_category');
-        abort_403 ($this->editPermission != 'all');
+        abort_403($this->editPermission != 'all');
 
         $category = ClientCategory::findOrFail($id);
         $category->category_name = strip_tags($request->category_name);
@@ -58,17 +60,18 @@ class ClientCategoryController extends AccountBaseController
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return mixed
      */
     public function destroy($id)
     {
         $this->deletePermission = user()->permission('manage_client_category');
-        abort_403 ($this->deletePermission != 'all');
+        abort_403($this->deletePermission != 'all');
 
         $category = ClientCategory::findOrFail($id);
         $category->delete();
         $categoryData = ClientCategory::all();
+
         return Reply::successWithData(__('messages.deleteSuccess'), ['data' => $categoryData]);
     }
 

@@ -76,7 +76,7 @@
             <p class="f-15">{{ $contract->subject }}</p>
 
             <h5>@lang('app.description')</h5>
-            <div class="ql-editor p-0">{!! $contract->contract_detail !!}</div>
+            <div class="ql-editor p-0 pb-3">{!! $contract->contract_detail !!}</div>
 
             @if ($contract->amount != 0)
                 <div class="text-right pt-3 mt-3 border-top">

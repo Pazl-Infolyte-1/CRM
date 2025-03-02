@@ -4,7 +4,7 @@
     <div class="col-sm-12">
         <x-form id="save-knowledgebase-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.knowledgeBase.knowledgeDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-12">
@@ -14,8 +14,10 @@
                                     :fieldLabel="__('modules.knowledgeBase.toEmployee')" fieldName="to"
                                     fieldValue="employee" checked="true">
                                 </x-forms.radio>
-                                <x-forms.radio fieldId="toClient" :fieldLabel="__('modules.knowledgeBase.toClients')"
-                                    fieldValue="client" fieldName="to"></x-forms.radio>
+                                @if (in_array('clients', user_modules()))
+                                    <x-forms.radio fieldId="toClient" :fieldLabel="__('modules.knowledgeBase.toClients')"
+                                        fieldValue="client" fieldName="to"></x-forms.radio>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -193,5 +195,9 @@
         })
 
         init(RIGHT_MODAL);
+    });
+
+    $('#close-settings').click(function() {
+        closeTaskDetail()
     });
 </script>

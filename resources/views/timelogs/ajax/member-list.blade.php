@@ -8,10 +8,9 @@
                             <x-employee :user="$item" />
                         </div>
                         <div class="col-md-4 text-center align-self-center border-left">
-
                             <span class="f-w-500">
-                                {{ intdiv(($item->total_minutes - $item->total_break_minutes), 60) }}
-                            </span> <span class="f-12 text-dark-grey ml-1"> @lang('modules.projects.hoursLogged')</span>
+                                {{ intdiv(($item->total_minutes - $item->total_break_minutes), 60) }} @lang('modules.leaves.hours') {{ ($item->total_minutes - $item->total_break_minutes) % 60 }} @lang('app.minutes')
+                            </span> <span class="f-12 text-dark-grey ml-1"> @lang('modules.timeLogs.logged')</span>
                         </div>
 
                         <div class="col-md-3 text-center align-self-center border-left">

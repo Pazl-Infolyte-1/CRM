@@ -2,7 +2,6 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\User;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Button;
@@ -52,13 +51,9 @@ class LeaveReportDataTable extends BaseDataTable
             ->addColumn('pendingLeave', function ($row) {
                 return ($row->count_pending_leaves + ($row->count_pending_half_leaves) / 2) == 0 ? '0' : ($row->count_pending_leaves + ($row->count_pending_half_leaves) / 2);
             })
-            ->addColumn('upcomingLeave', function ($row) {
-                return ($row->count_upcoming_leaves + ($row->count_upcoming_half_leaves) / 2) == 0 ? '0' : ($row->count_upcoming_leaves + ($row->count_upcoming_half_leaves) / 2);
-            })
             ->addIndexColumn()
             ->orderColumn('approvedLeave', 'count_approved_leaves $1')
             ->orderColumn('pendingLeave', 'count_pending_leaves $1')
-            ->orderColumn('upcomingLeave', 'count_upcoming_leaves $1')
             ->rawColumns(['approve', 'upcoming', 'pending', 'action', 'name']);
     }
 
@@ -98,9 +93,7 @@ class LeaveReportDataTable extends BaseDataTable
                 ( select count("id") from leaves where user_id = users.id and leaves.duration != \'half day\' and leaves.status = \'approved\' ' . $startDt . ' ' . $endDt . ' ) as count_approved_leaves,
                 ( select count("id") from leaves where user_id = users.id and leaves.duration = \'half day\' and leaves.status = \'approved\' ' . $startDt . ' ' . $endDt . ' ) as count_approved_half_leaves,
                 ( select count("id") from leaves where user_id = users.id and leaves.duration != \'half day\' and leaves.status = \'pending\' ' . $startDt . ' ' . $endDt . ') as count_pending_leaves,
-                ( select count("id") from leaves where user_id = users.id and leaves.duration = \'half day\' and leaves.status = \'pending\' ' . $startDt . ' ' . $endDt . ') as count_pending_half_leaves,
-                ( select count("id") from leaves where user_id = users.id and leaves.duration != \'half day\' and leaves.leave_date > "' . Carbon::now($this->company->timezone)->translatedFormat('Y-m-d') . '" and leaves.status != \'rejected\' ' . $startDt . ' ' . $endDt . ') as count_upcoming_leaves,
-                ( select count("id") from leaves where user_id = users.id and leaves.duration = \'half day\' and leaves.leave_date   > "' . now()->translatedFormat('Y-m-d') . '" and leaves.status != \'rejected\' ' . $startDt . ' ' . $endDt . ') as count_upcoming_half_leaves'
+                ( select count("id") from leaves where user_id = users.id and leaves.duration = \'half day\' and leaves.status = \'pending\' ' . $startDt . ' ' . $endDt . ') as count_pending_half_leaves'
         )->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
@@ -174,7 +167,6 @@ class LeaveReportDataTable extends BaseDataTable
             __('app.name') => ['data' => 'employee_name', 'name' => 'users.name', 'visible' => false, 'title' => __('app.name')],
             __('app.approved') => ['data' => 'approvedLeave', 'name' => 'approvedLeave', 'class' => 'text-center', 'title' => __('app.approved')],
             __('app.pending') => ['data' => 'pendingLeave', 'name' => 'pendingLeave', 'class' => 'text-center', 'title' => __('app.pending')],
-            __('app.upcoming') => ['data' => 'upcomingLeave', 'name' => 'upcomingLeave', 'class' => 'text-center', 'title' => __('app.upcoming')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

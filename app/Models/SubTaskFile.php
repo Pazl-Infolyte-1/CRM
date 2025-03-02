@@ -44,6 +44,7 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|TaskFile whereUserId($value)
  * @property int $sub_task_id
  * @method static \Illuminate\Database\Eloquent\Builder|SubTaskFile whereSubTaskId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class SubTaskFile extends BaseModel

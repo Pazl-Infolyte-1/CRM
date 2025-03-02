@@ -531,6 +531,7 @@
 
         .word-break {
             word-wrap: break-word;
+            word-break: break-all;
         }
 
         @if($invoiceSetting->locale == 'th')
@@ -603,7 +604,11 @@
                 @if (!is_null($creditNote->project) && !is_null($creditNote->project->client))
                     <span class="description">@lang('modules.credit-notes.billedTo')</span>
                     <div>
-                        <span class="bold">{{ $creditNote->project->client->name }}</span>
+                        <span class="bold">{{ $creditNote->project->client->name_salutation }}</span>
+                    </div>
+
+                    <div>
+                        <span>{{ $creditNote->client->email }}</span>
                     </div>
 
                     <div>
@@ -611,12 +616,10 @@
                     </div>
 
                     <div>
+                        <b>@lang('app.address') :</b>
                         <span>{!! nl2br($creditNote->project->clientDetails->address) !!}</span>
                     </div>
 
-                    <div  class="description">
-                        <span>{{ $creditNote->project->client->email }}</span>
-                    </div  class="description">
                     @if ($creditNoteSetting->show_gst == 'yes' && !is_null($creditNote->project->clientDetails->gst_number))
                         <div>
                             <span> @lang('app.gstIn'): {{ $creditNote->project->clientDetails->gst_number }} </span>
@@ -626,7 +629,42 @@
 
                 @if ($invoiceSetting->show_project == 1 && isset($creditNote->project))
                     <br>
-                    <span class="text-dark-grey text-capitalize description">@lang('modules.invoices.projectName')</span>
+                    <span class="text-dark-grey  description">@lang('modules.invoices.projectName')</span>
+                    {{ $creditNote->project->project_name }}
+                @endif
+
+            </section>
+        @elseif (is_null($creditNote->project) && !is_null($creditNote->client) && !is_null($creditNote->client->clientDetails))
+            <section id="client-info"  class="description">
+                @if (!is_null($creditNote->client) && !is_null($creditNote->client->clientDetails))
+                    <span class="description">@lang('modules.credit-notes.billedTo')</span>
+                    <div>
+                        <span class="bold">{{ $creditNote->client->name_salutation }}</span>
+                    </div>
+
+                    <div>
+                        <span>{{ $creditNote->client->email }}</span>
+                    </div>
+
+                    <div>
+                        <span>{{ $creditNote->client->clientDetails->company_name }}</span>
+                    </div>
+
+                    <div>
+                        <b>@lang('app.address') :</b>
+                        <span>{!! nl2br($creditNote->client->clientDetails->address) !!}</span>
+                    </div>
+
+                    @if ($creditNoteSetting->show_gst == 'yes' && !is_null($creditNote->client->clientDetails->gst_number))
+                        <div>
+                            <span> @lang('app.gstIn'): {{ $creditNote->client->clientDetails->gst_number }} </span>
+                        </div>
+                    @endif
+                @endif
+
+                @if ($invoiceSetting->show_project == 1 && isset($creditNote->project))
+                    <br>
+                    <span class="text-dark-grey  description">@lang('modules.invoices.projectName')</span>
                     {{ $creditNote->project->project_name }}
                 @endif
 
@@ -657,9 +695,9 @@
                             <td>{{ ++$count }}</td>
                             <!-- Don't remove this column as it's needed for the row commands -->
                             <td>
-                                <div class="mb-3">{{ $item->item_name }}</div>
+                                <div class="mb-3 word-break">{{ $item->item_name }}</div>
                                 @if (!is_null($item->item_summary))
-                                    <p class="item-summary mb-3 description">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                    <p class="item-summary mb-3 description word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                 @endif
                                 @if ($item->creditNoteItemImage)
                                     <p class="mt-2">
@@ -692,7 +730,13 @@
                 </tr>
                 @if ($discount != 0 && $discount != '')
                     <tr data-iterate="tax">
-                        <th>@lang('modules.credit-notes.discount'):</th>
+                        <th>@lang('modules.credit-notes.discount'):
+                            @if($creditNote->discount_type == 'percent')
+                                {{$creditNote->discount}}%
+                            @else
+                                {{ currency_format($creditNote->discount, $creditNote->currency_id) }}
+                            @endif
+                            </th>
                         <td>-{{ currency_format($discount, $creditNote->currency_id, false) }}</td>
                     </tr>
                 @endif
@@ -714,7 +758,7 @@
                 </tr>
                 <tr>
                     <th>
-                        @lang('app.adjustment') @lang('app.amount'):</th>
+                        @lang('app.adjustmentAmount'):</th>
                     <td>
                         {{ currency_format($creditNote->adjustment_amount, $creditNote->currency_id, false) }}</td>
                 </tr>
@@ -735,9 +779,9 @@
 
         <section id="terms"  class="description">
 
-            <div class="notes"  class="description">
+            <div class="notes description" >
                 <div>
-                    <span>@lang('app.menu.issues') @lang('app.date'):</span>
+                    <span>@lang('app.issuesDate'):</span>
                     <span>{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}</span>
                 </div>
                 @if ($invoiceNumber)
@@ -754,6 +798,9 @@
                 @endif
                 @if ($creditNote->status == 'open')
                     <br>{!! nl2br($creditNoteSetting->credit_note_terms) !!}
+                @endif
+                @if (isset($invoiceSetting->other_info))
+                    <br>{!! nl2br($invoiceSetting->other_info) !!}
                 @endif
             </div>
 

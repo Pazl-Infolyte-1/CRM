@@ -10,7 +10,6 @@ use App\Models\TaskboardColumn;
 use App\Models\TaskCategory;
 use App\Models\TaskLabelList;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -49,11 +48,11 @@ class TaskReportController extends AccountBaseController
         $startDate = $endDate = null;
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
         }
 
         $projectId = $request->projectId;
@@ -61,9 +60,9 @@ class TaskReportController extends AccountBaseController
 
         foreach ($taskStatus as $label) {
             $model = Task::leftJoin('projects', 'projects.id', '=', 'tasks.project_id')
-                ->leftJoin('task_users', 'task_users.task_id', '=', 'tasks.id')
                 ->leftJoin('users as creator_user', 'creator_user.id', '=', 'tasks.created_by')
                 ->leftJoin('task_labels', 'task_labels.task_id', '=', 'tasks.id')
+                ->leftJoin('task_users', 'task_users.task_id', '=', 'tasks.id')
                 ->where('tasks.board_column_id', $label->id);
 
             if ($startDate !== null && $endDate !== null) {

@@ -6,8 +6,7 @@ use Carbon\Carbon;
 use App\Models\Estimate;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
-use App\DataTables\BaseDataTable;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\GlobalSetting;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +20,7 @@ class EstimatesDataTable extends BaseDataTable
     private $deleteEstimatePermission;
     private $addInvoicePermission;
     private $viewEstimatePermission;
+    private $showRequest;
 
     public function __construct()
     {
@@ -30,6 +30,7 @@ class EstimatesDataTable extends BaseDataTable
         $this->editEstimatePermission = user()->permission('edit_estimates');
         $this->deleteEstimatePermission = user()->permission('delete_estimates');
         $this->addInvoicePermission = user()->permission('add_invoices');
+        $this->showRequest = in_array(user()->permission('view_estimate_request'), ['all', 'added', 'owned', 'both']);
     }
 
     /**
@@ -58,17 +59,15 @@ class EstimatesDataTable extends BaseDataTable
 
             $action .= '<a href="' . route('estimates.show', [$row->id]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
-            $action .= '<a class="dropdown-item btn-copy" data-clipboard-text="' . route('front.estimate.show', $row->hash) . '">
+            if ($row->send_status) {
+                $action .= '<a class="dropdown-item btn-copy" data-clipboard-text="' . url()->temporarySignedRoute('front.estimate.show', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '">
                         <i class="fa fa-copy mr-2"></i> ' . __('modules.estimates.copyLink') . ' </a>';
 
-            $action .= '<a class="dropdown-item" href="' . route('front.estimate.show', $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.estimates.viewLink') . '</a>';
-
+                $action .= '<a class="dropdown-item" href="' . url()->temporarySignedRoute('front.estimate.show', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.estimates.viewLink') . '</a>';
+            }
 
             if ($row->status != 'draft') {
-                $action .= '<a class="dropdown-item" href="' . route('estimates.download', [$row->id]) . '">
-                            <i class="fa fa-download mr-2"></i>
-                            ' . trans('app.download') . '
-                        </a>';
+                $action .= '<a class="dropdown-item" href="' . route('estimates.download', [$row->id]) . '"> <i class="fa fa-download mr-2"></i>' . trans('app.download') . '</a>';
             }
 
             if ($row->status == 'waiting' || $row->status == 'draft') {
@@ -78,10 +77,7 @@ class EstimatesDataTable extends BaseDataTable
                     || ($this->editEstimatePermission == 'owned' && $row->client_id == user()->id)
                     || ($this->editEstimatePermission == 'both' && ($row->client_id == user()->id || $row->added_by == user()->id))
                 ) {
-                    $action .= '<a class="dropdown-item" href="' . route('estimates.edit', [$row->id]) . '">
-                            <i class="fa fa-edit mr-2"></i>
-                            ' . trans('app.edit') . '
-                        </a>';
+                    $action .= '<a class="dropdown-item" href="' . route('estimates.edit', [$row->id]) . '"><i class="fa fa-edit mr-2"></i>' . trans('app.edit') . '</a>';
                 }
             }
 
@@ -97,10 +93,7 @@ class EstimatesDataTable extends BaseDataTable
                     || ($this->deleteEstimatePermission == 'both' && ($row->client_id == user()->id || $row->added_by == user()->id))
                 ) {
 
-                    $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-estimate-id="' . $row->id . '">
-                        <i class="fa fa-trash mr-2"></i>
-                        ' . trans('app.delete') . '
-                    </a>';
+                    $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-estimate-id="' . $row->id . '"><i class="fa fa-trash mr-2"></i>' . trans('app.delete') . '</a>';
                 }
             }
 
@@ -127,16 +120,15 @@ class EstimatesDataTable extends BaseDataTable
         $datatables->addColumn('estimate_number', function ($row) {
             return '<a href="' . route('estimates.show', $row->id) . '" class="text-darkest-grey">' . $row->estimate_number . '</a>';
         });
-        $datatables->addColumn('client_name', function ($row) {
-            return $row->name;
-        });
+        $datatables->editColumn('project_name', function ($row) {
+            if ($row->project_id != null) {
+                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project?->project_name . '</a>';
+            }
 
-
-        $datatables->editColumn('name', function ($row) {
-            return view('components.client', [
-                'user' => $row->client
-            ]);
+            return '--';
         });
+        $datatables->addColumn('client_name', fn($row) => $row->name);
+        $datatables->editColumn('name', fn($row) => view('components.client', ['user' => $row->client]));
         $datatables->editColumn('status', function ($row) {
             $status = '';
 
@@ -162,27 +154,25 @@ class EstimatesDataTable extends BaseDataTable
 
             return $status;
         });
-        $datatables->editColumn('total', function ($row) {
-            return currency_format($row->total, $row->currencyId);
+        $datatables->addColumn('estimate_request_number', function ($row) {
+            if ($row->estimate_request_id) {
+                return '<a href="' . route('estimate-request.show', $row->estimate_request_id) . '" class="text-darkest-grey">' . $row->estimateRequest->estimate_request_number . '</a>';
+            }
+            else {
+                return '--';
+            }
         });
-        $datatables->editColumn(
-            'valid_till',
-            function ($row) {
-                return Carbon::parse($row->valid_till)->translatedFormat($this->company->date_format);
-            }
-        )->editColumn(
-            'created_at',
-            function ($row) {
-                return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
-            }
-        );
+        $datatables->editColumn('total', fn($row) => currency_format($row->total, $row->currencyId));
+        $datatables->editColumn('valid_till', fn($row) => Carbon::parse($row->valid_till)->translatedFormat($this->company->date_format));
+        $datatables->editColumn('created_at', fn($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format));
+
         $datatables->removeColumn('currency_symbol');
         $datatables->removeColumn('client_id');
 
         // Custom Fields For export
         $customFieldColumns = CustomField::customFieldData($datatables, Estimate::CUSTOM_FIELD_MODEL);
 
-        $datatables->rawColumns(array_merge(['name', 'action', 'status', 'estimate_number'], $customFieldColumns));
+        $datatables->rawColumns(array_merge(['project_name', 'name', 'action', 'status', 'estimate_number', 'estimate_request_number'], $customFieldColumns));
 
         return $datatables;
     }
@@ -195,11 +185,17 @@ class EstimatesDataTable extends BaseDataTable
         $request = $this->request();
 
         $this->firstEstimate = Estimate::orderBy('id', 'desc')->first();
-        $model = Estimate::with('client', 'client.session', 'company:id')
+        $model = Estimate::with(['client', 'client.session', 'company:id',
+                'project' => function ($q) {
+                    $q->withTrashed();
+                    $q->select('id', 'project_name', 'project_short_code', 'client_id', 'deleted_at');
+                }
+                ])
             ->join('client_details', 'estimates.client_id', '=', 'client_details.user_id')
             ->join('currencies', 'currencies.id', '=', 'estimates.currency_id')
             ->join('users', 'users.id', '=', 'estimates.client_id')
             ->leftJoin('invoices', 'invoices.estimate_id', '=', 'estimates.id')
+            ->leftJoin('estimate_requests', 'estimate_requests.id', '=', 'estimates.estimate_request_id')
             ->select([
                 'estimates.id',
                 'estimates.company_id',
@@ -210,22 +206,25 @@ class EstimatesDataTable extends BaseDataTable
                 'currencies.currency_symbol',
                 'currencies.id as currencyId',
                 'estimates.status',
+                'estimates.project_id',
                 'estimates.valid_till',
                 'estimates.estimate_number',
                 'estimates.send_status',
                 'estimates.added_by',
                 'estimates.hash',
                 'invoices.estimate_id',
-                'estimates.created_at'
+                'estimates.created_at',
+                'estimates.estimate_request_id',
+                'estimate_requests.estimate_request_number',
             ]);
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(estimates.`valid_till`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(estimates.`valid_till`)'), '<=', $endDate);
         }
 
@@ -250,6 +249,12 @@ class EstimatesDataTable extends BaseDataTable
                     ->orWhere(function ($query) {
                         $query->whereHas('client', function ($q) {
                             $q->where('name', 'like', '%' . request('searchText') . '%');
+                        });
+                    })
+                    ->orWhere(function ($query) {
+                        $query->whereHas('project', function ($q) {
+                            $q->where('project_name', 'like', '%' . request('searchText') . '%')
+                                ->orWhere('project_short_code', 'like', '%' . request('searchText') . '%'); // project short code
                         });
                     })
                     ->orWhere(function ($query) {
@@ -315,12 +320,14 @@ class EstimatesDataTable extends BaseDataTable
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.id') => ['data' => 'id', 'name' => 'id', 'title' => __('app.id'), 'visible' => false],
             __('app.estimate') . '#' => ['data' => 'estimate_number', 'name' => 'estimate_number', 'title' => __('app.estimate')],
-            __('app.client') => ['data' => 'name', 'name' => 'users.name', 'exportable' => false, 'title' => __('app.client'), 'visible' => !in_array('client', user_roles())],
+            __('app.project') => ['data' => 'project_name', 'name' => 'project.project_name', 'title' => __('app.project'), 'visible' => in_array('projects', user_modules()), 'exportable' => in_array('projects', user_modules())],
+            __('app.client') => ['data' => 'name', 'name' => 'users.name', 'exportable' => false, 'title' => __('app.client'), 'visible' => (in_array('clients', user_modules()) && !in_array('client', user_roles()))],
             __('app.customers') => ['data' => 'client_name', 'name' => 'users.name', 'visible' => false, 'title' => __('app.customers')],
-            __('app.email') => ['data' => 'email', 'name' => 'users.email',  'visible' => false, 'title' => __('app.email')],
+            __('app.email') => ['data' => 'email', 'name' => 'users.email', 'visible' => false, 'title' => __('app.email')],
             __('modules.invoices.total') => ['data' => 'total', 'name' => 'total', 'title' => __('modules.invoices.total')],
             __('modules.estimates.validTill') => ['data' => 'valid_till', 'name' => 'valid_till', 'title' => __('modules.estimates.validTill')],
             __('app.createdOn') => ['data' => 'created_at', 'name' => 'created_at', 'title' => __('app.createdOn')],
+            __('modules.estimateRequest.estimateRequest') . ' ' . __('app.number') => ['data' => 'estimate_request_number', 'name' => 'estimate_request_number', 'visible' => $this->showRequest , 'title' => __('modules.estimateRequest.estimateRequest') . ' ' . __('app.number')],
             __('app.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.status')]
         ];
 

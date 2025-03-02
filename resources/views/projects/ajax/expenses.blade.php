@@ -102,7 +102,7 @@ $addExpensesPermission = user()->permission('add_expenses');
         data['searchText'] = searchText;
     });
     const showTable = () => {
-        window.LaravelDataTables["expenses-table"].draw(false);
+        window.LaravelDataTables["expenses-table"].draw(true);
     }
 
     $('#filter-status, #employee2').on('change keyup',
@@ -199,7 +199,7 @@ $addExpensesPermission = user()->permission('add_expenses');
 
                 success: function(response) {
                     if (response.status == "success") {
-                        window.LaravelDataTables["expenses-table"].draw(false);
+                        window.LaravelDataTables["expenses-table"].draw(true);
                     }
                 }
             });

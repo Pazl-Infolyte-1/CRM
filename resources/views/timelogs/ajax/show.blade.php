@@ -2,10 +2,10 @@
     <div class="row">
         <div class="col-sm-12 col-lg-7">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-md-10 col-10">
-                            <h3 class="heading-h1 mb-3">@lang('app.timeLog') @lang('app.details')</h3>
+                            <h3 class="heading-h1 mb-3">@lang('app.timeLogDetails')</h3>
                         </div>
                         <div class="col-lg-2 col-md-2 col-2 text-right">
                             @if (
@@ -18,14 +18,14 @@
                             )
                                 <div class="dropdown">
                                     <button
-                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>
                                     </button>
 
                                     <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                         aria-labelledby="dropdownMenuLink" tabindex="0">
-                                        @if (!is_null($timeLog->end_time))
+                                        @if (!is_null($timeLog->end_time) && (is_null($timeLog->project_id) || (!is_null($timeLog->project) && is_null($timeLog->project->deleted_at))))
                                             <a class="dropdown-item openRightModal"
                                                 href="{{ route('timelogs.edit', $timeLog->id) }}">@lang('app.edit')</a>
                                         @else
@@ -49,7 +49,7 @@
                         <x-cards.data-row :label="__('modules.timeLogs.totalHours')" :value="$timeLog->hours" />
                     @elseif(!is_null($timeLog->activeBreak))
                         <div class="col-12 px-0 pb-3 d-flex">
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                                 @lang('modules.timeLogs.endTime')</p>
                             <p class="mb-0 text-dark-grey f-14">
                                 <span class="badge badge-secondary">@lang('modules.timeLogs.paused')</span>
@@ -57,7 +57,7 @@
                         </div>
                     @else
                         <div class="col-12 px-0 pb-3 d-flex">
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                                 @lang('modules.timeLogs.endTime')</p>
                             <p class="mb-0 text-dark-grey f-14">
                                 <span class="badge badge-primary">@lang('app.active')</span>
@@ -72,7 +72,7 @@
 
 
                     <div class="col-12 px-0 pb-3 d-flex">
-                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                             @lang('app.employee')</p>
                         <p class="mb-0 text-dark-grey f-14">
                             <x-employee :user="$timeLog->user" />
@@ -85,7 +85,7 @@
 
         <div class="col-sm-12 col-lg-5">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
                     <div class="row">
                         <div class="col-12">
                             <h3 class="heading-h1 mb-3">@lang('modules.tasks.history')</h3>
@@ -145,22 +145,11 @@
 
 <script>
     $('body').on('click', '.stop-timer', function() {
-        var id = $(this).data('time-id');
-        var url = "{{ route('timelogs.stop_timer', ':id') }}";
-        url = url.replace(':id', id);
-        var token = '{{ csrf_token() }}';
-        $.easyAjax({
-            url: url,
-            type: "POST",
-            data: {
-                timeId: id,
-                _token: token
-            },
-            success: function(data) {
-                window.location.reload();
-            }
-        })
-
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
+            url = url.replace(':id', id);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
     });
 
     $('body').on('click', '.edit-time-break', function() {

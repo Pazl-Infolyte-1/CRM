@@ -4,39 +4,54 @@ namespace App\Observers;
 
 use App\Services\Google;
 use App\Models\LeadAgent;
-use App\Models\LeadFollowUp;
+use App\Models\DealHistory;
+use App\Models\DealFollowUp;
 use App\Models\Notification;
+use App\Traits\DealHistoryTrait;
+use GPBMetadata\Google\Api\Service;
 use App\Models\GoogleCalendarModule;
+use Carbon\Carbon;
+use Google\Service\Exception;
+use Google_Service_Calendar_Event;
+use App\Traits\EmployeeActivityTrait;
 
 class LeadFollowUpObserver
 {
 
-    public function saving(LeadFollowUp $leadFollowUp)
+    use DealHistoryTrait;
+    use EmployeeActivityTrait;
+
+    public function saving(DealFollowUp $leadFollowUp)
     {
-        if (!isRunningInConsoleOrSeeding()) {
+        if (!isRunningInConsoleOrSeeding() && user()) {
             $leadFollowUp->last_updated_by = user()->id;
         }
     }
 
-    public function creating(LeadFollowUp $leadFollowUp)
+    public function creating(DealFollowUp $leadFollowUp)
     {
-        if (!isRunningInConsoleOrSeeding()) {
+        if (!isRunningInConsoleOrSeeding() && user()) {
             $leadFollowUp->added_by = user()->id;
         }
     }
 
-    public function created(LeadFollowUp $leadFollowUp)
+    public function created(DealFollowUp $leadFollowUp)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            if (user()) {
+                self::createEmployeeActivity(user()->id, 'followUp-created', $leadFollowUp->deal_id, 'deal_followup');
+            }
+
 
             /* Add google calendar event */
             if (!is_null($leadFollowUp->next_follow_up_date)) {
                 $leadFollowUp->event_id = $this->googleCalendarEvent($leadFollowUp);
+                self::createDealHistory($leadFollowUp->deal_id, 'followup-created', agentId: $leadFollowUp->agent_id);
             }
         }
     }
 
-    public function updating(LeadFollowUp $leadFollowUp)
+    public function updating(DealFollowUp $leadFollowUp)
     {
         if (!isRunningInConsoleOrSeeding()) {
 
@@ -47,9 +62,25 @@ class LeadFollowUpObserver
         }
     }
 
-    public function deleting(LeadFollowUp $leadFollowUp)
+    public function updated(DealFollowUp $leadFollowUp)
+    {
+        if (!isRunningInConsoleOrSeeding() && user()) {
+            self::createEmployeeActivity(user()->id, 'followUp-updated', $leadFollowUp->id, 'deal_followup');
+
+
+        }
+    }
+
+    public function deleting(DealFollowUp $leadFollowUp)
     {
         /* Start of deleting event from google calendar */
+        $deletedHistory = new DealHistory();
+        $deletedHistory->deal_id = $leadFollowUp->deal_id;
+        $deletedHistory->event_type = 'followup-deleted';
+        $deletedHistory->created_by = user()->id;
+        $deletedHistory->save();
+
+
         $google = new Google();
         $googleAccount = company();
 
@@ -59,7 +90,7 @@ class LeadFollowUpObserver
                 if ($leadFollowUp->event_id) {
                     $google->service('Calendar')->events->delete('primary', $leadFollowUp->event_id);
                 }
-            } catch (\Google\Service\Exception $error) {
+            } catch (Exception $error) {
                 if (is_null($error->getErrors())) {
                     // Delete google calendar connection data i.e. token, name, google_id
                     $googleAccount->name = null;
@@ -92,23 +123,21 @@ class LeadFollowUpObserver
             $attendiesData = [];
 
 
-            $attendees = LeadAgent::with(['user'])->whereHas('user', function ($query) {
-                $query->where('status', 'active')->where('google_calendar_status', true);
-            })->where('user_id', $event->lead->id)->get();
+            $attendee = $event->lead?->leadAgent;
 
-            foreach ($attendees as $attend) {
-                if (!is_null($attend->user) && !is_null($attend->user->email)) {
-                    $attendiesData[] = ['email' => $attend->user->email];
+            if ($attendee) {
+                if (!is_null($attendee->user)) {
+                    $attendiesData[] = ['email' => $attendee->user->email];
                 }
             }
 
             if ($event->next_follow_up_date) {
-                $dateTime = \Carbon\Carbon::parse($event->next_follow_up_date)->shiftTimezone($googleAccount->timezone);
+                $dateTime = Carbon::parse($event->next_follow_up_date)->shiftTimezone($googleAccount->timezone);
 
                 // Create event
                 $google = $google->connectUsing($googleAccount->token);
 
-                $eventData = new \Google_Service_Calendar_Event(array(
+                $eventData = new Google_Service_Calendar_Event(array(
                     'summary' => __('app.lead') . ' ' . __('app.followUp') . ': ' . $event->remark,
                     'location' => '',
                     'description' => $event->remark,
@@ -140,7 +169,7 @@ class LeadFollowUpObserver
                     }
 
                     return $results->id;
-                } catch (\Google\Service\Exception $error) {
+                } catch (Exception $error) {
                     if (is_null($error->getErrors())) {
                         // Delete google calendar connection data i.e. token, name, google_id
                         $googleAccount->name = null;
@@ -154,6 +183,15 @@ class LeadFollowUpObserver
         }
 
         return $event->event_id;
+    }
+
+    public function deleted(DealFollowUp $leadFollowUp)
+    {
+        if (user()) {
+            self::createDealHistory($leadFollowUp->deal_id, 'followup-deleted');
+            self::createEmployeeActivity(user()->id, 'followUp-deleted');
+
+        }
     }
 
 }

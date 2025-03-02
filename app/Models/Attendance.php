@@ -6,6 +6,7 @@ use App\Scopes\ActiveScope;
 use App\Traits\HasCompany;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
+use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
 
@@ -87,7 +88,7 @@ class Attendance extends BaseModel
     ];
     protected $appends = ['clock_in_date'];
     protected $guarded = ['id'];
-    protected $with = ['company'];
+    protected $with = ['company:id'];
 
     public function user(): BelongsTo
     {
@@ -243,15 +244,29 @@ class Attendance extends BaseModel
 
     public static function userAttendanceByDate($startDate, $endDate, $userId)
     {
-        return Attendance::without('company')
+        $attendance = Attendance::without('company')
             ->join('users', 'users.id', '=', 'attendances.user_id')
             ->leftJoin('company_addresses', 'company_addresses.id', '=', 'attendances.location_id')
-            ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate)
-            ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate)
+            ->whereBetween('attendances.clock_in_time', [$startDate->copy()->subDay(), $endDate->copy()->addDay()])
             ->where('attendances.user_id', '=', $userId)
             ->orderBy('attendances.clock_in_time', 'desc')
             ->select('attendances.*', 'users.*', 'attendances.id as aId', 'company_addresses.location')
             ->get();
+
+        // Filter the attendance by date due to the timezone issue
+        $period = CarbonPeriod::create($startDate, $endDate);
+        $attendance = $attendance->filter(function ($item) use ($period) {
+
+            foreach ($period as $date) {
+                if ($item->clock_in_time->timezone(company()->timezone)->format('Y-m-d') == $date->timezone(company()->timezone)->format('Y-m-d')) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        return $attendance;
     }
 
     public static function countDaysPresentByUser($startDate, $endDate, $userId)
@@ -300,7 +315,7 @@ class Attendance extends BaseModel
 
     public static function getTotalUserClockInWithTime($startTime, $endTime, $userId)
     {
-        return Attendance::whereBetween('clock_in_time', [$startTime, $endTime])
+        return Attendance::whereBetween('clock_in_time', [$startTime->copy()->timezone(config('app.timezone')), $endTime->copy()->timezone(config('app.timezone'))])
             ->where('user_id', $userId)
             ->count();
     }
@@ -315,7 +330,7 @@ class Attendance extends BaseModel
 
     public function totalTime($startDate, $endDate, $userId, $format = null)
     {
-        $attendanceActivity = Attendance::userAttendanceByDate($startDate->format('Y-m-d'), $endDate->format('Y-m-d'), $userId);
+        $attendanceActivity = Attendance::userAttendanceByDate($startDate, $endDate, $userId);
 
         $attendanceActivity = $attendanceActivity->reverse()->values();
 

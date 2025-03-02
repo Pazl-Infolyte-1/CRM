@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Events\AutoFollowUpReminderEvent;
 use App\Models\Company;
-use App\Models\LeadFollowUp;
+use App\Models\DealFollowUp;
 use Illuminate\Console\Command;
 
 class SendAutoFollowUpReminder extends Command
@@ -33,16 +33,19 @@ class SendAutoFollowUpReminder extends Command
 
     public function handle()
     {
-        $companies = Company::get();
+        Company::active()->chunk(50, function ($companies) {
+            foreach ($companies as $company) {
+                $this->sendFollowUpReminder($company);
+            }
+        });
 
-        foreach ($companies as $company) {
-            $this->sendFollowUpReminder($company);
-        }
+        return Command::SUCCESS;
     }
 
     public function sendFollowUpReminder($company)
     {
-        $followups = LeadFollowUp::with('lead', 'lead.leadAgent', 'lead.leadAgent.user')->where('next_follow_up_date', '>=', now($company->timezone))
+        $followups = DealFollowUp::with('lead', 'lead.leadAgent', 'lead.leadAgent.user')
+            ->where('next_follow_up_date', '>=', now($company->timezone))
             ->whereHas('lead', function ($query) use ($company) {
                 $query->where('company_id', $company->id);
             })
@@ -65,7 +68,7 @@ class SendAutoFollowUpReminder extends Command
             }
 
             if ($reminderDate->format('Y-m-d H:i') == now($company->timezone)->format('Y-m-d H:i')) {
-                event(new AutoFollowUpReminderEvent($followup));
+                event(new AutoFollowUpReminderEvent($followup, false));
             }
 
         }

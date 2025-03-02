@@ -12,15 +12,19 @@ $content = "<div class='d-flex align-items-center text-left'>
         $content.="</div>";
 
     if($agent){
-    $content .= ' ['.$user->email.'] ';
+        $content .= ' ['.$user->email.'] ';
     }
 
     if($pill){
-    $content = "<span class='badge badge-pill badge-light border'>".$content."</span>";
+        $content = "<span class='badge badge-pill badge-light border abc'>".$content."</span>";
     }
+
+    if ($user->status == 'deactive') {
+        $content .= "<span class='badge badge-pill badge-danger border align-center ml-2 px-2'>Inactive</span>";
+    } 
 
     @endphp
 
     <option @selected($selected) data-content="{!! $content !!}" value="{{ $userID ?? $user->id }}">
-        {{ $user->name }}
+        {{ $user->name_salutation }}
     </option>

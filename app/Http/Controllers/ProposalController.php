@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\Tax;
-use App\Models\Lead;
+use App\Models\Deal;
 use App\Helper\Files;
 use App\Helper\Reply;
 use App\Models\Product;
@@ -20,8 +20,8 @@ use App\Models\ProposalItemImage;
 use Illuminate\Support\Facades\App;
 use App\Models\ProposalTemplateItem;
 use App\DataTables\ProposalDataTable;
-use App\Models\ProposalTemplateItemImage;
 use App\Http\Requests\Proposal\StoreRequest;
+use App\Models\Lead;
 
 class ProposalController extends AccountBaseController
 {
@@ -32,6 +32,7 @@ class ProposalController extends AccountBaseController
         $this->pageTitle = 'app.menu.proposal';
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('leads', $this->user->modules));
+
             return $next($request);
         });
     }
@@ -52,15 +53,39 @@ class ProposalController extends AccountBaseController
         $this->pageTitle = __('modules.proposal.createProposal');
 
         $this->addPermission = user()->permission('add_lead_proposals');
+        $this->viewLeadPermission = user()->permission('view_lead');
         abort_403(!in_array($this->addPermission, ['all', 'added']));
 
         $this->taxes = Tax::all();
 
-        if (request('lead_id') != '') {
-            $this->lead = Lead::findOrFail(request('lead_id'));
+        if (request('deal_id') != '') {
+            $this->deal = Deal::findOrFail(request('deal_id'));
+        }
+        else {
+            $leadContact = Lead::query();
 
-        } else {
-            $this->leads = Lead::allLeads();
+            if($this->viewLeadPermission == 'added') {
+                $this->leadContacts = $leadContact->where('added_by', user()->id)->get();
+            }
+            elseif($this->viewLeadPermission == 'both') {
+                $this->leadContacts = $leadContact->where('added_by', user()->id)
+                            ->orWhere('lead_owner', user()->id)->get();
+            }
+            elseif($this->viewLeadPermission == 'owned') {
+                $this->leadContacts = $leadContact->where('lead_owner', user()->id)->get();
+            }
+            elseif($this->viewLeadPermission == 'none') {
+                $this->leadContacts = collect();
+            }elseif($this->viewLeadPermission == 'all') {
+                $this->leadContacts = $leadContact->get();
+            }
+
+            if (count($this->leadContacts) > 0) {
+                $this->deals = Deal::allLeads($this->leadContacts[0]->id);
+            }
+            else {
+                $this->deals = Deal::allLeads();
+            }
         }
 
         $this->units = UnitType::all();
@@ -75,12 +100,13 @@ class ProposalController extends AccountBaseController
         $this->proposalTemplateItem = request('template') ? ProposalTemplateItem::with('proposalTemplateItemImage')->where('proposal_template_id', request('template'))->get() : null;
 
 
-        if (request()->ajax()) {
-            $html = view('proposals.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
 
         $this->view = 'proposals.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
         return view('proposals.create', $this->data);
     }
 
@@ -110,9 +136,17 @@ class ProposalController extends AccountBaseController
             }
         }
 
+        $lastProposal = Proposal::lastProposalNumber() + 1;
+        $invoiceSetting = invoice_setting();
+        $zero = str_repeat('0', $invoiceSetting->proposal_digit - strlen($lastProposal));
+
+        $originalNumber = $zero . $lastProposal;
+        $proposalNumber = $invoiceSetting->proposal_prefix . $invoiceSetting->proposal_number_separator . $zero . $lastProposal;
+
+
         $proposal = new Proposal();
-        $proposal->lead_id = $request->lead_id;
-        $proposal->valid_till = Carbon::createFromFormat($this->company->date_format, $request->valid_till)->format('Y-m-d');
+        $proposal->deal_id = $request->deal_id;
+        $proposal->valid_till = companyToYmd($request->valid_till);
         $proposal->sub_total = $request->sub_total;
         $proposal->total = $request->total;
         $proposal->currency_id = $request->currency_id;
@@ -122,6 +156,8 @@ class ProposalController extends AccountBaseController
         $proposal->status = 'waiting';
         $proposal->signature_approval = ($request->require_signature) ? 1 : 0;
         $proposal->description = trim_editor($request->description);
+        $proposal->proposal_number = $proposalNumber;
+        $proposal->original_proposal_number = $originalNumber;
         $proposal->save();
 
         $redirectUrl = urldecode($request->redirect_url);
@@ -130,7 +166,7 @@ class ProposalController extends AccountBaseController
             $redirectUrl = route('proposals.index');
         }
 
-        $this->logSearchEntry($proposal->id, 'Proposal #' . $proposal->id, 'proposals.show', 'proposal');
+        $this->logSearchEntry($proposal->id, $proposalNumber, 'proposals.show', 'proposal');
 
         return Reply::redirect($redirectUrl, __('messages.recordSaved'));
     }
@@ -139,10 +175,10 @@ class ProposalController extends AccountBaseController
     {
         $this->viewLeadProposalsPermission = user()->permission('view_lead_proposals');
 
-        $this->invoice = Proposal::with('items', 'unit', 'lead', 'items.proposalItemImage')->findOrFail($id);
+        $this->invoice = Proposal::with('deal', 'items', 'unit', 'lead', 'items.proposalItemImage')->findOrFail($id);
         abort_403(!($this->viewLeadProposalsPermission == 'all' || ($this->viewLeadProposalsPermission == 'added' && $this->invoice->added_by == user()->id)));
 
-        $this->pageTitle = __('modules.lead.proposal') . '#' . $this->invoice->id;
+        $this->pageTitle = $this->invoice->proposal_number;
 
         if ($this->invoice->discount > 0) {
             if ($this->invoice->discount_type == 'percent') {
@@ -154,6 +190,14 @@ class ProposalController extends AccountBaseController
         }
         else {
             $this->discount = 0;
+        }
+
+        if($this->invoice->discount_type == 'percent') {
+            $discountAmount = $this->invoice->discount;
+            $this->discountType = $discountAmount.'%';
+        }else {
+            $discountAmount = $this->invoice->discount;
+            $this->discountType = currency_format($discountAmount, $this->invoice->currency_id);
         }
 
         $taxList = array();
@@ -173,7 +217,8 @@ class ProposalController extends AccountBaseController
                     if ($this->invoice->calculate_tax == 'after_discount' && $this->discount > 0) {
                         $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = ($item->amount - ($item->amount / $this->invoice->sub_total) * $this->discount) * ($this->tax->rate_percent / 100);
 
-                    } else{
+                    }
+                    else {
                         $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $item->amount * ($this->tax->rate_percent / 100);
                     }
 
@@ -182,7 +227,8 @@ class ProposalController extends AccountBaseController
                     if ($this->invoice->calculate_tax == 'after_discount' && $this->discount > 0) {
                         $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] + (($item->amount - ($item->amount / $this->invoice->sub_total) * $this->discount) * ($this->tax->rate_percent / 100));
 
-                    } else {
+                    }
+                    else {
                         $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] + ($item->amount * ($this->tax->rate_percent / 100));
                     }
                 }
@@ -209,12 +255,12 @@ class ProposalController extends AccountBaseController
         $this->categories = ProductCategory::all();
         $this->invoiceSetting = invoice_setting();
 
+        $this->view = 'proposals.ajax.edit';
+
         if (request()->ajax()) {
-            $html = view('proposals.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'proposals.ajax.edit';
         return view('proposals.create', $this->data);
     }
 
@@ -265,8 +311,8 @@ class ProposalController extends AccountBaseController
         }
 
         $proposal = Proposal::findOrFail($id);
-        $proposal->lead_id = $request->lead_id;
-        $proposal->valid_till = Carbon::createFromFormat($this->company->date_format, $request->valid_till)->format('Y-m-d');
+        $proposal->deal_id = $request->deal_id;
+        $proposal->valid_till = companyToYmd($request->valid_till);
         $proposal->sub_total = $request->sub_total;
         $proposal->total = $request->total;
         $proposal->currency_id = $request->currency_id;
@@ -304,7 +350,7 @@ class ProposalController extends AccountBaseController
 
         $proposal->save();
 
-        if(request()->data_type == 'mark_as_send'){
+        if (request()->data_type == 'mark_as_send') {
             return Reply::success(__('messages.proposalMarkAsSent'));
         }
 
@@ -321,15 +367,16 @@ class ProposalController extends AccountBaseController
         $pdfOption = $this->domPdfObjectForDownload($id);
         $pdf = $pdfOption['pdf'];
         $filename = $pdfOption['fileName'];
+
         return $pdf->download($filename . '.pdf');
     }
 
     public function domPdfObjectForDownload($id)
     {
         $this->invoiceSetting = invoice_setting();
-        $this->proposal = Proposal::with('items', 'lead', 'currency')->findOrFail($id);
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        $this->proposal = Proposal::with('items', 'lead', 'lead.contact', 'currency')->findOrFail($id);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         if ($this->proposal->discount > 0) {
             if ($this->proposal->discount_type == 'percent') {
@@ -348,6 +395,7 @@ class ProposalController extends AccountBaseController
         $items = ProposalItem::whereNotNull('taxes')
             ->where('proposal_id', $this->proposal->id)
             ->get();
+
         $this->invoiceSetting = invoice_setting();
 
         foreach ($items as $item) {
@@ -361,7 +409,8 @@ class ProposalController extends AccountBaseController
                         if ($this->proposal->calculate_tax == 'after_discount' && $this->discount > 0) {
                             $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = ($item->amount - ($item->amount / $this->proposal->sub_total) * $this->discount) * ($this->tax->rate_percent / 100);
 
-                        } else{
+                        }
+                        else {
                             $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $item->amount * ($this->tax->rate_percent / 100);
                         }
 
@@ -370,7 +419,8 @@ class ProposalController extends AccountBaseController
                         if ($this->proposal->calculate_tax == 'after_discount' && $this->discount > 0) {
                             $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] + (($item->amount - ($item->amount / $this->proposal->sub_total) * $this->discount) * ($this->tax->rate_percent / 100));
 
-                        } else {
+                        }
+                        else {
                             $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] + ($item->amount * ($this->tax->rate_percent / 100));
                         }
                     }
@@ -380,7 +430,7 @@ class ProposalController extends AccountBaseController
 
         $this->taxes = $taxList;
 
-        $this->company = company();
+        $this->company = $this->proposal->company;
 
         $pdf = app('dompdf.wrapper');
 
@@ -388,11 +438,13 @@ class ProposalController extends AccountBaseController
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
-        $pdf->loadView('proposals.pdf.' . $this->invoiceSetting->template, $this->data);
+        // $pdf->loadView('proposals.pdf.' . $this->invoiceSetting->template, $this->data);
+        $customCss = '<style>
+                * { text-transform: none !important; }
+            </style>';
 
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
+        $pdf->loadHTML($customCss . view('proposals.pdf.' . $this->invoiceSetting->template, $this->data)->render());
+
         $filename = __('modules.lead.proposal') . '-' . $this->proposal->id;
 
         return [
@@ -417,7 +469,8 @@ class ProposalController extends AccountBaseController
     {
         $client_data = Product::where('unit_id', $id)->get();
         $unitId = UnitType::where('id', $id)->first();
-        return Reply::dataOnly(['status' => 'success', 'data' => $client_data, 'type' => $unitId] );
+
+        return Reply::dataOnly(['status' => 'success', 'data' => $client_data, 'type' => $unitId]);
     }
 
     public function addItem(Request $request)
@@ -427,14 +480,14 @@ class ProposalController extends AccountBaseController
 
         $exchangeRate = Currency::findOrFail($request->currencyId);
 
-        if (!is_null($exchangeRate) && !is_null($exchangeRate->exchange_rate)) {
+        if (!is_null($exchangeRate) && !is_null($exchangeRate->exchange_rate) && $exchangeRate->exchange_rate > 0) {
             if ($this->items->total_amount != '') {
                 /** @phpstan-ignore-next-line */
-                $this->items->price = floor($this->items->total_amount * $exchangeRate->exchange_rate);
+                $this->items->price = floor($this->items->total_amount / $exchangeRate->exchange_rate);
             }
             else {
 
-                $this->items->price = floatval($this->items->price) * floatval($exchangeRate->exchange_rate);
+                $this->items->price = floatval($this->items->price) / floatval($exchangeRate->exchange_rate);
             }
         }
         else {

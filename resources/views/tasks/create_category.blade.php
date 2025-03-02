@@ -124,6 +124,10 @@
             let id = $(this).data('row-id');
             let value = $(this).html();
 
+            if (id == null || id == '') {
+                return false;
+            }
+            
             var url = "{{ route('taskCategory.update', ':id') }}";
             url = url.replace(':id', id);
 

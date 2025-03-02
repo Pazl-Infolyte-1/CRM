@@ -42,7 +42,7 @@ class ContractSign extends BaseModel
     use HasCompany;
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'datetime',
     ];
 
     public function getSignatureAttribute()
@@ -55,6 +55,7 @@ class ContractSign extends BaseModel
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
+
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class, 'contract_id');

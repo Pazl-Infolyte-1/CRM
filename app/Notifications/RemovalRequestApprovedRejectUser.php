@@ -46,28 +46,36 @@ class RemovalRequestApprovedRejectUser extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
 
         if ($this->type == 'approved') {
 
             $content = __('email.removalRequestApprovedUser.text');
 
-            return $build
+            $build
                 ->subject(__('email.removalRequestApprovedUser.subject') . ' ' . config('app.name') . '.')
                 ->markdown('mail.email', [
                     'content' => $content,
                     'notifiableName' => $notifiable->name
                 ]);
+
+            parent::resetLocale();
+
+            return $build;
         }
 
         $content = __('email.removalRequestRejectedUser.text');
 
-        return $build
+        $build
             ->subject(__('email.removalRequestRejectedUser.subject') . ' ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'content' => $content,
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

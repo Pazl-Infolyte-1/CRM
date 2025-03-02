@@ -2,7 +2,7 @@
     <div class="col-sm-12">
         <x-form id="save-bankaccount-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('app.menu.addBankAccount')</h4>
                 <div class="row p-20">
                     <div class="col-md-12">
@@ -44,7 +44,7 @@
                             search="true">
                             <option value="saving">@lang('modules.bankaccount.saving')</option>
                             <option value="current">@lang('modules.bankaccount.current')</option>
-                            <option value="credit card">@lang('modules.bankaccount.creditCard')</option>
+                            <option value="credit-card">@lang('modules.bankaccount.credit-card')</option>
                             <option value="loan">@lang('modules.bankaccount.loan')</option>
                             <option value="overdraft">@lang('modules.bankaccount.overdraft')</option>
                         </x-forms.select>

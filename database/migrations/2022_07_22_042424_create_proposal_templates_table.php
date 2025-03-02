@@ -62,8 +62,7 @@ return new class extends Migration {
 
             $table->timestamps();
         });
-
-
+        
         Schema::create('proposal_template_item_images', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('company_id')->unsigned()->nullable();

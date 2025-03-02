@@ -21,7 +21,6 @@ return new class extends Migration {
         $this->lastViewed();
         $this->faviconToCompany();
         $this->noteDetailsToText();
-        $this->foreignKeyFixCompaniesTable();
 
         Team::where('parent_id', 0)->update(['parent_id' => null]);
 
@@ -102,26 +101,6 @@ return new class extends Migration {
         Schema::table('lead_notes', function (Blueprint $table) {
             $table->text('details')->change();
         });
-    }
-
-    private function foreignKeyFixCompaniesTable()
-    {
-
-        $currencyTables = GlobalSetting::CURRENCY_TABLES;
-
-        // We are restricting the currency id delete to prevent deleting records
-        foreach ($currencyTables as $currencyTable) {
-            try {
-
-
-                Schema::table($currencyTable, function (Blueprint $table) {
-                    $table->dropForeign(['currency_id']);
-                    $table->foreign('currency_id')->references('id')->on('currencies')->onUpdate('cascade')->onDelete('cascade');
-                });
-            } catch (\Exception $e) {
-                echo $e->getMessage();
-            }
-        }
     }
 
 };

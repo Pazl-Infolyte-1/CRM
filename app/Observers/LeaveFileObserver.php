@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Helper\Files;
 use App\Models\LeaveFile;
-use App\Models\ProductFiles;
 
 class LeaveFileObserver
 {
@@ -33,6 +32,10 @@ class LeaveFileObserver
         $leavefile->load('leave');
 
         Files::deleteFile($leavefile->hashname, LeaveFile::FILE_PATH);
+        if(LeaveFile::where('leave_id', $leavefile->leave_id)->count() == 0){
+            Files::deleteDirectory(LeaveFile::FILE_PATH . '/' . $leavefile->leave_id);
+        }
+
     }
 
 }

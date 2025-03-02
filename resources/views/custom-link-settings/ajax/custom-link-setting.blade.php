@@ -27,34 +27,32 @@
                                 $viewed = json_decode($custom_link->can_be_viewed_by);
                             @endphp
                             <td>
-                            @foreach ($roles as $item)
-                                @if (in_array($item->id, $viewed))
-                                    {{ $item->display_name }} <br>
-                                @endif
-                            @endforeach
+                                @foreach ($roles as $item)
+                                    @if (in_array($item->id, $viewed))
+                                        {{ $item->display_name }} <br>
+                                    @endif
+                                @endforeach
                             </td>
 
-                            @if ($custom_link->status == 'active')
-                                <td><i class="fa fa-circle mr-1 text-light-green f-10"></i>@lang('app.active')</td>
-                            @else
-                                <td><i class="fa fa-circle mr-1 text-danger f-10"></i>@lang('app.inactive')</td>
-                            @endif
+                            <td>{!! $custom_link->status == 'active' ? \App\Helper\Common::active() : \App\Helper\Common::inactive() !!}</td>
 
                             <td class="text-right">
                                 <div class="task_view">
-                                    <a class="task_view_more d-flex align-items-center justify-content-center edit-channel" data-custom_link-id="{{ $custom_link->id }}" href="javascript:;" >
-                                        <i class="fa fa-edit icons mr-2"></i>  @lang('app.edit')
+                                    <a class="task_view_more d-flex align-items-center justify-content-center edit-channel"
+                                       data-custom_link-id="{{ $custom_link->id }}" href="javascript:;">
+                                        <i class="fa fa-edit icons mr-2"></i> @lang('app.edit')
                                     </a>
                                 </div>
-                                <div class="task_view mt-1 mt-lg-0 mt-md-0">
-                                    <a class="task_view_more d-flex align-items-center justify-content-center delete-table-row" href="javascript:;" data-custom_link-id="{{ $custom_link->id }}">
+                                <div class="task_view">
+                                    <a class="task_view_more d-flex align-items-center justify-content-center delete-table-row"
+                                       href="javascript:;" data-custom_link-id="{{ $custom_link->id }}">
                                         <i class="fa fa-trash icons mr-2"></i> @lang('app.delete')
                                     </a>
                                 </div>
                             </td>
                         </tr>
                     @empty
-                        <x-cards.no-record-found-list />
+                        <x-cards.no-record-found-list colspan="5"/>
                     @endforelse
                 </x-table>
 

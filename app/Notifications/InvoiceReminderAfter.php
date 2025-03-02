@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\GlobalSetting;
 use Illuminate\Support\HtmlString;
 
 class InvoiceReminderAfter extends BaseNotification
@@ -45,13 +46,13 @@ class InvoiceReminderAfter extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $invoice_number = $this->invoice->invoice_number;
-        $url = route('front.invoice', $this->invoice->hash);
+        $url = url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->invoice->hash);
         $url = getDomainSpecificUrl($url, $this->company);
         $content = __('email.invoiceReminderAfter.text') . ' ' . $this->invoice->due_date->toFormattedDateString() . '<br>' . new HtmlString($invoice_number) . '<br>' . __('email.messages.confirmMessage') . '<br>' . __('email.messages.referenceMessage');
 
-        return $build
+        $build
             ->subject(__('email.invoiceReminder.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -60,6 +61,10 @@ class InvoiceReminderAfter extends BaseNotification
                 'actionText' => __('email.invoiceReminder.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

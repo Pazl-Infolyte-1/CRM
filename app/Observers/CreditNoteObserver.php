@@ -4,15 +4,19 @@ namespace App\Observers;
 
 use App\Models\CreditNotes;
 use App\Events\NewCreditNoteEvent;
+use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\UniversalSearch;
 use App\Models\User;
 use App\Scopes\ActiveScope;
 use App\Traits\UnitTypeSaveTrait;
+use App\Traits\EmployeeActivityTrait;
 
 class CreditNoteObserver
 {
+
     use UnitTypeSaveTrait;
+    use EmployeeActivityTrait;
 
     public function saving(CreditNotes $creditNote)
     {
@@ -51,13 +55,18 @@ class CreditNoteObserver
         }
 
         $notifyData = ['App\Notifications\NewCreditNote'];
-        \App\Models\Notification::deleteNotification($notifyData, $creditNote->id);
+        Notification::deleteNotification($notifyData, $creditNote->id);
 
     }
 
     public function created(CreditNotes $creditNote)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            if (user()) {
+                self::createEmployeeActivity(user()->id, 'creditNote-created', $creditNote->id, 'credit_note');
+            }
+
+
             $clientId = null;
 
             if ($creditNote->client_id) {
@@ -94,6 +103,21 @@ class CreditNoteObserver
                 $payment->paid_on = now();
                 $payment->save();
             }
+
+        }
+    }
+
+    public function updated(CreditNotes $creditNote)
+    {
+        if (!isRunningInConsoleOrSeeding() && user()) {
+            self::createEmployeeActivity(user()->id, 'creditNote-updated', $creditNote->id, 'credit_note');
+        }
+    }
+
+    public function deleted(CreditNotes $creditNote)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'creditNote-deleted');
 
         }
     }

@@ -3,7 +3,7 @@
 namespace App\Http\Requests\FollowUp;
 
 use App\Http\Requests\CoreRequest;
-use App\Models\Lead;
+use App\Models\Deal;
 
 class StoreRequest extends CoreRequest
 {
@@ -25,7 +25,7 @@ class StoreRequest extends CoreRequest
      */
     public function rules()
     {
-        $lead = Lead::findOrFail($this->lead_id);
+        $deal = Deal::findOrFail($this->deal_id);
         $setting = company();
 
         $rules = [];
@@ -34,7 +34,7 @@ class StoreRequest extends CoreRequest
             $rules['remind_time'] = 'required';
         }
 
-        $rules['next_follow_up_date'] = 'required|date_format:"' . $setting->date_format . '"|after_or_equal:'.$lead->created_at->format($setting->date_format);
+        $rules['next_follow_up_date'] = 'required|date_format:"' . $setting->date_format . '"|after_or_equal:'.$deal->created_at->format($setting->date_format);
 
         return $rules;
     }

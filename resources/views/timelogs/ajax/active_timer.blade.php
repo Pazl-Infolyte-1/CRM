@@ -144,7 +144,7 @@ $addTaskPermission = user()->permission('add_tasks');
                     <x-slot name="thead">
                         <th>#</th>
                         <th>@lang('app.task')</th>
-                        <th id="employee-header">@lang('app.employee')</th>
+                        <th id="employee-header" width="5%" style="width: 20px !important;">@lang('app.employee')</th>
                         <th class="text-right w-180">@lang('modules.timeLogs.startTime')</th>
                         <th class="text-right w-150">@lang('app.action')</th>
                     </x-slot>
@@ -162,7 +162,7 @@ $addTaskPermission = user()->permission('add_tasks');
                                     <p class="text-lightest mb-0 project-name">{{ $item->task->project->project_name }}</p>
                                 @endif
                             </td>
-                            <td class="text-right employee-user" >
+                            <td class="text-right employee-user"  width="5%">
                                <div style="display: none"> {{ $item->user->name }} </div>
                                 <x-employee-image :user="$item->user" />
                             </td>
@@ -286,5 +286,15 @@ $addTaskPermission = user()->permission('add_tasks');
     });
 
     init(MODAL_XL);
+
+@if(!is_null($myActiveTimer) && Route::current()->getName() != "timelogs.start_timer")
+    $('.stop-active-timer').click(function(){
+        var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+        var id = "{{$selfActiveTimer->id}}"
+        url = url.replace(':id', id);
+        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_LG, url);
+    })
+@endif
 
 </script>

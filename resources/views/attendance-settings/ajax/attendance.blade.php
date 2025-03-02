@@ -79,12 +79,12 @@
                     </div>
                     <div id="insertBefore"></div>
                     <div class="clearfix"></div>
-                    <a href="javascript:;" id="plusButton" class="text-capitalize"><i class="f-12 mr-2 fa fa-plus"></i>
+                    <a href="javascript:;" id="plusButton" class=""><i class="f-12 mr-2 fa fa-plus"></i>
                         @lang('modules.addIpAddress') </a>
                 </div>
 
                 <div class="col-lg-12 mb-1">
-                    <x-forms.checkbox :fieldLabel="__('modules.attendance.sendMonthlyReport')" fieldName="monthly_report" fieldId="monthly_report" fieldValue="1"
+                    <x-forms.checkbox :fieldLabel="__('modules.attendance.sendMonthlyReport')" :popover="__('messages.sendMonthlyReportTooltip')" fieldName="monthly_report" fieldId="monthly_report" fieldValue="1"
                         fieldRequired="true" :checked="$attendanceSetting->monthly_report" />
                 </div>
 

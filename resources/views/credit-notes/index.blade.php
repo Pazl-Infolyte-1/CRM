@@ -60,7 +60,7 @@
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="project_id" id="project_id" data-live-search="true" data-container="body" data-size="8">
@@ -74,7 +74,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="status" id="status" data-live-search="true" data-container="body" data-size="8">
@@ -158,7 +158,7 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["invoices-table"].draw(false);
+            window.LaravelDataTables["invoices-table"].draw(true);
         }
 
         $('#clientID, #project_id, #status')
@@ -324,7 +324,7 @@
                 },
                 success: function(response) {
                     if (response.status == "success") {
-                        window.LaravelDataTables["invoices-table"].draw(false);
+                        window.LaravelDataTables["invoices-table"].draw(true);
                     }
                 }
             });
@@ -345,7 +345,7 @@
                 success: function(response) {
                     if (response.status == "success") {
                         $.unblockUI();
-                        window.LaravelDataTables["invoices-table"].draw(false);
+                        window.LaravelDataTables["invoices-table"].draw(true);
                     }
                 }
             });

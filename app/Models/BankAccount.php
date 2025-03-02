@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * App\Models\BankAccount
@@ -84,6 +83,11 @@ class BankAccount extends BaseModel
         } elseif ($this->type == 'cash'){
             return '<i class="bi bi-cash-coin"></i>';
         }
+    }
+
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
     }
 
 }

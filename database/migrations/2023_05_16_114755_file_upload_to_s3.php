@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\GlobalSetting;
 use App\Models\User;
 use App\Helper\Files;
 use App\Models\Company;
@@ -29,11 +30,11 @@ return new class extends Migration
                 'columns' => [
                     [
                         'name' => 'logo',
-                        'path' => 'app-logo',
+                        'path' => GlobalSetting::APP_LOGO_PATH,
                     ],
                     [
                         'name' => 'light_logo',
-                        'path' => 'app-logo',
+                        'path' => GlobalSetting::APP_LOGO_PATH,
                     ],
                     [
                         'name' => 'login_background',
@@ -122,11 +123,11 @@ return new class extends Migration
                 'columns' => [
                     [
                         'name' => 'logo',
-                        'path' => 'app-logo',
+                        'path' => GlobalSetting::APP_LOGO_PATH,
                     ],
                     [
                         'name' => 'authorised_signatory_signature',
-                        'path' => 'app-logo',
+                        'path' => GlobalSetting::APP_LOGO_PATH,
                     ],
                 ],
             ],

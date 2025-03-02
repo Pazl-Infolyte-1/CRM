@@ -85,7 +85,7 @@ $addLeavePermission = user()->permission('add_leave');
                 <div class="select-status mr-3 pl-3">
                     <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                         <option value="">@lang('app.selectAction')</option>
-                        <option value="change-leave-status">@lang('app.change') @lang('app.leaveStatus')</option>
+                        <option value="change-leave-status">@lang('app.changeLeaveStatus')</option>
                         <option value="delete">@lang('app.delete')</option>
                     </select>
                 </div>
@@ -130,7 +130,7 @@ $addLeavePermission = user()->permission('add_leave');
     });
 
     const showTable = () => {
-        window.LaravelDataTables["leaves-table"].draw(false);
+        window.LaravelDataTables["leaves-table"].draw(true);
     }
 
     $('#leave_type, #status, #leave_year').on('change keyup',
@@ -336,7 +336,7 @@ $addLeavePermission = user()->permission('add_leave');
                     },
                     success: function(response) {
                         if (response.status == 'success') {
-                            window.LaravelDataTables["leaves-table"].draw(false);
+                            window.LaravelDataTables["leaves-table"].draw(true);
                         }
                     }
                 });

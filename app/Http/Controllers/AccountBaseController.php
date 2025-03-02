@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CustomLinkSetting;
+use App\Helper\Reply;
 use App\Models\GlobalSetting;
 use Carbon\Carbon;
+use App\Models\User;
+use App\Models\UserAuth;
 use App\Models\UserChat;
 use App\Models\TaskHistory;
 use App\Models\UserActivity;
@@ -13,6 +15,8 @@ use App\Models\ProjectActivity;
 use Illuminate\Support\Facades\App;
 use App\Traits\UniversalSearchTrait;
 use Illuminate\Support\Facades\Route;
+use App\Models\SuperAdmin\OfflinePlanChange;
+use App\Models\SuperAdmin\SupportTicket;
 
 class AccountBaseController extends Controller
 {
@@ -32,11 +36,18 @@ class AccountBaseController extends Controller
 
         $this->middleware(function ($request, $next) {
 
+            if (!user() && !auth()->check()) {
+                return redirect()->route('login');
+            }
+
             // Keep this function at top
             $this->adminSpecific();
 
             // Call this function after adminSpecific
             $this->common();
+
+            // Call this function after common
+            $this->superAdminSpecific();
 
             return $next($request);
         });
@@ -45,11 +56,20 @@ class AccountBaseController extends Controller
     public function adminSpecific()
     {
 
-        abort_403(!user()->admin_approval && request()->ajax());
+        // WORKSUITESAAS
+        if (user()->is_superadmin) {
+            return true;
+        }
 
-        if (!user()->admin_approval && Route::currentRouteName() != 'account_unverified') {
-            // send() is added to force redirect from here rather return to called function
-            return redirect(route('account_unverified'))->send();
+        $user = User::where('id', user()->id)->first();
+        $userAuth = UserAuth::where('id', $user->user_auth_id)->first();
+
+        if ($user->admin_approval === 0 && !empty($userAuth->email_verified_at)) {
+            abort_403($user->admin_approval && request()->ajax());
+            if ($user->admin_approval && Route::currentRouteName() != 'account_unverified') {
+                // send() is added to force redirect from here rather return to called function
+                return redirect(route('account_unverified'))->send();
+            }
         }
 
         $this->adminTheme = admin_theme();
@@ -65,18 +85,20 @@ class AccountBaseController extends Controller
 
         $this->viewTimelogPermission = user()->permission('view_timelogs');
 
-        $this->activeTimerCount = ProjectTimeLog::whereNull('end_time')
+        $activeTimerQuery = ProjectTimeLog::whereNull('end_time')
             ->doesntHave('activeBreak')
-            ->join('users', 'users.id', 'project_time_logs.user_id')
-            ->select('project_time_logs.id');
+            ->join('users', 'users.id', '=', 'project_time_logs.user_id');
 
         if ($this->viewTimelogPermission != 'all' && manage_active_timelogs() != 'all') {
-            $this->activeTimerCount->where('project_time_logs.user_id', user()->id);
+            $activeTimerQuery->where('project_time_logs.user_id', user()->id);
         }
 
-        $this->activeTimerCount = $this->activeTimerCount->count();
+        $this->activeTimerCount = $activeTimerQuery->count();
 
         $this->selfActiveTimer = ProjectTimeLog::selfActiveTimer();
+
+        $this->customLink = custom_link_setting();
+        $this->userCompanies = user_companies(user());
     }
 
     public function common()
@@ -86,13 +108,18 @@ class AccountBaseController extends Controller
         $this->pushSetting = push_setting();
         $this->smtpSetting = smtp_setting();
         $this->pusherSettings = pusher_settings();
+        $this->globalInvoiceSetting = global_invoice_setting();
 
         App::setLocale(user()->locale);
         Carbon::setLocale(user()->locale);
         setlocale(LC_TIME, user()->locale . '_' . mb_strtoupper($this->company->locale));
 
+        if (!isset(user()->roles)) {
+            session(['user' => User::find(user()->id)]);
+        }
+
         $this->user = user();
-        $this->unreadNotificationCount = isset($this->user->unreadNotifications) ? count($this->user->unreadNotifications) : 0;
+        $this->unreadNotificationCount = count($this->user?->unreadNotifications);
         $this->stickyNotes = $this->user->sticky;
 
         $this->worksuitePlugins = worksuite_plugins();
@@ -111,7 +138,7 @@ class AccountBaseController extends Controller
         }
 
         $this->sidebarUserPermissions = sidebar_user_perms();
-        $this->customLink = CustomLinkSetting::all();
+
     }
 
     public function logProjectActivity($projectId, $text)
@@ -147,6 +174,50 @@ class AccountBaseController extends Controller
         }
 
         $activity->save();
+    }
+
+    public function returnAjax($view)
+    {
+        $html = view($view, $this->data)->render();
+
+        return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+    }
+
+    public function superAdminSpecific()
+    {
+        // WORKSUITESAAS
+        if (user()->is_superadmin) {
+            $viewTicketPermission = user()->permission('view_superadmin_ticket');
+
+            $this->totalPendingOfflineRequests = OfflinePlanChange::select('id')->where('status', 'pending')->count();
+            $totalOpenTickets = SupportTicket::where('status', 'open');
+
+            if ($viewTicketPermission == 'added') {
+                $totalOpenTickets->where(function ($query) {
+                    return $query->where('created_by', user()->id);
+                });
+            }
+
+            if ($viewTicketPermission == 'owned') {
+                $totalOpenTickets->where(function ($query) {
+                    return $query->where('user_id', user()->id)
+                        ->orWhere('agent_id', user()->id);
+                });
+            }
+
+            if ($viewTicketPermission == 'both') {
+                $totalOpenTickets->where(function ($query) {
+                    return $query->where('created_by', user()->id)
+                        ->orWhere('user_id', user()->id)
+                        ->orWhere('agent_id', user()->id);
+                });
+            }
+
+            $this->totalOpenTickets = $totalOpenTickets->count();
+            $this->appTheme = superadmin_theme();
+            $this->checkListCompleted = GlobalSetting::checkListCompleted();
+            $this->sidebarSuperadminPermissions = sidebar_superadmin_perms();
+        }
     }
 
 }

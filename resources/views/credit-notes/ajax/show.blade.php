@@ -57,7 +57,7 @@
                             @endif
                             <tr>
                                 <td class="bg-light-grey border-right-0 f-w-500">
-                                    @lang('app.credit-note') @lang('app.date')</td>
+                                    @lang('app.creditNoteDate')</td>
                                 <td class="border-left-0">{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}
                                 </td>
                             </tr>
@@ -72,14 +72,14 @@
                 <tr class="inv-unpaid">
                     <td class="f-14 text-dark">
                         <p class="mb-0 text-left"><span
-                                class="text-dark-grey text-capitalize">@lang("modules.invoices.billedTo")</span><br>
-                            {{ $client->name }}<br>
+                                class="text-dark-grey ">@lang("modules.invoices.billedTo")</span><br>
+                            {{ $client->name_salutation }}<br>
                             {{ $client->clientDetails->company_name }}<br>
                             {!! nl2br($client->clientDetails->address) !!}
 
                             @if (($invoiceSetting->show_project == 1) && (isset($creditNote->project)))
                             <br><br>
-                            <span class="text-dark-grey text-capitalize">@lang("modules.invoices.projectName")</span><br>
+                            <span class="text-dark-grey ">@lang("modules.invoices.projectName")</span><br>
                             {{ $creditNote->project->project_name }}
                             @endif
                         </p>
@@ -157,7 +157,7 @@
                                         @if ($discount != 0 && $discount != '')
                                             <tr class="text-dark-grey" align="right">
                                                 <td class="w-50 border-top-0 border-left-0">
-                                                    @lang("modules.invoices.discount")</td>
+                                                    @lang("modules.invoices.discount"): {{ $discountType }}</td>
                                             </tr>
                                         @endif
                                         @foreach ($taxes as $key => $tax)
@@ -168,7 +168,7 @@
                                         @endforeach
                                         <tr class=" text-dark-grey " align="right">
                                             <td class="w-50 border-bottom-0 border-left-0">
-                                                @lang('app.adjustment') @lang('app.amount')</td>
+                                                @lang('app.adjustmentAmount')</td>
                                         </tr>
                                         <tr class=" text-dark-grey font-weight-bold" align="right">
                                             <td class="w-50 border-bottom-0 border-left-0">
@@ -347,6 +347,18 @@
                         </table>
                     </td>
                 </tr>
+                @if (isset($invoiceSetting->other_info))
+                    <tr>
+                        <td align="vertical-align: text-top">
+                            <table>
+                                <tr>
+                                    <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                    </p>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                @endif
             </table>
         </div>
     </div>

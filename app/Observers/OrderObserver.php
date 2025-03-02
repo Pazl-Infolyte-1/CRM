@@ -13,11 +13,13 @@ use App\Events\OrderUpdatedEvent;
 use App\Models\OrderCart;
 use App\Scopes\ActiveScope;
 use App\Traits\UnitTypeSaveTrait;
+use App\Traits\EmployeeActivityTrait;
 
 class OrderObserver
 {
 
     use UnitTypeSaveTrait;
+    use EmployeeActivityTrait;
 
     public function creating(Order $order)
     {
@@ -39,7 +41,12 @@ class OrderObserver
 
     public function created(Order $order)
     {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'order-created', $order->id, 'order');
+        }
+
         if (isRunningInConsoleOrSeeding()) {
+
             return true;
         }
 
@@ -53,6 +60,7 @@ class OrderObserver
             $productId = request()->product_id;
             $amount = request()->amount;
             $tax = request()->taxes;
+            $sku = request()->sku;
             $invoice_item_image_url = request()->invoice_item_image_url;
 
             foreach (request()->item_name as $key => $item) :
@@ -63,14 +71,16 @@ class OrderObserver
                             'item_name' => $item,
                             'item_summary' => $itemsSummary[$key] ?: '',
                             'type' => 'item',
-                            'unit_id' => (isset($unitId[$key]) && !is_null($unitId[$key])) ? $unitId[$key] : null,
-                            'product_id' => (isset($productId[$key]) && !is_null($productId[$key])) ? $productId[$key] : null,
+                            'unit_id' => (isset($unitId[$key])) ? $unitId[$key] : null,
+                            'product_id' => (isset($productId[$key])) ? $productId[$key] : null,
                             'hsn_sac_code' => (isset($hsn_sac_code[$key])) ? $hsn_sac_code[$key] : null,
                             'quantity' => $quantity[$key],
                             'unit_price' => round($cost_per_item[$key], 2),
                             'amount' => round($amount[$key], 2),
-                            'taxes' => ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null)
-                            ]
+                            'taxes' => ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null),
+                            'sku' => (isset($sku[$key])) ? $sku[$key] : null,
+                            'field_order' => $key + 1
+                        ]
                     );
 
                     // Save order image url
@@ -93,8 +103,8 @@ class OrderObserver
 
         }
 
-            // Notify client
-            $notifyUser = User::withoutGlobalScope(ActiveScope::class)->findOrFail($order->client_id);
+        // Notify client
+        $notifyUser = User::withoutGlobalScope(ActiveScope::class)->findOrFail($order->client_id);
 
         if (request()->type && request()->type == 'send') {
             event(new NewOrderEvent($order, $notifyUser));
@@ -115,15 +125,19 @@ class OrderObserver
 
     public function updated(Order $order)
     {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'order-updated', $order->id, 'order');
+        }
+
         // Send notification
         if (($order->isDirty('order_date') || $order->isDirty('sub_total') || $order->isDirty('total') || $order->isDirty('status') || $order->isDirty('currency_id') || $order->isDirty('show_shipping_address') || $order->isDirty('note') || $order->isDirty('last_updated_by')) && $order->added_by != null) {
 
             $clientId = $order->client_id ?: $order->added_by;
 
-                // Notify client
-                $notifyUser = User::withoutGlobalScope(ActiveScope::class)->findOrFail($clientId);
+            // Notify client
+            $notifyUser = User::withoutGlobalScope(ActiveScope::class)->findOrFail($clientId);
 
-                event(new OrderUpdatedEvent($order, $notifyUser));
+            event(new OrderUpdatedEvent($order, $notifyUser));
 
         }
 
@@ -141,6 +155,14 @@ class OrderObserver
                     $q->orWhere('data', 'like', '%,"task_id":' . $order->id . ',%');
                 }
             )->delete();
+    }
+
+    public function deleted(Order $order)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'order-deleted');
+
+        }
     }
 
 }

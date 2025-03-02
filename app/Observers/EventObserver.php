@@ -7,9 +7,14 @@ use App\Services\Google;
 use App\Models\Notification;
 use App\Models\EventAttendee;
 use App\Models\GoogleCalendarModule;
+use Carbon\Carbon;
+use Google\Service\Exception;
+use Google_Service_Calendar_Event;
+use App\Traits\EmployeeActivityTrait;
 
 class EventObserver
 {
+    use EmployeeActivityTrait;
 
     public function saving(Event $event)
     {
@@ -21,11 +26,17 @@ class EventObserver
         }
     }
 
+    public function created(Event $event)
+    {
+        if (!isRunningInConsoleOrSeeding() && user()) {
+            self::createEmployeeActivity(user()->id, 'event-created', $event->id, 'event');
+        }
+    }
+
     public function updated(Event $event)
     {
-        if (!isRunningInConsoleOrSeeding()) {
-            // Add/Update event to google calendar
-            $event->event_id = $this->googleCalendarEvent($event);
+        if (!isRunningInConsoleOrSeeding() && user()) {
+            self::createEmployeeActivity(user()->id, 'event-updated', $event->id, 'event');
         }
     }
 
@@ -52,7 +63,7 @@ class EventObserver
                 if ($event->event_id) {
                     $google->service('Calendar')->events->delete('primary', $event->event_id);
                 }
-            } catch (\Google\Service\Exception $error) {
+            } catch (Exception $error) {
                 if (is_null($error->getErrors())) {
                     // Delete google calendar connection data i.e. token, name, google_id
                     $googleAccount->name = null;
@@ -65,7 +76,7 @@ class EventObserver
         }
 
         $notifyData = ['App\Notifications\EventInvite', 'App\Notifications\EventReminder'];
-        \App\Models\Notification::deleteNotification($notifyData, $event->id);
+        Notification::deleteNotification($notifyData, $event->id);
 
 
         /* End of deleting event from google calendar */
@@ -92,13 +103,13 @@ class EventObserver
 
             if ($event->start_date_time && $event->end_date_time) {
 
-                $startDate = \Carbon\Carbon::parse($event->start_date_time)->shiftTimezone($googleAccount->timezone);
-                $endDate = \Carbon\Carbon::parse($event->end_date_time)->shiftTimezone($googleAccount->timezone);
+                $startDate = Carbon::parse($event->start_date_time)->shiftTimezone($googleAccount->timezone);
+                $endDate = Carbon::parse($event->end_date_time)->shiftTimezone($googleAccount->timezone);
 
                 // Create event
                 $google = $google->connectUsing($googleAccount->token);
 
-                $eventData = new \Google_Service_Calendar_Event(array(
+                $eventData = new Google_Service_Calendar_Event(array(
                     'summary' => $event->event_name,
                     'location' => $event->where,
                     'description' => $event->description,
@@ -130,7 +141,7 @@ class EventObserver
                     }
 
                     return $results->id;
-                } catch (\Google\Service\Exception $error) {
+                } catch (Exception $error) {
                     if (is_null($error->getErrors())) {
                         // Delete google calendar connection data i.e. token, name, google_id
                         $googleAccount->name = null;
@@ -145,6 +156,14 @@ class EventObserver
         }
 
         return $event->event_id;
+    }
+
+    public function deleted(Event $event)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'event-deleted');
+
+        }
     }
 
 }

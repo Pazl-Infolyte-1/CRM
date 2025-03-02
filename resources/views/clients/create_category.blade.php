@@ -52,6 +52,7 @@
         var url = "{{ route('clientCategory.destroy', ':id') }}";
         url = url.replace(':id', id);
 
+        let selectedCategory = $('#category_id').val();
         var token = "{{ csrf_token() }}";
 
         Swal.fire({
@@ -88,7 +89,8 @@
                             rData = response.data;
                             $.each(rData, function(index, value) {
                                 var selectData = '';
-                                selectData = '<option value="' + value.id + '">' +
+                                var isSelected = (value.id == selectedCategory) ? 'selected' : '';
+                                selectData = '<option value="' + value.id + '" ' + isSelected + '>' +
                                     value
                                     .category_name + '</option>';
                                 options.push(selectData);
@@ -97,9 +99,6 @@
                             $('#category_id').html('<option value="">--</option>' +
                                 options);
                             $('#category_id').selectpicker('refresh');
-
-                            $('#sub_category_id').html('<option value="">--</option>');
-                            $('#sub_category_id').selectpicker('refresh');
                         }
                     }
                 });
@@ -110,6 +109,7 @@
 
     $('#save-category').click(function() {
         var url = "{{ route('clientCategory.store') }}";
+        let selectedCategory = $('#category_id').val();
         $.easyAjax({
             url: url,
             container: '#createProjectCategory',
@@ -123,16 +123,14 @@
                         rData = response.data;
                         $.each(rData, function(index, value) {
                             var selectData = '';
-                            selectData = '<option value="' + value.id + '">' + value
+                            var isSelected = (value.id == selectedCategory) ? 'selected' : '';
+                            selectData = '<option value="' + value.id + '" ' + isSelected + '>' + value
                                 .category_name + '</option>';
                             options.push(selectData);
                         });
 
                         $('#category_id').html('<option value="">--</option>' + options);
                         $('#category_id').selectpicker('refresh');
-
-                        $('#sub_category_id').html('<option value="">--</option>');
-                        $('#sub_category_id').selectpicker('refresh');
                         $(MODAL_LG).modal('hide');
                     }
                 }
@@ -151,7 +149,7 @@
 
             var url = "{{ route('clientCategory.update', ':id') }}";
             url = url.replace(':id', id);
-
+            let selectedCategory = $('#category_id').val();
             var token = "{{ csrf_token() }}";
 
             $.easyAjax({
@@ -171,16 +169,14 @@
                         rData = response.data;
                         $.each(rData, function(index, value) {
                             var selectData = '';
-                            selectData = '<option value="' + value.id + '">' + value
+                            var isSelected = (value.id == selectedCategory) ? 'selected' : '';
+                            selectData = '<option value="' + value.id + '" ' + isSelected + '>' + value
                                 .category_name + '</option>';
                             options.push(selectData);
                         });
 
                         $('#category_id').html('<option value="">--</option>' + options);
                         $('#category_id').selectpicker('refresh');
-
-                        $('#sub_category_id').html('<option value="">--</option>');
-                        $('#sub_category_id').selectpicker('refresh');
                     }
                 }
             })

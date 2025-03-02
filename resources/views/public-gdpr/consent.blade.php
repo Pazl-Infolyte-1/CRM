@@ -57,7 +57,7 @@
             <div class="col-sm-12">
                 <x-form id="updateconsent">
                     <div class="add-client bg-white rounded">
-                        <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                        <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                             @lang($pageTitle)</h4>
                         <div class="col-lg-9 col-xl-10">
                             <div class="row">

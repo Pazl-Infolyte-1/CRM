@@ -25,7 +25,7 @@ $deleteDocumentPermission = user()->permission('delete_client_document');
                 <div class="col-md-12">
                     <a class="f-15 f-w-500" href="javascript:;" id="add-client-file"><i
                             class="icons icon-plus font-weight-bold mr-1"></i>
-                        @lang('app.addFile')</a>
+                        @lang('app.menu.addFile')</a>
                 </div>
             </div>
 
@@ -64,15 +64,19 @@ $deleteDocumentPermission = user()->permission('delete_client_document');
                 || ($viewDocumentPermission == 'owned' && ($file->user_id == user()->id && $file->added_by != user()->id))
                 || ($viewDocumentPermission == 'both' && ($file->added_by == user()->id || $file->user_id == user()->id)))
                     <x-file-card :fileName="$file->name" :dateAdded="$file->created_at->diffForHumans()">
-                        @if ($file->icon == 'images')
-                            <img src="{{ $file->doc_url }}">
-                        @else
-                            <i class="fa {{ $file->icon }} text-lightest"></i>
-                        @endif
+                            @if ($file->icon == 'images')
+                                <a class="img-lightbox" data-image-url="{{ $file->doc_url }}" href="javascript:;">
+                                    <img src="{{ $file->doc_url }}">
+                                </a>
+                            @else
+                                <a href="{{ $file->doc_url }}" target="_blank">
+                                    <i class="fa {{ $file->icon }} text-lightest"></i>
+                                </a>
+                            @endif
                             <x-slot name="action">
                                 <div class="dropdown ml-auto file-action">
                                     <button
-                                        class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>
                                     </button>

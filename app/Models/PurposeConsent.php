@@ -33,7 +33,7 @@ class PurposeConsent extends BaseModel
 
     public function lead(): HasOne
     {
-        return $this->hasOne(PurposeConsentLead::class, 'purpose_consent_id', 'id');
+        return $this->hasOne(PurposeConsentDeal::class, 'purpose_consent_id', 'id');
     }
 
     public function user(): HasOne

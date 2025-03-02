@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\MakeOrderInvoiceTrait;
 use KingFlamez\Rave\Facades\Rave as Flutterwave;
 use App\Http\Requests\PaymentGateway\FlutterwaveRequest;
+use App\Models\GlobalSetting;
 
 class FlutterwaveController extends Controller
 {
@@ -126,7 +127,7 @@ class FlutterwaveController extends Controller
 
             $this->makePayment('Flutterwave', ($amount ?: $invoice->amountDue()), $invoice, $transactionId, (($status == 'successful') ? 'complete' : 'failed'));
 
-            return redirect(route('front.invoice', $invoice->hash));
+            return redirect(url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash));
 
         case 'order':
             $order = Order::findOrFail($id);

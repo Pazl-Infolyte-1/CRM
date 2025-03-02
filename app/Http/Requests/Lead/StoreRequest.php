@@ -27,15 +27,27 @@ class StoreRequest extends CoreRequest
 
     public function rules()
     {
+        \Illuminate\Support\Facades\Validator::extend('check_superadmin', function ($attribute, $value, $parameters, $validator) {
+            return !\App\Models\User::withoutGlobalScopes([\App\Scopes\ActiveScope::class, \App\Scopes\CompanyScope::class])
+                ->where('email', $value)
+                ->where('is_superadmin', 1)
+                ->exists();
+        });
+
         $rules = array();
 
         $rules['client_name'] = 'required';
-        $rules['client_email'] = 'nullable|email:rfc';
-        $rules['website'] = 'nullable|url';
+        $rules['client_email'] = 'nullable|email:rfc,strict|unique:leads,client_email,null,id,company_id,' . company()->id;
 
-        $rules = $this->customFieldRules($rules);
+        if (request()->has('create_deal') && request()->create_deal == 'on') {
+            $rules['name'] = 'required';
+            $rules['pipeline'] = 'required';
+            $rules['stage_id'] = 'required';
+            $rules['close_date'] = 'required';
+            $rules['value'] = 'required';
+        }
 
-        return $rules;
+        return $this->customFieldRules($rules);
 
     }
 
@@ -45,9 +57,19 @@ class StoreRequest extends CoreRequest
 
         $attributes = $this->customFieldsAttributes($attributes);
 
-        $attributes['client_name'] = __('app.lead').' '.__('app.name');
+        $attributes['client_name'] = __('app.name');
+        $attributes['client_email'] = __('app.email');
+        $attributes['name'] = __('modules.deal.dealName');
+        $attributes['stage_id'] = __('modules.deal.leadStages');
 
         return $attributes;
+    }
+
+    public function messages()
+    {
+        return [
+            'email.check_superadmin' => __('superadmin.emailAlreadyExist'),
+        ];
     }
 
 }

@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateItemImage whereSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateItemImage whereUpdatedAt($value)
  * @property-read \App\Models\EstimateItem $item
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class EstimateItemImage extends BaseModel

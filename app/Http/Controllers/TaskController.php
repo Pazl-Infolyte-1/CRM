@@ -13,6 +13,8 @@ use App\Models\Project;
 use App\Models\SubTask;
 use App\Models\TaskFile;
 use App\Models\TaskUser;
+use App\Http\Requests\Tasks\ActionTask;
+use App\Models\TaskComment;
 use App\Models\BaseModel;
 use App\Models\TaskLabel;
 use App\Models\SubTaskFile;
@@ -26,11 +28,13 @@ use App\Traits\ProjectProgress;
 use App\Models\ProjectMilestone;
 use App\Events\TaskReminderEvent;
 use App\DataTables\TasksDataTable;
+use App\DataTables\WaitingForApprovalDataTable;
 use Illuminate\Support\Facades\DB;
 use App\Models\ProjectTimeLogBreak;
 use App\Http\Requests\Tasks\StoreTask;
 use Illuminate\Support\Facades\Config;
 use App\Http\Requests\Tasks\UpdateTask;
+use App\Events\TaskEvent;
 
 class TaskController extends AccountBaseController
 {
@@ -77,6 +81,19 @@ class TaskController extends AccountBaseController
             $this->taskCategories = TaskCategory::all();
             $this->taskLabels = TaskLabelList::all();
             $this->milestones = ProjectMilestone::all();
+
+            $taskBoardColumn = TaskboardColumn::waitingForApprovalColumn();
+
+            $projectIds = Project::where('project_admin', user()->id)->pluck('id');
+
+            if (!in_array('admin', user_roles()) && (in_array('employee', user_roles()) && $projectIds->isEmpty())) {
+                $user = User::findOrFail(user()->id);
+                $this->waitingApprovalCount = $user->tasks()->where('board_column_id', $taskBoardColumn->id)->where('company_id', company()->id)->count();
+            }elseif(!in_array('admin', user_roles()) && (in_array('employee', user_roles()) && !$projectIds->isEmpty())) {
+                $this->waitingApprovalCount = Task::whereIn('project_id', $projectIds)->where('board_column_id', $taskBoardColumn->id)->where('company_id', company()->id)->count();
+            }else{
+                $this->waitingApprovalCount = Task::where('board_column_id', $taskBoardColumn->id)->where('company_id', company()->id)->count();
+            }
         }
 
         return $dataTable->render('tasks.index', $this->data);
@@ -98,6 +115,10 @@ class TaskController extends AccountBaseController
             $this->changeBulkStatus($request);
 
             return Reply::success(__('messages.updateSuccess'));
+        case 'milestone':
+            $this->changeMilestones($request);
+
+            return Reply::success(__('messages.updateSuccess'));
         default:
             return Reply::error(__('messages.selectAction'));
         }
@@ -107,7 +128,9 @@ class TaskController extends AccountBaseController
     {
         abort_403(user()->permission('delete_tasks') != 'all');
 
-        Task::whereIn('id', explode(',', $request->row_ids))->delete();
+        $ids = explode(',', $request->row_ids);
+
+        Task::whereIn('id', $ids)->delete();
     }
 
     protected function changeBulkStatus($request)
@@ -116,23 +139,40 @@ class TaskController extends AccountBaseController
 
         $taskBoardColumn = TaskboardColumn::findOrFail(request()->status);
 
+        // Update tasks based on the requested status
+        $taskIds = explode(',', $request->row_ids);
+
         if ($taskBoardColumn && $taskBoardColumn->slug == 'completed') {
-            Task::whereIn('id', explode(',', $request->row_ids))->update([
+            Task::whereIn('id', $taskIds)->update([
                 'status' => 'completed',
                 'board_column_id' => $request->status,
                 'completed_on' => now()->format('Y-m-d')
             ]);
         }
         else {
-            Task::whereIn('id', explode(',', $request->row_ids))->update(['board_column_id' => $request->status]);
+            Task::whereIn('id', $taskIds)->update(['board_column_id' => $request->status]);
         }
+
+    }
+
+    public function changeMilestones($request)
+    {
+        abort_403(user()->permission('edit_tasks') != 'all');
+
+        $taskIds = explode(',', $request->row_ids);
+
+        Task::whereIn('id', $taskIds)->update([
+            'milestone_id' => $request->milestone
+        ]);
     }
 
     public function changeStatus(Request $request)
     {
         $taskId = $request->taskId;
         $status = $request->status;
-        $task = Task::with('project', 'users')->findOrFail($taskId);
+
+        $task = Task::withTrashed()->with('project', 'users')->findOrFail($taskId);
+
         $taskUsers = $task->users->pluck('id')->toArray();
 
         $this->editPermission = user()->permission('edit_tasks');
@@ -150,16 +190,25 @@ class TaskController extends AccountBaseController
         $taskBoardColumn = TaskboardColumn::where('slug', $status)->first();
         $task->board_column_id = $taskBoardColumn->id;
 
+        if ($task->status === 'completed' && $status !== 'completed') {
+            $task->approval_send = 0; // Reset approval_send to 0
+        }
+
         if ($taskBoardColumn->slug == 'completed') {
             $task->status = 'completed';
             $task->completed_on = now()->format('Y-m-d');
-            $task->save();
         }
         else {
             $task->completed_on = null;
         }
 
-        $task->save();
+        if ($task->trashed()) {
+            $task->saveQuietly();
+        }
+        else {
+            $task->save();
+        }
+
 
         if ($task->project_id != null) {
 
@@ -175,6 +224,41 @@ class TaskController extends AccountBaseController
 
         return Reply::successWithData(__('messages.updateSuccess'), ['clockHtml' => $clockHtml]);
 
+    }
+
+    public function milestoneChange(Request $request)
+    {
+        $editTaskPermission = user()->permission('edit_tasks');
+        $editMilestonePermission = user()->permission('edit_project_milestones');
+
+        $taskId = $request->taskId;
+        $milestoneId = $request->milestone_id;
+
+        $task = Task::withTrashed()->with('project', 'users')->findOrFail($taskId);
+        $taskUsers = $task->users->pluck('id')->toArray();
+
+        abort_403(
+            !(
+                ($editTaskPermission == 'all'
+                || ($editTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
+                || ($editTaskPermission == 'added' && $task->added_by == user()->id)
+                || ($task->project && ($task->project->project_admin == user()->id))
+                || ($editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
+                || ($editTaskPermission == 'owned' && (in_array('client', user_roles()) && $task->project && ($task->project->client_id == user()->id)))
+                || ($editTaskPermission == 'both' && (in_array('client', user_roles()) && ($task->project && ($task->project->client_id == user()->id)) || $task->added_by == user()->id))
+                ) &&(
+                    $editMilestonePermission == 'all'
+                    || ($editMilestonePermission == 'added' && $task->added_by == user()->id)
+                    || ($editMilestonePermission == 'owned' && in_array(user()->id, $taskUsers))
+                    || ($editMilestonePermission == 'owned' && (in_array('client', user_roles()) && $task->project && ($task->project->client_id == user()->id)))
+                )
+            )
+        );
+
+        $task->milestone_id = $milestoneId;
+        $task->save();
+
+        return Reply::success(__('messages.updateSuccess'));
     }
 
     public function destroy(Request $request, $id)
@@ -228,8 +312,9 @@ class TaskController extends AccountBaseController
         $this->selectedLabel = TaskLabel::where('task_id', request()['duplicate_task'])->get()->pluck('label_id')->toArray();
         $this->projectMember = TaskUser::where('task_id', request()['duplicate_task'])->get()->pluck('user_id')->toArray();
 
-        $this->projects = Project::where('status', '!=', 'finished')->get();
-        $this->taskLabels = TaskLabelList::where('project_id', null)->get();
+        $this->projects = Project::allProjects(true);
+
+        $this->taskLabels = TaskLabelList::whereNull('project_id')->get();
         $this->projectID = request()->task_project_id;
 
         if (request('task_project_id')) {
@@ -295,8 +380,10 @@ class TaskController extends AccountBaseController
 
         $task = new Task();
 
-        if ($task->getCustomFieldGroupsWithFields()) {
-            $this->fields = $task->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $task->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $userData = [];
@@ -313,13 +400,11 @@ class TaskController extends AccountBaseController
 
         $this->userData = $userData;
 
-        if (request()->ajax()) {
-            $html = view('tasks.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'tasks.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('tasks.create', $this->data);
     }
@@ -342,8 +427,8 @@ class TaskController extends AccountBaseController
         $task = new Task();
         $task->heading = $request->heading;
         $task->description = trim_editor($request->description);
-        $dueDate = ($request->has('without_duedate')) ? null : Carbon::createFromFormat($this->company->date_format, $request->due_date)->format('Y-m-d');
-        $task->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
+        $dueDate = ($request->has('without_duedate')) ? null : Carbon::createFromFormat(company()->date_format, $request->due_date);
+        $task->start_date = Carbon::createFromFormat(company()->date_format, $request->start_date);
         $task->due_date = $dueDate;
         $task->project_id = $request->project_id;
         $task->task_category_id = $request->category_id;
@@ -370,6 +455,13 @@ class TaskController extends AccountBaseController
             $task->board_column_id = $request->board_column_id;
         }
 
+        $waitingApprovalTaskBoardColumn = TaskboardColumn::waitingForApprovalColumn();
+        if($request->board_column_id == $waitingApprovalTaskBoardColumn->id){
+            $task->approval_send = 1;
+        }else{
+            $task->approval_send = 0;
+        }
+
         if ($request->milestone_id != '') {
             $task->milestone_id = $request->milestone_id;
         }
@@ -385,7 +477,13 @@ class TaskController extends AccountBaseController
 
         if ($project) {
             $projectLastTaskCount = Task::projectTaskCount($project->id);
-            $task->task_short_code = $project->project_short_code . '-' . $this->getTaskShortCode($project->project_short_code, $projectLastTaskCount);
+
+            if (isset($project->project_short_code)) {
+                $task->task_short_code = $project->project_short_code . '-' . $this->getTaskShortCode($project->project_short_code, $projectLastTaskCount);
+            }
+            else{
+                $task->task_short_code = $projectLastTaskCount + 1;
+            }
         }
 
         $task->save();
@@ -531,7 +629,7 @@ class TaskController extends AccountBaseController
     public function edit($id)
     {
         $editTaskPermission = user()->permission('edit_tasks');
-        $this->task = Task::with('users', 'label', 'project')->findOrFail($id)->withCustomFields();
+        $this->task = Task::with('users', 'label', 'project',)->findOrFail($id)->withCustomFields();
         $this->taskUsers = $taskUsers = $this->task->users->pluck('id')->toArray();
         abort_403(
             !($editTaskPermission == 'all'
@@ -544,20 +642,29 @@ class TaskController extends AccountBaseController
             )
         );
 
-        if ($this->task->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->task->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $this->task->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
-        $this->pageTitle = __('app.update') . ' ' . __('app.task');
+
+        $this->pageTitle = __('modules.tasks.updateTask');
         $this->labelIds = $this->task->label->pluck('label_id')->toArray();
-        $this->projects = Project::where('status', '!=', 'finished')->get();
+        $this->projects = Project::allProjects(true);
         $this->categories = TaskCategory::all();
         $projectId = $this->task->project_id;
-        $this->taskLabels = TaskLabelList::where('project_id', $projectId)->orWhere('project_id', null)->get();
+
+        if($projectId){
+            $this->taskLabels = TaskLabelList::where('project_id', $projectId)->orWhereNull('project_id')->get();
+        }else{
+            $this->taskLabels = TaskLabelList::whereNull('project_id')->get();
+        }
+
         $this->taskboardColumns = TaskboardColumn::orderBy('priority', 'asc')->get();
         $this->changeStatusPermission = user()->permission('change_status');
         $completedTaskColumn = TaskboardColumn::where('slug', '=', 'completed')->first();
-
+        $this->waitingApprovalTaskBoardColumn = TaskboardColumn::waitingForApprovalColumn();
         if ($completedTaskColumn) {
             $this->allTasks = Task::where('board_column_id', '<>', $completedTaskColumn->id)->whereNotNull('due_date')->where('id', '!=', $id)->where('project_id', $projectId)->get();
         }
@@ -567,20 +674,20 @@ class TaskController extends AccountBaseController
 
         if ($this->task->project_id) {
             if ($this->task->project->public) {
-                $this->employees = User::allEmployees(null, null, ($editTaskPermission == 'all' ? 'all' : null));
+                $this->employees = User::allEmployees(null, false, ($editTaskPermission == 'all' ? 'all' : null));
 
             }
             else {
-                $this->employees = $this->task->project->projectMembers;
+                $this->employees = $this->task->project->projectMembersWithoutScope;
             }
         }
         else {
             if ($editTaskPermission == 'added' || $editTaskPermission == 'owned') {
-                $this->employees = ((count($this->task->users) > 0) ? $this->task->users : User::allEmployees(null, null, ($editTaskPermission == 'all' ? 'all' : null)));
+                $this->employees = ((count($this->task->users) > 0) ? $this->task->users : User::allEmployees(null, true, ($editTaskPermission == 'all' ? 'all' : null)));
 
             }
             else {
-                $this->employees = User::allEmployees(null, null, ($editTaskPermission == 'all' ? 'all' : null));
+                $this->employees = User::allEmployees(null, false, ($editTaskPermission == 'all' ? 'all' : null));
             }
         }
 
@@ -629,13 +736,11 @@ class TaskController extends AccountBaseController
 
         $this->userData = $userData;
 
-        if (request()->ajax()) {
-            $html = view('tasks.ajax.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'tasks.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('tasks.create', $this->data);
 
@@ -658,18 +763,19 @@ class TaskController extends AccountBaseController
             )
         );
 
-        $dueDate = ($request->has('without_duedate')) ? null : Carbon::createFromFormat($this->company->date_format, $request->due_date)->format('Y-m-d');
+        $dueDate = ($request->has('without_duedate')) ? null : Carbon::createFromFormat(company()->date_format, $request->due_date);
         $task->heading = $request->heading;
         $task->description = trim_editor($request->description);
-        $task->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
+        $task->start_date = Carbon::createFromFormat(company()->date_format, $request->start_date);
         $task->due_date = $dueDate;
         $task->task_category_id = $request->category_id;
         $task->priority = $request->priority;
 
 
         if ($request->has('board_column_id')) {
-            $task->board_column_id = $request->board_column_id;
 
+            $task->board_column_id = $request->board_column_id;
+            $task->approval_send = 0;
             $taskBoardColumn = TaskboardColumn::findOrFail($request->board_column_id);
 
             if ($taskBoardColumn->slug == 'completed') {
@@ -680,6 +786,13 @@ class TaskController extends AccountBaseController
             }
         }
 
+        if($request->select_value == 'Waiting Approval'){
+
+            $taskBoardColumn = TaskboardColumn::where('column_name', $request->select_value)->where('company_id', company()->id)->first();
+            $task->board_column_id = $taskBoardColumn->id;
+            $task->approval_send = 1;
+        }
+
         $task->dependent_task_id = $request->has('dependent') && $request->has('dependent_task_id') && $request->dependent_task_id != '' ? $request->dependent_task_id : null;
         $task->is_private = $request->has('is_private') ? 1 : 0;
         $task->billable = $request->has('billable') && $request->billable ? 1 : 0;
@@ -688,12 +801,15 @@ class TaskController extends AccountBaseController
 
         if ($request->project_id != '') {
             $task->project_id = $request->project_id;
+            ProjectTimeLog::where('task_id', $id)->update(['project_id' => $request->project_id]);
         }
         else {
             $task->project_id = null;
         }
 
-        $task->milestone_id = $request->milestone_id;
+        if ($request->has('milestone_id')) {
+            $task->milestone_id = $request->milestone_id;
+        }
 
         if ($request->has('dependent') && $request->has('dependent_task_id') && $request->dependent_task_id != '') {
             $dependentTask = Task::findOrFail($request->dependent_task_id);
@@ -714,17 +830,15 @@ class TaskController extends AccountBaseController
             $task->repeat_cycles = $request->repeat_cycles;
         }
 
-        $task->save();
         $task->load('project');
 
         $project = $task->project;
 
-        if ($project) {
+        if ($project && $task->isDirty('project_id')) {
             $projectLastTaskCount = Task::projectTaskCount($project->id);
             $task->task_short_code = $project->project_short_code . '-' . $this->getTaskShortCode($project->project_short_code, $projectLastTaskCount);
         }
-
-        $task->saveQuietly();
+        $task->save();
 
         // save labels
         $task->labels()->sync($request->task_labels);
@@ -736,6 +850,14 @@ class TaskController extends AccountBaseController
 
         // Sync task users
         $task->users()->sync($request->user_id);
+
+        if(!empty($request->user_id)){
+            $newlyAssignedUserIds = array_diff($request->user_id, $taskUsers);
+            if (!empty($newlyAssignedUserIds)) {
+                $newUsers = User::whereIn('id', $newlyAssignedUserIds)->get();
+                event(new TaskEvent($task, $newUsers, 'NewTask'));
+            }
+        }
 
         return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('tasks.show', $id)]);
     }
@@ -768,7 +890,7 @@ class TaskController extends AccountBaseController
 
         $this->task = Task::with(
             ['boardColumn', 'project', 'users', 'label', 'approvedTimeLogs', 'mentionTask',
-                'approvedTimeLogs.user', 'approvedTimeLogs.activeBreak', 'comments',
+                'approvedTimeLogs.user', 'approvedTimeLogs.activeBreak', 'comments','activeUsers',
                 'comments.commentEmoji', 'comments.like', 'comments.dislike', 'comments.likeUsers',
                 'comments.dislikeUsers', 'comments.user', 'subtasks.files', 'userActiveTimer',
                 'files' => function ($q) use ($viewTaskFilePermission) {
@@ -809,9 +931,17 @@ class TaskController extends AccountBaseController
         $this->taskSettings = TaskSetting::first();
         $viewTaskPermission = user()->permission('view_tasks');
         $mentionUser = $this->task->mentionTask->pluck('user_id')->toArray();
+
+        $overrideViewPermission = false;
+
+        if (request()->has('tab') && request('tab') === 'project') {
+            $overrideViewPermission = true;
+        }
+
         abort_403(
             !(
-                $viewTaskPermission == 'all'
+                $overrideViewPermission == true
+                || $viewTaskPermission == 'all'
                 || ($viewTaskPermission == 'added' && $this->task->added_by == user()->id)
                 || ($viewTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
                 || ($viewTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $this->task->added_by == user()->id))
@@ -830,11 +960,18 @@ class TaskController extends AccountBaseController
 
         }
 
-        $this->pageTitle = __('app.task') . ' # ' . $this->task->task_short_code;
-
-        if ($this->task->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->task->getCustomFieldGroupsWithFields()->fields;
+        if($this->task->task_short_code){
+            $this->pageTitle = __('app.task') . ' # ' . $this->task->task_short_code;
+        }else{
+            $this->pageTitle = __('app.task');
         }
+        $this->status = TaskboardColumn::where('id', $this->task->board_column_id)->first();
+        $getCustomFieldGroupsWithFields = $this->task->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
+
 
         $this->employees = User::join('employee_details', 'users.id', '=', 'employee_details.user_id')
             ->leftJoin('project_time_logs', 'project_time_logs.user_id', '=', 'users.id')
@@ -882,7 +1019,10 @@ class TaskController extends AccountBaseController
                     if ($gitlabTask) {
                         /** @phpstan-ignore-next-line */
                         $gitlabIssue = \GrahamCampbell\GitLab\Facades\GitLab::issues()->all(intval($gitlabProject->gitlab_project_id), ['iids' => [intval($gitlabTask->gitlab_task_iid)]]);
-                        $this->gitlabIssue = $gitlabIssue[0];
+
+                        if ($gitlabIssue) {
+                            $this->gitlabIssue = $gitlabIssue[0];
+                        }
                     }
                 }
             }
@@ -940,11 +1080,9 @@ class TaskController extends AccountBaseController
         }
 
         if (request()->ajax()) {
-            $view = (request('json') == true) ? $this->tab : 'tasks.ajax.show';
+            $view = request('json') ? $this->tab : 'tasks.ajax.show';
 
-            $html = view($view, $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($view);
         }
 
 
@@ -975,10 +1113,93 @@ class TaskController extends AccountBaseController
 
     public function checkTask($taskID)
     {
-        $task = Task::findOrFail($taskID);
+        $task = Task::withTrashed()->findOrFail($taskID);
         $subTask = SubTask::where(['task_id' => $taskID, 'status' => 'incomplete'])->count();
 
         return Reply::dataOnly(['taskCount' => $subTask, 'lastStatus' => $task->boardColumn->slug]);
+    }
+
+    public function sendApproval(Request $request){
+
+        $task = Task::findOrFail($request->taskId);
+        $taskBoardColumn = TaskboardColumn::where('slug', 'waiting_approval')->first();
+
+        $task->approval_send = $request->isApproval ?? 0;
+        $task->board_column_id = $taskBoardColumn->id;
+        $task->save();
+
+        return Reply::success(__('messages.updateSuccess'));
+    }
+
+    public function waitingApproval(WaitingForApprovalDataTable $dataTable)
+    {
+        $viewPermission = user()->permission('view_tasks');
+
+        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+
+        if (!request()->ajax()) {
+            $this->assignedTo = request()->assignedTo;
+
+            if (request()->has('assignee') && request()->assignee == 'me') {
+                $this->assignedTo = user()->id;
+            }
+
+            $this->projects = Project::allProjects();
+
+            if (in_array('client', user_roles())) {
+                $this->clients = User::client();
+            }
+            else {
+                $this->clients = User::allClients();
+            }
+
+            $this->employees = User::allEmployees(null, true, ($viewPermission == 'all' ? 'all' : null));
+            $this->taskBoardStatus = TaskboardColumn::all();
+            $this->taskCategories = TaskCategory::all();
+            $this->taskLabels = TaskLabelList::all();
+            $this->milestones = ProjectMilestone::all();
+
+            $taskBoardColumn = TaskboardColumn::waitingForApprovalColumn();
+
+            $projectIds = Project::where('project_admin', user()->id)->pluck('id');
+
+            if (!in_array('admin', user_roles()) && (in_array('employee', user_roles()) && $projectIds->isEmpty())) {
+                $user = User::findOrFail(user()->id);
+                $this->waitingApprovalCount = $user->tasks()->where('board_column_id', $taskBoardColumn->id)->count();
+            }elseif(!in_array('admin', user_roles()) && (in_array('employee', user_roles()) && !$projectIds->isEmpty())) {
+                $this->waitingApprovalCount = Task::whereIn('project_id', $projectIds)->where('board_column_id', $taskBoardColumn->id)->count();
+            }else{
+                $this->waitingApprovalCount = Task::where('board_column_id', $taskBoardColumn->id)->count();
+            }
+        }
+
+        return $dataTable->render('tasks.waiting-approval', $this->data);
+    }
+
+    public function statusReason(Request $request){
+
+        $this->taskStatus = $request->taskStatus;
+        $this->taskId = $request->taskId;
+        $this->userId = $request->userId;
+
+        return view('tasks.status_reason_modal', $this->data);
+    }
+
+    public function storeStatusReason(ActionTask $request){
+
+        $task = Task::findOrFail($request->taskId);
+        $taskBoardColumn = TaskboardColumn::where('slug', $request->taskStatus)->first();
+        $task->board_column_id = $taskBoardColumn->id;
+        $task->approval_send = 0;
+        $task->save();
+
+        $comment = new TaskComment();
+        $comment->comment = $request->reason;
+        $comment->task_id = $request->taskId;
+        $comment->user_id = user()->id;
+        $comment->save();
+
+        return Reply::dataOnly(['status' => 'success']);
     }
 
     public function clientDetail(Request $request)
@@ -1041,10 +1262,14 @@ class TaskController extends AccountBaseController
         $options = '<option value="">--</option>';
 
         if ($id != 0) {
-            $members = Task::with('activeUsers')->findOrFail($id);
+            $members = Task::with('users')->findOrFail($id);
 
-            foreach ($members->activeUsers as $item) {
-                $options .= '<option  data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div>  ' . $item->name . '" value="' . $item->id . '"> ' . $item->name . ' </option>';
+            foreach ($members->users as $item) {
+                $self_select = (user() && user()->id == $item->id) ? '<span class=\'ml-2 badge badge-secondary\'>' . __('app.itsYou') . '</span>' : '';
+                if($item->status == 'active'){
+                    $content = ( $item->status == 'deactive') ? "<span class='badge badge-pill badge-danger border align-center ml-2 px-2'>Inactive</span>" : '';
+                    $options .= '<option  data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div>  ' . $item->name . '' . $self_select . '' . $content . '" value="' . $item->id .'"> ' . $item->name . ' </option>';
+                }
             }
         }
 
@@ -1064,8 +1289,8 @@ class TaskController extends AccountBaseController
 
     public function checkLeaves()
     {
-        $startDate = request()->start_date ? carbon::createFromFormat(company()->date_format, request()->start_date)->format('Y-m-d') : null;
-        $dueDate = request()->due_date ? carbon::createFromFormat(company()->date_format, request()->due_date)->format('Y-m-d') : null;
+        $startDate = request()->start_date ? companyToYmd(request()->start_date) : null;
+        $dueDate = request()->due_date ? companyToYmd(request()->due_date) : null;
 
         if (request()->start_date && request()->due_date && request()->user_id) {
             $data = $this->leaves(request()->user_id, $startDate, $dueDate);

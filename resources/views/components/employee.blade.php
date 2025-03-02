@@ -1,15 +1,16 @@
 @php
     $active = false;
 
-    if (isset($user->session)) {
-        $lastSeen = \Carbon\Carbon::createFromTimestamp($user->session->last_activity)->timezone(company()?company()->timezone:$user->company->timezone);
+    $session = $user->session ?? null;
+    if ($session) {
+        $lastSeen = \Carbon\Carbon::createFromTimestamp($session->last_activity)
+            ->timezone(company() ? company()->timezone : $user->company->timezone);
 
         $lastSeenDifference = now()->diffInSeconds($lastSeen);
-        if ($lastSeenDifference > 0 && $lastSeenDifference <= 90) {
-            $active = true;
-        }
+        $active = ($lastSeenDifference > 0 && $lastSeenDifference <= 90);
     }
 @endphp
+
 
 <div class="media align-items-center mw-250">
 
@@ -21,9 +22,9 @@
                       title="@lang('modules.client.online')"><i class="fa fa-circle"></i></span>
             @endif
             <img src="{{ $user->image_url }}" class="mr-2 taskEmployeeImg rounded-circle"
-                 alt="{{ $user->name }}" title="{{ $user->userBadge() }}">
+                 alt="{{ $user->name }}" title="{{ $user->name }}">
         </a>
-        <div class="media-body {{$user->status}}">
+        <div class="media-body {{$user->status}} text-truncate">
 
             <h5 class="mb-0 f-12">
                 <a href="{{  isset($disabledLink) ? 'javascript:;' : route('employees.show', [$user->id]) }}"

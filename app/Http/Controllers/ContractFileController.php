@@ -41,7 +41,7 @@ class ContractFileController extends AccountBaseController
                 $file->save();
             }
 
-            $this->files = ContractFile::where('contract_id', $request->contract_id)->orderBy('id', 'desc')->get();
+            $this->files = ContractFile::where('contract_id', $request->contract_id)->orderByDesc('id')->get();
             $view = view('contracts.files.show', $this->data)->render();
 
             return Reply::dataOnly(['status' => 'success', 'view' => $view]);
@@ -64,7 +64,7 @@ class ContractFileController extends AccountBaseController
 
         ContractFile::destroy($id);
 
-        $this->files = ContractFile::where('contract_id', $file->contract_id)->orderBy('id', 'desc')->get();
+        $this->files = ContractFile::where('contract_id', $file->contract_id)->orderByDesc('id')->get();
         $view = view('contracts.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.deleteSuccess'), ['view' => $view]);

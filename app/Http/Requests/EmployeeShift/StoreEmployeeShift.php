@@ -30,11 +30,21 @@ class StoreEmployeeShift extends FormRequest
         $data['halfday_mark_time'] = 'required';
         $data['shift_short_code'] = 'required';
         $data['color'] = 'required';
-        $data['late_mark_duration'] = 'required | integer | min:0';
         $data['clockin_in_day'] = 'required | integer | min:0';
 
         if (!request()->has('office_open_days')) {
             $data['office_open_days'] = 'required';
+        }
+
+        if (request()->shift_type == 'flexible') {
+            $data['total_shift_hours'] = 'required';
+            $data['halfday_shift_hours'] = 'required';
+            $data['auto_clockout'] = 'required';
+        }
+
+        if (request()->shift_type == 'strict') {
+            $data['late_mark_duration'] = 'required | integer | min:0';
+            $data['auto_clock_out_time'] = 'required';
         }
 
         return $data;

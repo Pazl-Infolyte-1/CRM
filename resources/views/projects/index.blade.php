@@ -72,7 +72,7 @@
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.dateFilterOn')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.dateFilterOn')</label>
                 <div class="select-filter mb-4">
                     <select class="form-control select-picker" name="date_filter_on" id="date_filter_on">
                         <option value="deadline">@lang('app.deadline')</option>
@@ -81,11 +81,11 @@
                 </div>
             </div>
 
-            <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.clientName')</label>
+            <div class="more-filter-items @if(!in_array('clients', user_modules())) d-none @endif">
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.clientName')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" name="client_id" id="client_id" data-container="body"
+                        <select class="form-control select-picker" data-live-search="true" name="client_id" id="client_id" data-container="body"
                             data-size="8">
                             @if (!in_array('client', user_roles()))
                                 <option selected value="all">@lang('app.all')</option>
@@ -99,7 +99,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                <label class="f-14 text-dark-grey mb-12 "
                     for="usr">@lang('modules.projects.projectCategory')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -117,14 +117,12 @@
 
             @if (!in_array('client', user_roles()))
                 <div class="more-filter-items">
-                    <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.projectMember')</label>
+                    <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.projectMember')</label>
                     <div class="select-filter mb-4">
                         <div class="select-others">
                             <select class="form-control select-picker" name="employee_id" id="employee_id"
                                 data-live-search="true" data-container="body" data-size="8">
-                                @if ($allEmployees->count() > 1 || in_array('admin', user_roles()))
-                                    <option value="all">@lang('app.all')</option>
-                                @endif
+                                <option value="all">@lang('app.all')</option>
                                 @foreach ($allEmployees as $employee)
                                         <x-user-option :user="$employee" :selected="request('assignee') == 'me' && $employee->id == user()->id"/>
                                 @endforeach
@@ -135,7 +133,7 @@
             @endif
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.department')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.department')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="team_id" id="team_id" data-live-search="true"
@@ -150,7 +148,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.pinned')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.pinned')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="pinned" id="pinned" data-container="body"
@@ -163,7 +161,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                <label class="f-14 text-dark-grey mb-12 "
                     for="usr">@lang('app.public')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -255,7 +253,7 @@ $deleteProjectPermission = user()->permission('delete_projects');
         </div>
         <!-- Add Task Export Buttons End -->
         <!-- Task Box Start -->
-        <div class="d-flex flex-column w-tables rounded mt-3 bg-white table-responsive">
+        <div class="d-flex flex-column w-tables rounded mt-3 bg-white table-responsive overflow-auto">
 
             {!! $dataTable->table(['class' => 'table table-hover border-0 w-100']) !!}
 
@@ -273,14 +271,17 @@ $deleteProjectPermission = user()->permission('delete_projects');
         var deadLineStartDate = '';
         var deadLineEndDate = '';
 
-        var startFilterDate = '';
-        var endFilterDate = '';
+        $(document).on('show.bs.dropdown', '.table-responsive', function() {
+            $('.table-responsive').css( "overflow", "inherit" );
+        });
+
         $(".select-picker").selectpicker();
 
         $('#projects-table').on('preXhr.dt', function(e, settings, data) {
 
             var dateRangePicker = $('#datatableRange').data('daterangepicker');
             var startFilterDate = $('#datatableRange').val();
+            let endFilterDate;
 
             if (startFilterDate == '') {
                 startFilterDate = null;
@@ -327,8 +328,18 @@ $deleteProjectPermission = user()->permission('delete_projects');
         });
 
         const showTable = () => {
-            window.LaravelDataTables["projects-table"].draw(false);
+            window.LaravelDataTables["projects-table"].draw(true);
         }
+
+        $( document ).ready(function() {
+            @if (!is_null(request('start')) && !is_null(request('end')))
+            $('#datatableRange').val('{{ request('start') }}' +
+            ' @lang("app.to") ' + '{{ request('end') }}');
+            $('#datatableRange').data('daterangepicker').setStartDate("{{ request('start') }}");
+            $('#datatableRange').data('daterangepicker').setEndDate("{{ request('end') }}");
+                showTable();
+            @endif
+        });
 
         $('#client_id, #status, #employee_id, #team_id, #category_id, #pinned, #date_filter_on, #public, #progress').on('change keyup',
             function() {
@@ -414,7 +425,7 @@ $deleteProjectPermission = user()->permission('delete_projects');
                         sortBy: 'id'
                     },
                     success: function(data) {
-                        window.LaravelDataTables["projects-table"].draw(false);
+                        window.LaravelDataTables["projects-table"].draw(true);
                     }
                 });
 
@@ -550,7 +561,7 @@ $deleteProjectPermission = user()->permission('delete_projects');
                         },
                         success: function(response) {
                             if (response.status == "success") {
-                                window.LaravelDataTables["projects-table"].draw(false);
+                                window.LaravelDataTables["projects-table"].draw(true);
                             }
                         }
                     });
@@ -595,5 +606,89 @@ $deleteProjectPermission = user()->permission('delete_projects');
             $.ajaxModal(MODAL_LG, url);
         });
 
+        $('body').on('click', '#pinnedItem', function() {
+            var type = $(this).data('pinned');
+            var id = $(this).data('project-id');
+            var pinType = 'project';
+
+            var dataPin = type.trim(type);
+            if (dataPin == 'pinned') {
+                Swal.fire({
+                    title: "@lang('messages.sweetAlertTitle')",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    focusConfirm: false,
+                    confirmButtonText: "@lang('messages.confirmUnpin')",
+                    cancelButtonText: "@lang('app.cancel')",
+                    customClass: {
+                        confirmButton: 'btn btn-primary mr-3',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    showClass: {
+                        popup: 'swal2-noanimation',
+                        backdrop: 'swal2-noanimation'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        var url = "{{ route('projects.destroy_pin', ':id') }}";
+                        url = url.replace(':id', id);
+
+                        var token = "{{ csrf_token() }}";
+                        $.easyAjax({
+                            type: 'POST',
+                            url: url,
+                            data: {
+                                '_token': token,
+                                'type': pinType
+                            },
+                            success: function(response) {
+                                if (response.status == "success") {
+                                    window.location.reload();
+                                }
+                            }
+                        })
+                    }
+                });
+
+            } else {
+                Swal.fire({
+                    title: "@lang('messages.sweetAlertTitle')",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    focusConfirm: false,
+                    confirmButtonText: "@lang('messages.confirmPin')",
+                    cancelButtonText: "@lang('app.cancel')",
+                    customClass: {
+                        confirmButton: 'btn btn-primary mr-3',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    showClass: {
+                        popup: 'swal2-noanimation',
+                        backdrop: 'swal2-noanimation'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        var url = "{{ route('projects.store_pin') }}?type=" + pinType;
+
+                        var token = "{{ csrf_token() }}";
+                        $.easyAjax({
+                            type: 'POST',
+                            url: url,
+                            data: {
+                                '_token': token,
+                                'project_id': id
+                            },
+                            success: function(response) {
+                                if (response.status == "success") {
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
     </script>
 @endpush

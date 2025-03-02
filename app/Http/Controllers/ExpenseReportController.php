@@ -11,7 +11,6 @@ use App\Models\Expense;
 use App\Models\ExpensesCategory;
 use App\Models\Project;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ExpenseReportController extends AccountBaseController
@@ -48,12 +47,12 @@ class ExpenseReportController extends AccountBaseController
         $expenses = Expense::where('status', 'approved');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $expenses = $expenses->where(DB::raw('DATE(`purchase_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $expenses = $expenses->where(DB::raw('DATE(`purchase_date`)'), '<=', $endDate);
         }
 
@@ -132,13 +131,13 @@ class ExpenseReportController extends AccountBaseController
             ->where('expenses.category_id', '!=', null);
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $expenses = $expenseCategoryId->where(DB::raw('DATE(expenses.`purchase_date`)'), '>=', $startDate);
         }
 
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $expenses = $expenseCategoryId->where(DB::raw('DATE(expenses.`purchase_date`)'), '<=', $endDate);
         }
 

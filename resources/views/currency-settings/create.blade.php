@@ -78,7 +78,7 @@
 
             </div>
             <div class="col-12 p-0 mt-4">
-                <h5 class="mb-0 pt-3 text-capitalize border-top-grey">@lang('modules.accountSettings.currencyFormatSetting')</h5>
+                <h5 class="mb-0 pt-3  border-top-grey">@lang('modules.accountSettings.currencyFormatSetting')</h5>
             </div>
             <div class="row pt-3">
                 <div class="col-lg-6">
@@ -193,7 +193,7 @@
                 blockUI: true,
                 messagePosition: 'inline',
                 success: function (response) {
-                    $('#exchange_rate').val(response);
+                    $('#exchange_rate').val(response.value);
                 }
             })
         });
@@ -219,7 +219,7 @@
                 $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+companyCurrencyName+' )');
             }
             else {
-                $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
+                $('#exchange_rateHelp').html('( '+currentCurrencyName+' @lang('app.to') '+companyCurrencyName+' )');
             }
 
             let formatted_currency = number_format(number, no_of_decimal, decimal_separator, thousand_separator, currency_position);

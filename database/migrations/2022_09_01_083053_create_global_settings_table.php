@@ -1,10 +1,5 @@
 <?php
 
-use Database\Seeders\CoreDatabaseSeeder;
-use Database\Seeders\CountriesTableSeeder;
-use Database\Seeders\ModulePermissionSeeder;
-use Database\Seeders\OrganisationSettingsTableSeeder;
-use Database\Seeders\SmtpSettingsSeeder;
 use App\Models\GlobalSetting;
 use App\Models\Company;
 use Illuminate\Support\Facades\Schema;
@@ -46,7 +41,7 @@ return new class extends Migration {
                 $table->string('google_recaptcha_v3_site_key')->nullable();
                 $table->string('google_recaptcha_v3_secret_key')->nullable();
                 $table->boolean('app_debug')->default(false);
-                $table->string('currency_converter_key');
+                $table->string('currency_converter_key')->nullable();
                 $table->string('currency_key_version')->default('free');
                 $table->string('moment_format')->default('DD-MM-YYYY');
                 $table->string('timezone')->default('Asia/Kolkata');
@@ -62,15 +57,68 @@ return new class extends Migration {
                 $table->text('allowed_file_types')->nullable();
                 $table->integer('allowed_file_size')->default(10);
                 $table->boolean('show_update_popup')->default(1);
+
+                $table->enum('google_calendar_status', ['active', 'inactive'])->default('inactive');
+                $table->text('google_client_id')->nullable();
+                $table->text('google_client_secret')->nullable();
+                $table->enum('google_calendar_verification_status', ['verified', 'non_verified'])->default('non_verified');
+                $table->string('google_id')->nullable();
+                $table->string('name')->nullable();
+                $table->text('token')->nullable();
                 $table->timestamps();
+            });
+        }
+
+        $globalSetting = GlobalSetting::first();
+
+        if (!Schema::hasColumn('global_settings', 'global_app_name')) {
+            Schema::table('global_settings', function (Blueprint $table) use ($defaultDriver) {
+                $table->renameColumn('company_name', 'global_app_name');
+                $table->string('sidebar_logo_style')->nullable()->default('square');
+                $table->string('light_logo')->nullable();
+                $table->enum('google_recaptcha_v2_status', ['active', 'deactive'])->default('deactive');
+                $table->string('google_recaptcha_v2_site_key')->nullable();
+                $table->string('google_recaptcha_v2_secret_key')->nullable();
+                $table->enum('google_recaptcha_v3_status', ['active', 'deactive'])->default('deactive');
+                $table->string('google_recaptcha_v3_site_key')->nullable();
+                $table->string('google_recaptcha_v3_secret_key')->nullable();
+                $table->string('moment_format')->default('DD-MM-YYYY');
+
+                $table->string('date_format', 20)->default('d-m-Y');
+                $table->string('time_format', 20)->default('h:i a');
+                $table->string('date_picker_format')->nullable();
+
+                $table->integer('allowed_file_size')->default(10);
+                $table->text('allowed_file_types')->nullable();
+                $table->enum('google_calendar_verification_status', ['verified', 'non_verified'])->default('non_verified');
+                $table->string('google_id')->nullable();
+                $table->string('name')->nullable();
+                $table->text('token')->nullable();
+                $table->enum('auth_theme', ['dark', 'light'])->default('light');
+                $table->enum('session_driver', ['file', 'database'])->default($defaultDriver);
+
+
+
+                $table->decimal('latitude', 10, 8)->default('26.9124336');
+                $table->decimal('longitude', 11, 8)->default('75.78727090000007');
+                $table->boolean('rounded_theme');
+
+            });
+            $globalSetting->logo_background_color = '#FFFFFF';
+            $globalSetting->allowed_file_types = 'image/*,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-zip-compressed, application/x-compressed, multipart/x-zip,.xlsx,video/x-flv,video/mp4,application/x-mpegURL,video/MP2T,video/3gpp,video/quicktime,video/x-msvideo,video/x-ms-wmv,application/sla,.stl';
+            $globalSetting->saveQuietly();
+        }
+
+        if (!Schema::hasColumn('global_settings', 'license_type')) {
+            Schema::table('global_settings', function (Blueprint $table) {
+                $table->string('license_type')->nullable()->after('purchase_code');
             });
         }
 
         $company = Company::first();
 
 
-        if ($company) {
-            $globalSetting = GlobalSetting::first();
+        if ($company && isWorksuite()) {
 
             if (!$globalSetting) {
                 $globalSetting = new GlobalSetting();
@@ -118,38 +166,49 @@ return new class extends Migration {
             $globalSetting->allowed_file_size = $company->allowed_file_size ?? 10;
             /** @phpstan-ignore-next-line */
             $globalSetting->show_update_popup = $company->show_update_popup ?? 1;
+
+            $globalSetting->google_calendar_status = $company->google_calendar_status;
+            $globalSetting->google_client_id = $company->google_client_id;
+            $globalSetting->google_client_secret = $company->google_client_secret;
+            $globalSetting->google_calendar_verification_status = $company->google_calendar_verification_status;
+            $globalSetting->google_id = $company->google_id;
+            $globalSetting->name = $company->name;
+            $globalSetting->token = $company->token;
+
             $globalSetting->save();
         }
 
         Schema::table('companies', function (Blueprint $table) {
-            $table->dropColumn([
-                'purchase_code',
-                'supported_until',
-                'google_recaptcha_status',
-                'google_recaptcha_v2_status',
-                'google_recaptcha_v2_site_key',
-                'google_recaptcha_v2_secret_key',
-                'google_recaptcha_v3_status',
-                'google_recaptcha_v3_site_key',
-                'google_recaptcha_v3_secret_key',
-                'app_debug',
-                'currency_converter_key',
-                'currency_key_version',
-                'license_type',
-                'hide_cron_message',
-                'system_update',
-                'show_review_modal',
-                'last_cron_run',
-                'session_driver',
-                'allowed_file_size',
-                'allowed_file_types']);
+            if (isWorksuite()) {
+                $table->dropColumn([
+                    'purchase_code',
+                    'supported_until',
+                    'google_recaptcha_status',
+                    'google_recaptcha_v2_status',
+                    'google_recaptcha_v2_site_key',
+                    'google_recaptcha_v2_secret_key',
+                    'google_recaptcha_v3_status',
+                    'google_recaptcha_v3_site_key',
+                    'google_recaptcha_v3_secret_key',
+                    'app_debug',
+                    'currency_converter_key',
+                    'currency_key_version',
+                    'license_type',
+                    'hide_cron_message',
+                    'system_update',
+                    'show_review_modal',
+                    'last_cron_run',
+                    'session_driver',
+                    'allowed_file_size',
+                    'allowed_file_types']);
 
-            if (Schema::hasColumn('companies', 'show_update_popup')) {
-                $table->dropColumn('show_update_popup');
-            }
+                if (Schema::hasColumn('companies', 'show_update_popup')) {
+                    $table->dropColumn('show_update_popup');
+                }
 
-            if (Schema::hasColumn('companies', 'weather_key')) {
-                $table->dropColumn('weather_key');
+                if (Schema::hasColumn('companies', 'weather_key')) {
+                    $table->dropColumn('weather_key');
+                }
             }
         });
 

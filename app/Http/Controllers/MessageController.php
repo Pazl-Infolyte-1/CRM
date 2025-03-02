@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Helper\Reply;
-use App\Http\Requests\ChatStoreRequest;
-use App\Models\Project;
-use App\Models\ProjectMember;
-use App\Models\User;
-use App\Models\UserChat;
 use Client;
+use App\Models\User;
+use App\Helper\Reply;
+use App\Models\Project;
+use App\Models\UserChat;
+use App\Models\ProjectMember;
+use App\Http\Requests\ChatStoreRequest;
 use Illuminate\Support\Facades\Session;
 
 class MessageController extends AccountBaseController
@@ -47,7 +47,7 @@ class MessageController extends AccountBaseController
             }, 'toUser' => function ($q) {
                 $q->withCount(['unreadMessages']);
             }])
-            ->whereIn('id', $messageIds)->orderBy('id', 'desc')->get();
+            ->whereIn('id', $messageIds)->orderByDesc('id')->get();
 
             $userList = view('messages.user_list', $this->data)->render();
             return Reply::dataOnly(['status' => 'success', 'userList' => $userList]);
@@ -65,11 +65,11 @@ class MessageController extends AccountBaseController
         }, 'toUser' => function ($q) {
             $q->withCount(['unreadMessages']);
         }])
-        ->whereIn('id', $messageIds)->orderBy('id', 'desc')->get();
+        ->whereIn('id', $messageIds)->orderByDesc('id')->get();
 
         if(in_array('client', user_roles())) {
             if ($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'no') {
-                $this->employees = User::allEmployees();
+                $this->employees = User::allEmployees(null, true);
             }
             else if($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'yes')
             {
@@ -145,7 +145,7 @@ class MessageController extends AccountBaseController
 
         if(in_array('client', user_roles())) {
             if ($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'no') {
-                $this->employees = User::allEmployees();
+                $this->employees = User::allEmployees(null, true);
             }
             else if($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'yes')
             {
@@ -186,7 +186,6 @@ class MessageController extends AccountBaseController
      */
     public function store(ChatStoreRequest $request)
     {
-
         if ($request->user_type == 'client') {
             $receiverID = $request->client_id;
         }
@@ -194,24 +193,38 @@ class MessageController extends AccountBaseController
             $receiverID = $request->user_id;
         }
 
-        $message = new UserChat();
-        $message->message         = $request->message;
-        $message->user_one        = user()->id;
-        $message->user_id         = $receiverID;
-        $message->from            = user()->id;
-        $message->to              = $receiverID;
-        $message->notification_sent = 0;
-        $message->save();
+        $message = $request->message;
 
-        $userLists = UserChat::userListLatest(user()->id, null);
-        $messageIds = collect($userLists)->pluck('id');
-        $this->userLists = UserChat::with('fromUser', 'toUser')->whereIn('id', $messageIds)->orderBy('id', 'desc')->get();
-        $userList = view('messages.user_list', $this->data)->render();
+        if($request->types == 'chat')
+        {
+            $validateModule = $this->validateModule($message);
 
-        $this->chatDetails = UserChat::chatDetail($receiverID, user()->id);
-        $messageList = view('messages.message_list', $this->data)->render();
+            if($validateModule['status'] == false)
+            {
+                return Reply::error($validateModule ['message'] );
+            }
 
-        return Reply::dataOnly(['user_list' => $userList, 'message_list' => $messageList, 'message_id' => $message->id, 'receiver_id' => $receiverID, 'userName' => $message->toUser->name]);
+        }
+
+            $message = new UserChat();
+            $message->message         = $request->message;
+            $message->user_one        = user()->id;
+            $message->user_id         = $receiverID;
+            $message->from            = user()->id;
+            $message->to              = $receiverID;
+            $message->notification_sent = 0;
+            $message->save();
+
+            $userLists = UserChat::userListLatest(user()->id, null);
+            $messageIds = collect($userLists)->pluck('id');
+            $this->userLists = UserChat::with('fromUser', 'toUser')->whereIn('id', $messageIds)->orderByDesc('id')->get();
+            $userList = view('messages.user_list', $this->data)->render();
+
+            $this->chatDetails = UserChat::chatDetail($receiverID, user()->id);
+            $messageList = view('messages.message_list', $this->data)->render();
+
+            return Reply::dataOnly(['user_list' => $userList, 'message_list' => $messageList, 'message_id' => $message->id, 'receiver_id' => $receiverID, 'userName' => $message->toUser->name]);
+
     }
 
     /**
@@ -255,7 +268,7 @@ class MessageController extends AccountBaseController
         }, 'toUser' => function ($q) {
             $q->withCount(['unreadMessages']);
         }])
-        ->whereIn('id', $messageIds)->orderBy('id', 'desc')->get();
+        ->whereIn('id', $messageIds)->orderByDesc('id')->get();
 
         // To show particular user's chat using it's user_id
         Session::flash('message_user_id', request()->user);
@@ -279,6 +292,24 @@ class MessageController extends AccountBaseController
         UserChat::where('to', user()->id)->update(['notification_sent' => 1]); // Mark notification as sent
 
         return Reply::dataOnly(['new_message_count' => $newMessageCount]);
+    }
+
+    public function validateModule($message)
+    {
+        if($message == '')
+        {
+
+            return [
+                'status' => false,
+                'message' => __('messages.fileMessage'),
+            ];
+        }
+        else{
+            return [
+                'status' => true,
+            ];
+        }
+
     }
 
 }

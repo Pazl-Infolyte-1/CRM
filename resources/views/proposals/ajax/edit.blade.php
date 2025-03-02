@@ -2,12 +2,15 @@
 $addProductPermission = user()->permission('add_product');
 @endphp
 
+<!-- for sortable content -->
+<link rel="stylesheet" href="{{ asset('vendor/css/jquery-ui.css') }}">
+
 
 <!-- CREATE INVOICE START -->
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('modules.lead.proposal') @lang('app.details')
+        <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.proposalDetails')
         </h4>
     </div>
     <!-- HEADING END -->
@@ -20,9 +23,9 @@ $addProductPermission = user()->permission('add_product');
             <!-- CLIENT START -->
             <div class="col-md-6 col-lg-4">
                 <div class="form-group c-inv-select mb-4">
-                    <x-forms.label fieldId="client_id" :fieldLabel="__('app.lead')"></x-forms.label>
-                    <p class="f-w-500">{{ $proposal->lead->client_name }}</p>
-                    <input type="hidden" name="lead_id" value="{{ $proposal->lead_id }}">
+                    <x-forms.label fieldId="client_id" :fieldLabel="__('modules.deal.title')"></x-forms.label>
+                    <p class="f-w-500">{{ $proposal->lead->name }}</p>
+                    <input type="hidden" name="deal_id" value="{{ $proposal->deal_id }}">
                 </div>
             </div>
             <!-- CLIENT END -->
@@ -160,9 +163,14 @@ $addProductPermission = user()->permission('add_product');
 
         <div id="sortable">
             @if (isset($proposal))
-                @foreach ($proposal->items as $key => $item)
+                @foreach ($proposal->items->sortBy('field_order') as $key => $item)
                     <!-- DESKTOP DESCRIPTION TABLE START -->
                     <div class="d-flex px-4 py-3 c-inv-desc item-row">
+                        <div class="d-flex align-items-center">
+                            <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
+                            <input type="hidden" name="sort_order[]"
+                                    value="1">
+                        </div>
 
                         <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                             <table width="100%">
@@ -285,6 +293,11 @@ $addProductPermission = user()->permission('add_product');
             @else
                 <!-- DESKTOP DESCRIPTION TABLE START -->
                 <div class="d-flex px-4 py-3 c-inv-desc item-row">
+                    <div class="d-flex align-items-center">
+                        <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
+                        <input type="hidden" name="sort_order[]"
+                                value="1">
+                    </div>
 
                     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                         <table width="100%">
@@ -392,7 +405,7 @@ $addProductPermission = user()->permission('add_product');
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14 text-capitalize">
+            <table width="100%" class="text-right f-14 ">
                 <tbody>
                     <tr>
                         <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -466,7 +479,7 @@ $addProductPermission = user()->permission('add_product');
         <!-- NOTE AND TERMS AND CONDITIONS START -->
         <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
             <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
+                <label class="f-14 text-dark-grey mb-12  w-100"
                     for="usr">@lang('modules.invoices.note')</label>
                 <textarea class="form-control" name="note" id="note" rows="4"
                     placeholder="@lang('placeholders.invoices.note')">{{ $proposal->note }}</textarea>
@@ -519,7 +532,7 @@ $addProductPermission = user()->permission('add_product');
 
                 </div>
 
-                <x-forms.button-cancel :link="route('invoices.index')" class="border-0">@lang('app.cancel')
+                <x-forms.button-cancel :link="route('proposals.index')" class="border-0">@lang('app.cancel')
                 </x-forms.button-cancel>
 
             </div>
@@ -530,18 +543,32 @@ $addProductPermission = user()->permission('add_product');
     <!-- FORM END -->
 </div>
 <!-- CREATE INVOICE END -->
+<!-- for sortable content -->
+<script src="{{ asset('vendor/jquery/jquery-ui.min.js') }}"></script>
 
 <script>
+    $(function () {
+        $("#sortable").sortable();
+    });
     $(document).ready(function() {
 
         $('.toggle-product-category').click(function() {
             $('.product-category-filter').toggleClass('d-none');
+            var url = "{{route('invoices.product_category', ':id')}}";
+            url = url.replace(':id', null);
+            changeProductCategory(url);
+            $('#product_category_id').val('').trigger('change');
+            $('#product_category_id').selectpicker('refresh');
         });
 
         $('#product_category_id').on('change', function(){
             var categoryId = $(this).val();
-            var url = "{{route('invoices.product_category', ':id')}}",
-            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);;
+            var url = "{{route('invoices.product_category', ':id')}}";
+            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);
+            changeProductCategory(url);
+        });
+
+        function changeProductCategory(url) {
             $.easyAjax({
                 url : url,
                 type : "GET",
@@ -559,13 +586,13 @@ $addProductPermission = user()->permission('add_product');
                             options.push(selectData);
                         });
                         $('#add-products').html(
-                            '<option value="" class="form-control" >{{ __('app.select') . ' ' . __('app.product') }}</option>' +
+                            '<option value="" class="form-control" >{{  __('app.menu.selectProduct') }}</option>' +
                             options);
                         $('#add-products').selectpicker('refresh');
                     }
                 }
             });
-        });
+        }
 
         var file = $('.dropify').dropify({
             messages: dropifyMessages
@@ -652,13 +679,14 @@ $addProductPermission = user()->permission('add_product');
 
         function addProduct(id) {
             var currencyId = $('#currency_id').val();
-
+            var exchangeRate = $('#exchange_rate').val();
             $.easyAjax({
                 url: "{{ route('invoices.add_item') }}",
                 type: "GET",
                 data: {
                     id: id,
-                    currencyId: currencyId
+                    currencyId: currencyId,
+                    exchangeRate: exchangeRate
                 },
                 blockUI: true,
                 success: function(response) {
@@ -683,6 +711,11 @@ $addProductPermission = user()->permission('add_product');
 
             var i = $(document).find('.item_name').length;
             var item = ' <div class="d-flex px-4 py-3 c-inv-desc item-row">' +
+                `<div class="d-flex align-items-center">
+                    <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
+                    <input type="hidden" name="sort_order[]"
+                            value="${i+1}">
+                </div>` +
                 '<div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">' +
                 '<table width="100%">' +
                 '<tbody>' +

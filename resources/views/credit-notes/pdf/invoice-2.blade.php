@@ -325,6 +325,7 @@
 
         .word-break {
             word-wrap:break-word;
+            word-break: break-all;
         }
         @if($invoiceSetting->locale == 'th')
 
@@ -371,7 +372,7 @@
         <section id="invoice-info">
             <table>
                 <tr>
-                    <td>@lang('app.menu.issues') @lang('app.date'):</td>
+                    <td>@lang('app.issuesDate'):</td>
                     <td>{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}</td>
                 </tr>
                 @if($invoiceNumber)
@@ -400,7 +401,7 @@
                 @if(!is_null($creditNote->project->client))
                     <span>@lang('modules.credit-notes.billedTo'):</span>
                     <div>
-                        <span class="bold">{{ $creditNote->project->client->name }}</span>
+                        <span class="bold">{{ $creditNote->project->client->name_salutation }}</span>
                     </div>
 
                     <div>
@@ -408,12 +409,14 @@
                     </div>
 
                     <div>
-                        <span>{!! nl2br($creditNote->project->clientDetails->address) !!}</span>
+                        <span>{{ $creditNote->project->client->email }}</span>
                     </div>
 
                     <div>
-                        <span>{{ $creditNote->project->client->email }}</span>
+                        <b>@lang('app.address') :</b>
+                        <span>{!! nl2br($creditNote->project->clientDetails->address) !!}</span>
                     </div>
+
                     @if($creditNoteSetting->show_gst == 'yes' && !is_null($creditNote->project->clientDetails->gst_number))
                         <div>
                             <span> @lang('app.gstIn'): {{ $creditNote->project->clientDetails->gst_number }} </span>
@@ -422,8 +425,40 @@
                 @endif
                 @if (($invoiceSetting->show_project == 1) && (isset($creditNote->project)))
                 <br>
-                <span class="text-dark-grey text-capitalize">@lang("modules.invoices.projectName"):</span>
+                <span class="text-dark-grey ">@lang("modules.invoices.projectName"):</span>
                 {{ $creditNote->project->project_name }}
+                @endif
+            </section>
+        @elseif(is_null($creditNote->project) && !is_null($creditNote->client->clientDetails))
+            <section id="client-info">
+                @if(!is_null($creditNote->client))
+                    <span>@lang('modules.credit-notes.billedTo'):</span>
+                    <div>
+                        <span class="bold">{{ $creditNote->client->name_salutation }}</span>
+                    </div>
+
+                    <div>
+                        <span>{{ $creditNote->client->clientDetails->company_name }}</span>
+                    </div>
+
+                    <div>
+                        <span>{{ $creditNote->client->email }}</span>
+                    </div>
+
+                    <div>
+                        <b>@lang('app.address') :</b>
+                        <span>{!! nl2br($creditNote->client->clientDetails->address) !!}</span>
+                    </div>
+                    @if($creditNoteSetting->show_gst == 'yes' && !is_null($creditNote->client->clientDetails->gst_number))
+                        <div>
+                            <span> @lang('app.gstIn'): {{ $creditNote->client->clientDetails->gst_number }} </span>
+                        </div>
+                    @endif
+                @endif
+                @if (($invoiceSetting->show_project == 1) && (isset($creditNote->client)))
+                    <br>
+                    <span class="text-dark-grey ">@lang("modules.invoices.projectName"):</span>
+                    {{ $creditNote->project->project_name }}
                 @endif
             </section>
         @endif
@@ -452,10 +487,10 @@
                     @if($item->type == 'item')
                 <tr data-iterate="item">
                     <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
-                    <td>
+                    <td class="word-break">
                         {{ $item->item_name }}
                         @if (!is_null($item->item_summary))
-                            <p class="item-summary">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                            <p class="item-summary word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                         @endif
                         @if ($item->creditNoteItemImage)
                             <p class="mt-2">
@@ -483,7 +518,12 @@
                 </tr>
                 @if($discount != 0 && $discount != '')
                 <tr data-iterate="tax">
-                    <td colspan="{{ $creditNoteSetting->hsn_sac_code_show ? '5': '4' }}">@lang("modules.credit-notes.discount"):</td>
+                    <td colspan="{{ $creditNoteSetting->hsn_sac_code_show ? '5': '4' }}">@lang("modules.credit-notes.discount"):
+                        @if($creditNote->discount_type == 'percent')
+                                {{$creditNote->discount}}%
+                            @else
+                                {{ currency_format($creditNote->discount, $creditNote->currency_id) }}
+                            @endif</td>
                     <td>-{{ currency_format($discount, $creditNote->currency_id, false) }}</td>
                 </tr>
                 @endif
@@ -503,7 +543,7 @@
                     <td>{{ currency_format($creditNote->creditAmountUsed(), $creditNote->currency_id, false) }}</td>
                 </tr>
                 <tr>
-                    <td colspan="{{ $creditNoteSetting->hsn_sac_code_show ? '5': '4' }}">@lang('app.adjustment') @lang('app.amount'):</td>
+                    <td colspan="{{ $creditNoteSetting->hsn_sac_code_show ? '5': '4' }}">@lang('app.adjustmentAmount'):</td>
                     <td>{{ currency_format($creditNote->adjustment_amount, $creditNote->currency_id, false) }}</td>
                 </tr>
                 <tr>
@@ -523,6 +563,12 @@
             @endif
 
             <div class="word-break item-summary">{!! nl2br($creditNoteSetting->invoice_terms) !!}</div>
+
+            @if (isset($invoiceSetting->other_info))
+                <div class="word-break item-summary description">
+                    {!! nl2br($invoiceSetting->other_info) !!}
+                </div>
+            @endif
         </section>
 
 

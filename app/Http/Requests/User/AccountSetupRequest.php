@@ -29,7 +29,7 @@ class AccountSetupRequest extends FormRequest
         $rules = [
             'company_name' => 'required',
             'full_name' => 'required',
-            'email' => 'required|email:rfc',
+            'email' => 'required|email:rfc,strict',
             'password' => 'required|min:8',
         ];
 

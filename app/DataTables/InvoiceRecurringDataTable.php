@@ -2,9 +2,7 @@
 
 namespace App\DataTables;
 
-use App\DataTables\BaseDataTable;
 use App\Models\RecurringInvoice;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -151,6 +149,9 @@ class InvoiceRecurringDataTable extends BaseDataTable
 
                     $date = $row->next_invoice_date->timezone($this->company->timezone)->translatedFormat($this->company->date_format);
 
+                    if($row->recurrings->count() === $row->billing_cycle){
+                        return '--';
+                    }
                     return $date . $rotation;
 
                 }
@@ -172,16 +173,16 @@ class InvoiceRecurringDataTable extends BaseDataTable
         $model = $model->with(['project' => function ($q) {
             $q->withTrashed();
             $q->select('id', 'project_name', 'client_id');
-        }, 'currency:id,currency_symbol,currency_code', 'project.client'])
-            ->select('invoice_recurring.id', 'invoice_recurring.project_id', 'invoice_recurring.client_id', 'invoice_recurring.currency_id', 'invoice_recurring.total', 'invoice_recurring.status', 'invoice_recurring.issue_date', 'invoice_recurring.show_shipping_address', 'invoice_recurring.client_can_stop', 'invoice_recurring.next_invoice_date', 'rotation');
+        }, 'currency:id,currency_symbol,currency_code', 'project.client', 'recurrings'])
+            ->select('invoice_recurring.id', 'invoice_recurring.project_id', 'invoice_recurring.client_id', 'invoice_recurring.currency_id', 'invoice_recurring.billing_cycle', 'invoice_recurring.total', 'invoice_recurring.status', 'invoice_recurring.issue_date', 'invoice_recurring.show_shipping_address', 'invoice_recurring.client_can_stop', 'invoice_recurring.next_invoice_date', 'rotation');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(invoice_recurring.`issue_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(invoice_recurring.`issue_date`)'), '<=', $endDate);
         }
 

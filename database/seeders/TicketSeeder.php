@@ -10,7 +10,6 @@ use Illuminate\Database\Seeder;
 use App\Models\TicketReply;
 use App\Models\TicketAgentGroups;
 use App\Models\TicketGroup;
-use Illuminate\Support\Facades\DB;
 
 class TicketSeeder extends Seeder
 {
@@ -67,21 +66,23 @@ class TicketSeeder extends Seeder
         $users = User::where('company_id', $companyId)->get()->pluck('id')->toArray();
         $channels = TicketChannel::where('company_id', $companyId)->get()->pluck('id')->toArray();
         $agents = TicketAgentGroups::where('company_id', $companyId)->get()->pluck('agent_id')->toArray();
+        $groups = TicketGroup::where('company_id', $companyId)->get()->pluck('id')->toArray();
 
         $type = $types[array_rand($types)];
         $user = $users[array_rand($users)];
         $channel = $channels[array_rand($channels)];
         $agent = $agents[array_rand($agents)];
-
+        $group = $groups[array_rand($groups)];
 
         Ticket::factory($companyId)->count((int)$count)
             ->make()
-            ->each(function (Ticket $ticket) use ($faker, $companyId, $type, $user, $channel, $agent) {
+            ->each(function (Ticket $ticket) use ($faker, $companyId, $type, $user, $channel, $agent, $group) {
 
                 $ticket->company_id = $companyId;
                 $ticket->ticket_number = Ticket::where('company_id', $companyId)->max('ticket_number') + 1;
                 $ticket->user_id = $user;
                 $ticket->agent_id = $agent;
+                $ticket->group_id = $group;
                 $ticket->channel_id = $channel;
                 $ticket->type_id = $type;
                 $ticket->save();

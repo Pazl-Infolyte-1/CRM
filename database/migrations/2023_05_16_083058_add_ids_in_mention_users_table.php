@@ -12,6 +12,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::table('attendance_settings', function (Blueprint $table) {
+            $table->dropColumn('early_clock_in');
+        });
+
+        Schema::table('employee_shifts', function (Blueprint $table) {
+            $table->string('early_clock_in')->nullable();
+        });
+
         Schema::table('mention_users', function (Blueprint $table) {
             $table->integer('ticket_id')->unsigned()->nullable()->after('discussion_id');
             $table->foreign('ticket_id')->references('id')->on('tickets')

@@ -106,7 +106,7 @@
                                                     id="payment_date{{ $key }}" name="payment_date[]"
                                                     class="payment_date px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15 w-100"
                                                     placeholder="@lang('placeholders.date')"
-                                                    value="{{ Carbon\Carbon::now(company()->timezone)->format(company()->date_format) }}">
+                                                    value="{{ now(company()->timezone)->format(company()->date_format) }}">
                                             </div>
                                         </td>
                                         <td class="border-bottom-0 btrr-mbl btlr">
@@ -177,7 +177,7 @@
                                                         @if($viewBankAccountPermission != 'none')
                                                             @foreach ($bankDetails as $bankDetail)
                                                                 @if ($pendingPayment->currency->id == $bankDetail->currency_id)
-                                                                    <option @if ($pendingPayment->bank_account_id == $bankDetail->id) selected @endif value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
+                                                                    <option @selected ($pendingPayment->bank_account_id == $bankDetail->id) value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
                                                                         {{ $bankDetail->bank_name }} | @endif {{ $bankDetail->account_name }}
                                                                     </option>
                                                                 @endif

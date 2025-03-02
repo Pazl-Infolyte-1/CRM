@@ -9,9 +9,6 @@
         .content-wrapper{
             padding: 15px 18px !important;
         }
-        .action-bar{
-            float: right;
-        }
     </style>
 @endpush
 
@@ -63,7 +60,7 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar" id="reports">
+                <div class="d-lg-flex d-md-flex justify-content-end" id="reports">
                     <div class="btn-group mt-3 mt-lg-0 mt-md-0 ml-lg-3" role="group">
                         <a href="{{ route('expense-report.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
                             data-original-title="@lang('app.menu.expenseReport')"><i class="side-icon bi bi-list-ul"></i></a>
@@ -132,7 +129,7 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["expense-category-report-table"].draw(false);
+            window.LaravelDataTables["expense-category-report-table"].draw(true);
         }
 
         $('#category_id').on('change keyup', function() {

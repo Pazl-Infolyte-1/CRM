@@ -32,7 +32,7 @@ class UpdateProject extends CoreRequest
             'start_date' => 'required',
             'hours_allocated' => 'nullable|numeric',
             'client_id' => 'requiredIf:client_view_task,true',
-            'project_code' => 'required|unique:projects,project_short_code,'.$this->route('project').',id,company_id,' . company()->id,
+            'project_code' => $this->project_code != '' ? 'unique:projects,project_short_code,' . $this->project_id . ',id,company_id,' . company()->id : '',
         ];
 
         if (!$this->has('without_deadline')) {
@@ -50,8 +50,10 @@ class UpdateProject extends CoreRequest
             $rules['user_id.0'] = 'required';
         }
 
-        if (!request()->private && !request()->public && $project->public == 0 && request()->member_id) {
-            $rules['member_id.0'] = 'required';
+        if ($project->public == 0 && !request()->has('public')) {
+            if (!request()->has('member_id') || (!request()->private && !request()->public)) {
+                $rules['member_id.0'] = 'required';
+            }
         }
 
         $rules = $this->customFieldRules($rules);

@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
 use App\Models\TicketReply;
-use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Support\HtmlString;
 
 class NewTicketReply extends BaseNotification
@@ -51,23 +50,21 @@ class NewTicketReply extends BaseNotification
 
     public function toMail($notifiable)
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
 
         $url = route('tickets.show', $this->ticket->ticket_number);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        if($this->ticketReply->user_id == $notifiable->id)
-        {
-            $text = '<p>' . __('email.ticketReply.repliedText') . $this->ticket->subject . ' #'. $this->ticket->ticket_number . '</p>' . __('app.by') . ' ' .$this->ticketReply->user->name;
+        if ($this->ticketReply->user_id == $notifiable->id) {
+            $text = '<p>' . __('email.ticketReply.repliedText') . $this->ticket->subject . ' #' . $this->ticket->ticket_number . '</p>' . __('app.by') . ' ' . $this->ticketReply->user->name;
         }
-        else
-        {
-            $text = '<p>' . __('email.ticketReply.receivedText') . $this->ticket->subject . ' #'. $this->ticket->ticket_number . '</p>' . __('app.by') . ' ' .$this->ticketReply->user->name;
+        else {
+            $text = '<p>' . __('email.ticketReply.receivedText') . $this->ticket->subject . ' #' . $this->ticket->ticket_number . '</p>' . __('app.by') . ' ' . $this->ticketReply->user->name;
         }
 
         $content = new HtmlString($text);
 
-        return $build
+        $build
             ->subject(__('email.ticketReply.subject') . ' - ' . $this->ticket->subject)
             ->markdown('mail.email', [
                 'url' => $url,
@@ -76,24 +73,21 @@ class NewTicketReply extends BaseNotification
                 'actionText' => __('email.ticketReply.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        $message = (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url);
+        $url = route('tickets.show', $this->ticket->ticket_number);
+        $url = getDomainSpecificUrl($url, $this->company);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.ticketReply.subject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name . "\n" . '<' . $url . '|' . __('modules.tickets.ticket') . ' #' . $this->ticket->id . '>' . "\n");
 
-            return $message
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.ticketReply.subject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name . "\n" . '<' . route('tickets.show', $this->ticket->ticket_number) . '|' . __('modules.tickets.ticket') . ' #' . $this->ticket->id . '>' . "\n");
-        }
-
-        return $message->content('*' . __('email.ticketReply.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     /**

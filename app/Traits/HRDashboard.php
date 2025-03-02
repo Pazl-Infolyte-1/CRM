@@ -11,16 +11,15 @@ use App\Models\Leave;
 use App\Models\Designation;
 use App\Models\DashboardWidget;
 use App\Models\EmployeeDetails;
-use App\Models\Order;
 use Google\Service\AnalyticsData\OrderBy;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Month;
 
 /**
  *
  */
 trait HRDashboard
 {
+
     use CurrencyExchange;
 
     /**
@@ -29,10 +28,11 @@ trait HRDashboard
      */
     public function hrDashboard()
     {
+        $this->viewHRDashboard = user()->permission('view_hr_dashboard');
         abort_403($this->viewHRDashboard !== 'all');
 
         $this->pageTitle = 'app.hrDashboard';
-        $this->startDate  = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
+        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
         $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
         $startDate = $this->startDate->toDateString();
         $endDate = $this->endDate->toDateString();
@@ -61,7 +61,8 @@ trait HRDashboard
                 $this->averageAttendance = '0%';
             }
 
-        } else {
+        }
+        else {
             $this->averageAttendance = '0%';
         }
 
@@ -78,7 +79,7 @@ trait HRDashboard
             ->where('leaves.status', 'approved')
             ->select(DB::raw('count(leaves.id) as employeeLeaveCount'), 'users.*')
             ->groupBy('users.id')
-            ->orderBy('employeeLeaveCount', 'DESC')
+            ->orderByDesc('employeeLeaveCount')
             ->get();
 
         $fromMonthDay = carbon::parse($startDate)->format('m-d');
@@ -87,8 +88,8 @@ trait HRDashboard
         $this->birthdays = EmployeeDetails::with('user')
             ->select('*', 'date_of_birth', DB::raw('MONTH(date_of_birth) months'))
             ->whereNotNull('date_of_birth')
-            ->where(function ($query) use($fromMonthDay, $tillMonthDay){
-                    $query->whereRaw('DATE_FORMAT(`date_of_birth`, "%m-%d") BETWEEN "'.$fromMonthDay.'" AND "'.$tillMonthDay.'"');
+            ->where(function ($query) use ($fromMonthDay, $tillMonthDay) {
+                $query->whereRaw('DATE_FORMAT(`date_of_birth`, "%m-%d") BETWEEN "' . $fromMonthDay . '" AND "' . $tillMonthDay . '"');
             })
             ->orderBy('months')
             ->get();
@@ -100,13 +101,13 @@ trait HRDashboard
             ->where('late', 'yes')
             ->select(DB::raw('count(DISTINCT DATE(attendances.clock_in_time) ) as employeeLateCount'), 'users.*')
             ->groupBy('users.id')
-            ->orderBy('employeeLateCount', 'DESC')
+            ->orderByDesc('employeeLateCount')
             ->get();
 
         $this->counts = User::select(
-                DB::raw('(select count(distinct(attendances.user_id)) from `attendances` inner join users as atd_user on atd_user.id=attendances.user_id inner join role_user on role_user.user_id=atd_user.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "employee" and attendances.clock_in_time >= "'.today(company()->timezone)->setTimezone('UTC')->toDateTimeString().'" and atd_user.status = "active" AND attendances.company_id = '. company()->id .') as totalTodayAttendance'),
-                DB::raw('(select count(users.id) from `users` inner join role_user on role_user.user_id=users.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "employee" and users.status = "active" AND users.company_id = '. company()->id .') as totalEmployees')
-            )
+            DB::raw('(select count(distinct(attendances.user_id)) from `attendances` inner join users as atd_user on atd_user.id=attendances.user_id inner join role_user on role_user.user_id=atd_user.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "employee" and attendances.clock_in_time >= "' . today(company()->timezone)->setTimezone('UTC')->toDateTimeString() . '" and atd_user.status = "active" AND attendances.company_id = ' . company()->id . ') as totalTodayAttendance'),
+            DB::raw('(select count(users.id) from `users` inner join role_user on role_user.user_id=users.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "employee" and users.status = "active" AND users.company_id = ' . company()->id . ') as totalEmployees')
+        )
             ->first();
 
         $this->view = 'dashboard.ajax.hr';
@@ -114,7 +115,7 @@ trait HRDashboard
 
     public function departmentWiseChart()
     {
-        $departments = Team::withCount(['teamMembers' => function($query) {
+        $departments = Team::withCount(['teamMembers' => function ($query) {
             $query->join('users', 'users.id', '=', 'employee_details.user_id');
             $query->where('users.status', '=', 'active');
         }])->get();
@@ -131,7 +132,7 @@ trait HRDashboard
 
     public function designationWiseChart()
     {
-        $departments = Designation::withCount(['members' => function($query) {
+        $departments = Designation::withCount(['members' => function ($query) {
             $query->join('users', 'users.id', '=', 'employee_details.user_id');
             $query->where('users.status', '=', 'active');
         }])->get();
@@ -168,12 +169,13 @@ trait HRDashboard
 
         $data['values'] = $genderWiseEmployee->pluck('totalEmployee')->toArray();
         $data['colors'] = ['#1d82f5', '#FCBD01', '#D30000'];
+
         return $data;
     }
 
     public function roleWiseChart()
     {
-        $roleWiseChart = Role::withCount(['users' => function($query) {
+        $roleWiseChart = Role::withCount(['users' => function ($query) {
             $query->where('users.status', '=', 'active');
         }])
             ->where('name', '<>', 'client')
@@ -192,47 +194,70 @@ trait HRDashboard
         }
 
         $data['values'] = $roleWiseChart->pluck('users_count')->toArray();
+
         return $data;
     }
 
     public function headCountChart()
     {
         $period = now(global_setting()->timezone)->subMonths(11)->monthsUntil(now(global_setting()->timezone));
-        $startDate = $period->startDate->startOfMonth(); /** @phpstan-ignore-line */
-        $endDate = $period->endDate->endOfMonth(); /** @phpstan-ignore-line */
+        $startDate = $period->startDate->startOfMonth();
+        /** @phpstan-ignore-line */
+        $endDate = $period->endDate->endOfMonth();
+        /** @phpstan-ignore-line */
 
         $months = [];
 
-        foreach($period as $periodData){
+        foreach ($period as $periodData) {
             $months[$periodData->format('m-Y')] = [
-                'y' => $periodData ? $periodData->translatedFormat('F') : null,
+                'y' => $periodData?->translatedFormat('F'),
                 'a' => 0
             ];
         }
 
         $oldEmployee = EmployeeDetails::whereDate('joining_date', '<', $startDate)->count();
 
-        $joiningDates = EmployeeDetails::whereDate('joining_date', '>=', $startDate)->whereDate('joining_date', '<=', $endDate )
+        $inActiveOldEmployee = EmployeeDetails::whereHas('user', function ($q) use ($startDate) {
+            $q->where('status', '=', 'deactive')
+                ->where('last_date', '<', $startDate);
+        })->count();
+
+        $oldEmployee = $oldEmployee - $inActiveOldEmployee;
+
+        $joiningDates = EmployeeDetails::whereDate('joining_date', '>=', $startDate)->whereDate('joining_date', '<=', $endDate)
             ->select(DB::raw('count(*) as data'),
                 DB::raw("DATE_FORMAT(joining_date, '%m-%Y') date"),
-                DB::raw('YEAR(joining_date) year, MONTH(joining_date) month'))
+                DB::raw('YEAR(joining_date) year, MONTH(joining_date) month'), )
             ->orderBy('joining_date')
             ->groupby('year', 'month')
             ->get()->keyBy('date');
 
-
-        $lastDates = EmployeeDetails::whereDate('last_date', '>=', $startDate)->whereDate('last_date', '<=', $endDate )
+        $lastDates = EmployeeDetails::whereDate('last_date', '>=', $startDate)->whereDate('last_date', '<=', $endDate)
             ->select('id', DB::raw('count(*) as data'),
                 DB::raw("DATE_FORMAT(last_date, '%m-%Y') date"),
                 DB::raw('YEAR(last_date) year, MONTH(last_date) month'))
             ->orderBy('last_date')
             ->groupby('year', 'month')
-            ->get()->keyBy('date');
+            ->get()
+            ->keyBy('date');
+
+        $inActiveEmployee = EmployeeDetails::join('users', 'employee_details.user_id', '=', 'users.id')
+            ->whereDate('last_date', '>=', $startDate)
+            ->whereDate('last_date', '<=', $endDate)
+            ->select(DB::raw('count(*) as data'),
+                DB::raw("DATE_FORMAT(last_date, '%m-%Y') date"),
+                DB::raw('YEAR(users.inactive_date) year, MONTH(last_date) month'))
+            ->orderBy('last_date')
+            ->groupby('year', 'month')
+            ->get()
+            ->keyBy('date');
+
 
         $graphData = [];
 
-        foreach ($months as $key => $month){
-            $oldEmployee = $oldEmployee + (isset($joiningDates[$key]) ? $joiningDates[$key]->data : 0);
+        foreach ($months as $key => $month) {
+            $inActiveCount = isset($inActiveEmployee[$key]) ? $inActiveEmployee[$key]->data : 0;
+            $oldEmployee = $oldEmployee + (isset($joiningDates[$key]) ? $joiningDates[$key]->data : 0) - $inActiveCount;
             $oldEmployee = $oldEmployee - (isset($lastDates[$key]) ? $lastDates[$key]->data : 0);
 
             $graphData[] = [
@@ -255,21 +280,23 @@ trait HRDashboard
     {
         $period = now()->subMonths(11)->monthsUntil(now());
 
-        $startDate = $period->startDate->startOfMonth(); /** @phpstan-ignore-line */
-        $endDate = $period->endDate->endOfMonth(); /** @phpstan-ignore-line */
+        $startDate = $period->startDate->startOfMonth();
+        /** @phpstan-ignore-line */
+        $endDate = $period->endDate->endOfMonth();
+        /** @phpstan-ignore-line */
 
 
         $months = [];
 
-        foreach($period as $periodData){
+        foreach ($period as $periodData) {
             $months[$periodData->format('m-Y')] = [
                 'y' => $periodData ? $periodData->translatedFormat('F') : null,
-                'a' => 0 ,
+                'a' => 0,
                 'b' => 0
             ];
         }
 
-        $joiningDates = EmployeeDetails::whereDate('joining_date', '>=', $startDate)->whereDate('joining_date', '<=', $endDate )
+        $joiningDates = EmployeeDetails::whereDate('joining_date', '>=', $startDate)->whereDate('joining_date', '<=', $endDate)
             ->select(DB::raw('count(joining_date) as data'),
                 DB::raw("DATE_FORMAT(joining_date, '%m-%Y') date"),
                 DB::raw('YEAR(joining_date) year, MONTH(joining_date) month'))
@@ -277,7 +304,9 @@ trait HRDashboard
             ->groupby('year', 'month')
             ->get()->keyBy('date');
 
-        $attritionDates = EmployeeDetails::whereDate('last_date', '>=', $startDate)->whereDate('last_date', '<=', $endDate )
+        $attritionDates = EmployeeDetails::join('users', 'employee_details.user_id', '=', 'users.id')
+            ->where('users.status', '=', 'deactive')
+            ->whereDate('last_date', '>=', $startDate)->whereDate('last_date', '<=', $endDate)
             ->select(DB::raw('count(last_date) as data'),
                 DB::raw("DATE_FORMAT(last_date, '%m-%Y') date"),
                 DB::raw('YEAR(last_date) year, MONTH(last_date) month'))
@@ -287,21 +316,21 @@ trait HRDashboard
 
         $graphData = [];
 
-        foreach ($months as $key => $month){
+        foreach ($months as $key => $month) {
             $joinings = 0;
             $exit = 0;
 
-            if(isset($joiningDates[$key])){
+            if (isset($joiningDates[$key])) {
                 $joinings = $joiningDates[$key]->data;
             }
 
-            if(isset($attritionDates[$key])){
+            if (isset($attritionDates[$key])) {
                 $exit = $attritionDates[$key]->data;
             }
 
             $graphData[] = [
                 'y' => $months[$key]['y'],
-                'a' => $joinings ,
+                'a' => $joinings,
                 'b' => $exit
             ];
 

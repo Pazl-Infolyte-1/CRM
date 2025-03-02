@@ -40,7 +40,9 @@ class EmployeePermissionSeeder extends Seeder
             ->where('company_id', $companyId)
             ->first();
 
-        $allPermissions = Permission::all();
+        $allPermissions = Permission::whereHas('module', function ($query) {
+            $query->withoutGlobalScopes()->where('is_superadmin', '0');
+        })->get();
 
         $this->permissionRole($allPermissions, 'employee', $companyId);
 

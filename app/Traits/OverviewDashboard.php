@@ -3,7 +3,7 @@
 namespace App\Traits;
 
 use App\Models\DashboardWidget;
-use App\Models\Lead;
+use App\Models\Deal;
 use App\Models\Leave;
 use App\Models\Payment;
 use App\Models\ProjectActivity;
@@ -27,32 +27,29 @@ trait OverviewDashboard
      */
     public function overviewDashboard()
     {
+        $this->viewOverviewDashboard = user()->permission('view_overview_dashboard');
         abort_403($this->viewOverviewDashboard !== 'all');
 
-        $this->startDate  = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
+        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
         $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
         $startDate = $this->startDate->toDateString();
         $endDate = $this->endDate->toDateString();
 
-        $taskBoardColumn = TaskboardColumn::all();
-
-        $completedTaskColumn = $taskBoardColumn->filter(function ($value, $key) {
-            return $value->slug == 'completed';
-        })->first();
+        $completedTaskColumn = TaskboardColumn::completeColumn();
 
         $this->counts = DB::table('users')
             ->select(
-                DB::raw('(select count(users.id) from `users` inner join role_user on role_user.user_id=users.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "client" AND users.company_id = '. company()->id .') as totalClients'),
-                DB::raw('(select count(users.id) from `users` inner join role_user on role_user.user_id=users.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "employee" and users.status = "active" AND users.company_id = '. company()->id .') as totalEmployees'),
-                DB::raw('(select count(projects.id) from `projects` WHERE projects.company_id = '. company()->id .') as totalProjects'),
-                DB::raw('(select count(invoices.id) from `invoices` where (status = "unpaid" or status = "partial") AND invoices.company_id = '. company()->id .') as totalUnpaidInvoices'),
-                DB::raw('(select sum(project_time_logs.total_minutes) from `project_time_logs` where approved = "1" AND project_time_logs.company_id = '. company()->id .') as totalHoursLogged'),
-                DB::raw('(select sum(project_time_log_breaks.total_minutes) from `project_time_log_breaks` WHERE project_time_log_breaks.company_id = '. company()->id .') as totalBreakMinutes'),
-                DB::raw('(select count(tasks.id) from `tasks` where tasks.board_column_id=' . $completedTaskColumn->id . ' and is_private = "0" AND tasks.company_id = '. company()->id .') as totalCompletedTasks'),
-                DB::raw('(select count(tasks.id) from `tasks` where tasks.board_column_id != ' . $completedTaskColumn->id . ' and is_private = "0" AND tasks.company_id = '. company()->id .') as totalPendingTasks'),
-                DB::raw('(select count(distinct(attendances.user_id)) from `attendances` inner join users as atd_user on atd_user.id=attendances.user_id inner join role_user on role_user.user_id=atd_user.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "employee" and attendances.clock_in_time >= "'.today(company()->timezone)->setTimezone('UTC')->toDateTimeString().'" and atd_user.status = "active" AND attendances.company_id = '. company()->id .') as totalTodayAttendance'),
-                DB::raw('(select count(tickets.id) from `tickets` where (status="open") and deleted_at IS NULL AND tickets.company_id = '. company()->id .') as totalOpenTickets'),
-                DB::raw('(select count(tickets.id) from `tickets` where (status="resolved" or status="closed") and deleted_at IS NULL AND tickets.company_id = '. company()->id .') as totalResolvedTickets')
+                DB::raw('(select count(users.id) from `users` inner join role_user on role_user.user_id=users.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "client" AND users.company_id = ' . company()->id . ') as totalClients'),
+                DB::raw('(select count(users.id) from `users` inner join role_user on role_user.user_id=users.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "employee" and users.status = "active" AND users.company_id = ' . company()->id . ') as totalEmployees'),
+                DB::raw('(select count(projects.id) from `projects` WHERE projects.company_id = ' . company()->id . ') as totalProjects'),
+                DB::raw('(select count(invoices.id) from `invoices` where (status = "unpaid" or status = "partial") AND invoices.company_id = ' . company()->id . ') as totalUnpaidInvoices'),
+                DB::raw('(select sum(project_time_logs.total_minutes) from `project_time_logs` where approved = "1" AND project_time_logs.company_id = ' . company()->id . ') as totalHoursLogged'),
+                DB::raw('(select sum(project_time_log_breaks.total_minutes) from `project_time_log_breaks` WHERE project_time_log_breaks.company_id = ' . company()->id . ') as totalBreakMinutes'),
+                DB::raw('(select count(tasks.id) from `tasks` where tasks.board_column_id=' . $completedTaskColumn->id . ' and is_private = "0" AND tasks.company_id = ' . company()->id . ') as totalCompletedTasks'),
+                DB::raw('(select count(tasks.id) from `tasks` where tasks.board_column_id != ' . $completedTaskColumn->id . ' and is_private = "0" and tasks.deleted_at IS NULL AND tasks.company_id = ' . company()->id . ') as totalPendingTasks'),
+                DB::raw('(select count(distinct(attendances.user_id)) from `attendances` inner join users as atd_user on atd_user.id=attendances.user_id inner join role_user on role_user.user_id=atd_user.id inner join roles on roles.id=role_user.role_id WHERE roles.name = "employee" and attendances.clock_in_time >= "' . today(company()->timezone)->setTimezone('UTC')->toDateTimeString() . '" and atd_user.status = "active" AND attendances.company_id = ' . company()->id . ') as totalTodayAttendance'),
+                DB::raw('(select count(tickets.id) from `tickets` where (status="open") and deleted_at IS NULL AND tickets.company_id = ' . company()->id . ') as totalOpenTickets'),
+                DB::raw('(select count(tickets.id) from `tickets` where (status="resolved" or status="closed") and deleted_at IS NULL AND tickets.company_id = ' . company()->id . ') as totalResolvedTickets')
             )
             ->first();
 
@@ -83,12 +80,12 @@ trait OverviewDashboard
 
         $this->newTickets = Ticket::with('requester')->where('status', 'open')
             ->whereBetween('updated_at', [$startDate, $endDate])
-            ->orderBy('updated_at', 'desc')->get();
+            ->orderByDesc('updated_at')->get();
 
         $this->pendingTasks = Task::with('project', 'users', 'boardColumn')
             ->where('tasks.board_column_id', '<>', $completedTaskColumn->id)
             ->where('tasks.is_private', 0)
-            ->orderBy('due_date', 'desc')
+            ->orderByDesc('due_date')
             ->whereBetween('due_date', [$startDate, $endDate])
             ->limit(15)
             ->get();
@@ -96,12 +93,13 @@ trait OverviewDashboard
 
         $currentDate = now()->timezone($this->company->timezone)->toDateTimeString();
 
-        $this->pendingLeadFollowUps = Lead::with('followup', 'leadAgent', 'leadAgent.user', 'leadAgent.user.employeeDetail', 'leadAgent.user.employeeDetail.designation')
-            ->selectRaw('leads.id,leads.company_name, leads.client_name, leads.agent_id, ( select lead_follow_up.next_follow_up_date from lead_follow_up where lead_follow_up.lead_id = leads.id and DATE(lead_follow_up.next_follow_up_date) < "'.$currentDate.'" ORDER BY lead_follow_up.created_at DESC Limit 1) as follow_up_date_past,
-            ( select lead_follow.next_follow_up_date from lead_follow_up as lead_follow where lead_follow.lead_id = leads.id and status = "incomplete" ORDER BY lead_follow.created_at DESC Limit 1) as follow_up_date_next'
-        )
-            ->where('leads.next_follow_up', 'yes')
-            ->groupBy('leads.id')
+        $this->pendingLeadFollowUps = Deal::with('followup', 'leadAgent', 'leadAgent.user', 'leadAgent.user.employeeDetail', 'leadAgent.user.employeeDetail.designation')
+            ->selectRaw('deals.id,leads.company_name, leads.client_name as client_name, deals.agent_id, ( select lead_follow_up.next_follow_up_date from lead_follow_up where lead_follow_up.deal_id = deals.id and DATE(lead_follow_up.next_follow_up_date) < "' . $currentDate . '" ORDER BY lead_follow_up.created_at DESC Limit 1) as follow_up_date_past,
+            ( select lead_follow.next_follow_up_date from lead_follow_up as lead_follow where lead_follow.deal_id = deals.id and status = "incomplete" ORDER BY lead_follow.created_at DESC Limit 1) as follow_up_date_next'
+            )
+            ->leftJoin('leads', 'leads.id', 'deals.lead_id')
+            ->where('deals.next_follow_up', 'yes')
+            ->groupBy('deals.id')
             ->get();
 
         $this->pendingLeadFollowUps = $this->pendingLeadFollowUps->filter(function ($value, $key) {
@@ -121,7 +119,7 @@ trait OverviewDashboard
 
         $this->userActivities = UserActivity::with('user')->limit(15)
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderBy('id', 'desc')->get();
+            ->orderByDesc('id')->get();
 
         $this->view = 'dashboard.ajax.overview';
     }
@@ -133,7 +131,7 @@ trait OverviewDashboard
      */
     public function earningChart($startDate, $endDate)
     {
-        $payments = Payment::join('currencies', 'currencies.id', '=', 'payments.currency_id')->where('status', 'complete');
+        $payments = Payment::join('currencies', 'currencies.id', '=', 'payments.currency_id')->where('payments.status', 'complete');
 
         $payments = $payments->whereBetween('payments.paid_on', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()]);
 
@@ -176,6 +174,7 @@ trait OverviewDashboard
         usort($graphData, function ($a, $b) {
             $t1 = strtotime($a['date']);
             $t2 = strtotime($b['date']);
+
             return $t1 - $t2;
         });
 
@@ -209,6 +208,7 @@ trait OverviewDashboard
         $data['values'] = $timelogs->pluck('total_hours')->toArray();
         $data['colors'] = [$this->appTheme->header_color];
         $data['name'] = __('modules.dashboard.totalHoursLogged');
+
         return $data;
     }
 

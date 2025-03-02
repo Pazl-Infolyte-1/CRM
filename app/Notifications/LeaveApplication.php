@@ -49,14 +49,14 @@ class LeaveApplication extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build();
+        $build = parent::build($notifiable);
         $url = route('leaves.show', $this->leave->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.leave.applied') . ':- ' . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->toDayDateTimeString() . '<br>' . __('app.status') . ': ' . $this->leave->status;
         $content .= '<br>' . __('modules.leaves.reason') . ': ' . $this->leave->reason;
 
-        return $build
+        $build
             ->subject(__('email.leave.applied') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -65,6 +65,10 @@ class LeaveApplication extends BaseNotification
                 'actionText' => __('email.leaves.action'),
                 'notifiableName' => $notifiable->name
             ]);
+
+        parent::resetLocale();
+
+        return $build;
     }
 
     /**

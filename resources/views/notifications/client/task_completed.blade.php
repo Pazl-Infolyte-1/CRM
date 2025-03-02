@@ -1,7 +1,7 @@
 @php
 $notificationUser = \App\Models\TaskHistory::with('user')
     ->where('task_id', $notification->data['id'])
-    ->orderBy('id', 'desc')
+    ->orderByDesc('id')
     ->first();
 @endphp
 @if ($notificationUser)

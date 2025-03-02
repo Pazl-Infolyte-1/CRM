@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Scopes\ActiveScope;
 
 /**
  * App\Models\SubTask
@@ -59,7 +60,7 @@ class SubTask extends BaseModel
 
     public function assignedTo(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(User::class, 'assigned_to')->withoutGlobalScope(ActiveScope::class);;
     }
 
     public function files(): HasMany

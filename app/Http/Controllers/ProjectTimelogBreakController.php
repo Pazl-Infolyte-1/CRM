@@ -7,7 +7,6 @@ use App\Http\Requests\TimelogBreak\UpdateTimelogBreak;
 use App\Models\ProjectTimeLog;
 use App\Models\ProjectTimeLogBreak;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 
 class ProjectTimelogBreakController extends AccountBaseController
 {
@@ -54,6 +53,19 @@ class ProjectTimelogBreakController extends AccountBaseController
 
         $timeLogBreak->total_minutes = $endTime->diffInMinutes($timeLogBreak->start_time);
         $timeLogBreak->save();
+
+        // Calculate total minutes worked during the break
+        $totalMinutesWorked = $timeLog->total_minutes - $timeLogBreak->total_minutes;
+
+        // Determine hourly rate (replace this with your actual logic)
+        $hourlyRate = $timeLog->hourly_rate; // Example hourly rate
+
+        // Calculate earnings
+        $earnings = ($hourlyRate * $totalMinutesWorked) / 60; // Convert minutes to hours and multiply by hourly rate
+
+        // Update earnings column in the database
+        $timeLog->earnings = $earnings;
+        $timeLog->saveQuietly();
 
         return Reply::success(__('messages.updateSuccess'));
     }

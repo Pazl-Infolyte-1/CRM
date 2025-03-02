@@ -27,7 +27,7 @@
                             <option value="all">@lang('app.all')</option>
                         @endif
                         @foreach ($leads as $client)
-                            <option value="{{ $client->id }}">{{ $client->client_name }}</option>
+                            <option value="{{ $client->id }}">{{ $client->client_name_salutation }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -63,7 +63,7 @@
         <x-filters.more-filter-box>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="status" id="proposal_status" data-live-search="true"
@@ -187,7 +187,7 @@ $addProposalTemplatePermission = user()->permission('manage_proposal_template');
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["invoices-table"].draw(false);
+            window.LaravelDataTables["invoices-table"].draw(true);
         }
 
         $('#clientID, #proposal_status')
@@ -223,7 +223,7 @@ $addProposalTemplatePermission = user()->permission('manage_proposal_template');
             showTable();
         });
 
-        $('body').on('click', '.delete-table-row', function() {
+        $('body').on('click', '.delete-proposal-table-row', function() {
             var id = $(this).data('proposal-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
@@ -285,7 +285,7 @@ $addProposalTemplatePermission = user()->permission('manage_proposal_template');
                 },
                 success: function(response) {
                     if (response.status == "success") {
-                        window.LaravelDataTables["invoices-table"].draw(false);
+                        window.LaravelDataTables["invoices-table"].draw(true);
                     }
                 }
             });

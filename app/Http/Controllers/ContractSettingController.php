@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helper\Reply;
 use App\Http\Requests\UpdateContractSetting;
 use App\Models\InvoiceSetting;
-use Illuminate\Http\Request;
 
 class ContractSettingController extends AccountBaseController
 {
@@ -17,6 +16,7 @@ class ContractSettingController extends AccountBaseController
         $this->activeSettingMenu = 'contract_settings';
         $this->middleware(function ($request, $next) {
             abort_403(!(user()->permission('manage_contract_setting') == 'all' && in_array('contracts', user_modules())));
+
             return $next($request);
         });
     }
@@ -28,7 +28,7 @@ class ContractSettingController extends AccountBaseController
     public function index()
     {
         $this->contractSetting = InvoiceSetting::first();
-       
+
         return view('contract-settings.index', $this->data);
     }
 
@@ -38,9 +38,9 @@ class ContractSettingController extends AccountBaseController
     public function update(UpdateContractSetting $request, string $id)
     {
         $setting = InvoiceSetting::findOrFail($id);
-        $setting->contract_prefix              = $request->contract_prefix;
-        $setting->contract_number_separator    = $request->contract_number_separator;
-        $setting->contract_digit               = $request->contract_digit;
+        $setting->contract_prefix = $request->contract_prefix;
+        $setting->contract_number_separator = $request->contract_number_separator;
+        $setting->contract_digit = $request->contract_digit;
         $setting->save();
 
         session()->forget('invoice_setting');

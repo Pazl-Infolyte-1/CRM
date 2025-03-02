@@ -141,4 +141,8 @@ return [
         ]),
     ],
 
+    'redirects' => [
+        'logout' => 'login',
+    ],
+
 ];

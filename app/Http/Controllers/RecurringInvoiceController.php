@@ -87,6 +87,12 @@ class RecurringInvoiceController extends AccountBaseController
         $this->products = Product::select(['id', 'name as title', 'name as text'])->get();
         $this->clients = User::allClients();
 
+        $invoice = new Invoice();
+        $getCustomFieldGroupsWithFields = $invoice->getCustomFieldGroupsWithFields();
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
+
         $this->linkInvoicePermission = user()->permission('link_invoice_bank_account');
         $this->viewBankAccountPermission = user()->permission('view_bankaccount');
 
@@ -102,8 +108,7 @@ class RecurringInvoiceController extends AccountBaseController
         $this->view = 'recurring-invoices.ajax.create';
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         return view('recurring-invoices.create', $this->data);
@@ -136,10 +141,6 @@ class RecurringInvoiceController extends AccountBaseController
             if (!is_numeric($amt)) {
                 return Reply::error(__('messages.amountNumber'));
             }
-
-            if ((int)$amt <= 0) {
-                return Reply::error(__('messages.amountIsZero'));
-            }
         }
 
         foreach ($items as $itm) {
@@ -153,8 +154,8 @@ class RecurringInvoiceController extends AccountBaseController
         $recurringInvoice = new RecurringInvoice();
         $recurringInvoice->project_id = $request->project_id ?? null;
         $recurringInvoice->client_id = $request->has('client_id') ? $request->client_id : null;
-        $recurringInvoice->issue_date = !is_null($request->issue_date) ? Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d') : Carbon::now()->format('Y-m-d');
-        $recurringInvoice->due_date = !is_null($request->issue_date) ? Carbon::createFromFormat($this->company->date_format, $request->issue_date)->addDays($invoiceSetting->due_after)->format('Y-m-d') : Carbon::now()->addDays($invoiceSetting->due_after)->format('Y-m-d');
+        $recurringInvoice->issue_date = !is_null($request->issue_date) ? companyToYmd($request->issue_date) : now()->format('Y-m-d');
+        $recurringInvoice->due_date = !is_null($request->issue_date) ? Carbon::createFromFormat($this->company->date_format, $request->issue_date)->addDays($invoiceSetting->due_after)->format('Y-m-d') : now()->addDays($invoiceSetting->due_after)->format('Y-m-d');
         $recurringInvoice->sub_total = $request->sub_total;
         $recurringInvoice->discount = round($request->discount_value, 2);
         $recurringInvoice->discount_type = $request->discount_type;
@@ -185,12 +186,14 @@ class RecurringInvoiceController extends AccountBaseController
             $invoice->project_id = $request->project_id ?? null;
             $invoice->client_id = $request->client_id ?: null;
             $invoice->invoice_number = Invoice::lastInvoiceNumber() + 1;
-            $invoice->issue_date = Carbon::now()->format('Y-m-d');
-            $invoice->due_date = Carbon::now()->addDays($invoiceSetting->due_after)->format('Y-m-d');
+            $invoice->issue_date = now()->format('Y-m-d');
+            $invoice->due_date = now()->addDays($invoiceSetting->due_after)->format('Y-m-d');
             $invoice->sub_total = round($request->sub_total, 2);
+
             $invoice->discount = round($request->discount_value, 2);
             $invoice->discount_type = $request->discount_type;
             $invoice->total = round($request->total, 2);
+            $invoice->due_amount = round($request->total, 2);
             $invoice->currency_id = $request->currency_id;
             $invoice->note = $request->note;
             $invoice->show_shipping_address = $request->show_shipping_address;
@@ -213,6 +216,10 @@ class RecurringInvoiceController extends AccountBaseController
 
 
             }
+
+            if ($request->custom_fields_data) {
+                $invoice->updateCustomFieldData($request->custom_fields_data);
+            }
         }
 
         return Reply::redirect(route('recurring-invoices.index'), __('messages.recordSaved'));
@@ -227,6 +234,12 @@ class RecurringInvoiceController extends AccountBaseController
     public function show($id)
     {
         $this->invoice = RecurringInvoice::with('recurrings', 'units', 'items.recurringInvoiceItemImage')->findOrFail($id);
+
+        $this->inv = Invoice::where('invoice_recurring_id', $id)->first()->withCustomFields();
+        $getCustomFieldGroupsWithFields = $this->inv->getCustomFieldGroupsWithFields();
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
 
         if ($this->invoice->discount > 0) {
             if ($this->invoice->discount_type == 'percent') {
@@ -285,9 +298,9 @@ class RecurringInvoiceController extends AccountBaseController
         }
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
+
 
         $this->activeTab = $tab ?: 'overview';
 
@@ -316,6 +329,12 @@ class RecurringInvoiceController extends AccountBaseController
 
         $this->linkInvoicePermission = user()->permission('link_invoice_bank_account');
         $this->viewBankAccountPermission = user()->permission('view_bankaccount');
+
+        $this->inv = Invoice::where('invoice_recurring_id', $id)->first()->withCustomFields();
+        $getCustomFieldGroupsWithFields = $this->inv->getCustomFieldGroupsWithFields();
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
 
         $bankAccounts = BankAccount::where('status', 1)->where('currency_id', $this->invoice->currency_id);
 
@@ -389,7 +408,7 @@ class RecurringInvoiceController extends AccountBaseController
 
             $invoice->project_id = $request->project_id ?? null;
             $invoice->client_id = $request->client_id;
-            $invoice->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d');
+            $invoice->issue_date = companyToYmd($request->issue_date);
             $invoice->due_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->addDays($invoiceSetting->due_after)->format('Y-m-d');
             $invoice->sub_total = $request->sub_total;
             $invoice->total = $request->total;
@@ -488,12 +507,17 @@ class RecurringInvoiceController extends AccountBaseController
 
         } else {
             $invoice->client_can_stop = ($request->client_can_stop) ? 1 : 0;
-
+            $invoice->bank_account_id = $request->bank_account_id;
             if (request()->has('status')) {
                 $invoice->status = $request->status;
             }
 
             $invoice->save();
+        }
+
+        $inv = Invoice::where('invoice_recurring_id', $id)->first()->withCustomFields();
+        if ($request->custom_fields_data) {
+            $inv->updateCustomFieldData($request->custom_fields_data);
         }
 
         return Reply::redirect(route('recurring-invoices.index'), __('messages.recordSaved'));

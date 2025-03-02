@@ -31,7 +31,7 @@
             @endif
 
             <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                     @lang('app.status')</p>
                 <p class="mb-0 text-dark-grey f-14 w-70">
                     @if ($payment->status == 'complete')
@@ -50,12 +50,12 @@
             @endif
 
             <div class="col-12 px-0 pb-3 d-flex">
-                <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                     @lang('app.receipt')</p>
                 <p class="mb-0 text-dark-grey f-14">
                     @if (!is_null($payment->bill))
                         <a target="_blank" class="text-dark-grey"
-                            href="{{ $payment->file_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.view') @lang('app.receipt')</u></a>
+                            href="{{ $payment->file_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.viewReceipt')</u></a>
                     @else
                         --
                     @endif

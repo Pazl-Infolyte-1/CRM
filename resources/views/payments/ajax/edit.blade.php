@@ -3,7 +3,7 @@
         <x-form id="save-payment-data-form">
             @method('PUT')
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.payments.paymentDetails')</h4>
                 <div class="row p-20">
 
@@ -319,7 +319,7 @@
                         $('#bank_account_id').html(response.account);
                         $('#bank_account_id').selectpicker('refresh');
                         if(id != 0) {
-                            $('#exchange_rate').val(response.exchangeRate);
+                            $('#exchange_rate').val(1/response.exchangeRate);
                         }
                         if(curId != undefined && curId != companyCurrency){
                             $('#exchange_rate').prop('readonly', false);
@@ -356,7 +356,7 @@
                     if (response.status == 'success') {
                         $('#bank_account_id').html(response.data);
                         $('#bank_account_id').selectpicker('refresh');
-                        $('#exchange_rate').val(response.exchangeRate);
+                        $('#exchange_rate').val(1/response.exchangeRate);
                         let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
                         $('#exchange_rateHelp').html(currencyExchange);
                     }

@@ -121,7 +121,7 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["attendance-report-table"].draw(false);
+            window.LaravelDataTables["attendance-report-table"].draw(true);
         }
 
         $('#employee_id')

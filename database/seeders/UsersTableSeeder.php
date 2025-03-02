@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Enums\MaritalStatus;
 use App\Models\ClientDetails;
 use App\Models\EmployeeDetails;
 use App\Models\Role;
 use App\Models\UniversalSearch;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use App\Models\UserAuth;
 
 class UsersTableSeeder extends Seeder
 {
@@ -38,9 +38,12 @@ class UsersTableSeeder extends Seeder
 
         if ($companyId === 1) {
             $user->email = 'admin@example.com';
-            $user->password = Hash::make('123456');
             $user->gender = 'male';
             $user->save();
+
+            $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+            $user->user_auth_id = $userAuth->id;
+            $user->saveQuietly();
 
             $this->addEmployeeDetails($user, $employeeRole, $companyId);
             $user->roles()->attach($adminRole->id); // id only
@@ -49,9 +52,12 @@ class UsersTableSeeder extends Seeder
             $user->name = $faker->name;
             $user->company_id = $companyId;
             $user->email = 'employee@example.com';
-            $user->password = Hash::make('123456');
             $user->gender = 'male';
             $user->save();
+
+            $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+            $user->user_auth_id = $userAuth->id;
+            $user->saveQuietly();
 
             $this->addEmployeeDetails($user, $employeeRole, $companyId);
 
@@ -63,9 +69,12 @@ class UsersTableSeeder extends Seeder
         }
         else {
             $user->email = 'admin' . $companyId . '@example.com';
-            $user->password = Hash::make('123456');
             $user->gender = 'male';
             $user->save();
+
+            $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+            $user->user_auth_id = $userAuth->id;
+            $user->saveQuietly();
 
             $this->addEmployeeDetails($user, $employeeRole, $companyId);
             $user->roles()->attach($adminRole->id); // id only
@@ -74,9 +83,12 @@ class UsersTableSeeder extends Seeder
             $user->name = $faker->name;
             $user->company_id = $companyId;
             $user->email = 'employee' . $companyId . '@example.com';
-            $user->password = Hash::make('123456');
             $user->gender = 'male';
             $user->save();
+
+            $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+            $user->user_auth_id = $userAuth->id;
+            $user->saveQuietly();
 
             $this->addEmployeeDetails($user, $employeeRole, $companyId);
 
@@ -88,24 +100,42 @@ class UsersTableSeeder extends Seeder
 
         }
 
-        $user->password = Hash::make('123456');
         $user->save();
+
+        $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+        $user->user_auth_id = $userAuth->id;
+        $user->saveQuietly();
+
         $this->addClientDetails($user, $clientRole, $companyId);
 
 
         // Multiple client create
         User::factory()->count((int)$count)->make()
             ->each(function (User $user) use ($clientRole, $companyId) {
+
                 $user->company_id = $companyId;
                 $user->save();
+
+                $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+                $user->user_auth_id = $userAuth->id;
+                $user->saveQuietly();
+
+                $this->command->info('Seeding client: ' . ($user->id) );
                 $this->addClientDetails($user, $clientRole, $companyId);
             });
 
         // Multiple employee create
         User::factory((int)$count)->make()
             ->each(function (User $user) use ($employeeRole, $companyId) {
+
                 $user->company_id = $companyId;
                 $user->save();
+
+                $userAuth = UserAuth::create(['email' => $user->email, 'password' => bcrypt('123456')]);
+                $user->user_auth_id = $userAuth->id;
+                $user->saveQuietly();
+
+                $this->command->info('employee employee: ' . ($user->id) );
                 $this->addEmployeeDetails($user, $employeeRole, $companyId);
             });
     }
@@ -125,8 +155,8 @@ class UsersTableSeeder extends Seeder
         $employee->department_id = rand(1, 6);
         $employee->designation_id = rand(1, 5);
         $employee->joining_date = now()->subMonths(9)->toDateTimeString();
-        $employee->calendar_view = 'task,events,holiday,tickets,leaves';
-        $employee->marital_status = 'unmarried';
+        $employee->calendar_view = 'task,events,holiday,tickets,leaves,follow_ups';
+        $employee->marital_status = MaritalStatus::Single;
         $employee->save();
 
         $search = new UniversalSearch();
@@ -134,11 +164,11 @@ class UsersTableSeeder extends Seeder
         $search->company_id = $companyId;
         $search->title = $user->name;
         $search->route_name = 'employees.show';
+        $search->module_type = 'employee';
         $search->save();
 
         // Assign Role
         $user->roles()->attach($employeeRole->id);
-        /* @phpstan-ignore-line */
     }
 
     private function addClientDetails($user, $clientRole, $companyId)
@@ -151,6 +181,7 @@ class UsersTableSeeder extends Seeder
         $search->title = $user->name;
         /* @phpstan-ignore-line */
         $search->route_name = 'clients.show';
+        $search->module_type = 'client';
         $search->save();
 
         $client = new ClientDetails();

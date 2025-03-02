@@ -52,8 +52,6 @@
     </div>
 </x-form>
 
-
-<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 <script>
     $('#colorpicker').colorpicker({"color": "#16813D"});
 

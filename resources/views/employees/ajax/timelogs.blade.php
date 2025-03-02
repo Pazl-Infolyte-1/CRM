@@ -113,7 +113,7 @@ $addTimelogPermission = user()->permission('add_timelogs');
         data['searchText'] = searchText;
     });
     const showTable = () => {
-        window.LaravelDataTables["timelogs-table"].draw(false);
+        window.LaravelDataTables["timelogs-table"].draw(true);
     }
 
     $('#project_id, #employee, #status, #invoice_generate').on('change keyup',

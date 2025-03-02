@@ -10,14 +10,14 @@ class AwardObserver
 
     public function creating(Award $appreciation)
     {
-        if(company()) {
+        if (company()) {
             $appreciation->company_id = company()->id;
         }
     }
 
     public function deleting(Award $award)
     {
-        foreach($award->appreciations as $appreciations){
+        foreach ($award->appreciations as $appreciations) {
             Notification::where('type', 'App\Notifications\NewAppreciation')
                 ->whereNull('read_at')
                 ->where(function ($q) use ($appreciations) {

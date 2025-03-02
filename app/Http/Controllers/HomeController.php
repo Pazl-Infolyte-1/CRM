@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GlobalSetting;
+use App\Models\Order;
+use App\Models\Role;
+use App\Models\UserAuth;
+use App\Scopes\ActiveScope;
+use Artisan;
 use App\Scopes\CompanyScope;
 use Carbon\Carbon;
 use Stripe\Stripe;
+use App\Models\Deal;
 use App\Models\Lead;
-use App\Models\Role;
 use App\Models\Task;
 use App\Models\User;
 use App\Helper\Files;
 use App\Helper\Reply;
-use App\Models\Order;
 use App\Models\Ticket;
 use GuzzleHttp\Client;
 use App\Models\Company;
@@ -19,43 +24,63 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Project;
+use App\Models\LeadNote;
 use App\Models\Proposal;
 use App\Models\TaskFile;
+use App\Models\LeadCategory;
 use App\Models\LeadSource;
-use App\Models\LeadStatus;
 use App\Models\TicketType;
 use App\Models\CreditNotes;
 use App\Models\LeadProduct;
+use App\Models\TicketGroup;
 use App\Models\TicketReply;
-use App\Scopes\ActiveScope;
 use App\Models\InvoiceItems;
+use App\Models\LeadPipeline;
 use App\Models\ProposalItem;
 use App\Models\ProposalSign;
 use Illuminate\Http\Request;
 use App\Models\ClientDetails;
+use App\Models\PipelineStage;
 use App\Models\LeadCustomForm;
 use App\Models\TaskboardColumn;
 use App\Models\TicketCustomForm;
 use Froiden\RestAPI\ApiResponse;
+use App\Traits\EmployeeDashboard;
 use Illuminate\Support\Facades\DB;
 use App\Models\ProjectTimeLogBreak;
 use Illuminate\Support\Facades\App;
 use Nwidart\Modules\Facades\Module;
 use App\Traits\UniversalSearchTrait;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Artisan;
 use App\Models\PaymentGatewayCredentials;
 use App\Http\Requests\Lead\StorePublicLead;
 use App\Http\Requests\ProposalAcceptRequest;
 use App\Http\Requests\Stripe\StoreStripeDetail;
 use App\Http\Requests\Tickets\StoreCustomTicket;
-use App\Models\TicketGroup;
+use App\Models\GanttLink;
+use App\Models\LanguageSetting;
+use App\Models\ProjectMilestone;
+use App\Events\NewUserEvent;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 
 class HomeController extends Controller
 {
 
+    use EmployeeDashboard;
+
     use UniversalSearchTrait;
+
+    public function __construct()
+    {
+        parent::__construct();
+        // Middleware only applied to these methods
+        if (!request()->ajax()) {
+            $this->middleware('signed')->only([
+                'taskboard' // Could add bunch of more methods too
+            ]);
+        }
+    }
 
     /**
      * Show the application dashboard.
@@ -78,7 +103,9 @@ class HomeController extends Controller
         $this->pageTitle = 'app.menu.invoices';
         $this->pageIcon = 'icon-money';
 
-        $this->invoice = Invoice::with('currency', 'project', 'project.client', 'items.invoiceItemImage', 'items', 'items.unit')->where('hash', $hash)->firstOrFail();
+        $this->invoice = Invoice::with('currency', 'project', 'project.client', 'items.invoiceItemImage', 'items', 'items.unit')
+            ->where('hash', $hash)
+            ->firstOrFail();
         $this->paidAmount = $this->invoice->getPaidAmount();
 
         $this->discount = 0;
@@ -99,34 +126,23 @@ class HomeController extends Controller
             ->get();
 
         foreach ($items as $item) {
+            foreach (json_decode($item->taxes) as $taxId) {
+                $tax = InvoiceItems::taxbyid($taxId)->first();
 
-            foreach (json_decode($item->taxes) as $tax) {
-                $this->tax = InvoiceItems::taxbyid($tax)->first();
+                if ($tax) {
+                    $taxName = $tax->tax_name . ': ' . $tax->rate_percent . '%';
+                    $taxAmount = $this->calculateTaxAmount($item, $tax);
 
-                if ($this->tax) {
-                    if (!isset($taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'])) {
-
-                        if ($this->invoice->calculate_tax == 'after_discount' && $this->discount > 0) {
-                            $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = ($item->amount - ($item->amount / $this->invoice->sub_total) * $this->discount) * ($this->tax->rate_percent / 100);
-
-                        }
-                        else {
-                            $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $item->amount * ($this->tax->rate_percent / 100);
-                        }
-
+                    if (!isset($taxList[$taxName])) {
+                        $taxList[$taxName] = $taxAmount;
                     }
                     else {
-                        if ($this->invoice->calculate_tax == 'after_discount' && $this->discount > 0) {
-                            $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] + (($item->amount - ($item->amount / $this->invoice->sub_total) * $this->discount) * ($this->tax->rate_percent / 100));
-
-                        }
-                        else {
-                            $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] + ($item->amount * ($this->tax->rate_percent / 100));
-                        }
+                        $taxList[$taxName] += $taxAmount;
                     }
                 }
             }
         }
+
 
         $this->taxes = $taxList;
         $this->company = $this->invoice->company;
@@ -147,6 +163,18 @@ class HomeController extends Controller
             'methods' => $this->methods,
             'invoiceSetting' => $this->invoiceSetting,
         ]);
+    }
+
+    private function calculateTaxAmount($item, $tax)
+    {
+        $amount = $item->amount;
+        $ratePercent = $tax->rate_percent / 100;
+
+        if ($this->invoice->calculate_tax == 'after_discount' && $this->discount > 0) {
+            $amount -= ($amount / $this->invoice->sub_total) * $this->discount;
+        }
+
+        return $amount * $ratePercent;
     }
 
     public function stripeModal(Request $request)
@@ -228,6 +256,7 @@ class HomeController extends Controller
 
         if (($this->credentials->test_stripe_secret || $this->credentials->live_stripe_secret) && !is_null($client)) {
 
+            // Company Specific
             Stripe::setApiKey($this->credentials->stripe_mode == 'test' ? $this->credentials->test_stripe_secret : $this->credentials->live_stripe_secret);
 
             $totalAmount = $this->invoice->amountDue();
@@ -277,9 +306,9 @@ class HomeController extends Controller
         $this->invoice = Invoice::whereRaw('md5(id) = ?', $id)->firstOrFail();
         $this->company = $this->invoice->company;
         $this->invoiceSetting = $this->company->invoiceSetting;
-        App::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
         // Download file uploaded
-        if ($this->invoice->file != null) {
+        if ($this->invoice->file != null && request()->has('download-uploaded')) {
             return response()->download(storage_path('app/public/invoice-files') . '/' . $this->invoice->file);
         }
 
@@ -295,8 +324,8 @@ class HomeController extends Controller
         $this->invoice = Invoice::with('items')->findOrFail($id);
         $this->company = $this->invoice->company;
         $this->invoiceSetting = $this->company->invoiceSetting;
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
         $this->paidAmount = $this->invoice->getPaidAmount();
         $this->creditNote = 0;
 
@@ -358,7 +387,7 @@ class HomeController extends Controller
 
         $this->company = $this->invoice->company;
 
-        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderBy('paid_on', 'desc')->get();
+        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderByDesc('paid_on')->get();
 
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('invoices.pdf.' . $this->invoiceSetting->template, $this->data);
@@ -382,10 +411,19 @@ class HomeController extends Controller
         $this->project = Project::with('members', 'members.user')->where('hash', $hash)->firstOrFail();
         $this->company = $this->project->company;
         $this->pageTitle = $this->project->project_name;
+        $this->hideCompleted = request('hide_completed') ?? 0;
+        $this->ganttData = $this->ganttDataNew($this->project->id, $this->hideCompleted, $this->company);
 
-        return view('gantt', [
+        // Check if public taskboard is enabled for this project
+        if ($this->project->public_gantt_chart != 'enable') {
+            abort_403('Public gantt chart is disabled for this project.');
+        }
+
+        return view('gantt_dhtml', [
             'company' => $this->company,
             'pageTitle' => $this->pageTitle,
+            'hideCompleted' => $this->hideCompleted,
+            'ganttData' => $this->ganttData,
             'project' => $this->project
         ]);
     }
@@ -431,6 +469,7 @@ class HomeController extends Controller
 
     public function taskDetail($hash)
     {
+
         $this->task = Task::with('company:id,timezone,favicon,light_logo,date_format,time_format,company_name', 'boardColumn', 'project', 'users', 'label', 'approvedTimeLogs', 'approvedTimeLogs.user', 'comments', 'comments.user')
             ->withCount('subtasks', 'files', 'comments', 'activeTimerAll')
             ->where('hash', $hash)
@@ -439,8 +478,10 @@ class HomeController extends Controller
 
         $this->pageTitle = __('app.task') . ' # ' . $this->task->task_short_code;
 
-        if ($this->task->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->task->getCustomFieldGroupsWithFields()->fields;
+        $getCustomFieldGroupsWithFields = $this->task->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $this->employees = User::join('employee_details', 'users.id', '=', 'employee_details.user_id')
@@ -465,6 +506,8 @@ class HomeController extends Controller
 
         $tab = request('view');
 
+        $this->routeUrl = url()->full();
+
         $this->tab = match ($tab) {
             'sub_task' => 'front.tasks.ajax.sub_tasks',
             'history' => 'front.tasks.ajax.history',
@@ -476,19 +519,16 @@ class HomeController extends Controller
 
         $this->company = $this->task->company;
 
-        if (request()->ajax()) {
-            if (request('json') == true) {
-                $html = view($this->tab, $this->data)->render();
+        $this->view = 'front.tasks.ajax.show';
 
-                return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->ajax()) {
+            if (request('json')) {
+                return $this->returnAjax($this->tab);
             }
 
-            $html = view('front.tasks.ajax.show', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'front.tasks.ajax.show';
 
         return view('front.tasks.show', $this->data);
 
@@ -503,9 +543,16 @@ class HomeController extends Controller
 
     public function taskboard(Request $request, $hash)
     {
+
+
         $project = Project::where('hash', $hash)->firstOrFail();
         $this->company = $project->company;
         $this->pageTitle = $project->project_name . ' ' . __('modules.tasks.taskBoard');
+
+        // Check if public taskboard is enabled for this project
+        if ($project->public_taskboard != 'enable') {
+            abort_403('Public taskboard access is disabled for this project.');
+        }
 
         if (request()->ajax()) {
 
@@ -542,6 +589,7 @@ class HomeController extends Controller
 
                 }])
                 ->where('taskboard_columns.company_id', $this->company->id)
+                ->where('taskboard_columns.column_name', '<>', 'Waiting Approval')
                 ->orderBy('priority', 'asc')
                 ->get();
             $result = array();
@@ -635,6 +683,11 @@ class HomeController extends Controller
      */
     public function leadForm($id)
     {
+
+        if(session()->has('is_deal')) {
+            session()->forget('is_deal');
+        }
+
         $this->withLogo = \request()->get('with_logo');
         $this->styled = \request()->get('styled');
 
@@ -644,6 +697,7 @@ class HomeController extends Controller
         $this->countries = countries();
         $this->sources = LeadSource::where('company_id', $this->company->id)->get();
         $this->products = Product::where('company_id', $this->company->id)->get();
+        $this->category = LeadCategory::select('id')->where('company_id', $this->company->id)->where('is_default', 1)->first();
 
         $this->leadFormFields = LeadCustomForm::with('customField')
             ->where('status', 'active')
@@ -656,7 +710,7 @@ class HomeController extends Controller
     /**
      * save lead
      *
-     * @return \Illuminate\Http\Response
+     * @return array
      */
     // public function leadStore(StorePublicLead $request)
     public function leadStore(StorePublicLead $request)
@@ -667,42 +721,66 @@ class HomeController extends Controller
             // Checking is google recaptcha is valid
             $gRecaptchaResponseInput = global_setting()->google_recaptcha_v3_status == 'active' ? 'g_recaptcha' : 'g-recaptcha-response';
             $gRecaptchaResponse = $request->{$gRecaptchaResponseInput};
-            $validateRecaptcha = $this->validateGoogleRecaptcha($gRecaptchaResponse);
+            $validateRecaptcha = GlobalSetting::validateGoogleRecaptcha($gRecaptchaResponse);
 
             if (!$validateRecaptcha) {
                 return Reply::error(__('auth.recaptchaFailed'));
             }
         }
 
-        $leadStatus = LeadStatus::where('default', '1')->where('company_id', $company->id)->first();
+        $leadPipeline = LeadPipeline::where('default', '1')->where('company_id', $company->id)->first();
+        $leadStage = PipelineStage::where('default', '1')->where('lead_pipeline_id', $leadPipeline->id)->where('company_id', $company->id)->first();
 
-        $lead = new Lead();
+        $leadContact = null;
+
+        if (request()->has('email') && !is_null($request->email)) {
+            $leadContact = Lead::where('client_email', $request->email)->first();
+        }
+
+        if (is_null($leadContact)) {
+            $leadContact = new Lead();
+        }
+
+        $leadContact->company_id = $company->id;
+        $leadContact->company_name = (request()->has('company_name') ? $request->company_name : '');
+        $leadContact->website = (request()->has('website') ? $request->website : '');
+        $leadContact->address = (request()->has('address') ? $request->address : '');
+        $leadContact->client_name = (request()->has('name') ? $request->name : '');
+        $leadContact->client_email = (request()->has('email') ? $request->email : '');
+        $leadContact->mobile = (request()->has('mobile') ? $request->mobile : '');
+        $leadContact->city = (request()->has('city') ? $request->city : '');
+        $leadContact->state = (request()->has('state') ? $request->state : '');
+        $leadContact->country = (request()->has('country') ? $request->country : '');
+        $leadContact->postal_code = (request()->has('postal_code') ? $request->postal_code : '');
+        $leadContact->save();
+
+        $note = new LeadNote();
+        $note->title = 'note';
+        $note->lead_id = $leadContact->id;
+        $note->details = (request()->has('message') ? $request->message : '');
+        $note->type = 0;
+        $note->save();
+
+        $lead = new Deal();
         $lead->company_id = $company->id;
-        $lead->company_name = (request()->has('company_name') ? $request->company_name : '');
-        $lead->website = (request()->has('website') ? $request->website : '');
-        $lead->address = (request()->has('address') ? $request->address : '');
-        $lead->client_name = (request()->has('name') ? $request->name : '');
-        $lead->client_email = (request()->has('email') ? $request->email : '');
-        $lead->mobile = (request()->has('mobile') ? $request->mobile : '');
-        $lead->city = (request()->has('city') ? $request->city : '');
-        $lead->state = (request()->has('state') ? $request->state : '');
-        $lead->country = (request()->has('country') ? $request->country : '');
-        $lead->postal_code = (request()->has('postal_code') ? $request->postal_code : '');
-        $lead->source_id = (request()->has('source') ? $request->source : '');
-        $lead->status_id = $leadStatus->id;
+        $lead->lead_id = $leadContact->id;
+        $lead->name = (request()->has('name') ? $request->name : '');
+        $lead->lead_pipeline_id = $leadPipeline->id;
+        $lead->pipeline_stage_id = $leadStage->id;
         $lead->note = (request()->has('message') ? $request->message : null);
         $lead->value = 0;
         $lead->currency_id = $company->currency_id;
+        $lead->category_id = $request->category_id;
+        Session::put('is_deal', true);
         $lead->save();
 
         if (!is_null($request->product)) {
 
             $products = $request->product;
 
-            foreach($products as $product)
-            {
+            foreach ($products as $product) {
                 $leadProduct = new LeadProduct();
-                $leadProduct->lead_id = $lead->id;
+                $leadProduct->deal_id = $lead->id;
                 $leadProduct->product_id = $product;
                 $leadProduct->save();
             }
@@ -710,7 +788,7 @@ class HomeController extends Controller
 
         // To add custom fields data
         if ($request->custom_fields_data) {
-            $lead->updateCustomFieldData($request->custom_fields_data);
+            $leadContact->updateCustomFieldData($request->custom_fields_data, $company->id);
         }
 
         return Reply::success(__('messages.recordSaved'));
@@ -729,6 +807,11 @@ class HomeController extends Controller
 
         $this->company = Company::where('hash', $id)->firstOrFail();
 
+        App::setLocale($this->company->locale);
+        Carbon::setLocale($this->company->locale);
+        setlocale(LC_TIME, $this->company->locale . '_' . mb_strtoupper($this->company->locale));
+
+
         $this->groups = TicketGroup::where('company_id', $this->company->id)->get();
         $this->ticketFormFields = TicketCustomForm::with('customField')
             ->where('company_id', $this->company->id)
@@ -737,9 +820,7 @@ class HomeController extends Controller
             ->get();
 
         $this->types = TicketType::where('company_id', $this->company->id)->get();
-        App::setLocale($this->company->locale);
-        Carbon::setLocale($this->company->locale);
-        setlocale(LC_TIME, $this->company->locale . '_' . mb_strtoupper($this->company->locale));
+
 
         return view('ticket-form', $this->data);
     }
@@ -758,7 +839,7 @@ class HomeController extends Controller
             // Checking is google recaptcha is valid
             $gRecaptchaResponseInput = global_setting()->google_recaptcha_v3_status == 'active' ? 'g_recaptcha' : 'g-recaptcha-response';
             $gRecaptchaResponse = $request->{$gRecaptchaResponseInput};
-            $validateRecaptcha = $this->validateGoogleRecaptcha($gRecaptchaResponse);
+            $validateRecaptcha = GlobalSetting::validateGoogleRecaptcha($gRecaptchaResponse);
 
             if (!$validateRecaptcha) {
                 return Reply::error(__('auth.recaptchaFailed'));
@@ -770,14 +851,19 @@ class HomeController extends Controller
         $newUser = $existing_user;
 
         if (!$existing_user) {
-            $password = str_random(8);
+            $userAuth = UserAuth::createUserAuthCredentials($request->email);
+
+            $password = session('auth_pass');
             // create new user
             $client = new User();
             $client->company_id = $request->company_id;
             $client->name = $request->name;
             $client->email = $request->email;
-            $client->password = Hash::make($password);
+            $client->email_notifications = $request->email_notifications ?? 1;
+            $client->user_auth_id = $userAuth->id;
             $client->save();
+
+            event(new NewUserEvent($client, $password));
 
             // attach role
             $role = Role::withoutGlobalScope(CompanyScope::class)
@@ -792,6 +878,8 @@ class HomeController extends Controller
             $clientDetail->company_id = $client->company_id;
             $clientDetail->user_id = $client->id;
             $clientDetail->save();
+
+            $client->assignUserRolePermission($role->id);
 
             // Log search
             $this->logSearchEntry($client->id, $client->name, 'clients.edit', 'client');
@@ -820,37 +908,17 @@ class HomeController extends Controller
 
         // To add custom fields data
         if ($request->custom_fields_data) {
-            $ticket->updateCustomFieldData($request->custom_fields_data);
+            $ticket->updateCustomFieldData($request->custom_fields_data, $company->id);
         }
 
         return Reply::success(__('messages.ticketCreateSuccess'));
     }
 
-    public function validateGoogleRecaptcha($googleRecaptchaResponse)
-    {
-        $secret = global_setting()->google_recaptcha_v2_status == 'active' ? global_setting()->google_recaptcha_v2_secret_key : global_setting()->google_recaptcha_v3_secret_key;
-
-        $client = new Client();
-        $response = $client->post(
-            'https://www.google.com/recaptcha/api/siteverify',
-            [
-                'form_params' => [
-                    'secret' => $secret,
-                    'response' => $googleRecaptchaResponse,
-                    'remoteip' => $_SERVER['REMOTE_ADDR']
-                ]
-            ]
-        );
-
-        $body = json_decode((string)$response->getBody());
-
-        return $body->success;
-    }
-
     public function installedModule()
     {
         $message = '';
-        $plugins = Module::allEnabled(); /* @phpstan-ignore-line */
+        $plugins = Module::allEnabled();
+        /* @phpstan-ignore-line */
 
         $applicationVersion = trim(
             preg_replace(
@@ -874,12 +942,19 @@ class HomeController extends Controller
             );
         }
 
-        if (((int)str_replace('.', '', $enableModules['RestAPI'])) < 110) {
-            $message .= 'Please update Rest API module greater then 1.1.0 version';
+        if (!in_array('RestAPI', array_keys($plugins))) {
+            $message = 'Rest API module is not activated';
+        }
+        elseif (!Module::has('RestAPI')) {
+            $message = 'Rest API module is not installed';
+
+        }
+        elseif (((int)str_replace('.', '', $enableModules['RestAPI'])) < 110) {
+            $message = 'Please update Rest API module greater then 1.1.0 version';
         }
 
-        if (((int)str_replace('.', '', $enableModules['worksuite'])) < 400) {
-            $message .= 'Please update' . config('app.name') . ' greater then 4.0.0 version';
+        elseif (((int)str_replace('.', '', $enableModules['worksuite'])) < 400) {
+            $message = 'Please update' . config('app.name') . ' greater then 4.0.0 version';
         }
 
         $enableModules['message'] = $message;
@@ -895,6 +970,8 @@ class HomeController extends Controller
         $this->proposal = Proposal::with(['items', 'unit'])->where('hash', $hash)->firstOrFail();
         $this->company = $this->proposal->company;
 
+        $this->discount = 0;
+
         if ($this->proposal->discount > 0) {
             if ($this->proposal->discount_type == 'percent') {
                 $this->discount = (($this->proposal->discount / 100) * $this->proposal->sub_total);
@@ -902,9 +979,6 @@ class HomeController extends Controller
             else {
                 $this->discount = $this->proposal->discount;
             }
-        }
-        else {
-            $this->discount = 0;
         }
 
         $this->taxes = ProposalItem::where('type', 'tax')
@@ -1017,6 +1091,7 @@ class HomeController extends Controller
 
         $this->proposal = Proposal::where('hash', $id)->firstOrFail();
         $this->company = $this->proposal->company;
+        $this->discount = 0;
 
         if ($this->proposal->discount > 0) {
             if ($this->proposal->discount_type == 'percent') {
@@ -1025,9 +1100,6 @@ class HomeController extends Controller
             else {
                 $this->discount = $this->proposal->discount;
             }
-        }
-        else {
-            $this->discount = 0;
         }
 
         $this->taxes = ProposalItem::where('type', 'tax')
@@ -1073,8 +1145,8 @@ class HomeController extends Controller
         $this->taxes = $taxList;
         $this->invoiceSetting = $this->company->invoiceSetting;
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         $pdf = app('dompdf.wrapper');
 
@@ -1083,9 +1155,6 @@ class HomeController extends Controller
         $pdf->setOption('isRemoteEnabled', true);
 
         $pdf->loadView('proposals.pdf.' . $this->invoiceSetting->template, $this->data);
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
         $filename = 'proposal-' . $this->proposal->id;
 
         return [
@@ -1102,8 +1171,9 @@ class HomeController extends Controller
     {
 
         $this->proposal = Proposal::where('hash', $id)->firstOrFail();
+
         $this->company = $this->proposal->company;
-        App::setLocale(isset($this->company->locale) ? $this->company->locale : 'en');
+        App::setLocale($this->company->locale ?? 'en');
 
         $pdfOption = $this->domPdfObjectProposalDownload($id);
         $pdf = $pdfOption['pdf'];
@@ -1115,6 +1185,8 @@ class HomeController extends Controller
     public function invoicePaymentfailed($invoiceId)
     {
         $invoice = Invoice::findOrFail($invoiceId);
+
+        $errorMessage = [];
 
         if (request()->gateway == 'Razorpay') {
             $errorMessage = ['code' => request()->errorMessage['code'], 'message' => request()->errorMessage['description']];
@@ -1147,6 +1219,14 @@ class HomeController extends Controller
         return view('front.image.show_image', $this->data);
     }
 
+    public function showPieChart()
+    {
+        $this->chartData = json_decode(request()->chart_data, true);
+        $this->chartId = request()->chart_id;
+
+        return view('front.charts.pie-chart', $this->data);
+    }
+
     public function syncPermissions()
     {
         return Artisan::call('sync-user-permissions');
@@ -1155,8 +1235,152 @@ class HomeController extends Controller
     public function changeLang($locale)
     {
         session(['locale' => $locale]);
+        $lang = LanguageSetting::where('language_code', $locale)->first()->is_rtl;
+        session()->forget('changedRtl');
+        session(['changedRtl' => $lang == true ? true : false]);
 
         return Reply::success(__('messages.updateSuccess'));
+    }
+
+    public function ganttDataNew($projectID, $hideCompleted, $company)
+    {
+        $taskBoardColumn = TaskboardColumn::completeColumn();
+
+        if ($hideCompleted == 0) {
+            $milestones = ProjectMilestone::with(['tasks' => function ($q) {
+                return $q->whereNotNull('tasks.start_date');
+            }, 'tasks.boardColumn'])->where('project_id', $projectID)->get();
+
+        } else {
+            $milestones = ProjectMilestone::with(['tasks' => function ($q) use ($taskBoardColumn) {
+                return $q->whereNotNull('tasks.start_date')->where('tasks.board_column_id', '<>', $taskBoardColumn->id);
+            }, 'tasks.boardColumn'])
+            ->where('status', 'incomplete')
+            ->where('project_id', $projectID)->get();
+        }
+
+        $nonMilestoneTasks = Task::whereNull('milestone_id')->whereNotNull('start_date')->with('boardColumn');
+
+        if ($hideCompleted == 1) {
+            $nonMilestoneTasks = $nonMilestoneTasks->where('tasks.board_column_id', '<>', $taskBoardColumn->id);
+        }
+
+        $nonMilestoneTasks = $nonMilestoneTasks->where('project_id', $projectID)->get();
+
+        $ganttData = [];
+        $ganttData['data'] = [];
+        $ganttData['links'] = [];
+
+        foreach ($milestones as $key => $milestone) {
+            $parentID = 'project-' . $milestone->id;
+
+            $ganttData['data'][] = [
+                'id' => $parentID,
+                'text' => $milestone->milestone_title,
+                'type' => 'project',
+                'start_date' => $milestone->start_date->format('d-m-Y H:i'),
+                'duration' => $milestone->start_date->diffInDays($milestone->end_date) + 1,
+                'progress' => ($milestone->tasks->count()) ? ($milestone->completionPercent() / 100) : 0,
+                'parent' => 0,
+                'open' => ($milestone->status == 'incomplete'),
+                'color' => '#cccccc',
+                'textColor' => '#09203F',
+                'linkable' => false,
+                'priority' => ($key + 1)
+            ];
+
+
+            foreach ($milestone->tasks as $key2 => $task) {
+                $taskUsers = '<div class="d-inline-flex align-items-center ml-1 text-dark w-180" data-task-id="'.$task->id.'">';
+
+                foreach($task->users as $item) {
+                    $taskUsers .= '<img data-toggle="tooltip" class="taskEmployeeImg rounded-circle mr-1" data-original-title="'.$item->name.'"
+                                                     src="'.$item->image_url.'">';
+                }
+
+                $taskUsers .= $task->heading . ' &nbsp; &nbsp;' . view('components.status', ['style' => 'color: ' . $task->boardColumn->label_color, 'value' => $task->boardColumn->column_name, 'color' => 'red'])->render() . '</div>';
+
+                $ganttData['data'][] = [
+                    'id' => $task->id,
+                    'text' => $task->heading,
+                    'hash' => $task->hash,
+                    'text_user' => $taskUsers,
+                    'type' => 'task',
+                    'start_date' => $task->start_date->format('d-m-Y H:i'),
+                    'duration' => (($task->due_date) ? $task->start_date->diffInDays($task->due_date) + 1 : 1),
+                    'parent' => $parentID,
+                    'priority' => ($key2 + 1),
+                    'color' => $task->boardColumn->label_color.'20',
+                    'textColor' => '#09203F',
+                    'view' => view('components.cards.task-card', ['task' => $task, 'draggable' => false, 'company' => $company])->render()
+                ];
+
+                if (!is_null($task->dependent_task_id)) {
+                    $ganttData['links'][] = [
+                        'id' => $task->id,
+                        'source' => $task->dependent_task_id,
+                        'target' => $task->id,
+                        'type' => 0
+                    ];
+                }
+            }
+
+            if ($milestone->tasks->count()) {
+                $ganttData['data'][] = [
+                    'id' => 'milestone-' . $milestone->id,
+                    'text' => $milestone->milestone_title,
+                    'type' => 'milestone',
+                    'start_date' => (($task->due_date) ? $task->due_date->format('d-m-Y H:i') : $task->start_date->format('d-m-Y H:i')),
+                    'duration' => (($task->due_date) ? $task->start_date->diffInDays($task->due_date) + 1 : 1),
+                    'parent' => $parentID,
+                ];
+
+                $ganttData['links'][] = [
+                    'id' => 'milestone-' . $milestone->id,
+                    'source' => $task->id,
+                    'target' => 'milestone-' . $milestone->id,
+                    'type' => 0
+                ];
+            }
+        }
+
+        foreach ($nonMilestoneTasks as $key2 => $task) {
+            $taskUsers = '<div class="d-inline-flex align-items-center ml-1 text-dark w-180" data-task-id="'.$task->id.'">';
+
+            foreach($task->users as $item) {
+                $taskUsers .= '<img data-toggle="tooltip" class="taskEmployeeImg rounded-circle mr-1" data-original-title="'.$item->name.'"
+                                                 src="'.$item->image_url.'">';
+            }
+
+            $taskUsers .= $task->heading . ' &nbsp; &nbsp;' . view('components.status', ['style' => 'color: ' . $task->boardColumn->label_color, 'value' => $task->boardColumn->column_name, 'color' => 'red'])->render() . '</div>';
+
+            $ganttData['data'][] = [
+                'id' => $task->id,
+                'text' => $task->heading,
+                'text_user' => $taskUsers,
+                'type' => 'task',
+                'start_date' => $task->start_date->format('d-m-Y H:i'),
+                'duration' => (($task->due_date) ? $task->start_date->diffInDays($task->due_date) : 1),
+                'priority' => ($key2 + 1),
+                'color' => $task->boardColumn->label_color.'20',
+                'textColor' => '#09203F',
+                'view' => view('components.cards.task-card', ['task' => $task, 'draggable' => false, 'company' => $company])->render()
+            ];
+
+            if (!is_null($task->dependent_task_id)) {
+                $ganttData['links'][] = [
+                    'id' => $task->id,
+                    'source' => $task->dependent_task_id,
+                    'target' => $task->id,
+                    'type' => 0
+                ];
+            }
+
+        }
+
+        $ganttData['links'] = array_merge($ganttData['links'], GanttLink::where('project_id', $projectID)->select('id', 'type', 'source', 'target', 'type')->get()->toArray());
+
+        return $ganttData;
     }
 
 }

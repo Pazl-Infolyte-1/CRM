@@ -101,6 +101,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read mixed $company_signature
  * @method static \Illuminate\Database\Eloquent\Builder|Contract whereCompanySign($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Contract whereSignDate($value)
+ * @property string|null $original_contract_number
+ * @method static \Illuminate\Database\Eloquent\Builder|Contract whereOriginalContractNumber($value)
  * @mixin \Eloquent
  */
 class Contract extends BaseModel
@@ -114,11 +116,16 @@ class Contract extends BaseModel
         'sign_date' => 'datetime',
     ];
 
-    protected $with = ['currency'];
+    protected $with = [];
 
     protected $appends = ['image_url', 'company_signature'];
 
     const CUSTOM_FIELD_MODEL = 'App\Models\Contract';
+
+    public function signer()
+    {
+        return $this->belongsTo(User::class, 'sign_by');
+    }
 
     public function getImageUrlAttribute()
     {
@@ -152,17 +159,17 @@ class Contract extends BaseModel
 
     public function discussion(): HasMany
     {
-        return $this->hasMany(ContractDiscussion::class)->orderBy('id', 'desc');
+        return $this->hasMany(ContractDiscussion::class)->orderByDesc('id');
     }
 
     public function renewHistory(): HasMany
     {
-        return $this->hasMany(ContractRenew::class, 'contract_id')->orderBy('id', 'desc');
+        return $this->hasMany(ContractRenew::class, 'contract_id')->orderByDesc('id');
     }
 
     public function files(): HasMany
     {
-        return $this->hasMany(ContractFile::class, 'contract_id')->orderBy('id', 'desc');
+        return $this->hasMany(ContractFile::class, 'contract_id')->orderByDesc('id');
     }
 
     public static function lastContractNumber()

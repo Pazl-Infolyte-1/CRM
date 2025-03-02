@@ -19,7 +19,7 @@ $addProductPermission = user()->permission('add_product');
         <div class="bg-white rounded b-shadow-4 create-inv">
             <!-- HEADING START -->
             <div class="px-lg-4 px-md-4 px-3 py-3">
-                <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.menu.credit-note') @lang('app.details')
+                <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.creditNoteDetails')
                 </h4>
             </div>
             <!-- HEADING END -->
@@ -33,7 +33,7 @@ $addProductPermission = user()->permission('add_product');
                     <!-- INVOICE NUMBER START -->
                     <div class="col-md-3">
                         <div class="form-group mb-lg-0 mb-md-0 mb-4">
-                            <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.credit-note')
+                            <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.credit-note')
                                 #</label>
                             <div class="input-group">
                                 <input type="text" name="cn_number" id="cn_number"
@@ -93,7 +93,7 @@ $addProductPermission = user()->permission('add_product');
                             <x-forms.label fieldId="client_id" :fieldLabel="__('app.client')">
                             </x-forms.label>
                             <p>
-                                {{ $creditNote->client->name }}
+                                {{ $creditNote->client->name_salutation }}
                             </p>
                         </div>
                     </div>
@@ -210,6 +210,7 @@ $addProductPermission = user()->permission('add_product');
                                                 data-id="{{ $item->id }}"
                                                 id="{{ $item->id }}"
                                                 data-default-file="{{ $item->creditNoteItemImage ? $item->creditNoteItemImage->file_url : '' }}"
+                                                disabled="disabled"
                                                 />
                                                 <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->creditNoteItemImage ? $item->creditNoteItemImage->file : '' }}">
                                             </td>
@@ -226,7 +227,7 @@ $addProductPermission = user()->permission('add_product');
 
                 <!-- TOTAL, DISCOUNT START -->
                 <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-                    <table width="100%" class="text-right f-14 text-capitalize">
+                    <table width="100%" class="text-right f-14 ">
                         <tbody>
                             <tr>
                                 <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -247,16 +248,17 @@ $addProductPermission = user()->permission('add_product');
                                                         <tbody>
                                                             <tr>
                                                                 <td width="50%" class="c-inv-sub-padding">
-                                                                    <input type="number" min="0" name="discount_value"
+                                                                    <input type="hidden" min="0" name="discount_value"
                                                                         class="f-14 border-0 w-100 text-right discount_value"
                                                                         placeholder="0"
                                                                         value="{{ $creditNote->discount }}">
+                                                                    <span>{{ $creditNote->discount }}</span>
                                                                 </td>
                                                                 <td width="50%" align="left" class="c-inv-sub-padding">
                                                                     <div
                                                                         class="select-others select-tax height-35 rounded border-0">
                                                                         <select class="form-control select-picker"
-                                                                            id="discount_type" name="discount_type">
+                                                                            id="discount_type" name="discount_type" disabled>
                                                                             <option @if ($creditNote->discount_type == 'percent') selected @endif
                                                                                 value="percent">%</option>
                                                                             <option @if ($creditNote->discount_type == 'fixed') selected @endif value="fixed">
@@ -285,7 +287,7 @@ $addProductPermission = user()->permission('add_product');
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td>@lang('app.adjustment') @lang('app.amount')</td>
+                                                <td>@lang('app.adjustmentAmount')</td>
                                                 <td colspan="2" class="p-0 border-0">
                                                     <table width="100%" id="invoice-taxes">
                                                         <tr>
@@ -321,13 +323,13 @@ $addProductPermission = user()->permission('add_product');
                 <!-- NOTE AND TERMS AND CONDITIONS START -->
                 <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
                     <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                        <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
+                        <label class="f-14 text-dark-grey mb-12  w-100"
                             for="usr">@lang('modules.invoices.note')</label>
                         <textarea class="form-control" name="note" id="note" rows="4"
-                            placeholder="@lang('placeholders.invoices.note')"></textarea>
+                            placeholder="@lang('placeholders.invoices.note')">{{ $creditNote->note ? $creditNote->note : '' }}</textarea>
                     </div>
                     <div class="col-md-6 col-sm-12 p-0 c-inv-note-terms">
-                        <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
+                        <label class="f-14 text-dark-grey mb-12  w-100"
                             for="usr">@lang('modules.invoiceSettings.invoiceTerms')</label>
                         {!! nl2br($creditNoteSetting->invoice_terms) !!}
                     </div>
@@ -376,13 +378,14 @@ $addProductPermission = user()->permission('add_product');
 
             function addProduct(id) {
                 var currencyId = $('#currency_id').val();
-
+                var exchangeRate = $('#exchange_rate').val();
                 $.easyAjax({
                     url: "{{ route('invoices.add_item') }}",
                     type: "GET",
                     data: {
                         id: id,
-                        currencyId: currencyId
+                        currencyId: currencyId,
+                        exchangeRate: exchangeRate
                     },
                     success: function(response) {
                         if($('input[name="item_name[]"]').val() == ''){

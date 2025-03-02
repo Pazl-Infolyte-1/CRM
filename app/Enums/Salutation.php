@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum Salutation: string
 {
+
     // phpcs:disable
     case Mr = 'mr';
     case Mrs = 'mrs';
@@ -17,12 +18,7 @@ enum Salutation: string
     public function label(): string
     {
         return match ($this) {
-            self::Mr => __('app.' . $this->value),
-            self::Mrs => __('app.' . $this->value),
-            self::Miss => __('app.' . $this->value),
-            self::Dr => __('app.' . $this->value),
-            self::Sir => __('app.' . $this->value),
-            self::Madam => __('app.' . $this->value),
+            self::Mr, self::Mrs, self::Miss, self::Dr, self::Sir, self::Madam => __('app.' . $this->value),
             default => $this->value,
         };
     }

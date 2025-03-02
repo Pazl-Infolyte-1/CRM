@@ -5,7 +5,7 @@
     <div class="col-sm-12">
         <x-form id="save-attendance-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('app.menu.addShiftRoster')</h4>
                 <div class="row p-20">
 
@@ -43,10 +43,16 @@
                     <div class="col-lg-3 col-md-6">
                         <x-forms.select fieldId="shift" :fieldLabel="__('modules.attendance.shift')" fieldName="shift" search="true">
                             @foreach ($employeeShifts as $item)
+                                @if ($item->shift_type == 'strict')
                                 <option
                                 data-content="<i class='fa fa-circle mr-2' style='color: {{ $item->color }}'></i> {{ ($item->shift_name != 'Day Off') ? $item->shift_name : __('modules.attendance.' . str($item->shift_name)->camel()) }}{{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}"
                                 value="{{ $item->id }}">
                                     {{ ($item->shift_name != 'Day Off') ? $item->shift_name : __('modules.attendance.' . str($item->shift_name)->camel()) }}{{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}</option>
+                                @else
+                                <option data-content="<i class='fa fa-circle mr-2' style='color: {{ $item->color }}'></i> {{ ($item->shift_name != 'Day Off') ? $item->shift_name : __('modules.attendance.' . str($item->shift_name)->camel()) }} {{ ($item->shift_name != 'Day Off') ? ' ['.$item->flexible_total_hours.' '.__('app.hrs').']' : ''}}"
+                                    value="{{ $item->id }}">{{ ($item->shift_name != 'Day Off') ? $item->shift_name : __('modules.attendance.' . str($item->shift_name)->camel()) }} {{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}</option>
+
+                                @endif
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -146,10 +152,15 @@
             }
         });
 
+        var dateFormat = "{{ $dateformat }}";
+
         $('#multi_date').daterangepicker({
             multidate: true,
             todayHighlight: true,
-            format: 'yyyy-mm-d'
+            locale: {
+                format: dateFormat,
+                separator: ' To ',
+            },
         });
 
         $('input[type=radio][name=assign_shift_by]').change(function() {
@@ -157,8 +168,11 @@
                 const dp2 = $('#multi_date').daterangepicker('clearDates').daterangepicker({
                     multidate: true,
                     todayHighlight: true,
-                    format: 'yyyy-mm-d'
-
+                    // format: 'yyyy-mm-d',
+                    locale: {
+                        format: dateFormat,
+                        separator: ' To ',
+                    },
                 });
             }
         });
@@ -195,8 +209,11 @@
         $('#save-attendance-form').click(function() {
 
             var dateRange = $('#multi_date').data('daterangepicker');
-            startDate = dateRange.startDate.format('{{ company()->moment_date_format }}');
-            endDate = dateRange.endDate.format('{{ company()->moment_date_format }}');
+            // startDate = dateRange.startDate.format('{{ company()->moment_date_format }}');
+            // endDate = dateRange.endDate.format('{{ company()->moment_date_format }}');
+
+            startDate = dateRange.startDate.format('YYYY-MM-DD');
+            endDate = dateRange.endDate.format('YYYY-MM-DD');
 
             var multiDate = [];
             multiDate = [startDate, endDate];

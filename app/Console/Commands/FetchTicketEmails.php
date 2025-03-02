@@ -2,27 +2,26 @@
 
 namespace App\Console\Commands;
 
+use App\Events\MailTicketReplyEvent;
 use App\Events\TicketReplyEvent;
-use App\Mail\TicketReply as MailTicketReply;
 use App\Models\ClientDetails;
 use App\Models\Company;
 use App\Models\Role;
 use App\Models\SmtpSetting;
 use App\Models\Ticket;
-use App\Models\TicketEmailSetting;
 use App\Models\TicketReply;
 use App\Models\User;
 use App\Scopes\ActiveScope;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Mail;
+use Webklex\IMAP\Facades\Client;
+use Webklex\PHPIMAP\Message;
 
 class FetchTicketEmails extends Command
 {
 
-    private $smtpSetting;
-    private $ticketEmailSetting;
 
+    protected $company;
     /**
      * The name and signature of the console command.
      *
@@ -44,86 +43,94 @@ class FetchTicketEmails extends Command
      */
     public function handle()
     {
-        $companies = Company::select('id')->get();
 
-        $this->smtpSetting = SmtpSetting::first();
 
-        foreach ($companies as $company) {
-            $this->ticketEmailSetting = TicketEmailSetting::where('company_id', $company->id)->first();
+        $smtpSetting = SmtpSetting::first();
 
-            if ($this->ticketEmailSetting->status == 1) {
+        Company::active()
+            ->select(['companies.id as id', 'timezone', 'ticket_email_settings.*'])
+            ->join('ticket_email_settings', 'ticket_email_settings.company_id', '=', 'companies.id')
+            ->where('ticket_email_settings.status', 1)
+            ->chunk(50, function ($companies) use ($smtpSetting) {
 
-                if (!in_array(config('app.env'), ['demo', 'development'])) {
+                foreach ($companies as $company) {
 
-                    $driver = ($this->smtpSetting->mail_driver != 'mail') ? $this->smtpSetting->mail_driver : 'sendmail';
+                    $this->company = $company;
 
-                    Config::set('mail.default', $driver);
-                    Config::set('mail.mailers.smtp.host', $this->smtpSetting->mail_host);
-                    Config::set('mail.mailers.smtp.port', $this->smtpSetting->mail_port);
-                    Config::set('mail.mailers.smtp.username', $this->smtpSetting->mail_username);
-                    Config::set('mail.mailers.smtp.password', $this->smtpSetting->mail_password);
-                    Config::set('mail.mailers.smtp.encryption', $this->smtpSetting->mail_encryption);
-                    Config::set('queue.default', $this->smtpSetting->mail_connection);
-                }
+                    if (!in_array(config('app.env'), ['demo', 'development'])) {
 
-                Config::set('imap.accounts.default.host', $this->ticketEmailSetting->imap_host);
-                Config::set('imap.accounts.default.port', $this->ticketEmailSetting->imap_port);
-                Config::set('imap.accounts.default.encryption', $this->ticketEmailSetting->imap_encryption);
-                Config::set('imap.accounts.default.username', $this->ticketEmailSetting->mail_username);
-                Config::set('imap.accounts.default.password', $this->ticketEmailSetting->mail_password);
+                        $driver = ($smtpSetting->mail_driver != 'mail') ? $smtpSetting->mail_driver : 'sendmail';
 
-                $client = \Webklex\IMAP\Facades\Client::account('default'); /* @phpstan-ignore-line */
-                $client->connect();
-                $oFolder = $client->getFolder('INBOX');
-                $messages = $oFolder->query()->since(today())->get();
-                /** @var \Webklex\PHPIMAP\Message $message */
-                foreach ($messages as $message) {
-                    /* echo($message->getFrom()[0]->personal)."\n";
-                    // echo $message->getUid()."\n";
-                    // echo $message->getSubject()."\n";
-                    // echo 'Attachments: '.$message->getAttachments()->count()."\n";
-                    // echo $message->getMessageId()."\n";
-                    // echo $message->getInReplyTo()."\n";
-                    // echo $message->getFrom()[0]->mail."\n";
-                    // print_r($message->getAttributes())."\n";
-                    // echo $message->getHTMLBody(true);
-                    // echo $message->getTextBody(true); */
-                    $data = [
-                        'name' => trim($message->getFrom()[0]->personal),
-                        'email' => trim($message->getFrom()[0]->mail),
-                        'subject' => $message->getSubject(),
-                        'text' => $message->getHTMLBody() != '' ? $message->getHTMLBody() : $message->getRawBody(),
-                        'imap_message_id' => $message->getMessageId(),
-                        'imap_message_uid' => $message->getUid(),
-                        'imap_in_reply_to' => !is_null($message->getInReplyTo()) ? str_replace(array('<', '>'), '', $message->getInReplyTo()) : null,
-                    ];
+                        Config::set('mail.default', $driver);
+                        Config::set('mail.mailers.smtp.host', $smtpSetting->mail_host);
+                        Config::set('mail.mailers.smtp.port', $smtpSetting->mail_port);
+                        Config::set('mail.mailers.smtp.username', $smtpSetting->mail_username);
+                        Config::set('mail.mailers.smtp.password', $smtpSetting->mail_password);
+                        Config::set('mail.mailers.smtp.encryption', $smtpSetting->mail_encryption);
+                        Config::set('queue.default', $smtpSetting->mail_connection);
+                    }
 
-                    $checkTicket = TicketReply::with(['ticket' => function ($q) use ($company) {
-                        $q->where('company_id', $company->id);
-                    }])->where('imap_message_uid', $data['imap_message_uid'])->withTrashed()->first();
+                    Config::set('imap.accounts.default.host', $company->imap_host);
+                    Config::set('imap.accounts.default.port', $company->imap_port);
+                    Config::set('imap.accounts.default.encryption', $company->imap_encryption);
+                    Config::set('imap.accounts.default.username', $company->mail_username);
+                    Config::set('imap.accounts.default.password', $company->mail_password);
 
-                    if (is_null($checkTicket) && !is_null($data['imap_in_reply_to'])) {
-                        $checkReplyTo = TicketReply::with(['ticket' => function ($q) use ($company) {
+                    $client = Client::account('default');
+                    /* @phpstan-ignore-line */
+                    $client->connect();
+                    $oFolder = $client->getFolder('INBOX');
+                    $messages = $oFolder->query()->since(today())->get();
+                    /** @var Message $message */
+                    foreach ($messages as $message) {
+                        /* echo($message->getFrom()[0]->personal)."\n";
+                        // echo $message->getUid()."\n";
+                        // echo $message->getSubject()."\n";
+                        // echo 'Attachments: '.$message->getAttachments()->count()."\n";
+                        // echo $message->getMessageId()."\n";
+                        // echo $message->getInReplyTo()."\n";
+                        // echo $message->getFrom()[0]->mail."\n";
+                        // print_r($message->getAttributes())."\n";
+                        // echo $message->getHTMLBody(true);
+                        // echo $message->getTextBody(true); */
+                        $data = [
+                            'name' => trim($message->getFrom()[0]->personal),
+                            'email' => trim($message->getFrom()[0]->mail),
+                            'subject' => $message->getSubject(),
+                            'text' => $message->getHTMLBody() != '' ? $message->getHTMLBody() : $message->getRawBody(),
+                            'imap_message_id' => $message->getMessageId(),
+                            'imap_message_uid' => $message->getUid(),
+                            'imap_in_reply_to' => !is_null($message->getInReplyTo()) ? str_replace(array('<', '>'), '', $message->getInReplyTo()) : null,
+                        ];
+
+                        $checkTicket = TicketReply::with(['ticket' => function ($q) use ($company) {
                             $q->where('company_id', $company->id);
-                        }])->where('imap_message_id', $data['imap_in_reply_to'])->withTrashed()->first();
-                    }
+                        }])->where('imap_message_uid', $data['imap_message_uid'])
+                            ->withTrashed()
+                            ->first();
 
-                    if (is_null($checkTicket)) {
-                        if (isset($checkReplyTo) && !is_null($checkReplyTo)) {
-                            $this->createTicketReply($checkReplyTo->ticket, $data, $company->id);
+                        if (is_null($checkTicket) && !is_null($data['imap_in_reply_to'])) {
+                            $checkReplyTo = TicketReply::with(['ticket' => function ($q) use ($company) {
+                                $q->where('company_id', $company->id);
+                            }])->where('imap_message_id', $data['imap_in_reply_to'])->withTrashed()->first();
+                        }
 
+                        if (is_null($checkTicket)) {
+                            if (isset($checkReplyTo)) {
+                                $this->createTicketReply($checkReplyTo->ticket, $data, $company->id);
+                            }
+                            else {
+                                $this->createTicket($data, $company->id);
+                            }
                         }
-                        else {
-                            $this->createTicket($data, $company->id);
-                        }
+
                     }
 
                 }
 
-            }
-        }
+            });
 
-        return true;
+        return Command::SUCCESS;
     }
 
     public function createTicket($data, $companyId)
@@ -218,6 +225,7 @@ class FetchTicketEmails extends Command
     public function sendNotifications($ticketReply)
     {
         $ticketReply->ticket->touch();
+        $ticketEmailSetting = $this->company;
 
         if (!is_null($ticketReply->ticket->agent) && $ticketReply->user_id != $ticketReply->ticket->agent_id) {
             event(new TicketReplyEvent($ticketReply, $ticketReply->ticket->agent));
@@ -238,8 +246,7 @@ class FetchTicketEmails extends Command
                 $toEmail = $ticketReply->ticket->agent->email;
             }
 
-            Mail::to($toEmail)->send(new MailTicketReply($ticketReply, $this->ticketEmailSetting));
-
+            event(new MailTicketReplyEvent($ticketReply, $ticketEmailSetting));
         }
     }
 

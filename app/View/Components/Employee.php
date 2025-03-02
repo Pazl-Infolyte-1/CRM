@@ -2,6 +2,7 @@
 
 namespace App\View\Components;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Employee extends Component
@@ -15,7 +16,7 @@ class Employee extends Component
      *
      * @return void
      */
-    public function __construct($user, $disabledLink=null)
+    public function __construct($user, $disabledLink = null)
     {
         $this->user = $user;
         $this->disabledLink = $disabledLink;
@@ -24,7 +25,7 @@ class Employee extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|string
+     * @return View|string
      */
     public function render()
     {

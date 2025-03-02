@@ -9,6 +9,7 @@ use Razorpay\Api\Api;
 use App\Models\Invoice;
 use App\Traits\MakePaymentTrait;
 use App\Http\Controllers\Controller;
+use App\Models\GlobalSetting;
 use App\Traits\MakeOrderInvoiceTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -102,9 +103,9 @@ class RazorPayController extends Controller
             Session::put('success', __('messages.paymentSuccessful'));
 
             if (!auth()->check() && isset($invoice)) {
-                $redirectRoute = 'front.invoice';
+                $redirectRoute = url()->temporarySignedRoute('front.invoice', now()->addDays(\App\Models\GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash);
 
-                return Reply::redirect(route($redirectRoute, $invoice->hash), __('messages.paymentSuccessful'));
+                return Reply::redirect($redirectRoute, __('messages.paymentSuccessful'));
             }
 
             /** @phpstan-ignore-next-line */
@@ -120,7 +121,7 @@ class RazorPayController extends Controller
             Session::put('success', __('messages.paymentSuccessful'));
 
             if (!auth()->check() && isset($invoice)) {
-                return Reply::redirect(route('front.invoice', $invoice->hash), __('messages.paymentSuccessful'));
+                return Reply::redirect(url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash), __('messages.paymentSuccessful'));
             }
 
             if (isset($invoice)) {

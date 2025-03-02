@@ -12,7 +12,7 @@ class AppreciationListener
     /**
      * Handle the event.
      *
-     * @param  AppreciationEvent $event
+     * @param AppreciationEvent $event
      * @return void
      */
 

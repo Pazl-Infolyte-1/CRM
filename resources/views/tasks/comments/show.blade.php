@@ -58,7 +58,7 @@
                     }
                 @endphp
                 <div class="card-text f-14 text-dark-grey">
-                    <div class="card-text f-14 text-dark-grey text-justify ql-editor">
+                    <div class="card-text f-14 text-dark-grey text-justify">
                         {!! $comment->comment !!}
                     </div>
                     <div id="emoji-{{$comment->id}}">

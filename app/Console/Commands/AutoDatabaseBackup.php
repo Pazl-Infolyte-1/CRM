@@ -37,12 +37,13 @@ class AutoDatabaseBackup extends Command
 
         // If there's no record or if the status is inactive, return false
         if (!$backupSetting || $backupSetting->status == 'inactive') {
-            return false;
+            $this->info('Database Settings is inactive');
+
+            return Command::SUCCESS;
         }
 
         // Get the backups list
-        $dbController = new DatabaseBackupSettingController();
-        $backups = $dbController->getBackup();
+        $backups = (new DatabaseBackupSettingController())->getBackup();
 
         // Reverse the backups array to get the most recent backup
         $backups = array_reverse($backups);
@@ -51,7 +52,7 @@ class AutoDatabaseBackup extends Command
         if (count($backups) == 0) {
             Artisan::call('backup:run', ['--only-db' => true, '--disable-notifications' => true]);
 
-            return true;
+            return Command::SUCCESS;
         }
 
         // Calculate the difference between the most recent backup and today's date
@@ -60,21 +61,25 @@ class AutoDatabaseBackup extends Command
 
         // If the difference is less than the backup_after_days setting, return false
         if ($dateDifference < $backupSetting->backup_after_days) {
-            return false;
+            $this->info('Backup already created for today.');
+
+            return Command::SUCCESS;
         }
 
         // Get the current time in the timezone set in the global setting
         $nowTimeWithTimeZone = now()->setTimezone(global_setting()->timezone)->format('H:i:s');
         $settingHourOfDay = Carbon::createFromFormat('H:i:s', $backupSetting->hour_of_day)->format('H:i:s');
 
+
         // If the current time is equal or greater than the hour_of_day setting, create a backup
         if ($nowTimeWithTimeZone >= $settingHourOfDay) {
+            $this->info('Backup created successfully.');
             Artisan::call('backup:run', ['--only-db' => true, '--disable-notifications' => true]);
 
-            return true;
+            return Command::SUCCESS;
         }
 
-        return false;
+        return Command::SUCCESS;
     }
 
 }

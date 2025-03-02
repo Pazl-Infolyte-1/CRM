@@ -2,33 +2,31 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Helper\Reply;
-use App\Models\Company;
-use Exception;
-use Carbon\Carbon;
-use Froiden\RestAPI\Exceptions\ApiException;
-use PayPal\Api\Item;
-use App\Models\Order;
-use PayPal\Api\Payer;
-use PayPal\Api\Amount;
-use App\Models\Invoice;
-use PayPal\Api\Payment;
-use PayPal\Api\ItemList;
-use PayPal\Api\Agreement;
-use PayPal\Api\Transaction;
-use PayPal\Rest\ApiContext;
-use Illuminate\Http\Request;
-use PayPal\Api\RedirectUrls;
-use App\Traits\MakePaymentTrait;
-use PayPal\Api\PaymentExecution;
 use App\Http\Controllers\Controller;
-use App\Traits\MakeOrderInvoiceTrait;
-use PayPal\Auth\OAuthTokenCredential;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Session;
+use App\Models\Company;
+use App\Models\GlobalSetting;
+use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\Payment as ModelsPayment;
+use App\Traits\MakeOrderInvoiceTrait;
+use App\Traits\MakePaymentTrait;
+use Exception;
+use Froiden\RestAPI\Exceptions\ApiException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Redirect;
-use App\Models\PaymentGatewayCredentials;
+use Illuminate\Support\Facades\Session;
+use PayPal\Api\Agreement;
+use PayPal\Api\Amount;
+use PayPal\Api\Item;
+use PayPal\Api\ItemList;
+use PayPal\Api\Payer;
+use PayPal\Api\Payment;
+use PayPal\Api\PaymentExecution;
+use PayPal\Api\RedirectUrls;
+use PayPal\Api\Transaction;
+use PayPal\Auth\OAuthTokenCredential;
+use PayPal\Rest\ApiContext;
 
 class PaypalController extends Controller
 {
@@ -72,15 +70,10 @@ class PaypalController extends Controller
 
     }
 
-    public function getWebhook(Request $request)
-    {
-        return response()->json(['message' => 'This url need not to be opened directly. Only POST request is accepted. Add this url to your paypal webhook']);
-    }
-
     /**
      * Show the application paywith paypalpage.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Foundation\Application
      */
     public function payWithPaypal()
     {
@@ -88,16 +81,16 @@ class PaypalController extends Controller
     }
 
     /**
-     * Store a details of payment with paypal.
+     * Store a details of payment with PayPal.
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
     /* Id could be order id OR invoice id, differentiate according to type  */
     public function paymentWithpaypal(Request $request, $id)
     {
         $redirectRoute = $request->type == 'order' ? 'orders.show' : 'invoices.show';
-        $redirectRoute = route($redirectRoute, $id);
+        $redirectRoute = url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $id);
 
         return $this->makePaypalPayment($id, $redirectRoute, $request->type);
     }
@@ -108,7 +101,7 @@ class PaypalController extends Controller
         $this->setKeys($invoice->company->hash);
 
         $redirectRoute = 'front.invoice';
-        $redirectRoute = route($redirectRoute, $invoice->hash);
+        $redirectRoute = url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash);
 
         return $this->makePaypalPayment($invoiceId, $redirectRoute);
     }
@@ -169,7 +162,7 @@ class PaypalController extends Controller
             /** Specify return URL **/
             ->setCancelUrl(route('get_paypal_status'));
 
-        /* Make invoice of this order */
+        /* Make invoice for this order */
         if ($paymentType == 'order' && isset($order)) {
             $invoice = $this->makeOrderInvoice($order);
         }
@@ -303,7 +296,7 @@ class PaypalController extends Controller
         if (empty($request->PayerID) || empty($request->token)) {
             Session::put('error', __('messages.paymentFailed'));
 
-            return redirect(route($redirectRoute, $id));
+            return redirect(url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$id]));
         }
 
         $payment = Payment::get($payment_id, $this->api_context);
@@ -338,12 +331,12 @@ class PaypalController extends Controller
 
             Session::put('success', __('messages.paymentSuccessful'));
 
-            return Redirect::route($redirectRoute, $enc_invoice_id);
+            return redirect(url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$enc_invoice_id]));
         }
 
         Session::put('error', __('messages.paymentFailed'));
 
-        return Redirect::route($redirectRoute, $enc_invoice_id);
+        return redirect(url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$enc_invoice_id]));
     }
 
     public function payWithPaypalRecurring(Request $requestObject)
@@ -365,7 +358,7 @@ class PaypalController extends Controller
         /** clear the session payment ID **/
         Session::forget('paypal_payment_id');
 
-        if ($requestObject->get('success') == true && $requestObject->has('token')) {
+        if ($requestObject->get('success') && $requestObject->has('token')) {
             $token = $requestObject->get('token');
             $agreement = new Agreement();
             try {
@@ -385,29 +378,29 @@ class PaypalController extends Controller
 
                     Session::put('success', __('messages.paymentSuccessful'));
 
-                    return Redirect::route($redirectRoute, $enc_invoice_id);
+                    return redirect(url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$enc_invoice_id]));
                 }
 
                 Session::put('error', __('messages.paymentFailed'));
 
-                return Redirect::route($redirectRoute, $enc_invoice_id);
+                return redirect(url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$enc_invoice_id]));
             } catch (Exception $ex) {
                 if (Config::get('app.debug')) {
                     Session::put('error', 'Connection timeout');
 
-                    return Redirect::route($redirectRoute, $enc_invoice_id);
+                    return redirect(url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$enc_invoice_id]));
                 }
                 else {
                     Session::put('error', __('messages.errorOccured'));
 
-                    return Redirect::route($redirectRoute, $enc_invoice_id);
+                    return redirect(url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$enc_invoice_id]));
                 }
             }
         }
-        else if ($requestObject->get('fail') == true) {
+        else if ($requestObject->get('fail')) {
             Session::put('error', __('messages.paymentFailed'));
 
-            return Redirect::route($redirectRoute, $enc_invoice_id);
+            return redirect(url()->temporarySignedRoute($redirectRoute, now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), [$enc_invoice_id]));
         }
 
         abort_403(true);

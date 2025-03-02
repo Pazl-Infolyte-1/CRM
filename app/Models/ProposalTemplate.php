@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\UnitType;
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,7 +30,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read \App\Models\Currency|null $currency
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\ProposalTemplateItem[] $items
  * @property-read int|null $items_count
- * @property-read \App\Models\Lead $lead
  * @method static \Illuminate\Database\Eloquent\Builder|ProposalTemplate newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProposalTemplate newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|ProposalTemplate query()
@@ -76,7 +74,7 @@ class ProposalTemplate extends BaseModel
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Lead::class);
+        return $this->belongsTo(Deal::class);
     }
 
     public function units(): BelongsTo

@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Issue;
 
 use App\Http\Requests\CoreRequest;
-use Illuminate\Foundation\Http\FormRequest;
 
 class StoreIssue extends CoreRequest
 {

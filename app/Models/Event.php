@@ -67,6 +67,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $mention_event_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
+ * @property int|null $parent_id
+ * @method static \Illuminate\Database\Eloquent\Builder|Event whereParentId($value)
  * @mixin \Eloquent
  */
 class Event extends BaseModel
@@ -98,7 +100,7 @@ class Event extends BaseModel
 
     public function files()
     {
-        return $this->hasMany(EventFile::class, 'event_id')->orderBy('id', 'desc');
+        return $this->hasMany(EventFile::class, 'event_id')->orderByDesc('id');
     }
 
     public function mentionUser(): BelongsToMany
@@ -109,6 +111,11 @@ class Event extends BaseModel
     public function mentionEvent(): HasMany
     {
         return $this->hasMany(MentionUser::class, 'event_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'host');
     }
 
 }

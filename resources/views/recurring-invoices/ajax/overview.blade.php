@@ -20,7 +20,7 @@
     <div class="w-100 py-0 py-md-0 ">
         <x-cards.data :title="__('app.recurring') . ' ' . __('app.details')" class=" mt-4">
             <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                     @lang('modules.recurringInvoice.completedTotalInvoice')</p>
                 <p class="mb-0 text-dark-grey f-14 ">
                     @if(!is_null($invoice->billing_cycle))
@@ -39,7 +39,7 @@
             @endif
 
             <x-cards.data-row :label="__('modules.recurringInvoice.nextInvoice').' '.__('app.date')"
-            :value="$invoice->next_invoice_date ? $invoice->next_invoice_date->translatedFormat(company()->date_format) : '----'" />
+            :value="($invoice->recurrings->count() === $invoice->billing_cycle) ? '--' : ($invoice->next_invoice_date ? $invoice->next_invoice_date->translatedFormat(company()->date_format) : '----')" />
         </x-cards.data>
     </div>
 </div>
@@ -85,7 +85,7 @@
                                     <tr>
                                         <td class="bg-light-grey border-right-0 f-w-500">@lang('app.dueDate')</td>
                                         <td class="border-left-0">
-                                            {{ $invoice->due_date->translatedFormat(company()->date_format) }}
+                                            --
                                         </td>
                                     </tr>
                                 </table>
@@ -99,7 +99,7 @@
                         <tr class="inv-unpaid">
                             <td class="f-14 text-dark">
                                 <p class="mb-0 text-left"><span
-                                        class="text-dark-grey text-capitalize">@lang('modules.invoices.billedTo')</span><br>
+                                        class="text-dark-grey ">@lang('modules.invoices.billedTo')</span><br>
 
                                     @php
                                         if ($invoice->project && $invoice->project->client) {
@@ -111,14 +111,14 @@
                                         }
                                     @endphp
 
-                                    {{ $client->name }}<br>
+                                    {{ $client->name_salutation }}<br>
                                     {{ $client->clientDetails->company_name }}<br>
                                     {!! nl2br($client->clientDetails->address) !!}</p>
                             </td>
                             @if ($invoice->shipping_address)
                                 <td class="f-14 text-black">
                                     <p class="mb-0 text-left"><span
-                                            class="text-dark-grey text-capitalize">@lang('app.shippingAddress')</span><br>
+                                            class="text-dark-grey ">@lang('app.shippingAddress')</span><br>
                                         {!! nl2br($client->clientDetails->address) !!}</p>
                                 </td>
                             @endif
@@ -179,7 +179,7 @@
                                     @endforeach
                                     <p class="mb-0">
                                         @if ($invoiceSetting->show_project == 1 && isset($invoice->project->project_name))
-                                            <span class="text-dark-grey text-capitalize">@lang('modules.invoices.projectName')</span><br>
+                                            <span class="text-dark-grey ">@lang('modules.invoices.projectName')</span><br>
                                             {{ $invoice->project->project_name }}
                                         @endif
                                         <br><br>
@@ -332,4 +332,16 @@
 
     </div>
 </div>
+
+@if (isset($fields) && count($fields) > 0)
+    <div class="row mt-4">
+        <!-- TASK STATUS START -->
+        <div class="col-md-12">
+            <x-cards.data>
+                <h5 class="mb-3"> @lang('modules.projects.otherInfo')</h5>
+                <x-forms.custom-field-show :fields="$fields" :model="$invoice"></x-forms.custom-field-show>
+            </x-cards.data>
+        </div>
+    </div>
+@endif
 <!-- INVOICE CARD END -->

@@ -45,6 +45,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
  * @method static \Illuminate\Database\Eloquent\Builder|DiscussionFile whereCompanyId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class DiscussionFile extends BaseModel

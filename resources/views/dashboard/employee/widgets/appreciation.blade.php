@@ -1,7 +1,7 @@
 @if (in_array('appreciation', $activeWidgets) && isset($sidebarUserPermissions['view_appreciation']) && $sidebarUserPermissions['view_appreciation'] != 5 && in_array('employees', user_modules()))
     <!-- EMP DASHBOARD APPRECIATION START -->
     <div class="col-sm-12">
-        <x-cards.data class="e-d-info mb-3" :title="__('app.employee').' '.__('modules.dashboard.appreciation')" padding="false" otherClasses="h-200">
+        <x-cards.data class="e-d-info mb-2" :title="__('app.employee').' '.__('modules.dashboard.appreciation')" padding="false" otherClasses="h-200">
             <x-table class="appreciation-table">
                 @forelse ($appreciations as $appreciation)
                     <tr>

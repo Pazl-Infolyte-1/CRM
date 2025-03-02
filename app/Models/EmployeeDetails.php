@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\MaritalStatus;
 use App\Scopes\ActiveScope;
 use App\Traits\CustomFieldsTrait;
 use App\Traits\HasCompany;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -96,9 +96,10 @@ class EmployeeDetails extends BaseModel
         'last_date' => 'datetime',
         'date_of_birth' => 'datetime',
         'calendar_view	' => 'array',
+        'marital_status' => MaritalStatus::class,
     ];
 
-    protected $with = ['designation', 'company', 'department'];
+    protected $with = ['company:id'];
 
     protected $appends = ['upcoming_birthday'];
 

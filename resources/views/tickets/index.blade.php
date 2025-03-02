@@ -66,7 +66,7 @@
             <!--GROUP START -->
             @if (!in_array('client', user_roles()))
                 <div class="more-filter-items">
-                    <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                    <label class="f-14 text-dark-grey mb-12 "
                         for="usr">@lang('modules.tickets.group')</label>
                     <div class="select-filter mb-4">
                         <div class="select-others">
@@ -91,22 +91,25 @@
             <!-- AGENT START -->
             @if (!in_array('client', user_roles()))
                 <div class="more-filter-items">
-                    <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                    <label class="f-14 text-dark-grey mb-12 "
                         for="usr">@lang('modules.tickets.agent')</label>
                     <div class="select-filter mb-4">
                         <div class="select-others">
-                            <select class="form-control select-picker" name="agent_id" id="agent_id" data-live-search="true"
+
+
+                            <select class="form-control select-picker" name="agent_id" id="agent" data-live-search="true"
                                 data-container="body" data-size="8">
                                 @if ($groups)
-                                    @if ($viewPermission == 'all')
+                                    {{-- @if ($viewPermission == 'all') --}}
                                     <option value="all">@lang('app.all')</option>
-                                    @endif
+                                    {{-- @endif --}}
 
                                     @foreach ($groups as $group)
                                         <optgroup label="{{ $group->group_name }}">
                                             @foreach ($group->enabledAgents as $agent)
                                                 @if($agent->user)
-                                                    <x-user-option :user="$agent->user" :selected="(request('agent') == $agent->user->id) || (request('agent') == 'me' && $agent->user->id == user()->id)" />
+                                                    {{-- <x-user-option :user="$agent->user" :selected="(request('agent') == $agent->user->id) || (request('agent') == 'me' && $agent->user->id == user()->id)" /> --}}
+                                                        <x-user-option :user="$agent->user"  />
                                                 @endif
                                             @endforeach
                                         </optgroup>
@@ -121,7 +124,7 @@
 
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.priority')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tasks.priority')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="priority" id="priority" data-live-search="true"
@@ -136,7 +139,7 @@
                 </div>
             </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize"
+                <label class="f-14 text-dark-grey mb-12 "
                     for="usr">@lang('modules.tickets.channelName')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -150,7 +153,7 @@
                 </div>
             </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.invoices.type')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.invoices.type')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="type_id" data-live-search="true" data-size="8"
@@ -165,12 +168,12 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tickets.tags')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tickets.tags')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" id="tag_id" data-live-search="true" data-size="8"
-                            data-container="body">
-                            <option value="all">@lang('app.all')</option>
+                        <select class="form-control select-picker" multiple="multiple" name="tagId[]" id="tag_id"
+                            data-live-search="true" data-size="8" data-container="body">
+                            <option value="all" selected>@lang('app.all')</option>
                             @foreach ($tags as $tag)
                                 <option value="{{ $tag->id }}">{{ $tag->tag_name }}</option>
                             @endforeach
@@ -180,7 +183,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="project" data-live-search="true" data-size="8"
@@ -206,7 +209,7 @@ $addTicketPermission = user()->permission('add_tickets');
 @section('content')
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
-        <div class="row row-cols-lg-5 my-3">
+        <div class="row row-cols-lg-5">
 
             <div class="col mb-4">
                 <a href="javascript:;" data-status="all" class="widget-filter-status">
@@ -225,7 +228,7 @@ $addTicketPermission = user()->permission('add_tickets');
             <div class="col mb-4">
                 <a href="javascript:;" data-status="open" class="widget-filter-status">
                     <x-cards.widget :title="__('modules.tickets.totalOpenTickets')" value="0" icon="ticket-alt"
-                        widgetId="openTickets" />
+                        widgetId="openTickets" class="border border-additional-grey"/>
                 </a>
             </div>
 
@@ -247,7 +250,7 @@ $addTicketPermission = user()->permission('add_tickets');
 
         <!-- Add Task Export Buttons Start -->
         <div class="d-flex justify-content-between action-bar">
-            <div id="table-actions" class="flex-grow-1 align-items-center mt-3">
+            <div id="table-actions" class="flex-grow-1 align-items-center ">
                 @if ($addTicketPermission == 'all' || $addTicketPermission == 'added')
                     <x-forms.link-primary :link="route('tickets.create')" class="mr-3 openRightModal float-left"
                         icon="plus">
@@ -305,120 +308,9 @@ $addTicketPermission = user()->permission('add_tickets');
 
         var ticketFilterStatus = "{{ request('dashboard-ticket-status') }}";
 
-        $('#ticket-table').on('preXhr.dt', function(e, settings, data) {
-
-            var dateRangePicker = $('#datatableRange').data('daterangepicker');
-            var startDate = $('#datatableRange').val();
-
-            if (startDate == '') {
-                startDate = null;
-                endDate = null;
-            } else {
-                startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
-                endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
-            }
-
-            @if (request('startDate') != '' && request('endDate') != '')
-                startDate = '{{ request('startDate') }}';
-                endDate = '{{ request('endDate') }}';
-            @endif
-
-            var agentId = $('#agent_id').val();
-            if (agentId == "") {
-                agentId = 0;
-            }
-
-            var groupId = $('#group_id').val();
-            if (groupId == "") {
-                groupId = 0;
-            }
-
-            var status = $('#ticket-status').val();
-            if (status == "") {
-                status = 0;
-            }
-
-            var priority = $('#priority').val();
-            if (priority == "") {
-                priority = 0;
-            }
-
-            var channelId = $('#channel_id').val();
-            if (channelId == "") {
-                channelId = 0;
-            }
-
-            var typeId = $('#type_id').val();
-            if (typeId == "") {
-                typeId = 0;
-            }
-
-            var tagId = $('#tag_id').val();
-            if (tagId == "") {
-                tagId = 0;
-            }
-
-            var projectID = $('#project').val();
-            if (projectID == "") {
-                projectID = 0;
-            }
-
-            var searchText = $('#search-text-field').val();
-
-            data['startDate'] = startDate;
-            data['endDate'] = endDate;
-            data['groupId'] = groupId;
-            data['agentId'] = agentId;
-            data['priority'] = priority;
-            data['channelId'] = channelId;
-            data['typeId'] = typeId;
-            data['tagId'] = tagId;
-            data['projectID'] = projectID;
-            data['ticketStatus'] = status;
-            data['searchText'] = searchText;
-            if (ticketFilterStatus != '') {
-                data['ticketFilterStatus'] = ticketFilterStatus;
-            }
-
-
-        });
         const showTable = () => {
-            window.LaravelDataTables["ticket-table"].draw(false);
-            refreshCount();
-        }
-
-        $('#agent_id, #ticket-status, #priority, #channel_id, #type_id, #tag_id, #group_id, #project')
-            .on('change keyup',
-                function() {
-                    if ($('#ticket-status').val() != "not finished") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#agent_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#priority').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#channel_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#type_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#tag_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#group_id').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#project').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else {
-                        $('#reset-filters').addClass('d-none');
-                        showTable();
-                    }
-                });
+            window.LaravelDataTables["ticket-table"].draw(true);
+        };
 
         $('#search-text-field').on('keyup', function() {
             if ($('#search-text-field').val() != "") {
@@ -430,6 +322,10 @@ $addTicketPermission = user()->permission('add_tickets');
         $('.widget-filter-status').click(function() {
             var status = $(this).data('status');
             $('#ticket-status').val(status);
+
+            $('.widget-filter-status').find('div:first').removeClass('border border-additional-grey')
+            $(this).find('div:first').addClass('border border-additional-grey')
+
             $('#ticket-status').selectpicker('refresh');
             ticketFilterStatus = '';
             showTable();
@@ -534,34 +430,6 @@ $addTicketPermission = user()->permission('add_tickets');
             });
         });
 
-        $('#ticket-table').on('change', '.change-status', function() {
-            var url = "{{ route('tickets.change-status') }}";
-            var token = "{{ csrf_token() }}";
-            var id = $(this).data('ticket-id');
-            var status = $(this).val();
-
-            if (id != "" && status != "") {
-                $.easyAjax({
-                    url: url,
-                    type: "POST",
-                    container: '.content-wrapper',
-                    blockUI: true,
-                    data: {
-                        '_token': token,
-                        ticketId: id,
-                        status: status,
-                    },
-                    success: function(data) {
-                        if(data.status == 'success') {
-                            refreshCount();
-                        }
-                        window.LaravelDataTables["ticket-table"].draw(false);
-                    }
-                });
-
-            }
-        });
-
         const applyQuickAction = () => {
             var rowdIds = $("#ticket-table input:checkbox:checked").map(function() {
                 return $(this).val();
@@ -587,96 +455,253 @@ $addTicketPermission = user()->permission('add_tickets');
             })
         };
 
-        function refreshCount() {
-            var dateRangePicker = $('#datatableRange').data('daterangepicker');
-            var startDate = $('#datatableRange').val();
-
-            if (startDate == '') {
-                startDate = null;
-                endDate = null;
-            } else {
-                startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
-                endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
-            }
-
-            // @if (!is_null(request('status')) && !is_null(request('startDate')) && !is_null(request('endDate')))
-            //     startDate = '{{ request('startDate') }}';
-            //     endDate = '{{ request('endDate') }}';
-            // @endif
-
-            if (endDate == '') {
-                endDate = null;
-            }
-
-            var groupId = $('#group_id').val();
-            if (groupId == "") {
-                groupId = 0;
-            }
-
-            var agentId = $('#agent_id').val();
-            if (agentId == "") {
-                agentId = 0;
-            }
-
-            var status = $('#ticket-status').val();
-            if (status == "") {
-                status = 0;
-            }
-
-
-            var priority = $('#priority').val();
-            if (priority == "") {
-                priority = 0;
-            }
-
-            var channelId = $('#channel_id').val();
-            if (channelId == "") {
-                channelId = 0;
-            }
-
-            var typeId = $('#type_id').val();
-            if (typeId == "") {
-                typeId = 0;
-            }
-
-            var url = "{{ route('tickets.refresh_count') }}";
-            $.easyAjax({
-                type: 'POST',
-                url: url,
-                data: {
-                    'startDate': startDate,
-                    'endDate': endDate,
-                    'agentId': agentId,
-                    'ticketStatus': status,
-                    'priority': priority,
-                    'channelId': channelId,
-                    'typeId': typeId,
-                    'groupId': groupId,
-                    '_token': '{{ csrf_token() }}'
-                },
-                success: function(response) {
-                    $('#totalTickets').html(response.totalTickets);
-                    $('#closedTickets').html(response.closedTickets);
-                    $('#openTickets').html(response.openTickets);
-                    $('#pendingTickets').html(response.pendingTickets);
-                    $('#resolvedTickets').html(response.resolvedTickets);
-                }
-            });
-        }
-
         $('body').on('click', '#add-ticket', function() {
             window.location.href = "{{ route('ticket-form.index') }}";
         });
 
         $( document ).ready(function() {
+
+            const tagSelect = $('#tag_id');
+
+            // Initialize the selectpicker with all options selected
+            tagSelect.find('option').prop('selected', true);
+            tagSelect.selectpicker('refresh');
+
+            // Handle changes in the selectpicker
+            tagSelect.on('changed.bs.select', function(e, clickedIndex, isSelected, previousValue) {
+                const selectedValues = tagSelect.val() || [];
+                const allOption = tagSelect.find('option[value="all"]');
+
+                // If 'all' is selected or deselected
+                if (clickedIndex === 0) {
+                    if (isSelected) {
+                        // 'All' selected, select all options
+                        tagSelect.find('option').prop('selected', true);
+                    } else {
+                        // 'All' deselected, deselect all options
+                        tagSelect.find('option').prop('selected', false);
+                    }
+                } else {
+                    if (isSelected) {
+                        // Check if all other options are selected
+                        const allSelected = selectedValues.length === tagSelect.find('option').length - 1;
+                    }
+                }
+
+                tagSelect.selectpicker('refresh');
+                updateFilterValues();
+            });
+
+            // Function to update filters and trigger table redraw
+            function updateFilterValues() {
+                const filters = [
+                    $('#ticket-status').val(),
+                    $('#agent').val(),
+                    $('#priority').val(),
+                    $('#channel_id').val(),
+                    $('#type_id').val(),
+                    $('#tag_id').val(),
+                    $('#group_id').val(),
+                    $('#project').val()
+                ];
+
+                if (filters.some(filter => filter !== "all" && filter !== "not finished")) {
+                    $('#reset-filters').removeClass('d-none');
+                } else {
+                    $('#reset-filters').addClass('d-none');
+                }
+                refreshCount();
+                showTable();
+            }
+
+            // Initialize DataTable with preXhr.dt event to handle filtering
+            $('#ticket-table').on('preXhr.dt', function(e, settings, data) {
+                var dateRangePicker = $('#datatableRange').data('daterangepicker');
+                var startDate = $('#datatableRange').val();
+
+                if (startDate == '') {
+                    startDate = null;
+                    endDate = null;
+                } else {
+                    startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
+                    endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
+                }
+
+                @if (request('startDate') != '' && request('endDate') != '')
+                    startDate = '{{ request('startDate') }}';
+                    endDate = '{{ request('endDate') }}';
+                @endif
+
+                var agentId = $('#agent').val();
+                var groupId = $('#group_id').val();
+                var status = $('#ticket-status').val() || 0;
+                var priority = $('#priority').val() || 0;
+                var channelId = $('#channel_id').val() || 0;
+                var typeId = $('#type_id').val() || 0;
+                var projectID = $('#project').val() || 0;
+                var tagId = tagSelect.val(); // Get selected tag IDs
+
+                var searchText = $('#search-text-field').val();
+
+                // Set the data to be sent with the AJAX request
+                data['startDate'] = startDate;
+                data['endDate'] = endDate;
+                data['groupId'] = groupId;
+                data['agentId'] = agentId;
+                data['priority'] = priority;
+                data['channelId'] = channelId;
+                data['typeId'] = typeId;
+                data['tagId'] = tagId; // Assign selected tags to data
+                data['projectID'] = projectID;
+                data['ticketStatus'] = status;
+                data['searchText'] = searchText;
+
+                if (ticketFilterStatus != '') {
+                    data['ticketFilterStatus'] = ticketFilterStatus;
+                }
+            });
+
+            // Attach change and keyup events to filter inputs
+            $('#agent, #ticket-status, #priority, #channel_id, #type_id, #tag_id, #group_id, #project')
+                .on('change keyup', function() {
+                    updateFilterValues();
+                });
+
+            function refreshCount() {
+                var dateRangePicker = $('#datatableRange').data('daterangepicker');
+                var startDate = $('#datatableRange').val();
+
+                if (startDate == '') {
+                    startDate = null;
+                    endDate = null;
+                } else {
+                    startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
+                    endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
+                }
+
+                // @if (!is_null(request('status')) && !is_null(request('startDate')) && !is_null(request('endDate')))
+                //     startDate = '{{ request('startDate') }}';
+                //     endDate = '{{ request('endDate') }}';
+                // @endif
+
+                if (endDate == '') {
+                    endDate = null;
+                }
+
+                var groupId = $('#group_id').val();
+                if (groupId == "") {
+                    groupId = 0;
+                }
+
+                var agentId = $('#agent').val();
+                if (agentId == "") {
+                    agentId = 0;
+                }
+
+                var status = $('#ticket-status').val();
+                if (status == "") {
+                    status = 0;
+                }
+
+
+                var priority = $('#priority').val();
+                if (priority == "") {
+                    priority = 0;
+                }
+
+                var channelId = $('#channel_id').val();
+                if (channelId == "") {
+                    channelId = 0;
+                }
+
+                var typeId = $('#type_id').val();
+                if (typeId == "") {
+                    typeId = 0;
+                }
+
+                var projectID = $('#project').val();
+                if (projectID == "") {
+                    projectID = 0;
+                }
+
+                var tagId = tagSelect.val(); // Get selected tag IDs
+
+                var url = "{{ route('tickets.refresh_count') }}";
+                $.easyAjax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        'startDate': startDate,
+                        'endDate': endDate,
+                        'agentId': agentId,
+                        'ticketStatus': status,
+                        'priority': priority,
+                        'channelId': channelId,
+                        'typeId': typeId,
+                        'tagId': tagId,
+                        'groupId': groupId,
+                        'projectID': projectID,
+                        '_token': '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        $('#totalTickets').html(response.totalTickets);
+                        $('#closedTickets').html(response.closedTickets);
+                        $('#openTickets').html(response.openTickets);
+                        $('#pendingTickets').html(response.pendingTickets);
+                        $('#resolvedTickets').html(response.resolvedTickets);
+                    }
+                });
+            }
+
+            $('#ticket-table').on('change', '.change-status', function() {
+                var url = "{{ route('tickets.change-status') }}";
+                var token = "{{ csrf_token() }}";
+                var id = $(this).data('ticket-id');
+                var status = $(this).val();
+
+                if (id != "" && status != "") {
+                    $.easyAjax({
+                        url: url,
+                        type: "POST",
+                        container: '.content-wrapper',
+                        blockUI: true,
+                        data: {
+                            '_token': token,
+                            ticketId: id,
+                            status: status,
+                        },
+                        success: function(data) {
+                            if(data.status == 'success') {
+                                refreshCount();
+                            }
+                            window.LaravelDataTables["ticket-table"].draw(true);
+                        }
+                    });
+
+                }
+            });
+
+            // Handle case when all options are deselected and then 'all' is selected
+            tagSelect.on('changed.bs.select', function() {
+                const selectedValues = tagSelect.val() || [];
+                const allOption = tagSelect.find('option[value="all"]');
+
+                if (selectedValues.includes('all')) {
+                    // If 'all' is selected, only 'all' should be selected
+                    if (selectedValues.length === 1) {
+                        tagSelect.find('option').not(allOption).prop('selected', false);
+                    }
+                }
+            });
+
             @if (!is_null(request('startDate')) && !is_null(request('endDate')))
-            $('#datatableRange').val('{{ request('startDate') }}' +
-            ' @lang("app.to") ' + '{{ request('endDate') }}');
-            $('#datatableRange').data('daterangepicker').setStartDate("{{ request('startDate') }}");
-            $('#datatableRange').data('daterangepicker').setEndDate("{{ request('endDate') }}");
+                $('#datatableRange').val('{{ request('startDate') }}' +
+                ' @lang("app.to") ' + '{{ request('endDate') }}');
+                $('#datatableRange').data('daterangepicker').setStartDate("{{ request('startDate') }}");
+                $('#datatableRange').data('daterangepicker').setEndDate("{{ request('endDate') }}");
                 refreshCount();
             @else
-            refreshCount();
+                refreshCount();
             @endif
         });
     </script>

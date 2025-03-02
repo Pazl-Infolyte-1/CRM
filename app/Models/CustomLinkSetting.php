@@ -32,6 +32,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class CustomLinkSetting extends BaseModel
 {
-    use HasFactory, HasCompany;
 
+    use HasFactory, HasCompany;
 }

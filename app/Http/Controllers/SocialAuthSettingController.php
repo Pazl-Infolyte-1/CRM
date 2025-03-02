@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helper\Reply;
+use App\Models\GlobalSetting;
 use App\Models\SocialAuthSetting;
 use App\Http\Requests\Admin\SocialAuth\UpdateRequest;
 
@@ -15,7 +16,7 @@ class SocialAuthSettingController extends AccountBaseController
         $this->pageTitle = 'app.menu.socialLogin';
         $this->activeSettingMenu = 'social_auth_settings';
         $this->middleware(function ($request, $next) {
-            abort_403(!(user()->permission('manage_social_login_setting') == 'all'));
+            abort_403(GlobalSetting::validateSuperAdmin('manage_superadmin_social_settings') && user()->permission('manage_social_login_setting') != 'all');
             return $next($request);
         });
     }
@@ -35,10 +36,9 @@ class SocialAuthSettingController extends AccountBaseController
 
         $this->activeTab = $tab ?: 'google';
 
-        if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
 
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
         }
 
         return view('social-login-settings.index', $this->data);

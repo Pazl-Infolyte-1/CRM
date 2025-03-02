@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * App\Models\LeaveSetting
@@ -25,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder|LeaveSetting whereUpdatedAt($value)
  * @mixin \Eloquent
  */
-class LeaveSetting extends Model
+class LeaveSetting extends BaseModel
 {
 
     use HasFactory, HasCompany;

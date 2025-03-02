@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Helper\Reply;
-use App\Models\TicketAgentGroups;
 use App\Models\TicketChannel;
 use App\Models\TicketEmailSetting;
 use App\Models\TicketGroup;
 use App\Models\TicketReplyTemplate;
 use App\Models\TicketType;
 use App\Models\User;
+use App\Models\LeadSetting;
+use App\Models\TicketSettingForAgents;
+use Illuminate\Http\Request;
 
 class TicketSettingController extends AccountBaseController
 {
@@ -32,7 +34,8 @@ class TicketSettingController extends AccountBaseController
      */
     public function index()
     {
-        $this->agents = User::whereHas('agent')->with('agentGroup', 'agent')->get();
+        $this->agents = User::with('employeeDetail.designation:id,name')->whereHas('agent')->with('agentGroup', 'agent')->get();
+
         $this->employees = User::doesntHave('agent')
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
@@ -45,7 +48,8 @@ class TicketSettingController extends AccountBaseController
         $this->templates = TicketReplyTemplate::all();
         $this->channels = TicketChannel::all();
         $this->ticketEmailSetting = TicketEmailSetting::first();
-
+        $this->ticketSettings = LeadSetting::select('ticket_round_robin_status')->first();
+        $this->ticketAgentSettings = TicketSettingForAgents::first();
 
         $this->view = 'ticket-settings.ajax.agent';
 
@@ -64,6 +68,10 @@ class TicketSettingController extends AccountBaseController
             $this->pageTitle = 'app.menu.replyTemplates';
             $this->view = 'ticket-settings.ajax.reply-template';
             break;
+        case 'round-robin':
+            $this->pageTitle = 'modules.deal.dealMethod';
+            $this->view = 'ticket-settings.ajax.round-robin';
+            break;
         case 'email-sync':
             $this->pageTitle = 'app.menu.emailSync';
             $this->view = 'ticket-settings.ajax.email-sync';
@@ -71,6 +79,10 @@ class TicketSettingController extends AccountBaseController
         case 'group-manage':
             $this->pageTitle = 'app.menu.groupManage';
             $this->view = 'ticket-settings.ajax.group-manage';
+            break;
+        case 'ticket-agent-setting':
+            $this->pageTitle = 'modules.deal.ticketSetting';
+            $this->view = 'ticket-settings.ajax.ticket-agent-setting';
             break;
         default:
             $this->pageTitle = 'app.menu.ticketAgents';
@@ -87,6 +99,45 @@ class TicketSettingController extends AccountBaseController
 
         return view('ticket-settings.index', $this->data);
 
+    }
+
+    public function updateTicketSettingForAgent($id, Request $request)
+    {
+        $ticketSetting = TicketSettingForAgents::first();
+
+        if(!$ticketSetting){
+            $ticketSetting = new TicketSettingForAgents;
+            $ticketSetting->company_id = $id;
+        }
+
+        $ticketSetting->user_id = user()->id;
+        $ticketSetting->ticket_scope = $request->ticketScope;
+        $ticketSetting->group_id = $request->groupId;
+        $ticketSetting->updated_by = user()->id;
+
+        $ticketSetting->save();
+
+        return reply::success(__('messages.updateSuccess'));
+
+    }
+
+    public function updateTicketSettingStatus($id, Request $request)
+    {
+        $leadSetting = LeadSetting::where('company_id', $id)->first();
+
+        if(!$leadSetting){
+            $leadSetting = new LeadSetting;
+            $leadSetting->company_id = $id;
+            $leadSetting->user_id = $request->userId;
+        }
+
+        if($request->requestFromTicket === 'yes') {
+            $leadSetting->ticket_round_robin_status = $request->lead_setting_status;
+        }
+
+        $leadSetting->save();
+
+        return reply::success(__('messages.updateSuccess'));
     }
 
 }

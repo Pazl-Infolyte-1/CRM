@@ -39,6 +39,7 @@ class Handler extends ExceptionHandler
      */
     public function register()
     {
+
         $this->renderable(function (ApiException $e, $request) {
             return response()->json($e, 403);
         });

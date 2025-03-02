@@ -2,24 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProductFiles;
 use App\Models\Tax;
 use App\Helper\Files;
 use App\Helper\Reply;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\UnitType;
+use App\Models\OrderCart;
+use App\Models\ProductFiles;
 use Illuminate\Http\Request;
+use App\Imports\ProductImport;
+use App\Jobs\ImportProductJob;
 use App\Models\ProductCategory;
 use App\Models\ProductSubCategory;
 use App\DataTables\ProductsDataTable;
+use App\Http\Controllers\AccountBaseController;
 use App\Http\Requests\Product\StoreProductRequest;
+use App\Http\Requests\Admin\Employee\ImportRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
-use App\Models\OrderCart;
-use App\Models\UnitType;
-use Illuminate\Support\Facades\Session;
+use App\Http\Requests\Admin\Employee\ImportProcessRequest;
+use App\Traits\ImportExcel;
 
 class ProductController extends AccountBaseController
 {
+    use ImportExcel;
 
     public function __construct()
     {
@@ -75,18 +81,16 @@ class ProductController extends AccountBaseController
 
         $this->unit_types = UnitType::all();
 
-        if ($product->getCustomFieldGroupsWithFields()) {
-            $this->fields = $product->getCustomFieldGroupsWithFields()->fields;
-        }
+        $getCustomFieldGroupsWithFields = $product->getCustomFieldGroupsWithFields();
 
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
+        $this->view = 'products.ajax.create';
 
         if (request()->ajax()) {
-            $html = view('products.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'products.ajax.create';
 
         return view('products.create', $this->data);
     }
@@ -107,6 +111,7 @@ class ProductController extends AccountBaseController
         $product->taxes = $request->tax ? json_encode($request->tax) : null;
         $product->description = trim_editor($request->description);
         $product->hsn_sac_code = $request->hsn_sac_code;
+        $product->sku = $request->sku;
         $product->unit_id = $request->unit_type;
         $product->allow_purchase = $request->purchase_allow == 'no';
         $product->downloadable = $request->downloadable == 'true';
@@ -168,17 +173,17 @@ class ProductController extends AccountBaseController
 
         $this->taxValue = implode(', ', $taxes);
 
-        if ($this->product->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->product->getCustomFieldGroupsWithFields()->fields;
-        }
+        $getCustomFieldGroupsWithFields = $this->product->getCustomFieldGroupsWithFields();
 
-        if (request()->ajax()) {
-            $html = view('products.ajax.show', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $this->view = 'products.ajax.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('products.create', $this->data);
 
@@ -219,17 +224,17 @@ class ProductController extends AccountBaseController
 
         $this->images = json_encode($images);
 
-        if ($this->product->getCustomFieldGroupsWithFields()) {
-            $this->fields = $this->product->getCustomFieldGroupsWithFields()->fields;
-        }
+        $getCustomFieldGroupsWithFields = $this->product->getCustomFieldGroupsWithFields();
 
-        if (request()->ajax()) {
-            $html = view('products.ajax.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
         }
 
         $this->view = 'products.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('products.create', $this->data);
 
@@ -252,6 +257,7 @@ class ProductController extends AccountBaseController
         $product->price = $request->price;
         $product->taxes = $request->tax ? json_encode($request->tax) : null;
         $product->hsn_sac_code = $request->hsn_sac_code;
+        $product->sku = $request->sku;
         $product->unit_id = $request->unit_type;
         $product->description = trim_editor($request->description);
         $product->allow_purchase = ($request->purchase_allow == 'no') ? true : false;
@@ -407,12 +413,12 @@ class ProductController extends AccountBaseController
     public function emptyCart()
     {
 
+        $this->view = 'products.ajax.empty_cart';
+
         if (request()->ajax()) {
-            $html = view('products.ajax.empty_cart', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'products.ajax.empty_cart';
         return view('products.create', $this->data);
 
     }
@@ -427,14 +433,11 @@ class ProductController extends AccountBaseController
 
         $this->products = OrderCart::where('client_id', '=', user()->id)->get();
 
-        if (request()->ajax()) {
-
-            $html = view('products.ajax.cart', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'products.ajax.cart';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('products.create', $this->data);
     }
@@ -450,6 +453,42 @@ class ProductController extends AccountBaseController
         }
 
         return Reply::dataOnly(['products' => $option]);
+    }
+
+    public function importProduct()
+    {
+        $this->pageTitle = __('app.importExcel') . ' ' . __('app.menu.product');
+
+        $this->addPermission = user()->permission('add_product');
+        abort_403(!in_array($this->addPermission, ['all', 'added']));
+
+        $this->view = 'products.ajax.import';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
+        return view('products.create', $this->data);
+    }
+
+    public function importStore(ImportRequest $request)
+    {
+        $rvalue = $this->importFileProcess($request, ProductImport::class);
+
+        if($rvalue == 'abort'){
+            return Reply::error(__('messages.abortAction'));
+        }
+        
+        $view = view('products.ajax.import_progress', $this->data)->render();
+
+        return Reply::successWithData(__('messages.importUploadSuccess'), ['view' => $view]);
+    }
+
+    public function importProcess(ImportProcessRequest $request)
+    {
+        $batch = $this->importJobProcess($request, ProductImport::class, ImportProductJob::class);
+
+        return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);
     }
 
 }

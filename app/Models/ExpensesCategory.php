@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -33,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \App\Models\Company|null $company
  * @property-read \App\Models\Expense|null $expenses
  * @method static \Illuminate\Database\Eloquent\Builder|ExpensesCategory whereCompanyId($value)
+ * @property-read int|null $expenses_count
  * @mixin \Eloquent
  */
 class ExpensesCategory extends BaseModel
