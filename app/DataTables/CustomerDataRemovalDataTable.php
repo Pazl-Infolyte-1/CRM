@@ -2,8 +2,10 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\LeadStatus;
 use App\Models\RemovalRequest;
+use App\Models\User;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -41,15 +43,26 @@ class CustomerDataRemovalDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->addColumn('status', function ($row) {
-                return match ($row->status) {
-                    'pending' => '<label class="label label-info">' . __('app.pending') . '</label>',
-                    'approved' => '<label class="label label-success">' . __('app.approved') . '</label>',
-                    'rejected' => '<label class="label label-danger">' . __('app.rejected') . '</label>',
-                    default => ''
-                };
+            ->addColumn('status', function ($row) use ($status) {
+
+                if ($row->status == 'pending') {
+                    $status = '<label class="label label-info">' . __('app.pending') . '</label>';
+                }
+                elseif ($row->status == 'approved') {
+                    $status = '<label class="label label-success">' . __('app.approved') . '</label>';
+                }
+                elseif ($row->status == 'rejected') {
+                    $status = '<label class="label label-danger">' . __('app.rejected') . '</label>';
+                }
+
+                return $status;
             })
-            ->editColumn('created_at', fn ($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format))
+            ->editColumn(
+                'created_at',
+                function ($row) {
+                    return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
+                }
+            )
             ->rawColumns(['status', 'action', 'status']);
     }
 

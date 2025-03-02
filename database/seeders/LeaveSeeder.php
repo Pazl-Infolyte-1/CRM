@@ -5,6 +5,7 @@ use App\Models\Leave;
 use App\Models\LeaveType;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class LeaveSeeder extends Seeder
 {

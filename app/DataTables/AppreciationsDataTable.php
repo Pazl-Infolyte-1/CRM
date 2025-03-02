@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Models\Notice;
 use App\Models\Appreciation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -33,27 +34,25 @@ class AppreciationsDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
-                    <a href="' . route('appreciations.show', [$row->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>';
+                    <a href="' . route('appreciations.show', [$row->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
+                    <div class="dropdown">
+                        <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
+                            id="dropdownMenuLink-' . $row->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="icon-options-vertical icons"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
 
-                if (($this->editAppreciationPermission == 'all' || ($this->editAppreciationPermission == 'added' && user()->id == $row->added_by) || ($this->editAppreciationPermission == 'owned' && user()->id == $row->award_to) || ($this->editAppreciationPermission == 'both' && ($row->added_by == user()->id || user()->id == $row->award_to))) || ($this->deleteAppreciationPermission == 'all' || ($this->deleteAppreciationPermission == 'added' && user()->id == $row->added_by) || ($this->deleteAppreciationPermission == 'owned' && user()->id == $row->award_to) || ($this->deleteAppreciationPermission == 'both' && ($row->added_by == user()->id || user()->id == $row->award_to)))) {
-                    $action .= '<div class="dropdown">
-                    <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
-                        id="dropdownMenuLink-' . $row->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="icon-options-vertical icons"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
-                }
-
-                if ($this->editAppreciationPermission == 'all' ||
-                    ($this->editAppreciationPermission == 'added' && user()->id == $row->added_by) ||
-                    ($this->editAppreciationPermission == 'owned' && user()->id == $row->award_to) ||
-                    ($this->editAppreciationPermission == 'both' && ($row->added_by == user()->id || user()->id == $row->award_to))
-                ) {
-                    $action .= '<a class="dropdown-item openRightModal" href="' . route('appreciations.edit', [$row->id]) . '"> <i class="fa fa-edit mr-2"></i>' . trans('app.edit') . '</a>';
+                if ($this->editAppreciationPermission == 'all' || ($this->editAppreciationPermission == 'added' && user()->id == $row->added_by) || ($this->editAppreciationPermission == 'owned' && user()->id == $row->award_to) || ($this->editAppreciationPermission == 'both' && ($row->added_by == user()->id || user()->id == $row->award_to))) {
+                    $action .= '<a class="dropdown-item openRightModal" href="' . route('appreciations.edit', [$row->id]) . '">
+                                <i class="fa fa-edit mr-2"></i>
+                                ' . trans('app.edit') . '
+                            </a>';
                 }
 
                 if ($this->deleteAppreciationPermission == 'all' || ($this->deleteAppreciationPermission == 'added' && user()->id == $row->added_by) || ($this->deleteAppreciationPermission == 'owned' && user()->id == $row->award_to) || ($this->deleteAppreciationPermission == 'both' && ($row->added_by == user()->id || user()->id == $row->award_to))) {
@@ -69,14 +68,54 @@ class AppreciationsDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->editColumn('award_id', fn($row) => isset($row->award?->awardIcon) ? view('components.award-icon', ['award' => $row->award]) . ' <span class="align-self-center ml-2">' . $row->award->title . '</span>' : '-')
-            ->addColumn('appreciation_type', fn($row) => $row->award ? $row->award->title : '-')
-            ->addColumn('award_date', fn($row) => $row->award_date->translatedFormat($this->company->date_format))
-            ->addColumn('award_to', fn($row) => view('components.employee', ['user' => $row->awardTo]))
-            ->addColumn('award_employee', fn($row) => $row->awardTo->name)
+            ->editColumn(
+                'award_id',
+                function ($row) {
+                    if (isset($row->award->awardIcon)) {
+                        return view('components.award-icon', [
+                            'award' => $row->award
+                        ]).' <span class="align-self-center ml-2">' . mb_ucwords($row->award->title) . '</span>'; /** @phpstan-ignore-line */
+                    }
+
+                    return '-';
+
+                }
+            )
+            ->addColumn(
+                'appreciation_type',
+                function ($row) {
+                    if ($row->award) {
+                        return $row->award->title;
+                    }
+
+                    return '-';
+                }
+            )
+            ->editColumn(
+                'award_date',
+                function ($row) {
+                    return $row->award_date->translatedFormat($this->company->date_format);
+                }
+            )
+            ->editColumn(
+                'award_to',
+                function ($row) {
+                    return view('components.employee', [
+                        'user' => $row->awardTo
+                    ]);
+                }
+            )
+            ->addColumn(
+                'award_employee',
+                function ($row) {
+                    return $row->awardTo->name;
+                }
+            )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['check', 'action', 'award_id', 'award_to']);
     }
 
@@ -87,18 +126,9 @@ class AppreciationsDataTable extends BaseDataTable
     public function query(Appreciation $model)
     {
         $request = $this->request();
-        $model = $model->with([
-            'award',
-            'award.awardIcon',
-            'awardTo',
-            'awardTo.employeeDetail' => function ($query) {
-                $query->select('user_id', 'added_by', 'designation_id', 'employee_id', 'joining_date')
-                    ->with('reportingTo:id,name,image', 'designation:id,name');
-            },
-            'awardTo.session',
-        ])
-            ->select('id', 'award_id', 'award_to', 'award_date', 'image', 'summary', 'created_at')
-            ->join('awards', 'awards.id', '=', 'appreciations.award_id')
+        $model = $model->with(['award', 'award.awardIcon', 'awardTo'])->select('id', 'award_id', 'award_to', 'award_date', 'image', 'summary', 'created_at');
+
+        $model->join('awards', 'awards.id', '=', 'appreciations.award_id')
             ->join('users', 'users.id', '=', 'appreciations.award_to');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
@@ -122,6 +152,7 @@ class AppreciationsDataTable extends BaseDataTable
         if ($this->viewAppreciationPermission == 'both') {
             $model->where(function ($q) {
                 $q->where('appreciations.added_by', '=', user()->id);
+
                 $q->orWhere('appreciations.award_to', '=', user()->id);
             });
         }

@@ -5,7 +5,7 @@
 </div>
 
 @if ($cannotLogin == false)
-<x-form id="clockInForm">
+<x-form id="startTimerForm">
     <div class="modal-body">
             <div class="row justify-content-between">
                 <div class="col" id="task_div">
@@ -18,7 +18,7 @@
                             <x-forms.select fieldId="location" :fieldLabel="__('app.location')" fieldName="location"
                                             search="true">
                                 @foreach ($location as $locations)
-                                    <option @if ($locations->id == $user->employeeDetail->company_address_id) selected
+                                    <option @if ($locations->is_default == 1) selected
                                             @endif value="{{ $locations->id }}">
                                         {{ $locations->location }}</option>
                                 @endforeach
@@ -86,7 +86,7 @@
             buttonSelector: "#save-clock-in",
             disableButton: true,
             blockUI: true,
-            container: '#clockInForm',
+            container: '#startTimerForm',
             data: {
                 working_from: workingFrom,
                 location: location,

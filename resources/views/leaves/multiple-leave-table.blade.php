@@ -2,19 +2,11 @@
     <x-slot name="thead">
         <th>@lang('app.leaveDate')</th>
         <th>@lang('app.leaveType')</th>
-        <th>@lang('app.paid')</th>
         <th>@lang('app.status')</th>
-        @php
-            if (isset($multipleLeaves)) {
-                $leave = $multipleLeaves[0];
-            }
-        @endphp
         @if ($approveRejectPermission == 'all' || ($deleteLeavePermission == 'all'
                                 || ($deleteLeavePermission == 'added' && user()->id == $leave->added_by)
                                 || ($deleteLeavePermission == 'owned' && user()->id == $leave->user_id)
-                                || ($deleteLeavePermission == 'both' && (user()->id == $leave->user_id || user()->id == $leave->added_by))
-                                || ($leaveSetting->manager_permission != 'cannot-approve' && user()->id == $multipleLeaves->first()->user->employeeDetails->reporting_to)
-                                ))
+                                || ($deleteLeavePermission == 'both' && (user()->id == $leave->user_id || user()->id == $leave->added_by))))
             <th class="text-right pr-20">@lang('app.action')</th>
         @endif
     </x-slot>
@@ -22,21 +14,10 @@
     @forelse($multipleLeaves as $leave)
         <tr class="row{{ $leave->id }}">
             <td>
-                {{$leave->leave_date->translatedFormat(company()->date_format)}}<br>
-                ({{ $leave->leave_date->format('l') }})
+                {{$leave->leave_date->translatedFormat(company()->date_format)}}
             </td>
             <td>
                 <span class="badge badge-success" style="background-color:{{$leave->type->color}}">{{ $leave->type->type_name }}</span>
-            </td>
-            <td>
-                @if ($leave->paid == 1)
-                    <span class="badge badge-success">{{ __('app.paid') }}</span>
-                @else
-                    <span class="badge badge-danger">{{ __('app.unpaid') }}</span>
-                @endif
-                @if ($leave->over_utilized == 1)
-                    <br>({{ __('modules.leaves.overUtilized') }})
-                @endif
             </td>
             <td>
                 @php
@@ -55,41 +36,19 @@
                 @endphp
 
                 <i class="fa fa-circle mr-1 {{$class}} f-10"></i> {{$status}}
-                @if($leave->manager_status_permission == 'pre-approve')
-                    <div><span class="badge badge-success">@lang("modules.leaves.preApproved")</span></div>
-                @endif
             </td>
-
             @if ($approveRejectPermission == 'all' || ($deleteLeavePermission == 'all'
                                 || ($deleteLeavePermission == 'added' && user()->id == $leave->added_by)
                                 || ($deleteLeavePermission == 'owned' && user()->id == $leave->user_id)
-                                || ($deleteLeavePermission == 'both' && (user()->id == $leave->user_id || user()->id == $leave->added_by))
-                                ) || ($leaveSetting->manager_permission != 'cannot-approve' && user()->id == $leave->user->employeeDetails->reporting_to)
-                                )
+                                || ($deleteLeavePermission == 'both' && (user()->id == $leave->user_id || user()->id == $leave->added_by))))
                 @if($viewType == 'model')
                     <td class="text-right">
-                        @if ($leave->status == 'pending' && ($approveRejectPermission == 'all' || ($leaveSetting->manager_permission != 'cannot-approve' && user()->id == $leave->user->employeeDetails->reporting_to)))
+                        @if ($leave->status == 'pending' && $approveRejectPermission == 'all')
                             <div class="task_view">
-                                @if (user()->id != $leave->user->employeeDetails->reporting_to)
-                                    <a class="dropdown-item leave-action-approved action-hover" data-leave-id={{ $leave->id }}
-                                        data-leave-action="approved" data-toggle="tooltip" data-original-title="@lang('app.approve')" data-leave-type-id="{{ $leave->leave_type_id }}" href="javascript:;">
-                                            <i class="fa fa-check mr-2"></i>
-                                    </a>
-                                @elseif($leaveSetting->manager_permission == 'pre-approve' && 
-                                        user()->id == $leave->user->employeeDetails->reporting_to &&
-                                        $leave->manager_status_permission != 'pre-approve'
-                                    )
-                                    <a class="dropdown-item action-hover leave-action-preapprove" 
-                                        data-leave-id="{{ $leave->id }}"
-                                        data-leave-uid="null"
-                                        data-user-id="{{ $multipleLeaves->first()->user_id}}"
-                                        data-leave-type-id="{{ $multipleLeaves->first()->leave_type_id}}"
-                                        data-leave-action="pre-approve" data-type="approveAll" 
-                                        data-toggle="tooltip" data-original-title="@lang('app.preApprove')" 
-                                         href="javascript:;">
-                                        <i class="fa fa-check mr-2"></i></a>
-                                @endif
-
+                                <a class="dropdown-item leave-action-approved action-hover" data-leave-id={{ $leave->id }}
+                                    data-leave-action="approved" data-toggle="tooltip" data-original-title="@lang('app.approve')" data-leave-type-id="{{ $leave->leave_type_id }}" href="javascript:;">
+                                        <i class="fa fa-check mr-2"></i>
+                                </a>
                             </div>
                             <div class="task_view mt-1 mt-lg-0 mt-md-0">
                                 <a class="dropdown-item leave-action-reject action-hover" data-leave-id={{ $leave->id }}
@@ -111,7 +70,6 @@
                         @endif
                     </td>
                 @else
-                
                     <td class="text-right pr-20">
                         <div class="task_view">
                             <div class="dropdown">
@@ -122,22 +80,10 @@
                                     <a href="{{route('leaves.show', $leave->id) }}?type=single" class="dropdown-item openRightModal"><i class="fa fa-eye mr-2"></i>@lang('app.view')</a>
 
                                     @if ($leave->status == 'pending')
-                                        @if (user()->id != $leave->user->employeeDetails->reporting_to)
                                         <a class="dropdown-item leave-action-approved" data-leave-id={{ $leave->id }}
                                             data-leave-action="approved" data-user-id="{{ $leave->user_id }}" data-leave-type-id="{{ $leave->leave_type_id }}" href="javascript:;">
                                             <i class="fa fa-check mr-2"></i>@lang('app.approve')
                                         </a>
-                                        @elseif($leaveSetting->manager_permission == 'pre-approve' && 
-                                            user()->id == $leave->user->employeeDetails->reporting_to &&
-                                            $leave->manager_status_permission != 'pre-approve'
-                                        )
-                                        <a class="dropdown-item leave-action-preapprove" 
-                                            data-leave-id="{{ $leave->id }}" data-leave-uid="null"
-                                            data-user-id="{{ $multipleLeaves->first()->user_id}}" data-leave-type-id="{{ $multipleLeaves->first()->leave_type_id}}"
-                                            data-leave-action="pre-approve" data-type="approveAll" class="mr-3" icon="check" href="javascript:;">
-                                        <i class="fa fa-check mr-2"></i>@lang('app.preApprove')</a>
-                                        </a>
-                                        @endif
                                         <a data-leave-id={{ $leave->id }}
                                                 data-leave-action="rejected" data-user-id="{{ $leave->user_id }}" data-leave-type-id="{{ $leave->leave_type_id }}" class="dropdown-item leave-action-reject" href="javascript:;">
                                                 <i class="fa fa-times mr-2"></i>@lang('app.reject')

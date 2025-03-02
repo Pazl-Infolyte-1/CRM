@@ -1,11 +1,11 @@
-<div class="mt-3 chartHeading-org d-flex justify-content-between rounded-top">
-    <h3 class="mb-0 f-21 f-w-500">@lang('modules.department.treeView')</h3>
+<div class="chartHeading-org d-flex justify-content-between mt-3 rounded-top">
+    <h3 class="f-21 f-w-500 mb-0">@lang('modules.department.treeView')</h3>
     <div class="heading-h3">
         <i class="fa fa-compress" id="resize"></i>
-        <i class="fa fa-expand" id="full_view"></i>
+        <i class="fa fa-expand" id="full_view"></i>    
     </div>
 </div>
-<div id="chartDiv" class="pt-3 bg-white rounded-bottom" style="height:100%"></div>
+<div id="chartDiv" class="bg-white pt-3 rounded-bottom" style="height:100%"></div>
 
 <script>
 
@@ -23,7 +23,6 @@
 
       var chartValue = [];
       var designationHierarchy = <?php echo json_encode($chartDesignations); ?>;
-      var isRtl = "{{ isRtl('he-IL') }}";
 
       for (var i = 0; i < designationHierarchy.length; i++) {
           if (designationHierarchy[i].parent_id == null) {
@@ -43,7 +42,6 @@
       var chart = JSC.chart('chartDiv', {
           debug: false,
           type: 'organizational',
-          defaultCultureName: isRtl,
 
           /*These options will apply to all annotations including point nodes and breadcrumbs.*/
           defaultAnnotation: {

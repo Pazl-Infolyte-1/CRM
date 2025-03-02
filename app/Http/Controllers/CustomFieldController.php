@@ -6,6 +6,7 @@ use App\Helper\Reply;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\CustomField\StoreCustomField;
 use App\Http\Requests\CustomField\UpdateCustomField;
 
@@ -31,11 +32,98 @@ class CustomFieldController extends AccountBaseController
      */
     public function index()
     {
-        $this->customFields = CustomField::join('custom_field_groups', 'custom_field_groups.id', '=', 'custom_fields.custom_field_group_id')
+
+        if (\request()->ajax()) {
+            $permissions = CustomField::join('custom_field_groups', 'custom_field_groups.id', '=', 'custom_fields.custom_field_group_id')
                 ->select('custom_fields.id', 'custom_field_groups.name as module', 'custom_fields.label', 'custom_fields.type', 'custom_fields.values', 'custom_fields.required', 'custom_fields.export', 'custom_fields.visible')
                 ->get();
-        $this->groupedCustomFields = $this->customFields->groupBy('module');
 
+            $data = DataTables::of($permissions)
+                ->editColumn(
+                    'values',
+                    function ($row) {
+                        $ul = '--';
+
+                        if (isset($row->values) && $row->values != '[null]') {
+                            $ul = '<ul class="value-list">';
+
+                            foreach (json_decode($row->values) as $key => $value) {
+                                $ul .= '<li>' . $value . '</li>';
+                            }
+
+                            $ul .= '</ul>';
+                        }
+
+                        return $ul;
+                    }
+                )
+                ->editColumn(
+                    'required',
+                    function ($row) {
+                        // Edit Button
+                        $string = ' - ';
+                        $class = 'badge  badge-danger disabled color-palette';
+
+                        if ($row->required === 'yes') {
+                            $string = '<span class="' . $class . '">' . __('app.' . $row->required) . '</span>';
+                        }
+
+                        if ($row->required === 'no') {
+                            $class = 'badge badge-secondary disabled color-palette';
+                            $string = '<span class="' . $class . '">' . __('app.' . $row->required) . '</span>';
+                        }
+
+                        return $string;
+                    }
+                )
+                ->editColumn(
+                    'export',
+                    function ($row) {
+                        $class = 'badge  badge-danger disabled color-palette';
+
+                        if($row->export == 1) {
+                            $string = '<span class="' . $class . '">' . __('app.yes') . '</span>';
+                        }
+                        else {
+                            $class = 'badge  badge-secondary disabled color-palette';
+                            $string = '<span class="' . $class . '">' . __('app.no') . '</span>';
+                        }
+
+                        return $string;
+                    }
+                )
+                ->addColumn(
+                    'visible',
+                    function ($row) {
+                        $class = 'badge  badge-danger disabled color-palette';
+                        // dd($row->visible == 'false');
+                        if($row->visible == 'true') {
+                            $string = '<span class="' . $class . '">' . __('app.yes') . '</span>';
+                        }
+                        else {
+                            // dump('false');
+                            $class = 'badge  badge-secondary disabled color-palette';
+                            $string = '<span class="' . $class . '">' . __('app.no') . '</span>';
+                        }
+
+                        return $string;
+                    }
+                )
+
+                ->addColumn(
+                    'action',
+                    function ($row) {
+
+                        return '<div class="task_view"> <a data-user-id="' . $row->id . '" class="task_view_more d-flex align-items-center justify-content-center edit-custom-field" href="javascript:;" data-id="{{ $permission->id }}" > <i class="fa fa-edit icons mr-2"></i>' . __('app.edit') . '</a> </div>
+                    <div class="task_view"> <a data-user-id="' . $row->id . '" class="task_view_more d-flex align-items-center justify-content-center sa-params" href="javascript:;" data-id="{{ $permission->id }}"  >
+                            <i class="fa fa-trash icons mr-2"></i> ' . __('app.delete') . ' </a> </div>';
+                    }
+                )
+                ->rawColumns(['values', 'action', 'required', 'export', 'visible'])
+                ->make(true);
+
+            return $data;
+        }
 
         return view('custom-fields.index', $this->data);
     }
@@ -124,17 +212,9 @@ class CustomFieldController extends AccountBaseController
      */
     public function destroy($id)
     {
-        // Find the custom field
-        $field = CustomField::findOrFail($id);
-        $module = $field->fieldGroup->name;
-        // Delete the custom field
-        $field->delete();
-    
-        // Fetch the updated count for the module
-        $updatedCount = CustomField::whereHas('fieldGroup', function ($query) use ($module) {
-            $query->where('name', $module);
-        })->count();
-        return Reply::successWithData(__('messages.deleteSuccess'), ['updatedCount' => $updatedCount]);
+        CustomField::destroy($id);
+
+        return Reply::success('messages.deleteSuccess');
     }
 
     private function addCustomField($group)

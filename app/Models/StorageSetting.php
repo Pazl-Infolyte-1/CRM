@@ -30,10 +30,6 @@ class StorageSetting extends BaseModel
 
     protected $table = 'file_storage_settings';
 
-    protected $casts = [
-        'auth_keys' => 'encrypted'
-    ];
-
     protected $fillable = ['filesystem', 'auth_keys', 'status'];
 
     const AWS_REGIONS = [
@@ -57,8 +53,7 @@ class StorageSetting extends BaseModel
         'eu-west-3' => 'Europe (Paris) eu-west-3',
         'eu-north-1' => 'Europe (Stockholm) eu-north-1',
         'me-south-1' => 'Middle East (Bahrain) me-south-1',
-        'me-central-1' => 'Middle East (UAE) (me-central-1)',
-        'sa-east-1' => 'South America (São Paulo) sa-east-1',
+        'sa-east-1' => 'South America (São Paulo)	 sa-east-1'
     ];
 
     const DIGITALOCEAN_REGIONS = [
@@ -79,10 +74,8 @@ class StorageSetting extends BaseModel
         'ap-southeast-1' => 'AP Southeast 1 (Singapore)',
         'ap-northeast-2' => 'AP Northeast 2 (Osaka)',
         'ap-northeast-1' => 'AP Northeast 1 (Tokyo)',
-        'eu-west-3' => 'EU West 3 (London)',
         'eu-west-2' => 'EU West 2 (Paris)',
         'eu-west-1' => 'EU West 1 (London)',
-        'eu-south-1' => 'EU South 1 (Milan)',
         'eu-central-2' => 'EU Central 2 (Frankfurt)',
         'eu-central-1' => 'EU Central 1 (Amsterdam)',
         'ca-central-1' => 'CA Central 1 (Toronto)',
@@ -93,4 +86,5 @@ class StorageSetting extends BaseModel
     ];
 
     const S3_COMPATIBLE_STORAGE = ['s3', 'digitalocean', 'wasabi', 'minio'];
+
 }

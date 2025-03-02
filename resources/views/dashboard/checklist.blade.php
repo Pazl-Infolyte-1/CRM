@@ -31,7 +31,7 @@
                                              :link="route('app-settings.index')"/>
                     <x-cards.onboarding-item :title="__('modules.checklist.companyLogo')"
                                              :summary="__('modules.checklist.companyLogoInfo')"
-                                             :completed="global_setting()->logo"
+                                             :completed="company()->logo"
                                              :link="route('theme-settings.index')"/>
 
                     <x-cards.onboarding-item :title="__('modules.checklist.favicon')"

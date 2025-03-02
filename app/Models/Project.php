@@ -155,7 +155,7 @@ class Project extends BaseModel
     ];
 
     protected $guarded = ['id'];
-    protected $with = [];
+    protected $with = ['members'];
     protected $appends = ['isProjectAdmin'];
 
     const CUSTOM_FIELD_MODEL = 'App\Models\Project';
@@ -163,11 +163,6 @@ class Project extends BaseModel
     public function category(): BelongsTo
     {
         return $this->belongsTo(ProjectCategory::class, 'category_id');
-    }
-
-    public function projectAdmin()
-    {
-        return $this->belongsTo(User::class, 'project_admin');
     }
 
     public function client(): BelongsTo
@@ -185,11 +180,6 @@ class Project extends BaseModel
         return $this->hasMany(ProjectMember::class, 'project_id');
     }
 
-    public function projectMembersWithoutScope(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'project_members')->using(ProjectMember::class)->withoutGlobalScope(ActiveScope::class);
-    }
-
     public function projectMembers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'project_members')->using(ProjectMember::class);
@@ -197,62 +187,57 @@ class Project extends BaseModel
 
     public function tasks(): HasMany
     {
-        return $this->hasMany(Task::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(Task::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function files(): HasMany
     {
-        return $this->hasMany(ProjectFile::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(ProjectFile::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function invoices(): HasMany
     {
-        return $this->hasMany(Invoice::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(Invoice::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function contracts(): HasMany
     {
-        return $this->hasMany(Contract::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(Contract::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function issues(): HasMany
     {
-        return $this->hasMany(Issue::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(Issue::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function times(): HasMany
     {
-        return $this->hasMany(ProjectTimeLog::class, 'project_id')->with('breaks')->orderByDesc('id');
+        return $this->hasMany(ProjectTimeLog::class, 'project_id')->with('breaks')->orderBy('id', 'desc');
     }
 
     public function milestones(): HasMany
     {
-        return $this->hasMany(ProjectMilestone::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(ProjectMilestone::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function incompleteMilestones(): HasMany
     {
-        return $this->hasMany(ProjectMilestone::class, 'project_id')->whereNot('status', 'complete')->orderByDesc('id');
-    }
-
-    public function completedMilestones(): HasMany
-    {
-        return $this->hasMany(ProjectMilestone::class, 'project_id')->where('status', 'complete')->orderByDesc('id');
+        return $this->hasMany(ProjectMilestone::class, 'project_id')->whereNot('status', 'complete')->orderBy('id', 'desc');
     }
 
     public function expenses(): HasMany
     {
-        return $this->hasMany(Expense::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(Expense::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function notes(): HasMany
     {
-        return $this->hasMany(ProjectNote::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(ProjectNote::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(Payment::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function currency(): BelongsTo
@@ -262,7 +247,7 @@ class Project extends BaseModel
 
     public function discussions(): HasMany
     {
-        return $this->hasMany(Discussion::class, 'project_id')->orderByDesc('id');
+        return $this->hasMany(Discussion::class, 'project_id')->orderBy('id', 'desc');
     }
 
     public function rating(): HasOne
@@ -297,63 +282,42 @@ class Project extends BaseModel
     }
 
     /**
-     * @param boolean $notFinished
+     * @param  string $search
      * Search Parameter is passed the get only search results and 20
      * @return \Illuminate\Support\Collection
      */
-    public static function allProjects($notFinished = false)
+    public static function allProjects($search = '')
     {
-        $projects = Project::query();
-
-        if ($notFinished) {
-            $projects->notFinished();
-        }
-
-        $projects = $projects->leftJoin('project_members', 'project_members.project_id', 'projects.id')
+        $projects = Project::leftJoin('project_members', 'project_members.project_id', 'projects.id')
             ->select('projects.*')
             ->orderBy('project_name');
-
 
         if (!isRunningInConsoleOrSeeding()) {
 
             if (user()->permission('view_projects') == 'added') {
-                $projects->where('projects.added_by', user()->id)->orWhere('projects.public', 1);
-            }
-
-            if (user()->permission('view_projects') == 'added' && in_array('client', user_roles())) {
                 $projects->where('projects.added_by', user()->id);
             }
 
             if (user()->permission('view_projects') == 'both') {
-                $projects->where('projects.added_by', user()->id)->orWhere('project_members.user_id', user()->id)->orWhere('projects.public', 1);
-            }
-
-            if (user()->permission('view_projects') == 'both' && in_array('client', user_roles())) {
-                $projects->where('projects.added_by', user()->id)->orWhere('projects.client_id', user()->id);
+                $projects->where('projects.added_by', user()->id)->orWhere('project_members.user_id', user()->id);
             }
 
             if (user()->permission('view_projects') == 'owned' && in_array('employee', user_roles())) {
-                $projects->where('project_members.user_id', user()->id)->orWhere('projects.public', 1);
+                $projects->where('project_members.user_id', user()->id);
             }
 
             if (user()->permission('view_projects') == 'owned' && in_array('client', user_roles())) {
-                $projects->where('projects.client_id', user()->id);
-            }
-
-            if (user()->permission('view_projects') == 'all' && in_array('client', user_roles())) {
                 $projects->where('projects.client_id', user()->id);
             }
         }
 
         $projects = $projects->groupBy('projects.id');
 
-        // @codingStandardsIgnoreStart
-        //        if ($search !== '') {
-        //            return $projects->where('project_name', 'like', '%' . $search . '%')
-        //                ->take(GlobalSetting::SELECT2_SHOW_COUNT)
-        //                ->get();
-        //        }
-        // @codingStandardsIgnoreEnd
+        if ($search !== '') {
+            return $projects->where('project_name', 'like', '%' . $search . '%')
+                ->take(GlobalSetting::SELECT2_SHOW_COUNT)
+                ->get();
+        }
 
         return $projects->get();
     }
@@ -411,11 +375,6 @@ class Project extends BaseModel
         return $query->where('status', 'finished');
     }
 
-    public function scopeNotFinished($query)
-    {
-        return $query->where('status', '<>', 'finished');
-    }
-
     public function scopeNotStarted($query)
     {
         return $query->where('status', 'not started');
@@ -462,16 +421,6 @@ class Project extends BaseModel
     public function mentionProject(): HasMany
     {
         return $this->hasMany(MentionUser::class, 'project_id');
-    }
-
-    public function departments(): HasMany
-    {
-        return $this->hasMany(ProjectDepartment::class, 'project_id');
-    }
-
-    public function projectDepartments(): BelongsToMany
-    {
-        return $this->belongsToMany(Team::class, 'project_departments')->using(ProjectDepartment::class);
     }
 
 }

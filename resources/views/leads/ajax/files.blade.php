@@ -1,25 +1,37 @@
 @php
 $addLeadFilePermission = user()->permission('add_lead_files');
 @endphp
+
 <!-- ROW START -->
 <div class="row">
     <!--  USER CARDS START -->
     <div class="col-xl-12 col-lg-12 col-md-12 mb-4 mb-xl-0 mb-lg-4 mb-md-0">
-        @if ($addLeadFilePermission == 'all' || $addLeadFilePermission == 'added')
-            <div class="d-flex p-20">
-                <div class="row">
-                    <div class="col-md-12">
-                        <a class="f-15 f-w-500" href="javascript:;" id="add-files" data-lead-id="{{ $deal->id }}"><i
-                                class="icons icon-plus font-weight-bold mr-1"></i>@lang('modules.projects.uploadFile')</a>
-                    </div>
-                </div>
+        <div class="d-flex">
+            <div id="table-actions" class="flex-grow-1 align-items-center">
+                @if ($addLeadFilePermission == 'all' || $addLeadFilePermission == 'added')
+                    <x-forms.link-primary link="javascript:;" id="add-files" class="mr-3 float-left" icon="plus"
+                        data-lead-id="{{ $lead->id }}">
+                        @lang('app.add')
+                        @lang('modules.lead.file')
+                    </x-forms.link-primary>
+                @endif
             </div>
-        @endif
 
-        <div class="p-20">
+            <div class="btn-group" role="group">
+                <a id="list-tabs" href="javascript:;" onclick="leadFilesView('listview')"
+                    class="btn btn-secondary f-14 layout btn-active" data-toggle="tooltip" data-tab-name="listview"
+                    data-original-title="List View"><i class="side-icon bi bi-list-ul"></i></a>
+
+                <a id="thumbnail" href="javascript:;" onclick="leadFilesView('gridview')"
+                    class="btn btn-secondary f-14 layout" data-toggle="tooltip" data-tab-name="gridview"
+                    data-original-title="Grid View"><i class="side-icon bi bi-grid"></i></a>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column mt-3">
             <div id="layout">
 
-                @include('leads.lead-files.thumbnail-list')
+                @include('leads.lead-files.ajax-list')
             </div>
 
         </div>
@@ -30,14 +42,14 @@ $addLeadFilePermission = user()->permission('add_lead_files');
 
 
 <script>
-    var fileLayout = 'thumbnail-list';
+    var fileLayout = 'listview';
     function leadFilesView(layout) {
         $('#layout').html('');
-        var leadID = "{{ $deal->id }}";
+        var leadID = "{{ $lead->id }}";
         fileLayout = layout;
         $.easyAjax({
             type: 'GET',
-            url: "{{ route('deal-files.layout') }}",
+            url: "{{ route('lead-files.layout') }}",
             disableButton: true,
             blockUI: true,
             data: {
@@ -79,7 +91,7 @@ $addLeadFilePermission = user()->permission('add_lead_files');
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                var url = "{{ route('deal-files.destroy', ':id') }}";
+                var url = "{{ route('lead-files.destroy', ':id') }}";
                 url = url.replace(':id', id);
 
                 var token = "{{ csrf_token() }}";

@@ -25,8 +25,6 @@ class StoreMilestone extends FormRequest
     public function rules()
     {
 
-        $setting = company();
-        
         $rules = [
             'project_id' => 'required',
             'milestone_title' => 'required',
@@ -34,7 +32,7 @@ class StoreMilestone extends FormRequest
         ];
 
         if ($this->end_date !== null) {
-            $rules['start_date'] = 'required|date_format:"' . $setting->date_format . '"';
+            $rules['start_date'] = 'required';
         }
 
         if ($this->start_date !== null) {
@@ -42,7 +40,7 @@ class StoreMilestone extends FormRequest
         }
 
         if ($this->start_date > $this->end_date) {
-            $rules['end_date'] = 'date_format:"' . $setting->date_format . '"|after_or_equal:start_date';
+            $rules['end_date'] = 'after_or_equal:start_date';
         }
 
         if ($this->cost != '' && $this->cost > 0) {

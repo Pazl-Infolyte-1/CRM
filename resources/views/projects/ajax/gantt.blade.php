@@ -13,7 +13,8 @@ $editTaskPermission = ($project->project_admin == user()->id) ? 'all' : user()->
             @if (($addTaskPermission == 'all' || $addTaskPermission == 'added') && !$project->trashed())
                 <x-forms.link-primary :link="route('tasks.create').'?task_project_id='.$project->id"
                     class="mr-3 openRightModal" icon="plus" data-redirect-url="{{ url()->full() }}">
-                    @lang('app.addTask')
+                    @lang('app.add')
+                    @lang('app.task')
                 </x-forms.link-primary>
             @endif
 
@@ -70,7 +71,7 @@ $editTaskPermission = ($project->project_admin == user()->id) ? 'all' : user()->
 
                  <!-- ASSIGN START -->
                  <div class="select-box py-2 px-2 mr-3">
-                    <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.taskStatus')
+                    <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.task') @lang('app.status')
                     </p>
                     <div class="select-status mr-3">
                         <select class="form-control select-picker" id="task_status" data-live-search="true"
@@ -100,7 +101,7 @@ $editTaskPermission = ($project->project_admin == user()->id) ? 'all' : user()->
             </div>
 
 
-            <svg id="gantt"></svg>
+            <div id="gantt"></div>
 
         </div>
         <!-- Task Box End -->

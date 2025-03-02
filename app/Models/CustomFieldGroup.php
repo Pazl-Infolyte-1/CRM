@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -39,7 +41,6 @@ class CustomFieldGroup extends BaseModel
         ['name' => 'Task', 'model' => Task::CUSTOM_FIELD_MODEL],
         ['name' => 'Expense', 'model' => Expense::CUSTOM_FIELD_MODEL],
         ['name' => 'Lead', 'model' => Lead::CUSTOM_FIELD_MODEL],
-        ['name' => 'Deal', 'model' => Deal::CUSTOM_FIELD_MODEL],
         ['name' => 'Product', 'model' => Product::CUSTOM_FIELD_MODEL],
         ['name' => 'Ticket', 'model' => Ticket::CUSTOM_FIELD_MODEL],
         ['name' => 'Time Log', 'model' => ProjectTimeLog::CUSTOM_FIELD_MODEL],
@@ -64,14 +65,13 @@ class CustomFieldGroup extends BaseModel
                 $customField->name => [
                     'data' => $customField->name,
                     'name' => $customField->name,
-                    'title' => str($customField->label)->__toString(),
-                    'visible' => (!is_null($customField['visible'])) ? $customField['visible'] : false,
+                    'title' => $customField->label,
+                    'visible' => $customField['visible'],
                     'orderable' => false,
                 ]
             ];
 
             $customFieldsDataMerge = array_merge($customFieldsDataMerge, $customFieldsData);
-            info($customFieldsDataMerge);
         }
 
         return $customFieldsDataMerge;

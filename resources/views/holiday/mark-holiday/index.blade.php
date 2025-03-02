@@ -9,9 +9,9 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="form-group">
-                        <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('modules.holiday.officeHolidayMarkDays')</label>
-                        <div class="d-flex mt-2 flex-wrap">
-                            <x-forms.weeks fieldName="office_holiday_days[]" fieldRequired="true"></x-forms.weeks>
+                        <label class="f-14 text-dark-grey mb-12 text-capitalize w-100" for="usr">@lang('modules.holiday.officeHolidayMarkDays')</label>
+                        <div class="d-flex mt-2">
+                            <x-forms.weeks fieldName="office_holiday_days[]" fieldRequired="true" class="mr-2 mr-lg-2 mr-md-2"></x-forms.weeks>
                         </div>
                     </div>
                 </div>
@@ -22,7 +22,6 @@
                             fieldValue="" data-toggle="tooltip" data-original-title="{{ __('messages.selectOccassion')}}" />
                     </div>
                 </div>
-                <input type="hidden" name="notification_sent" value="no">
             </div>
 
     </div>
@@ -65,7 +64,7 @@
                         success: function(response) {
                             if (response.status == "success") {
                                 if (response.redirectUrl == 'table-view') {
-                                    window.LaravelDataTables["holiday-table"].draw(true);
+                                    window.LaravelDataTables["holiday-table"].draw(false);
                                     $(MODAL_LG).modal('hide');
                                 } else {
                                     location.href = response.redirectUrl;

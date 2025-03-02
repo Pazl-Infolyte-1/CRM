@@ -2,10 +2,14 @@
 
 namespace App\Observers;
 
+use File;
+use Carbon\Carbon;
 use App\Helper\Files;
+use App\Models\Invoice;
 use App\Models\Estimate;
 use Illuminate\Support\Str;
 use App\Models\EstimateItem;
+use App\Models\InvoiceItems;
 use App\Models\Notification;
 use App\Models\UniversalSearch;
 use App\Events\NewEstimateEvent;
@@ -14,13 +18,10 @@ use App\Traits\UnitTypeSaveTrait;
 use App\Events\EstimateAcceptedEvent;
 use App\Events\EstimateDeclinedEvent;
 use App\Models\EstimateTemplateItemImage;
-use function user;
-use App\Traits\EmployeeActivityTrait;
+use App\Models\Product;
 
 class EstimateObserver
 {
-    use EmployeeActivityTrait;
-
 
     use UnitTypeSaveTrait;
 
@@ -28,7 +29,7 @@ class EstimateObserver
     {
         if (!isRunningInConsoleOrSeeding()) {
 
-            if (user()) {
+            if (\user()) {
                 $estimate->last_updated_by = user()->id;
             }
 
@@ -43,7 +44,7 @@ class EstimateObserver
     {
         $estimate->hash = md5(microtime());
 
-        if (user()) {
+        if (\user()) {
             $estimate->added_by = user()->id;
         }
 
@@ -73,10 +74,6 @@ class EstimateObserver
     {
 
         if (!isRunningInConsoleOrSeeding()) {
-            if (user()) {
-                self::createEmployeeActivity(user()->id, 'estimate-created', $estimate->id, 'estimate');
-            }
-
             if (!empty(request()->item_name)) {
 
                 $itemsSummary = request()->item_summary;
@@ -107,15 +104,15 @@ class EstimateObserver
                                 'quantity' => $quantity[$key],
                                 'unit_price' => round($cost_per_item[$key], 2),
                                 'amount' => round($amount[$key], 2),
-                                'taxes' => ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null),
-                                'field_order' => $key + 1
+                                'taxes' => ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null)
                             ]
                         );
 
 
                         /* Invoice file save here */
 
-                        if ((isset($invoice_item_image[$key]) && $invoice_item_image[$key] != 'yes') || isset($invoice_item_image_url[$key])) {
+                        if ((isset($invoice_item_image[$key]) && $invoice_item_image[$key] != 'yes') || isset($invoice_item_image_url[$key]))
+                        {
                             EstimateItemImage::create(
                                 [
                                     'estimate_item_id' => $estimateItem->id,
@@ -130,17 +127,20 @@ class EstimateObserver
 
                         $image = true;
 
-                        if (isset($invoice_item_image_delete[$key])) {
+                        if(isset($invoice_item_image_delete[$key]))
+                        {
                             $image = false;
                         }
 
-                        if ($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != '')) {
+                        if($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != ''))
+                        {
                             $estimateOldImg = EstimateItemImage::with('item')->where('id', request()->image_id[$key])->first();
 
                             $this->duplicateImageStore($estimateOldImg, $estimateItem);
                         }
 
-                        if ($image && (isset(request()->templateImage_id[$key]) && $invoiceTemplateImage[$key] != '')) {
+                        if($image && (isset(request()->templateImage_id[$key]) && $invoiceTemplateImage[$key] != ''))
+                        {
                             $estimateTemplateImg = EstimateTemplateItemImage::where('id', request()->templateImage_id[$key])->first();
 
                             $this->duplicateTemplateImageStore($estimateTemplateImg, $estimateItem);
@@ -152,6 +152,7 @@ class EstimateObserver
             }
 
 
+
             if (request()->type != 'save' && request()->type != 'draft') {
                 event(new NewEstimateEvent($estimate));
             }
@@ -161,10 +162,6 @@ class EstimateObserver
     public function updated(Estimate $estimate)
     {
         if (!isRunningInConsoleOrSeeding()) {
-            if (user()) {
-                self::createEmployeeActivity(user()->id, 'estimate-updated', $estimate->id, 'estimate');
-            }
-
             if ($estimate->status == 'declined') {
                 event(new EstimateDeclinedEvent($estimate));
             }
@@ -185,28 +182,20 @@ class EstimateObserver
         }
 
         $notifyData = ['App\Notifications\NewEstimate'];
-        Notification::deleteNotification($notifyData, $estimate->id);
+        \App\Models\Notification::deleteNotification($notifyData, $estimate->id);
 
-    }
-
-    public function deleted(Estimate $estimate)
-    {
-        if (user()) {
-            self::createEmployeeActivity(user()->id, 'estimate-deleted');
-
-        }
     }
 
     /**
      * duplicateImageStore
      *
-     * @param mixed $estimateOldImg
-     * @param mixed $estimateItem
+     * @param  mixed $estimateOldImg
+     * @param  mixed $estimateItem
      * @return void
      */
     public function duplicateImageStore($estimateOldImg, $estimateItem)
     {
-        if (!is_null($estimateOldImg)) {
+        if(!is_null($estimateOldImg)) {
 
             $file = new EstimateItemImage();
 
@@ -226,7 +215,7 @@ class EstimateObserver
 
     public function duplicateTemplateImageStore($estimateTemplateImg, $estimateItem)
     {
-        if (!is_null($estimateTemplateImg)) {
+        if(!is_null($estimateTemplateImg)) {
 
             $file = new EstimateItemImage();
 

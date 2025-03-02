@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\Team;
-use App\Models\User;
-use App\Helper\Reply;
-use App\Models\Holiday;
-use App\Services\Google;
-use App\Models\Designation;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\DataTables\HolidayDataTable;
+use App\Helper\Reply;
 use App\Http\Requests\CommonRequest;
-use App\Models\GoogleCalendarModule;
-use Illuminate\Support\Facades\View;
 use App\Http\Requests\Holiday\CreateRequest;
 use App\Http\Requests\Holiday\UpdateRequest;
+use App\Models\AttendanceSetting;
+use App\Models\GoogleCalendarModule;
+use App\Models\Holiday;
+use Carbon\Carbon;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
+use App\Services\Google;
+use Illuminate\Support\Facades\DB;
 
 class HolidayController extends AccountBaseController
 {
@@ -27,11 +26,10 @@ class HolidayController extends AccountBaseController
         $this->pageTitle = 'app.menu.holiday';
     }
 
-    public function index(Request $request)
+    public function index()
     {
         $this->viewPermission = user()->permission('view_holiday');
-        abort_403(!in_array($this->viewPermission, ['all', 'added', 'owned', 'both']));
-
+        abort_403(!in_array($this->viewPermission, ['all', 'added']));
 
         if (request('start') && request('end')) {
             $holidayArray = array();
@@ -40,30 +38,6 @@ class HolidayController extends AccountBaseController
 
             if (request()->searchText != '') {
                 $holidays->where('holidays.occassion', 'like', '%' . request()->searchText . '%');
-            }
-
-            if (in_array($this->viewPermission, ['owned', 'both'])) {
-                $user = user();
-                $holidays->where(function ($query) use ($user) {
-                    // Common conditions
-                    $query->where(function ($q) use ($user) {
-                        $q->orWhere('department_id_json', 'like', '%"' . $user->employeeDetails->department_id . '"%')
-                            ->orWhereNull('department_id_json');
-                    });
-                    $query->where(function ($q) use ($user) {
-                        $q->orWhere('designation_id_json', 'like', '%"' . $user->employeeDetails->designation_id . '"%')
-                            ->orWhereNull('designation_id_json');
-                    });
-                    $query->where(function ($q) use ($user) {
-                        $q->orWhere('employment_type_json', 'like', '%"' . $user->employeeDetails->employment_type . '"%')
-                            ->orWhereNull('employment_type_json');
-                    });
-
-                    // Additional condition for 'both'
-                    if ($this->viewPermission == 'both') {
-                        $query->orWhere('added_by', $user->id);
-                    }
-                });
             }
 
             $holidays = $holidays->get();
@@ -95,19 +69,16 @@ class HolidayController extends AccountBaseController
         $this->redirectUrl = request()->date ? route('holidays.index') : route('holidays.table_view');
         $this->date = request()->date ? Carbon::parse(request()->date)->timezone(company()->timezone)->translatedFormat(company()->date_format) : '';
 
-        $this->pageTitle = __('app.menu.holiday');
+        if (request()->ajax()) {
+            $this->pageTitle = __('app.menu.holiday');
+            $html = view('holiday.ajax.create', $this->data)->render();
+
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        }
 
         $this->view = 'holiday.ajax.create';
 
-        $this->teams = Team::all();
-        $this->designations = Designation::allDesignations();
-
-        if (request()->ajax()) {
-            return $this->returnAjax($this->view);
-        }
-
         return view('holiday.create', $this->data);
-
 
     }
 
@@ -118,15 +89,12 @@ class HolidayController extends AccountBaseController
      */
     public function store(CreateRequest $request)
     {
-
         $this->addPermission = user()->permission('add_holiday');
 
         abort_403(!in_array($this->addPermission, ['all', 'added']));
 
         $occassions = $request->occassion;
         $dates = $request->date;
-        $notificationSent = $request->notification_sent;
-
 
         foreach ($dates as $index => $value) {
             if ($value != '') {
@@ -134,28 +102,12 @@ class HolidayController extends AccountBaseController
                 $holiday = new Holiday();
                 $holiday->date = Carbon::createFromFormat($this->company->date_format, $value);
                 $holiday->occassion = $occassions[$index];
-                $holiday->notification_sent = $notificationSent;
-
-                if (!empty($request->department)) {
-                    $holiday->department_id_json = json_encode($request->department);
-                }
-
-                if (!empty($request->designation)) {
-                    $holiday->designation_id_json = json_encode($request->designation);
-                }
-
-                if (!empty($request->employment_type)) {
-                    $holiday->employment_type_json = json_encode($request->employment_type);
-                }
-
                 $holiday->save();
 
                 if ($holiday) {
                     $holiday->event_id = $this->googleCalendarEvent($holiday);
                     $holiday->save();
                 }
-
-
             }
         }
 
@@ -179,32 +131,18 @@ class HolidayController extends AccountBaseController
     public function show(Holiday $holiday)
     {
         $this->holiday = $holiday;
-
-        $departmentArray = $this->holiday?->department(json_decode($holiday->department_id_json));
-        $this->department = $departmentArray ? implode(', ', $departmentArray) : '--';
-
-
-        $designationArray = $this->holiday?->designation(json_decode($holiday->designation_id_json));
-        $this->designation = $designationArray ? implode(', ', $designationArray) : '--';
-
-
-        $this->employment_type = !empty($holiday->employment_type_json) ? collect(json_decode($holiday->employment_type_json))
-            ->map(function ($employmentType) {
-                return __('modules.employees.' . $employmentType);
-            })
-            ->implode(', ') : '--';
-
-
         $this->viewPermission = user()->permission('view_holiday');
-        abort_403(!($this->viewPermission == 'all' || $this->viewPermission == 'owned' || $this->viewPermission == 'both' || ($this->viewPermission == 'added' && $this->holiday->added_by == user()->id)));
+        abort_403(!($this->viewPermission == 'all' || ($this->viewPermission == 'added' && $this->holiday->added_by == user()->id)));
 
         $this->pageTitle = __('app.menu.holiday');
 
-        $this->view = 'holiday.ajax.show';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('holiday.ajax.show', $this->data)->render();
+
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'holiday.ajax.show';
 
         return view('holiday.create', $this->data);
 
@@ -217,40 +155,19 @@ class HolidayController extends AccountBaseController
     public function edit(Holiday $holiday)
     {
         $this->holiday = $holiday;
-        $this->teams = Team::all();
-        $this->designations = Designation::allDesignations();
-
-
-        $this->departmentId = $this->holiday->department_id_json;
-        $this->departmentArray = $this->departmentId ? json_decode($this->departmentId, true) : [];
-        if (!is_array($this->departmentArray)) {
-            $this->departmentArray = [];
-        }
-
-        $this->designationId = $this->holiday->designation_id_json;
-        $this->designationArray = $this->designationId ? json_decode($this->designationId, true) : [];
-        if (!is_array($this->designationArray)) {
-            $this->designationArray = [];
-        }
-
-        $this->employmentType = $this->holiday->employment_type_json;
-        $this->employmentTypeArray = $this->employmentType ? json_decode($this->employmentType, true) : [];
-        if (!is_array($this->employmentTypeArray)) {
-            $this->employmentTypeArray = [];
-        }
-
-
         $this->editPermission = user()->permission('edit_holiday');
 
         abort_403(!($this->editPermission == 'all' || ($this->editPermission == 'added' && $this->holiday->added_by == user()->id)));
 
         $this->pageTitle = __('app.menu.holiday');
 
-        $this->view = 'holiday.ajax.edit';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('holiday.ajax.edit', $this->data)->render();
+
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'holiday.ajax.edit';
 
         return view('holiday.create', $this->data);
 
@@ -261,24 +178,15 @@ class HolidayController extends AccountBaseController
      * @param Holiday $holiday
      * @return array|void
      */
-    public function update(UpdateRequest $request,  $id)
+    public function update(UpdateRequest $request, Holiday $holiday)
     {
         $this->editPermission = user()->permission('edit_holiday');
         abort_403(!($this->editPermission == 'all' || ($this->editPermission == 'added' && $this->holiday->added_by == user()->id)));
 
         $data = $request->all();
-        $data['date'] = companyToYmd($request->date);
+        $data['date'] = Carbon::createFromFormat($this->company->date_format, $request->date)->format('Y-m-d');
 
-        $holiday = Holiday::find($id);
-
-        $holiday->department_id_json = $request->has('department') ? json_encode($request->department) : null;
-        $holiday->designation_id_json = $request->has('designation') ? json_encode($request->designation) : null;
-        $holiday->employment_type_json = $request->has('employment_type') ? json_encode($request->employment_type) : null;
-
-        $holiday->occassion = $request->occassion;
-        $holiday->date = Carbon::createFromFormat($this->company->date_format, $request->date);
-
-        $holiday->save();
+        $holiday->update($data);
 
         if ($holiday) {
             $holiday->event_id = $this->googleCalendarEvent($holiday);
@@ -307,7 +215,7 @@ class HolidayController extends AccountBaseController
     public function tableView(HolidayDataTable $dataTable)
     {
         $viewPermission = user()->permission('view_holiday');
-        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+        abort_403(!in_array($viewPermission, ['all', 'added']));
 
         $this->pageTitle = __('app.menu.listView');
         $this->currentYear = now()->format('Y');
@@ -315,7 +223,6 @@ class HolidayController extends AccountBaseController
 
         /* year range from last 5 year to next year */
         $years = [];
-
         $latestFifthYear = (int)now()->subYears(5)->format('Y');
         $nextYear = (int)now()->addYear()->format('Y');
 
@@ -383,7 +290,6 @@ class HolidayController extends AccountBaseController
                 foreach ($dateArray as $date) {
                     Holiday::firstOrCreate([
                         'date' => $date,
-                        'notification_sent' => $request->notification_sent ?: 'no',
                         'occassion' => $request->occassion ? $request->occassion : now()->weekday($day)->translatedFormat('l')
                     ]);
                 }

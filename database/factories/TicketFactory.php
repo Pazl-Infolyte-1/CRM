@@ -3,6 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\Ticket;
+use App\Models\TicketAgentGroups;
+use App\Models\TicketChannel;
+use App\Models\TicketType;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TicketFactory extends Factory

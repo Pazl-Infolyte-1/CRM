@@ -6,7 +6,6 @@ use App\Http\Controllers\CreditNoteController;
 use App\Models\CreditNotes;
 use App\Models\EmailNotificationSetting;
 use NotificationChannels\OneSignal\OneSignalChannel;
-use Illuminate\Support\Facades\App;
 
 class NewCreditNote extends BaseNotification
 {
@@ -38,14 +37,8 @@ class NewCreditNote extends BaseNotification
     {
         $via = ($notifiable->email_notifications && $notifiable->email != '') ? ['mail', 'database'] : ['database'];
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
             array_push($via, OneSignalChannel::class);
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.creditNote.subject'), $this->creditNotes->cn_number);
         }
 
         return $via;
@@ -59,7 +52,7 @@ class NewCreditNote extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $newCreditNote = parent::build($notifiable);
+        $newCreditNote = parent::build();
 
         if (!is_null($this->creditNotes->client_id)) {
             // For Sending pdf to email
@@ -68,16 +61,13 @@ class NewCreditNote extends BaseNotification
             if ($pdfOption = $invoiceController->domPdfObjectForDownload($this->creditNotes->id)) {
                 $pdf = $pdfOption['pdf'];
                 $filename = $pdfOption['fileName'];
-                $newCreditNote->attachData($pdf->output(), $filename . '.pdf');
-
-                App::setLocale($notifiable->locale ?? $this->company->locale ?? 'en');
 
                 $url = route('creditnotes.show', $this->creditNotes->id);
                 $url = getDomainSpecificUrl($url, $this->company);
 
-                $content = __('email.creditNote.text') . '<br>' . __('app.creditnoteNumber') . ': ' . $this->creditNotes->cn_number .'<br>';
+                $content = __('email.creditNote.text') . '<br>';
 
-                $newCreditNote->subject(__('email.creditNote.subject') . ' (' . $this->creditNotes->cn_number . ') - ' . config('app.name') . '.')
+                $newCreditNote->subject(__('email.creditNote.subject') . ' - ' . config('app.name') . '.')
                     ->markdown('mail.email', [
                         'url' => $url,
                         'content' => $content,
@@ -86,7 +76,7 @@ class NewCreditNote extends BaseNotification
                         'notifiableName' => $notifiable->name
                     ]);
 
-
+                $newCreditNote->attachData($pdf->output(), $filename . '.pdf');
 
                 return $newCreditNote;
             }

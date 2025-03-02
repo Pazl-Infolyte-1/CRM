@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Product;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreProductSubCategory extends CoreRequest
 {

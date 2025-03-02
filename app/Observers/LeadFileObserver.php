@@ -3,47 +3,28 @@
 namespace App\Observers;
 
 use App\Helper\Files;
-use App\Models\DealFile;
-use App\Traits\DealHistoryTrait;
+use App\Models\LeadFiles;
 
 class LeadFileObserver
 {
 
-    use DealHistoryTrait;
-
-    public function saving(DealFile $leadFile)
+    public function saving(LeadFiles $leadFile)
     {
         if (!isRunningInConsoleOrSeeding()) {
             $leadFile->last_updated_by = user()->id;
         }
     }
 
-    public function created(DealFile $leadFile)
-    {
-
-        if (!isRunningInConsoleOrSeeding()) {
-            self::createDealHistory($leadFile->deal_id, 'file-added', fileId: $leadFile->id);
-        }
-
-    }
-
-    public function creating(DealFile $leadFile)
+    public function creating(LeadFiles $leadFile)
     {
         if (!isRunningInConsoleOrSeeding()) {
             $leadFile->added_by = user()->id;
         }
     }
 
-    public function deleting(DealFile $leadFile)
+    public function deleting(LeadFiles $leadFile)
     {
-        Files::deleteFile($leadFile->hashname, DealFile::FILE_PATH . '/' . $leadFile->lead_id);
-    }
-
-    public function deleted(DealFile $leadFile)
-    {
-        if (user()) {
-            self::createDealHistory($leadFile->deal_id, 'file-deleted');
-        }
+        Files::deleteFile($leadFile->hashname, LeadFiles::FILE_PATH . '/' . $leadFile->lead_id);
     }
 
 }

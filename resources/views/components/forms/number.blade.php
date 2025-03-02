@@ -7,7 +7,7 @@
             @if ($maxValue)
             max="{{ $maxValue }}"
             @endif
-            @readonly($fieldReadOnly == 'true')>
+            @if ($fieldReadOnly == 'true') readonly @endif>
 
     @if ($fieldHelp)
         <small id="{{ $fieldId }}Help" class="form-text text-muted">{{ $fieldHelp }}</small>

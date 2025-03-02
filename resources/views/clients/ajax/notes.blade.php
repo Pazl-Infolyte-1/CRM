@@ -46,7 +46,7 @@ $addClientNotePermission = user()->permission('add_client_note');
         data['clientID'] = clientID;
     });
     const showTable = () => {
-        window.LaravelDataTables["client-notes-table"].draw(true);
+        window.LaravelDataTables["client-notes-table"].draw(false);
     }
 
     $('#quick-action-type').change(function() {

@@ -41,7 +41,7 @@ class RemovalRequestLead extends BaseModel
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Deal::class);
+        return $this->belongsTo(Lead::class);
     }
 
 }

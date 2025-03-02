@@ -3,8 +3,6 @@
 @endphp
 
 <link rel="stylesheet" href="{{ asset('vendor/css/dropzone.min.css') }}">
-<!-- for sortable content -->
-<link rel="stylesheet" href="{{ asset('vendor/css/jquery-ui.css') }}">
 
 @if (!in_array('clients', user_modules()))
     <x-alert class="mb-3" type="danger" icon="exclamation-circle"><span>@lang('messages.enableClientModule')</span>
@@ -16,7 +14,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.invoiceDetails')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoice') @lang('app.details')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -24,7 +22,6 @@
     <x-form class="c-inv-form" id="saveInvoiceForm">
         @method('PUT')
         <!-- INVOICE NUMBER, DATE, DUE DATE, FREQUENCY START -->
-                <input type="hidden" name="do_it_later" id="doItLater" value="direct">
         <div class="row px-lg-4 px-md-4 px-3 py-3">
             <!-- INVOICE NUMBER START -->
             <div class="col-md-2">
@@ -90,7 +87,7 @@
                 </x-forms.label>
                 <input type="number" id="exchange_rate" name="exchange_rate"
                        class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15" value="{{$invoice->exchange_rate}}" @if($companyCurrency->id == $invoice->currency_id) readonly @endif>
-                <small id="currency_exchange" class="form-text text-muted">@if (company()->currency->currency_code != $invoice->currency->currency_code) ( {{$invoice->currency->currency_code}} @lang('app.to') {{company()->currency->currency_code}} ) @endif </small>
+                <small id="currency_exchange" class="form-text text-muted">@if (company()->currency->currency_code != $invoice->currency->currency_code) ( {{company()->currency->currency_code}} @lang('app.to') {{$invoice->currency->currency_code}} ) @endif </small>
             </div>
         </div>
         <!-- INVOICE NUMBER, DATE, DUE DATE, FREQUENCY END -->
@@ -163,24 +160,6 @@
                 </div>
             @endif
 
-            <div class="col-md-4">
-                <div class="form-group c-inv-select my-4">
-                    <x-forms.label fieldId="invoice_payment_id" :fieldLabel="__('modules.invoices.paymentDetails')">
-                    </x-forms.label>
-                    <div class="select-others height-35 rounded">
-                        <select class="form-control select-picker" data-live-search="true" data-size="8"
-                            name="invoice_payment_id" id="invoice_payment_id">
-                            <option value="">--</option>
-                            @foreach ($invoicePayments as $invoicePayment)
-                            <option value="{{ $invoicePayment->id }}"  @if($invoicePayment->id == $invoice->invoice_payment_id) selected @endif>
-                                {{ $invoicePayment->title }}
-                            </option>
-                        @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
-
             @if ($invoice->amountPaid() == 0 && $invoice->status == 'paid')
                 <!-- STATUS START -->
                 <div class="col-md-4">
@@ -206,23 +185,22 @@
             <!-- BILLING ADDRESS START -->
             <div class="col-md-4">
                 <div class="form-group c-inv-select mb-0">
-                    <label class="f-14 text-dark-grey mb-12  w-100"
+                    <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
                            for="usr">@lang('modules.invoices.billingAddress')</label>
                     <p class="f-15" id="client_billing_address">{!! nl2br($invoice->client?->clientDetails?->address) !!}</p>
-                    <textarea class="form-control d-none" id="client_billing_address_editable" name="billing_address" rows="3"></textarea>
                 </div>
             </div>
             <!-- BILLING ADDRESS END -->
             <!-- SHIPPING ADDRESS START -->
             <div class="col-md-4">
                 <div class="form-group c-inv-select mb-lg-0 mb-md-0 mb-4">
-                    <label class="f-14 text-dark-grey mb-12  w-100"
+                    <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
                            for="usr">@lang('modules.invoices.shippingAddress')</label>
                     <p class="f-15" id="client_shipping_address">
                         @if ($invoice->client?->clientDetails?->shipping_address)
                             {!! nl2br($invoice?->client?->clientDetails?->shipping_address) !!}
                         @else
-                            <a href="javascript:;" class="" id="show-shipping-field"><i
+                            <a href="javascript:;" class="text-capitalize" id="show-shipping-field"><i
                                     class="f-12 mr-2 fa fa-plus"></i>@lang('app.addShippingAddress')</a>
                         @endif
                     </p>
@@ -252,7 +230,6 @@
 
         </div>
         <!-- CLIENT, PROJECT, GST, BILLING, SHIPPING ADDRESS END -->
-
         <x-forms.custom-field :fields="$fields" :model="$invoice"></x-forms.custom-field>
 
         <hr class="m-0 border-top-grey">
@@ -277,21 +254,10 @@
                     <div class="form-group c-inv-select mb-4">
                     <x-forms.input-group>
                         <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                        @if (in_array('purchase', user_modules()))
-                            @foreach ($products as $item)
-                                @if ((!empty($item->inventory) && count($item->inventory) > 0 && $item->inventory[0]) || ($item->type == 'service'))
-                                    @if (($item->track_inventory == 1 && $item->inventory[0]->net_quantity > 0) || ($item->type == 'service'))
-                                        <option data-content="{{ $item->name }}" value="{{ $item->id }}">
-                                            {{ $item->name }}</option>
-                                    @endif
-                                @endif
-                            @endforeach
-                        @else
                             @foreach ($products as $item)
                                 <option data-content="{{ $item->name }}" value="{{ $item->id }}">
                                     {{ $item->name }}</option>
                             @endforeach
-                        @endif
                         </select>
                         <x-slot name="preappend">
                             <a href="javascript:;"
@@ -299,21 +265,11 @@
                                 data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
                         </x-slot>
                         @if ($addProductPermission == 'all' || $addProductPermission == 'added')
-                            @if (module_enabled('Purchase'))
-                                <x-slot name="append">
-                                    <a href="{{ route('purchase-products.create') }}" data-redirect-url="no"
-                                        class="btn btn-outline-secondary border-grey openRightModal"
-                                        data-toggle="tooltip"
-                                        data-original-title="{{ __('app.add') . ' ' . __('modules.dashboard.newproduct') }}">@lang('app.add')</a>
-                                </x-slot>
-                            @else
-                                <x-slot name="append">
-                                    <a href="{{ route('products.create') }}" data-redirect-url="no"
-                                        class="btn btn-outline-secondary border-grey openRightModal"
-                                        data-toggle="tooltip"
-                                        data-original-title="{{ __('app.add') . ' ' . __('modules.dashboard.newproduct') }}">@lang('app.add')</a>
-                                </x-slot>
-                            @endif
+                            <x-slot name="append">
+                                <a href="{{ route('products.create') }}" data-redirect-url="no"
+                                    class="btn btn-outline-secondary border-grey openRightModal"
+                                    data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                            </x-slot>
                         @endif
                     </x-forms.input-group>
                     </div>
@@ -323,14 +279,9 @@
         </div>
 
         <div id="sortable">
-            @foreach ($invoice->items->sortBy('field_order') as $key => $item)
+            @foreach ($invoice->items as $key => $item)
                 <!-- DESKTOP DESCRIPTION TABLE START -->
                 <div class="d-flex px-4 py-3 c-inv-desc item-row">
-                    <div class="d-flex align-items-center">
-                        <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-                        <input type="hidden" name="sort_order[]"
-                               value="{{ $item->id }}">
-                    </div>
 
                     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                         <table width="100%">
@@ -461,7 +412,7 @@
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14 ">
+            <table width="100%" class="text-right f-14 text-capitalize">
                 <tbody>
                 <tr>
                     <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -539,7 +490,7 @@
         <!-- NOTE AND TERMS AND CONDITIONS START -->
         <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
             <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                <label class="f-14 text-dark-grey mb-12  w-100"
+                <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
                        for="usr">@lang('modules.invoices.note')</label>
                 <textarea class="form-control" name="note" id="note" rows="4"
                           placeholder="@lang('placeholders.invoices.note')">{{ $invoice->note }}</textarea>
@@ -680,32 +631,17 @@
     <!-- FORM END -->
 </div>
 <!-- CREATE INVOICE END -->
-<!-- for sortable content -->
-<script src="{{ asset('vendor/jquery/jquery-ui.min.js') }}"></script>
 
 <script>
-    $(function () {
-        $("#sortable").sortable();
-    });
-
     $(document).ready(function() {
         $('.toggle-product-category').click(function() {
             $('.product-category-filter').toggleClass('d-none');
-            var url = "{{route('invoices.product_category', ':id')}}";
-            url = url.replace(':id', null);
-            changeProductCategory(url);
-            $('#product_category_id').val('').trigger('change');
-            $('#product_category_id').selectpicker('refresh');
         });
 
         $('#product_category_id').on('change', function(){
-            var categoryId = $(this).val();
-            var url = "{{route('invoices.product_category', ':id')}}";
-            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);
-            changeProductCategory(url);
-        });
-
-        function changeProductCategory(url) {
+            var id = $(this).val();
+            var url = "{{route('invoices.product_category', ':id')}}",
+            url = url.replace(':id', id);
             $.easyAjax({
                 url : url,
                 type : "GET",
@@ -718,20 +654,18 @@
                         rData = response.data;
                         $.each(rData, function(index, value) {
                             var selectData = '';
-                            {{-- if (value.opening_stock > 0) { --}}
-                                selectData = '<option value="' + value.id + '">' + value.name +
+                            selectData = '<option value="' + value.id + '">' + value.name +
                                 '</option>';
-                                options.push(selectData);
-                            {{-- } --}}
+                            options.push(selectData);
                         });
                         $('#add-products').html(
-                            '<option value="" class="form-control" >{{  __('app.menu.selectProduct') }}</option>' +
+                            '<option value="" class="form-control" >{{ __('app.select') . ' ' . __('app.product') }}</option>' +
                             options);
                         $('#add-products').selectpicker('refresh');
                     }
                 }
             });
-        }
+        });
 
         Dropzone.autoDiscover = false;
             //Dropzone class
@@ -893,39 +827,21 @@
                     _token: token
                 },
                 success: function(response) {
-
                     if (response.status == 'success') {
-                        if (response.data !== null) {
-                            $('#client_billing_address').html(nl2br(response.data.client_details
-                                .address));
-                            $('#add-shipping-field').addClass('d-none');
-                            $('#client_shipping_address').removeClass('d-none');
+                        $('#client_billing_address').html(nl2br(response.data.clientDetails
+                            .address));
+                        $('#add-shipping-field').addClass('d-none');
+                        $('#client_shipping_address').removeClass('d-none');
 
-                            if (response.data.client_details.address) {
-                                $('#client_billing_address').html(nl2br(response.data.client_details.address)).removeClass('d-none');
-                                $('#client_billing_address_editable').addClass('d-none');
-                            } else {
-                                $('#client_billing_address').html(
-                                    "<span class='text-lightest'>@lang('messages.selectCustomerForBillingAddress')</span>"
-                                );
-                                $('#client_billing_address_editable').addClass('d-none');
-                            }
-
-                            if (response.data.clientDetails.shipping_address === null) {
-                                var addShippingLink =
-                                    `<a href="javascript:;" class="" id="show-shipping-field"><i class="f-12 mr-2 fa fa-plus"></i>
-                                        @lang("app.addShippingAddress")</a>`;
-                                $('#client_shipping_address').html(addShippingLink);
-                            } else {
-                                $('#client_shipping_address').html(nl2br(response.data
-                                    .clientDetails
-                                    .shipping_address));
-                            }
-                        }else{
-                            $('#client_billing_address').html(
-                                "<span class='text-lightest'>@lang('messages.selectCustomerForBillingAddress')</span>"
-                            ).removeClass('d-none');
-                            $('#client_billing_address_editable').addClass('d-none');
+                        if (response.data.clientDetails.shipping_address === null) {
+                            var addShippingLink =
+                                `<a href="javascript:;" class="text-capitalize" id="show-shipping-field"><i class="f-12 mr-2 fa fa-plus"></i>
+                                    @lang("app.addShippingAddress")</a>`;
+                            $('#client_shipping_address').html(addShippingLink);
+                        } else {
+                            $('#client_shipping_address').html(nl2br(response.data
+                                .clientDetails
+                                .shipping_address));
                         }
                     }
                 }
@@ -950,18 +866,15 @@
             }
         });
 
-
-
         function addProduct(id) {
             var currencyId = $('#currency_id').val();
-            var exchangeRate = $('#exchange_rate').val();
+
             $.easyAjax({
                 url: "{{ route('invoices.add_item') }}",
                 type: "GET",
                 data: {
                     id: id,
-                    currencyId: currencyId,
-                    exchangeRate: exchangeRate
+                    currencyId: currencyId
                 },
                 blockUI: true,
                 success: function(response) {
@@ -986,11 +899,6 @@
 
             var i = $(document).find('.item_name').length;
             var item = ' <div class="d-flex px-4 py-3 c-inv-desc item-row">' +
-                `<div class="d-flex align-items-center">
-                    <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-                    <input type="hidden" name="sort_order[]"
-                            value="${i+1}">
-                </div>` +
                 '<div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">' +
                 '<table width="100%">' +
                 '<tbody>' +
@@ -1087,35 +995,53 @@
 
         $('.save-form').click(function() {
             var type = $(this).data('type');
-            let totalAmt = $('.total-field').val();
 
-            if((type == 'send' || type == 'mark_as_send') && totalAmt == 0) {
+            if (KTUtil.isMobileDevice()) {
+                $('.desktop-description').remove();
+            } else {
+                $('.mobile-description').remove();
+            }
+
+            calculateTotal();
+
+            var discount = $('#discount_amount').html();
+            var total = $('.sub-total-field').val();
+
+            if (parseFloat(discount) > parseFloat(total)) {
                 Swal.fire({
-                    title: "@lang('messages.sweetAlertTitle')",
-                    text: "@lang('messages.markAsPaid')",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    focusConfirm: false,
-                    confirmButtonText: "@lang('app.yes')",
-                    cancelButtonText: "@lang('app.no')",
+                    icon: 'error',
+                    text: "{{ __('messages.discountExceed') }}",
+
                     customClass: {
-                        confirmButton: 'btn btn-primary mr-3',
-                        cancelButton: 'btn btn-secondary'
+                        confirmButton: 'btn btn-primary',
                     },
                     showClass: {
                         popup: 'swal2-noanimation',
                         backdrop: 'swal2-noanimation'
                     },
                     buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        saveForm(type, 'direct');
-                    }
                 });
-            } else {
-                saveForm(type, 'direct');
+                return false;
             }
 
+            $.easyAjax({
+                url: "{{ route('invoices.update', $invoice->id) }}" + "?type=" + type,
+                container: '#saveInvoiceForm',
+                type: "POST",
+                blockUI: true,
+                redirect: true,
+                file: true,  // Commented so that we dot get error of Input variables exceeded 1000
+                data: $('#saveInvoiceForm').serialize(),
+                success: function(response) {
+                    if (invoiceDropzone.getQueuedFiles().length > 0) {
+                        invoiceDropzone.processQueue();
+                    }
+                    else {
+                        window.location.href = response.redirectUrl;
+                    }
+
+                }
+            })
         });
 
         $('#saveInvoiceForm').on('keyup', '.quantity,.cost_per_item,.item_name, .discount_value', function() {
@@ -1159,6 +1085,14 @@
 
     });
 
+    function checkboxChange(parentClass, id){
+        var checkedData = '';
+        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
+            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
+        });
+        $('#'+id).val(checkedData);
+    }
+
     function ucWord(str){
         str = str.toLowerCase().replace(/\b[a-z]/g, function(letter) {
             return letter.toUpperCase();
@@ -1190,7 +1124,7 @@
                     $('#bank_account_id').html(response.data);
                     $('#bank_account_id').selectpicker('refresh');
                     $('#exchange_rate').val(response.exchangeRate);
-                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+currentCurrencyName+' @lang('app.to') '+companyCurrencyName+' )' : '';
+                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
                     $('#currency_exchange').html(currencyExchange);
                 }
             }
@@ -1246,72 +1180,6 @@
             $('#add_offline').addClass('d-none');
         }
     });
-
-    function saveForm(type, exceed){
-
-            $('#doItLater').val(exceed);
-
-            if (KTUtil.isMobileDevice()) {
-                $('.desktop-description').remove();
-            } else {
-                $('.mobile-description').remove();
-            }
-
-            calculateTotal();
-
-            var discount = $('#discount_amount').html();
-            var total = $('.sub-total-field').val();
-
-            if (parseFloat(discount) > parseFloat(total)) {
-                Swal.fire({
-                    icon: 'error',
-                    text: "{{ __('messages.discountExceed') }}",
-
-                    customClass: {
-                        confirmButton: 'btn btn-primary',
-                    },
-                    showClass: {
-                        popup: 'swal2-noanimation',
-                        backdrop: 'swal2-noanimation'
-                    },
-                    buttonsStyling: false
-                });
-                return false;
-            }
-
-            $.easyAjax({
-                url: "{{ route('invoices.update', $invoice->id) }}" + "?type=" + type,
-                container: '#saveInvoiceForm',
-                type: "POST",
-                blockUI: true,
-                redirect: true,
-                file: true,  // Commented so that we dot get error of Input variables exceeded 1000
-                data: $('#saveInvoiceForm').serialize(),
-                success: function(response) {
-                    $(MODAL_DEFAULT).modal('hide');
-
-                    if (response.status == 'error' && response.showValue === true && exceed == 'direct') {
-                        const productIDs = response.data;
-                        $('#do_it_later').val('true');
-                        const url = "{{ route('invoices.committed_modal') }}" + "?products=" + productIDs + "&type=" + type ;
-
-                        $(MODAL_DEFAULT + ' ' + MODAL_HEADING).html('...');
-                        $.ajaxModal(MODAL_DEFAULT, url);
-                    }
-
-                    if (response.status === 'success') {
-                        if (typeof invoiceDropzone !== 'undefined' && invoiceDropzone.getQueuedFiles().length > 0) {
-                            invoiceID = response.invoiceID;
-                            $('#invoiceID').val(response.invoiceID);
-                            invoiceDropzone.processQueue();
-                        }
-                        else {
-                            window.location.href = response.redirectUrl;
-                        }
-                    }
-                }
-            })
-        }
 
 </script>
 

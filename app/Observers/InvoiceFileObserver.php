@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Helper\Files;
 use App\Models\InvoiceFiles;
+use Carbon\Carbon;
 
 class InvoiceFileObserver
 {
@@ -19,7 +20,7 @@ class InvoiceFileObserver
     {
         if (!isRunningInConsoleOrSeeding()) {
             $invoiceFiles->added_by = user()->id;
-            $invoiceFiles->created_at = now()->format('Y-m-d H:i:s');
+            $invoiceFiles->created_at = Carbon::now()->format('Y-m-d H:i:s');
         }
     }
 

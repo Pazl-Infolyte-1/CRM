@@ -6,7 +6,7 @@ $deleteInvoicePermission = user()->permission('delete_invoices');
 
     <!--  USER CARDS START -->
     <div class="col-lg-12 col-md-12 mb-4 mb-xl-0 mb-lg-4 mb-md-0">
-        <h4 class="my-3 f-21  font-weight-bold">{{ $creditNote->cn_number }}</h4>
+        <h4 class="my-3 f-21 text-capitalize font-weight-bold">{{ $creditNote->cn_number }}</h4>
 
         <div class="row">
 
@@ -24,7 +24,7 @@ $deleteInvoicePermission = user()->permission('delete_invoices');
                     <div class="row">
                         <div class="col-10">
                             <h4 class="card-title f-15 f-w-500 text-darkest-grey mb-0">
-                                {{ $creditNote->client->name_salutation }}
+                                {{ $creditNote->client->name }}
                             </h4>
                         </div>
                     </div>
@@ -44,7 +44,7 @@ $deleteInvoicePermission = user()->permission('delete_invoices');
 
         </div>
 
-        <h4 class="mt-5 mb-3 f-21  font-weight-bold">@lang('app.creditedInvoices')</h4>
+        <h4 class="mt-5 mb-3 f-21 text-capitalize font-weight-bold">@lang('app.creditedInvoices')</h4>
 
         <x-cards.data padding="false">
             <x-table class="table-hover">

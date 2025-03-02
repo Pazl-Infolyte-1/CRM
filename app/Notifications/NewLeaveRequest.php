@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
 use App\Models\Leave;
+use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
@@ -43,17 +44,11 @@ class NewLeaveRequest extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
+            array_push($via, 'slack');
         }
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
             array_push($via, OneSignalChannel::class);
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.leaves.subject') . ' by: ' . $this->leave->user->name, $this->leave->leave_date->format($this->company->date_format) . ' ' . $this->leave->type->type_name);
         }
 
         return $via;
@@ -67,13 +62,13 @@ class NewLeaveRequest extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('leaves.show', $this->leave->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.leaves.subject') . ' by: ' . $this->leave->user->name . '.' . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . '<br>' . __('modules.leaves.leaveType') . ': ' . $this->leave->type->type_name . '<br>' . __('modules.leaves.reason') . ':- ' . $this->leave->reason;
 
-        $build
+        return $build
             ->subject(__('email.leaves.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -82,10 +77,6 @@ class NewLeaveRequest extends BaseNotification
                 'actionText' => __('email.leaves.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -106,9 +97,20 @@ class NewLeaveRequest extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        return $this->slackBuild($notifiable)
-            ->content(__('email.leaves.subject') . "\n" . $this->leave->user->name . "\n" . '*' . __('app.date') . '*: ' . $this->leave->leave_date->format($this->company->date_format) . "\n" . '*' . __('modules.leaves.leaveType') . '*: ' . $this->leave->type->type_name . "\n" . '*' . __('modules.leaves.reason') . '*' . "\n" . $this->leave->reason);
+        $slack = $notifiable->company->slackSetting;
 
+        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->to('@' . $notifiable->employee[0]->slack_username)
+                ->content(__('email.leaves.subject') . "\n" . $this->leave->user->name . "\n" . '*' . __('app.date') . '*: ' . $this->leave->leave_date->format($this->company->date_format) . "\n" . '*' . __('modules.leaves.leaveType') . '*: ' . $this->leave->type->type_name . "\n" . '*' . __('modules.leaves.reason') . '*' . "\n" . $this->leave->reason);
+        }
+
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image($slack->slack_logo_url)
+            ->content('*' . __('email.leaves.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

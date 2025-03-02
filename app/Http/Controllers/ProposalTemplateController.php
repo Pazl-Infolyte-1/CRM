@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\Tax;
+use App\Models\Lead;
 use App\Helper\Files;
 use App\Helper\Reply;
 use App\Models\Product;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\App;
 use App\Models\ProposalTemplateItem;
 use App\Models\ProposalTemplateItemImage;
 use App\DataTables\ProposalTemplateDataTable;
+use Google\Service\ShoppingContent\UnitInvoice;
+use SebastianBergmann\CodeCoverage\Report\Xml\Unit;
 use App\Http\Requests\ProposalTemplate\StoreRequest;
 
 class ProposalTemplateController extends AccountBaseController
@@ -60,12 +63,12 @@ class ProposalTemplateController extends AccountBaseController
         $this->products = Product::all();
         $this->categories = ProductCategory::all();
 
-        $this->view = 'proposal-template.ajax.create';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('proposal-template.ajax.create', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'proposal-template.ajax.create';
         return view('proposals.create', $this->data);
     }
 
@@ -206,12 +209,12 @@ class ProposalTemplateController extends AccountBaseController
         $this->units = UnitType::all();
         $this->invoiceSetting = invoice_setting();
 
-        $this->view = 'proposal-template.ajax.edit';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('proposal-template.ajax.edit', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'proposal-template.ajax.edit';
         return view('proposal-template.create', $this->data);
     }
 
@@ -298,8 +301,8 @@ class ProposalTemplateController extends AccountBaseController
     {
         $this->invoiceSetting = invoice_setting();
         $this->proposalTemplate = ProposalTemplate::with('items', 'lead', 'currency')->findOrFail($id);
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         if ($this->proposalTemplate->discount > 0) {
             if ($this->proposalTemplate->discount_type == 'percent') {
@@ -356,6 +359,9 @@ class ProposalTemplateController extends AccountBaseController
 
         $pdf->loadView('proposal-template.pdf.invoice-5', $this->data);
 
+        $dom_pdf = $pdf->getDomPDF();
+        $canvas = $dom_pdf->getCanvas();
+        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10, array(0, 0, 0));
         $filename = __('modules.lead.proposal') . '-' . $this->proposalTemplate->id;
 
         return [
@@ -371,20 +377,14 @@ class ProposalTemplateController extends AccountBaseController
 
         $exchangeRate = Currency::findOrFail($request->currencyId);
 
-        if($exchangeRate->exchange_rate == $request->exchangeRate){
-            $exRate = $exchangeRate->exchange_rate;
-        }else{
-            $exRate = floatval($request->exchangeRate);
-        }
-
         if (!is_null($exchangeRate) && !is_null($exchangeRate->exchange_rate)) {
             if ($this->items->total_amount != '') {
                 /** @phpstan-ignore-next-line */
-                $this->items->price = floor($this->items->total_amount / $exRate);
+                $this->items->price = floor($this->items->total_amount * $exchangeRate->exchange_rate);
             }
             else {
 
-                $this->items->price = floatval($this->items->price) / floatval($exRate);
+                $this->items->price = floatval($this->items->price) * floatval($exchangeRate->exchange_rate);
             }
         }
         else {

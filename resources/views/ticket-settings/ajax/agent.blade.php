@@ -22,10 +22,9 @@
                                         @endphp
                                     @endif
                                 @endforeach
-                            value="{{ $group->id }}">{{ $group->group_name }}</option>
+                             value="{{ $group->id }}">{{ $group->group_name }}</option>
                         @endforeach
                     </select>
-
                 </td>
                 <td>
                     <select class="change-agent-status form-control select-picker" data-agent-id="{{ $agent->id }}">
@@ -51,15 +50,3 @@
         @endforelse
     </x-table>
 </div>
-
-@push('scripts')
-    <script>
-        $(".change-agent-group").selectpicker({
-            multipleSeparator: ", ",
-            selectedTextFormat: "count > 6",
-            countSelectedText: function(selected, total) {
-                return selected + " {{ __('app.groupSelected') }} ";
-            }
-        });
-    </script>
-@endpush

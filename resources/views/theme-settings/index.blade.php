@@ -25,7 +25,7 @@
         <x-setting-card method="POST">
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
-                    <h2 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                         @lang($pageTitle)</h2>
                 </div>
             </x-slot>
@@ -71,7 +71,6 @@
                                       :fieldValue="company()->masked_default_logo"
                                       fieldName="logo" fieldId="logo" :popover="__('messages.darkThemeLogoTooltip')"/>
                     </div>
-                    @if(module_enabled('Subdomain') || isWorksuite())
                     <div class="col-lg-6">
                         <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
                                       :fieldLabel="__('modules.themeSettings.loginScreenBackground')"
@@ -80,7 +79,6 @@
                                       :popover="__('modules.themeSettings.loginBackgroundSize')"
                                       :popover="__('messages.fileFormat.ImageFile')"/>
                     </div>
-                    @endif
                     <div class="col-lg-6">
                         <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"
                                       :fieldLabel="__('modules.accountSettings.faviconImage')"
@@ -89,7 +87,7 @@
                                       fieldName="favicon" fieldId="favicon"
                                       :popover="__('messages.fileFormat.ImageFile')"/>
                     </div>
-                    @if(module_enabled('Subdomain') || isWorksuite())
+
                     <div class="col-lg-6">
                         <div class="form-group my-3">
                             <x-forms.label fieldId="logo_background_color" fieldRequired="true"
@@ -119,70 +117,63 @@
                                                 :checked="(company()->auth_theme_text == 'dark')">
                                 </x-forms.radio>
 
-                                    <x-forms.radio fieldId="auth_theme_text_light_4"
-                                                   :fieldLabel="__('modules.themeSettings.light')"
-                                                   fieldValue="light" fieldName="auth_theme_text" class="auth_theme_text"
-                                                   :checked="(company()->auth_theme_text == 'light')">
-                                    </x-forms.radio>
-                                </div>
+                                <x-forms.radio fieldId="auth_theme_text_light_4"
+                                                :fieldLabel="__('modules.themeSettings.light')"
+                                                fieldValue="light" fieldName="auth_theme_text" class="auth_theme_text"
+                                                :checked="(company()->auth_theme_text == 'light')">
+                                </x-forms.radio>
                             </div>
                         </div>
-                    @endif
+                    </div>
 
-
-
-                <div class="col-sm-12 mt-3 {{ $superAdminThemeSetting->restrict_admin_theme_change ? 'd-none' : '' }}">
+                <div class="col-sm-12 mt-3">
                     <x-alert type="info" icon="info-circle">@lang('messages.darkThemeRestrictionInfo')</x-alert>
                 </div>
-                        <div
-                            class="col-lg-12 {{ $superAdminThemeSetting->restrict_admin_theme_change |!module_enabled('Subdomain') ? 'd-none' : '' }}">
-                            <h4>{{__('modules.themeSettings.authTheme')}}</h4>
+
+                <div class="col-lg-12">
+                    <h4>{{__('modules.themeSettings.authTheme')}}</h4>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="form-group my-3">
+                        <x-forms.label fieldId="colorselector" fieldRequired="true"
+                                        :fieldLabel="__('modules.themeSettings.headerColor')">
+                        </x-forms.label>
+                        <x-forms.input-group class="color-picker">
+                            <input type="text" class="form-control height-35 f-14"
+                                    value="{{ company()->header_color }}"
+                                    placeholder="{{ __('placeholders.colorPicker') }}" name="global_header_color">
+
+                            <x-slot name="append">
+                                <span class="input-group-text height-35 colorpicker-input-addon"><i></i></span>
+                            </x-slot>
+                        </x-forms.input-group>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="form-group my-3">
+                        <x-forms.label fieldId="auth_theme" :fieldLabel="__('modules.themeSettings.authTheme')"
+                                        :popover="__('modules.themeSettings.authThemeInfo')">
+                        </x-forms.label>
+                        <div class="d-flex">
+                            <x-forms.radio fieldId="auth_theme_dark_4"
+                                            :fieldLabel="__('modules.themeSettings.dark')"
+                                            fieldName="auth_theme" fieldValue="dark" class="auth_theme"
+                                            :checked="(company()->auth_theme == 'dark')">
+                            </x-forms.radio>
+
+                            <x-forms.radio fieldId="auth_theme_light_4"
+                                            :fieldLabel="__('modules.themeSettings.light')"
+                                            fieldValue="light" fieldName="auth_theme" class="auth_theme"
+                                            :checked="(company()->auth_theme == 'light')">
+                            </x-forms.radio>
                         </div>
+                    </div>
+                </div>
 
-                        <div
-                            class="col-lg-6 {{ $superAdminThemeSetting->restrict_admin_theme_change |!module_enabled('Subdomain') ? 'd-none' : '' }}">
-                            <div class="form-group my-3">
-                                <x-forms.label fieldId="colorselector" fieldRequired="true"
-                                               :fieldLabel="__('modules.themeSettings.headerColor')">
-                                </x-forms.label>
-                                <x-forms.input-group class="color-picker">
-                                    <input type="text" class="form-control height-35 f-14"
-                                           value="{{ company()->header_color }}"
-                                           placeholder="{{ __('placeholders.colorPicker') }}"
-                                           name="global_header_color">
+                    @include('theme-settings.ajax.customer_theme')
 
-                                    <x-slot name="append">
-                                        <span class="input-group-text height-35 colorpicker-input-addon"><i></i></span>
-                                    </x-slot>
-                                </x-forms.input-group>
-                            </div>
-                        </div>
-
-
-                        <div
-                            class="col-lg-6 {{ $superAdminThemeSetting->restrict_admin_theme_change || !module_enabled('Subdomain')? 'd-none' : '' }}">
-                            <div class="form-group my-3">
-                                <x-forms.label fieldId="auth_theme" :fieldLabel="__('modules.themeSettings.authTheme')"
-                                               :popover="__('modules.themeSettings.authThemeInfo')">
-                                </x-forms.label>
-                                <div class="d-flex">
-                                    <x-forms.radio fieldId="auth_theme_dark_4"
-                                                   :fieldLabel="__('modules.themeSettings.dark')"
-                                                   fieldName="auth_theme" fieldValue="dark" class="auth_theme"
-                                                   :checked="(company()->auth_theme == 'dark')">
-                                    </x-forms.radio>
-
-                                    <x-forms.radio fieldId="auth_theme_light_4"
-                                                   :fieldLabel="__('modules.themeSettings.light')"
-                                                   fieldValue="light" fieldName="auth_theme" class="auth_theme"
-                                                   :checked="(company()->auth_theme == 'light')">
-                                    </x-forms.radio>
-                                </div>
-                            </div>
-                        </div>
-                    @if (!$superAdminThemeSetting->restrict_admin_theme_change)
-                        @include('theme-settings.ajax.customer_theme')
-                    @endif
 
                 </div>
             </div>
@@ -210,6 +201,7 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
     <script src="{{ asset('vendor/jquery/image-picker.min.js') }}"></script>
 
     @if (!user()->dark_theme)

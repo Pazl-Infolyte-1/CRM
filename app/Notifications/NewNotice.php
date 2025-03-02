@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
 use App\Models\Notice;
+use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
@@ -47,14 +48,8 @@ class NewNotice extends BaseNotification
             array_push($via, 'slack');
         }
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
             array_push($via, OneSignalChannel::class);
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.newNotice.subject'), $this->notice->heading);
         }
 
         return $via;
@@ -68,14 +63,14 @@ class NewNotice extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('notices.show', $this->notice->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.newNotice.text') . '<br>' . $this->notice->heading;
 
 
-        $build
+        return $build
             ->subject(__('email.newNotice.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -84,10 +79,6 @@ class NewNotice extends BaseNotification
                 'actionText' => __('email.newNotice.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -106,13 +97,24 @@ class NewNotice extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return \Illuminate\Notifications\Messages\SlackMessage
+     * @return SlackMessage
      */
     public function toSlack($notifiable)
     {
-        return $this->slackBuild($notifiable)
-            ->content('*' . __('email.newNotice.subject') . ' : ' . $this->notice->heading . '*' . "\n" . strip_tags($this->notice->description));
+        $slack = $notifiable->company->slackSetting;
 
+        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->to('@' . $notifiable->employee[0]->slack_username)
+                ->content('*' . __('email.newNotice.subject') . ' : ' . $this->notice->heading . '*' . "\n" . strip_tags($this->notice->description));
+        }
+
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image($slack->slack_logo_url)
+            ->content('*' . __('email.newNotice.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

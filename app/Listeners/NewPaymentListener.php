@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
 use App\Events\NewPaymentEvent;
 use App\Notifications\NewPayment;
 use Illuminate\Support\Facades\Notification;

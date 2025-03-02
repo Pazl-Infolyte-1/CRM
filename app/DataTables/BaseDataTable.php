@@ -31,7 +31,7 @@ class BaseDataTable extends DataTable
             ->destroy(true)
             ->responsive()
             ->serverSide()
-            ->stateSave(true)
+            ->stateSave(false)
             ->pageLength(companyOrGlobalSetting()->datatable_row_limit ?? 10)
             ->processing()
             ->dom($this->domHtml)
@@ -44,16 +44,6 @@ class BaseDataTable extends DataTable
         $filename = str()->snake(class_basename($this), '-');
 
         return str_replace('data-table', '', $filename)  . now()->format('Y-m-d-H-i-s');
-    }
-
-    public function checkBox($row, $hideCheckbox = false): string
-    {
-        if ($hideCheckbox) {
-            return '';
-        }
-
-        return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-
     }
 
 }

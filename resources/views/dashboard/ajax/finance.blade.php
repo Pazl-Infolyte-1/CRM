@@ -14,7 +14,7 @@
         <div class="col-xl-4 col-lg-6 col-md-6">
             <div
                 class="bg-white p-3 rounded b-shadow-4 d-flex justify-content-between align-items-center mb-4 mb-md-0 mb-lg-0">
-                <div class="d-block ">
+                <div class="d-block text-capitalize">
                     <h5 class="f-13 f-w-500 mb-20 text-darkest-grey">@lang('app.menu.invoices')</h5>
                     <div class="d-flex">
                         @if (in_array('total_paid_invoices', $activeWidgets))
@@ -47,7 +47,7 @@
         <div class="col-xl-4 col-lg-6 col-md-6">
             <div
                 class="bg-white p-3 rounded b-shadow-4 d-flex justify-content-between align-items-center mb-4 mb-md-0 mb-lg-0">
-                <div class="d-block ">
+                <div class="d-block text-capitalize">
                     <h5 class="f-13 f-w-500 mb-20 text-darkest-grey">@lang('app.menu.finance')</h5>
                     <a href="javascript:;" id="totalEarnings">
                         <div class="d-flex">
@@ -91,9 +91,6 @@
         <div class="col-sm-12 col-lg-6 mt-4">
             <x-cards.data
                 :title="__('modules.dashboard.invoiceOverview').' <i class=\'fa fa-question-circle\' data-toggle=\'popover\' data-placement=\'top\' data-content=\''.__('messages.invoicesWidgetMessage').'\' data-trigger=\'hover\'></i>'">
-                @if (array_sum($invoiceOverviewChartData['values']) > 0)
-                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart1" data-chart-data="{{ json_encode($invoiceOverviewChartData) }}"><i class="fas fa-expand float-right mr-3"></i></a>
-                @endif
                 <x-pie-chart id="task-chart1" :labels="$invoiceOverviewChartData['labels']"
                     :values="$invoiceOverviewChartData['values']" :colors="$invoiceOverviewChartData['colors']"
                     height="300" width="300" />
@@ -105,9 +102,6 @@
         <div class="col-sm-12 col-lg-6 mt-4">
             <x-cards.data
                 :title="__('modules.dashboard.estimateOverview').' <i class=\'fa fa-question-circle\' data-toggle=\'popover\' data-placement=\'top\' data-content=\''.__('messages.estimatesWidgetMessage').'\' data-trigger=\'hover\'></i>'">
-                @if (array_sum($estimateOverviewChartData['values']) > 0)
-                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart2" data-chart-data="{{ json_encode($estimateOverviewChartData) }}"><i class="fas fa-expand float-right mr-3"></i></a>
-                @endif
                 <x-pie-chart id="task-chart2" :labels="$estimateOverviewChartData['labels']"
                     :values="$estimateOverviewChartData['values']" :colors="$estimateOverviewChartData['colors']"
                     height="300" width="300" />
@@ -119,9 +113,6 @@
         <div class="col-sm-12 col-lg-6 mt-4">
             <x-cards.data
                 :title="__('modules.dashboard.proposalOverview').' <i class=\'fa fa-question-circle\' data-toggle=\'popover\' data-placement=\'top\' data-content=\''.__('messages.proposalsWidgetMessage').'\' data-trigger=\'hover\'></i>'">
-                @if (array_sum($proposalOverviewChartData['values']) > 0)
-                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart3" data-chart-data="{{ json_encode($proposalOverviewChartData) }}"><i class="fas fa-expand float-right mr-3"></i></a>
-                @endif
                 <x-pie-chart id="task-chart3" :labels="$proposalOverviewChartData['labels']"
                     :values="$proposalOverviewChartData['values']" :colors="$proposalOverviewChartData['colors']"
                     height="300" width="300" />

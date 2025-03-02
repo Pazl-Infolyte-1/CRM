@@ -68,6 +68,7 @@
     <x-forms.button-cancel data-dismiss="modal" class="border-0 mr-3">@lang('app.close')</x-forms.button-cancel>
     <x-forms.button-primary id="save-appreciationType" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
+<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 
 <script>
     $(document).ready(function() {

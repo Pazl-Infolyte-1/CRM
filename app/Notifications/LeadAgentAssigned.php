@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
-use App\Models\Deal;
+use App\Models\Lead;
 
 class LeadAgentAssigned extends BaseNotification
 {
@@ -13,13 +13,13 @@ class LeadAgentAssigned extends BaseNotification
      *
      * @return void
      */
-    private $deal;
+    private $lead;
     private $emailSetting;
 
-    public function __construct(Deal $deal)
+    public function __construct(Lead $lead)
     {
-        $this->deal = $deal;
-        $this->company = $this->deal->company;
+        $this->lead = $lead;
+        $this->company = $this->lead->company;
         $this->emailSetting = EmailNotificationSetting::where('company_id', $this->company->id)->where('slug', 'lead-notification')->first();
     }
 
@@ -48,15 +48,16 @@ class LeadAgentAssigned extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
-        $url = route('deals.show', $this->deal->id);
+        $build = parent::build();
+        $url = route('leads.show', $this->lead->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
+        $salutation = ($this->lead->salutation ? $this->lead->salutation->label() : '') .' ';
         $leadEmail = __('modules.lead.clientEmail') . ': ';
-        $clientEmail = !is_null($this->deal->contact->client_email) ? $leadEmail : '';
-        $content = __('email.leadAgent.subject') . '<br>' .__('modules.deal.dealName') . ': '  . $this->deal->name . '<br>' .  __('modules.lead.clientName') . ': '  . $this->deal->contact->client_name_salutation . '<br>' . $clientEmail . $this->deal->contact->client_email;
+        $clientEmail = !is_null($this->lead->client_email) ? $leadEmail : '';
+        $content = __('email.leadAgent.subject') . '<br>' . __('modules.lead.clientName') . ': ' . $salutation . $this->lead->client_name . '<br>' . $clientEmail . $this->lead->client_email;
 
-        $build
+        return $build
             ->subject(__('email.leadAgent.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -65,10 +66,6 @@ class LeadAgentAssigned extends BaseNotification
                 'actionText' => __('email.leadAgent.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -81,10 +78,10 @@ class LeadAgentAssigned extends BaseNotification
     public function toArray($notifiable)
     {
         return [
-            'id' => $this->deal->id,
-            'name' => $this->deal->name,
+            'id' => $this->lead->id,
+            'name' => $this->lead->client_name,
             'agent_id' => $notifiable->id,
-            'added_by' => $this->deal->added_by
+            'added_by' => $this->lead->added_by
         ];
     }
 

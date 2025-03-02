@@ -20,7 +20,6 @@ class TicketFileController extends AccountBaseController
                 $reply = new TicketReply();
                 $reply->ticket_id = $request->ticket_id;
                 $reply->user_id = $this->user->id; // Current logged in user
-                $reply->type = $request->type;
                 $reply->save();
                 $replyId = $reply->id;
             }
@@ -51,6 +50,9 @@ class TicketFileController extends AccountBaseController
      */
     public function destroy(Request $request, $id)
     {
+        $file = TicketFile::findOrFail($id);
+
+        Files::deleteFile($file->hashname, 'ticket-files/' . $file->ticket_reply_id);
         TicketFile::destroy($id);
 
         return Reply::success(__('messages.deleteSuccess'));

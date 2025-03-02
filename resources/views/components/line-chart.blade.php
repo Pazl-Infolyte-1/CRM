@@ -76,7 +76,6 @@
         </script>
 
         <script>
-            var valuesOverPoint = data['datasets'][0]['values'].length <= 30 ? 1 : 0;
             var chart = new frappe.Chart("#{{ $attributes['id'] }}", { // or a DOM element,
                 data: data,
                 type: 'line', // or 'bar', 'line', 'scatter', 'pie', 'percentage'
@@ -88,7 +87,7 @@
                     heatline: 1,
                     regionFill: 1,
                 },
-                valuesOverPoints: valuesOverPoint,
+                valuesOverPoints: 1,
                 axisOptions: {
                     yAxisMode: 'tick',
                     xAxisMode: 'tick',

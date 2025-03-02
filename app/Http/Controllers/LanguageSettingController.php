@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Flag;
 use App\Helper\Reply;
-use App\Models\GlobalSetting;
 use Illuminate\Http\Request;
 use App\Models\LanguageSetting;
 use App\Models\TranslateSetting;
@@ -27,7 +26,7 @@ class LanguageSettingController extends AccountBaseController
         $this->activeSettingMenu = 'language_settings';
         $this->langPath = base_path() . '/resources/lang';
         $this->middleware(function ($request, $next) {
-            abort_403(((user()->permission('manage_language_setting') !== 'all') && GlobalSetting::validateSuperAdmin('manage_superadmin_language_settings')));
+            abort_403(!(user()->permission('manage_language_setting') == 'all'));
             return $next($request);
         });
     }
@@ -72,27 +71,26 @@ class LanguageSettingController extends AccountBaseController
     {
         $setting = LanguageSetting::findOrFail($request->id);
 
-        $oldLangExists = File::exists($this->langPath.'/'.$setting->language_code);
+        $oldLangExists = File::exists($this->langPath.'/'.strtolower($setting->language_code));
 
         if($oldLangExists){
             // check and create lang folder
-            $langExists = File::exists($this->langPath . '/' . $request->language_code);
+            $langExists = File::exists($this->langPath . '/' . strtolower($request->language_code));
 
             if (!$langExists) {
                 // update lang folder name
-                File::move($this->langPath . '/' . $setting->language_code, $this->langPath . '/' . $request->language_code);
+                File::move($this->langPath . '/' . strtolower($setting->language_code), $this->langPath . '/' . strtolower($request->language_code));
 
-                Translation::where('locale', $setting->language_code)->get()->map(function ($translation) {
+                Translation::where('locale', strtolower($setting->language_code))->get()->map(function ($translation) {
                     $translation->delete();
                 });
             }
         }
 
         $setting->language_name = $request->language_name;
-        $setting->language_code = $request->language_code;
+        $setting->language_code = strtolower($request->language_code);
         $setting->flag_code = strtolower($request->flag);
         $setting->status = $request->status;
-        $setting->is_rtl = $request->is_rtl;
         $setting->save();
 
 
@@ -106,18 +104,17 @@ class LanguageSettingController extends AccountBaseController
     public function store(StoreRequest $request)
     {
         // check and create lang folder
-        $langExists = File::exists($this->langPath . '/' . $request->language_code);
+        $langExists = File::exists($this->langPath . '/' . strtolower($request->language_code));
 
         if (!$langExists) {
-            File::makeDirectory($this->langPath . '/' . $request->language_code);
+            File::makeDirectory($this->langPath . '/' . strtolower($request->language_code));
         }
 
         $setting = new LanguageSetting();
         $setting->language_name = $request->language_name;
-        $setting->language_code = $request->language_code;
+        $setting->language_code = strtolower($request->language_code);
         $setting->flag_code = $request->flag;
         $setting->status = $request->status;
-        $setting->is_rtl = $request->is_rtl;
         $setting->save();
 
         return Reply::success(__('messages.recordSaved'));
@@ -172,7 +169,7 @@ class LanguageSettingController extends AccountBaseController
     public function destroy($id)
     {
         $language = LanguageSetting::findOrFail($id);
-        $setting = companyOrGlobalSetting();
+        $setting = company();
 
         if ($language->language_code == $setting->locale) {
             $setting->locale = 'en';
@@ -183,10 +180,10 @@ class LanguageSettingController extends AccountBaseController
 
         $language->destroy($id);
 
-        $langExists = File::exists($this->langPath . '/' . $language->language_code);
+        $langExists = File::exists($this->langPath . '/' . strtolower($language->language_code));
 
         if ($langExists) {
-            File::deleteDirectory($this->langPath . '/' . $language->language_code);
+            File::deleteDirectory($this->langPath . '/' . strtolower($language->language_code));
         }
 
         if (Schema::hasTable('ltm_translations')) {

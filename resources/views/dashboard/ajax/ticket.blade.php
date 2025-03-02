@@ -8,7 +8,7 @@
 
                 <div
                     class="bg-white p-3 rounded b-shadow-4 d-flex justify-content-between align-items-center mb-4 mb-md-0 mb-lg-0">
-                    <div class="d-block ">
+                    <div class="d-block text-capitalize">
                         <h5 class="f-15 f-w-500 mb-20 text-darkest-grey">@lang('app.menu.tickets')</h5>
                         <div class="d-flex">
                             <a href="javascript:;"  class="totalTicketCount" data-status="open"><p class="mb-0 f-15 font-weight-bold text-blue d-grid mr-5">
@@ -48,9 +48,6 @@
     @if (in_array('tickets', user_modules()) && in_array('type_wise_ticket', $activeWidgets))
         <div class="col-sm-12 col-lg-6 mt-3">
             <x-cards.data :title="__('modules.dashboard.typeWiseTicket')">
-                @if (array_sum($ticketTypeChart['values']) > 0)
-                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart1" data-chart-data="{{ json_encode($ticketTypeChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
-                @endif
                 <x-pie-chart id="task-chart1" :labels="$ticketTypeChart['labels']" :values="$ticketTypeChart['values']"
                     :colors="$ticketTypeChart['colors']" height="300" width="300" />
             </x-cards.data>
@@ -60,9 +57,6 @@
     @if (in_array('tickets', user_modules()) && in_array('status_wise_ticket', $activeWidgets))
         <div class="col-sm-12 col-lg-6 mt-3">
             <x-cards.data :title="__('modules.dashboard.statusWiseTicket')">
-                @if (array_sum($ticketStatusChart['values']) > 0)
-                    <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart2" data-chart-data="{{ json_encode($ticketStatusChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
-                @endif
                 <x-pie-chart id="task-chart2" :labels="$ticketStatusChart['labels']"
                     :values="$ticketStatusChart['values']" :colors="$ticketStatusChart['colors']" height="300" width="300" />
             </x-cards.data>
@@ -73,9 +67,6 @@
         <div class="col-sm-12 col-lg-6 mt-3">
             <x-cards.data :title="__('modules.dashboard.channelWiseTicket')">
                 @if(isset($ticketChannelChart['colors']) && $ticketChannelChart['labels'])
-                    @if (array_sum($ticketChannelChart['values']) > 0)
-                        <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="task-chart3" data-chart-data="{{ json_encode($ticketChannelChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
-                    @endif
                     <x-pie-chart id="task-chart3" :labels="$ticketChannelChart['labels']"
                         :values="$ticketChannelChart['values']" :colors="$ticketChannelChart['colors']" height="300" width="300" />
                 @endif

@@ -6,6 +6,7 @@ use App\Events\TaskReminderEvent;
 use App\Models\Company;
 use App\Models\Task;
 use App\Models\TaskboardColumn;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class SendTaskReminder extends Command
@@ -31,41 +32,38 @@ class SendTaskReminder extends Command
     public function handle()
     {
         // Get all companies
+        $companies = Company::select(['id', 'timezone', 'before_days', 'after_days', 'on_deadline'])->get();
 
-        Company::active()->select(['id', 'timezone', 'before_days', 'after_days', 'on_deadline'])->chunk(50, function ($companies) {
-            // Loop through each company
-            foreach ($companies as $company) {
-                // Get current time in company's timezone
-                $now = now($company->timezone);
+        // Loop through each company
+        foreach ($companies as $company) {
+            // Get current time in company's timezone
+            $now = Carbon::now($company->timezone);
 
-                // If the company has set "before_days"
-                if ($company->before_days > 0) {
-                    $beforeDeadline = $now->clone()->subDays($company->before_days)->format('Y-m-d');
-                    $this->sendReminders($beforeDeadline, $company);
-                }
-
-                // If the company has set "after_days"
-                if ($company->after_days > 0) {
-                    $afterDeadline = $now->clone()->addDays($company->after_days)->format('Y-m-d');
-                    $this->sendReminders($afterDeadline, $company);
-                }
-
-                // If the company has set "on_deadline"
-                if ($company->on_deadline) {
-                    $onDeadline = $now->clone()->format('Y-m-d');
-                    $this->sendReminders($onDeadline, $company);
-                }
+            // If the company has set "before_days"
+            if ($company->before_days > 0) {
+                $beforeDeadline = $now->clone()->subDays($company->before_days)->format('Y-m-d');
+                $this->sendReminders($beforeDeadline, $company);
             }
-        });
 
-        return Command::SUCCESS;
+            // If the company has set "after_days"
+            if ($company->after_days > 0) {
+                $afterDeadline = $now->clone()->addDays($company->after_days)->format('Y-m-d');
+                $this->sendReminders($afterDeadline, $company);
+            }
+
+            // If the company has set "on_deadline"
+            if ($company->on_deadline) {
+                $onDeadline = $now->clone()->format('Y-m-d');
+                $this->sendReminders($onDeadline, $company);
+            }
+        }
     }
 
     /**
      * Send task reminders for the given date and company.
      *
      * @param string $dueDate
-     * @param Company $company
+     * @param \App\Models\Company $company
      *
      * @return void
      */
@@ -77,7 +75,8 @@ class SendTaskReminder extends Command
             ->first();
 
         // Get all tasks for the given date and company that are not in the "completed" column
-        $tasks = Task::where('due_date', $dueDate)
+        $tasks = Task::select('id')
+            ->where('due_date', $dueDate)
             ->where('company_id', $company->id)
             ->where('board_column_id', '<>', $completedTaskColumn->id)
             ->get();

@@ -54,10 +54,6 @@
             margin-top: 0;
         }
 
-        .rtl .preloader-container {
-            margin-right: 0;
-        }
-
         .fc a[data-navlink] {
             color: #99a5b5;
         }
@@ -80,10 +76,10 @@
 
 </head>
 
-<body id="body" class="h-100 bg-additional-grey {{ isRtl('rtl') }}">
+<body id="body" class="h-100 bg-additional-grey">
 
 <!-- BODY WRAPPER START -->
-<div class="clearfix body-wrapper">
+<div class="body-wrapper clearfix">
 
     <!-- MAIN CONTAINER START -->
     <section class="bg-additional-grey" id="fullscreen">
@@ -92,10 +88,10 @@
             <div class="spinner-border" role="status" aria-hidden="true"></div>
         </div>
 
-        <x-app-title class="d-block d-lg-none" :pageTitle="$pageTitle"></x-app-title>
+        <x-app-title class="d-block d-lg-none" :pageTitle="__($pageTitle)"></x-app-title>
 
         <!-- CONTENT WRAPPER START -->
-        <div class="container content-wrapper">
+        <div class="content-wrapper container">
             <!-- INVOICE CARD START -->
             @if (!is_null($invoice->project) && !is_null($invoice->project->client) && !is_null($invoice->project->client->clientDetails))
                 @php
@@ -106,7 +102,7 @@
                     $client = $invoice->client;
                 @endphp
             @endif
-            <div class="border-0 card invoice">
+            <div class="card border-0 invoice">
                 <!-- CARD BODY START -->
                 <div class="card-body">
 
@@ -116,7 +112,7 @@
                                     aria-hidden="true"></button>
                             <i class="fa fa-check"></i> {!! $message !!}
                         </div>
-                            <?php Session::forget('success'); ?>
+                        <?php Session::forget('success'); ?>
                     @endif
 
                     @if ($message = Session::get('error'))
@@ -125,7 +121,7 @@
                                     aria-hidden="true"></button>
                             {!! $message !!}
                         </div>
-                            <?php Session::forget('error'); ?>
+                        <?php Session::forget('error'); ?>
                     @endif
 
                     <div class="invoice-table-wrapper">
@@ -134,7 +130,7 @@
                                 <td><img src="{{ $company->invoiceSetting->logo_url }}"
                                          alt="{{ $company->company_name }}" id="logo"/></td>
                                 <td align="right"
-                                    class="mt-4 font-weight-bold f-21 text-dark text-uppercase mt-lg-0 mt-md-0">
+                                    class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                                     @lang('app.invoice')</td>
                             </tr>
                             <tr class="inv-num">
@@ -145,14 +141,14 @@
                                             {!! $invoice->address ? nl2br($invoice->address->address) : '' !!}<br>
                                             {{ $company->company_phone }}
                                         @endif
-                                        @if ($invoiceSetting->show_gst == 'yes' && $invoice->address->tax_number)
+                                        @if ($invoiceSetting->show_gst == 'yes' && $invoice->address)
                                             <br>{{ $invoice->address->tax_name }}:
                                             {{ $invoice->address->tax_number }}
                                         @endif
                                     </p><br>
                                 </td>
                                 <td align="right">
-                                    <table class="mt-3 inv-num-date text-dark f-13">
+                                    <table class="inv-num-date text-dark f-13 mt-3">
                                         <tr>
                                             <td class="bg-light-grey border-right-0 f-w-500">
                                                 @lang('modules.invoices.invoiceNumber')</td>
@@ -187,10 +183,10 @@
                                     <p class="mb-0 text-left">
 
                                         <span
-                                            class="text-dark-grey ">@lang('modules.invoices.billedTo')</span><br>
+                                            class="text-dark-grey text-capitalize">@lang('modules.invoices.billedTo')</span><br>
 
                                         @if ($invoice->client && $invoice->client->name && $invoice->company->invoiceSetting->show_client_name == 'yes')
-                                            {{ $invoice->client->name_salutation }}<br>
+                                            {{ $invoice->client->name }}<br>
                                         @endif
 
                                         @if ($invoice->client && $invoice->client->email && $invoice->company->invoiceSetting->show_client_email == 'yes')
@@ -198,7 +194,7 @@
                                         @endif
 
                                         @if ($invoice->client && $invoice->client->mobile && $invoice->company->invoiceSetting->show_client_phone == 'yes')
-                                            {{ $invoice->client->mobile_with_phonecode }}<br>
+                                            {{ $invoice->client->mobile }}<br>
                                         @endif
 
                                         @if ($invoice->clientDetails && $invoice->clientDetails->company_name && $invoice->company->invoiceSetting->show_client_company_name == 'yes')
@@ -212,34 +208,28 @@
 
                                         @if ($invoiceSetting->show_gst == 'yes' && !is_null($client->clientDetails->gst_number))
                                             <br>
-                                            @if ($client->clientDetails->tax_name)
-                                                {{$client->clientDetails->tax_name}}
-                                                : {{$client->clientDetails->gst_number}}
-                                            @else
-                                                @lang('app.gstIn'): {{ $client->clientDetails->gst_number }}
-                                            @endif
+                                            @lang('app.gstIn'): {{ $client->clientDetails->gst_number }}
                                         @endif
 
                                     </p>
                                 </td>
 
-                                @if ($invoice->show_shipping_address == 'yes')
-                                    <td class="text-black f-14">
+                                @if ($invoice->shipping_address)
+                                    <td class="f-14 text-black">
                                         <p class="mb-0 text-left"><span
-                                                class="text-dark-grey ">@lang('app.shippingAddress')</span><br>
-                                            {!! nl2br($client->clientDetails->shipping_address) !!}</p>
+                                                class="text-dark-grey text-capitalize">@lang('app.shippingAddress')</span><br>
+                                            {!! nl2br($client->clientDetails->address) !!}</p>
                                     </td>
                                 @endif
 
                                 <td align="right" class="mt-4 mt-lg-0 mt-md-0">
                                     @if($invoice->clientDetails->company_logo)
                                         <img src="{{ $invoice->clientDetails->image_url }}"
-                                             alt="{{ $invoice->clientDetails->company_name }}" class="logo"
-                                             style="height:50px;"/>
-                                        <br><br><br>
+                                            alt="{{ $invoice->clientDetails->company_name }}" class="logo" style="height:50px;" />
+                                            <br><br><br>
                                     @endif
-                                    <span
-                                        class="unpaid {{ $invoice->status == 'partial' ? 'text-primary border-primary' : '' }} {{ $invoice->status == 'paid' ? 'text-success border-success' : '' }} rounded f-15 ">@lang('modules.invoices.' . $invoice->status)</span>
+                                        <span
+                                            class="unpaid {{ $invoice->status == 'partial' ? 'text-primary border-primary' : '' }} {{ $invoice->status == 'paid' ? 'text-success border-success' : '' }} rounded f-15 ">@lang('modules.invoices.' . $invoice->status)</span>
                                 </td>
                             </tr>
                             <tr>
@@ -250,7 +240,7 @@
                         <p class="mb-0">
                             @if (($invoiceSetting->show_project == 1) && isset($invoice->project->project_name))
                                 <span
-                                    class="text-dark-grey ">@lang('modules.invoices.projectName')</span>
+                                    class="text-dark-grey text-capitalize">@lang('modules.invoices.projectName')</span>
                                 <br>
                                 {{ $invoice->project->project_name }}
                             @endif
@@ -264,34 +254,29 @@
                                         <tr class="i-d-heading bg-light-grey text-dark-grey font-weight-bold">
                                             <td class="border-right-0">@lang('app.description')</td>
                                             @if ($invoiceSetting->hsn_sac_code_show)
-                                                <td class="border-right-0 border-left-0"
-                                                    align="right">@lang('app.hsnSac')</td>
+                                                <td class="border-right-0 border-left-0" align="right">@lang('app.hsnSac')</td>
                                             @endif
                                             <td class="border-right-0 border-left-0" align="right">
-                                                @lang('modules.invoices.qty')
+                                               @lang('modules.invoices.qty')
                                             </td>
                                             <td class="border-right-0 border-left-0" align="right">
                                                 @lang('modules.invoices.unitPrice')
                                                 ({{ $invoice->currency->currency_code }})
                                             </td>
-                                            <td class="border-left-0 border-right-0 "
-                                                align="right">@lang('modules.invoices.tax')</td>
+                                            <td class="border-left-0 border-right-0 " align="right">@lang('modules.invoices.tax')</td>
                                             <td class="border-left-0" align="right">
                                                 @lang('modules.invoices.amount')
                                                 ({{ $invoice->currency->currency_code }})
                                             </td>
                                         </tr>
-                                        @foreach ($invoice->items->sortBy('field_order') as $item)
+                                        @foreach ($invoice->items as $item)
                                             @if ($item->type == 'item')
                                                 <tr class="text-dark font-weight-semibold f-13">
                                                     <td>{{ $item->item_name }}</td>
                                                     @if ($invoiceSetting->hsn_sac_code_show)
                                                         <td align="right">{{ $item->hsn_sac_code }}</td>
                                                     @endif
-                                                    <td align="right">{{ $item->quantity }} @if($item->unit)
-                                                            <br><span
-                                                                class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>
-                                                        @endif</td>
+                                                    <td align="right">{{ $item->quantity }} @if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                                                     <td align="right">
                                                         {{ currency_format($item->unit_price, $invoice->currency_id, false) }}
                                                     </td>
@@ -302,8 +287,7 @@
                                                 </tr>
                                                 @if ($item->item_summary || $item->invoiceItemImage)
                                                     <tr class="text-dark f-12">
-                                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}"
-                                                            class="border-bottom-0">
+                                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}" class="border-bottom-0">
                                                             {!! nl2br(strip_tags($item->item_summary)) !!}
                                                             @if ($item->invoiceItemImage)
                                                                 <p class="mt-2">
@@ -392,9 +376,9 @@
 
                             </tr>
                         </table>
-                        <table width="100%" class="inv-desc-mob d-lg-none d-md-none">
+                        <table width="100%" class="inv-desc-mob d-block d-lg-none d-md-none">
 
-                            @foreach ($invoice->items->sortBy('field_order') as $item)
+                            @foreach ($invoice->items as $item)
                                 @if ($item->type == 'item')
                                     <tr>
                                         <th width="50%" class="bg-light-grey text-dark-grey font-weight-bold">
@@ -494,10 +478,6 @@
                                     {{ $invoice->currency->currency_code }}</td>
                             </tr>
                         </table>
-
-                        @includeIf('invoices.payment_details')
-
-
                         <table class="inv-note">
                             <tr>
                                 <td height="30" colspan="2"></td>
@@ -521,25 +501,13 @@
                                     </table>
                                 </td>
                             </tr>
-                            @if (isset($invoiceSetting->other_info))
-                                <tr>
-                                    <td align="vertical-align: text-top">
-                                        <table>
-                                            <tr>
-                                                <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
-                                                </p>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            @endif
                         </table>
                     </div>
                 </div>
                 <!-- CARD BODY END -->
                 <!-- CARD FOOTER START -->
                 <div
-                    class="py-0 mb-4 bg-white border-0 card-footer d-flex justify-content-end py-lg-4 py-md-4 mb-lg-3 mb-md-3 ">
+                    class="card-footer bg-white border-0 d-flex justify-content-end py-0 py-lg-4 py-md-4 mb-4 mb-lg-3 mb-md-3 ">
 
 
                     <div class="d-flex">
@@ -548,15 +516,9 @@
                                                 :link="route('front.invoice_download', [md5($invoice->id)])"
                                                 class="mr-3">
                             @lang('app.download')</x-forms.link-secondary>
-                        @if ($invoice->status == 'paid' && $invoice->file != null)
-                            <x-forms.link-secondary icon="download"
-                                                    :link="route('front.invoice_download', [md5($invoice->id), 'download-uploaded' => 'true'])"
-                                                    class="mr-3">
-                                @lang('app.download') @lang('app.uploadedFile')</x-forms.link-secondary>
-                        @endif
 
-                        @if ($invoice->total > 0 && $invoice->status != 'paid' && $invoice->status != 'pending-confirmation' && $credentials->show_pay)
-                            <div class="mr-3 inv-action mr-lg-3 mr-md-3 dropup">
+                        @if ($invoice->total > 0 && $invoice->status != 'paid' && $credentials->show_pay)
+                            <div class="inv-action mr-3 mr-lg-3 mr-md-3 dropup">
 
 
                                 <button class="dropdown-toggle btn-secondary" type="button" id="dropdownMenuButton"
@@ -571,7 +533,7 @@
                                         <li>
                                             <a class="dropdown-item f-14 text-dark"
                                                href="{{ route('paypal_public', [$invoice->id]) }}">
-                                                <i class="mr-2 fab fa-paypal f-w-500 f-11"></i>
+                                                <i class="fab fa-paypal f-w-500 mr-2 f-11"></i>
                                                 @lang('modules.invoices.payPaypal')
                                             </a>
                                         </li>
@@ -580,7 +542,7 @@
                                         <li>
                                             <a class="dropdown-item f-14 text-dark" href="javascript:;"
                                                id="razorpayPaymentButton">
-                                                <i class="mr-2 fa fa-credit-card f-w-500 f-11"></i>
+                                                <i class="fa fa-credit-card f-w-500 mr-2 f-11"></i>
                                                 @lang('modules.invoices.payRazorpay')
                                             </a>
                                         </li>
@@ -589,7 +551,7 @@
                                         <li>
                                             <a class="dropdown-item f-14 text-dark" href="javascript:;"
                                                data-invoice-id="{{ $invoice->id }}" id="stripeModal">
-                                                <i class="mr-2 fab fa-stripe-s f-w-500 f-11"></i>
+                                                <i class="fab fa-stripe-s f-w-500 mr-2 f-11"></i>
                                                 @lang('modules.invoices.payStripe')
                                             </a>
                                         </li>
@@ -616,7 +578,7 @@
                                         <li>
                                             <a class="dropdown-item f-14 text-dark" href="javascript:void(0);"
                                                id="payfastModal">
-                                                <img style="height: 15px;" src="{{ asset('img/payfast.png') }}">
+                                                <img style="height: 15px;" src="{{ asset('img/payfast-logo.png') }}">
                                                 @lang('modules.invoices.payPayfast')</a>
                                         </li>
                                     @endif
@@ -678,8 +640,8 @@
                 {{__('app.loading')}}
             </div>
             <div class="modal-footer">
-                <button type="button" class="mr-3 rounded btn-cancel" data-dismiss="modal">Close</button>
-                <button type="button" class="rounded btn-primary">Save changes</button>
+                <button type="button" class="btn-cancel rounded mr-3" data-dismiss="modal">Close</button>
+                <button type="button" class="btn-primary rounded">Save changes</button>
             </div>
         </div>
     </div>

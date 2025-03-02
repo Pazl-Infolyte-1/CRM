@@ -6,7 +6,6 @@ use App\Helper\Reply;
 use App\Http\Requests\Product\StoreProductCategory;
 use App\Models\BaseModel;
 use App\Models\ProductCategory;
-use App\Models\ProductSubCategory;
 
 class ProductCategoryController extends AccountBaseController
 {
@@ -36,8 +35,7 @@ class ProductCategoryController extends AccountBaseController
         $categories = ProductCategory::get();
         $options = BaseModel::options($categories, $category, 'category_name');
 
-        $subCategoryData = ProductSubCategory::where('category_id', $category->id)->get();
-        return Reply::successWithData(__('messages.recordSaved'), ['data' => $options, 'subCategoryData' => $subCategoryData]);
+        return Reply::successWithData(__('messages.recordSaved'), ['data' => $options]);
     }
 
     /**

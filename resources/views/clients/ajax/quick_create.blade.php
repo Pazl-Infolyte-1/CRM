@@ -10,7 +10,7 @@
             <div class="col-md-12">
                 <x-forms.text fieldId="name" :fieldLabel="__('modules.client.clientName')" fieldName="name"
                     fieldRequired="true" :fieldPlaceholder="__('placeholders.name')"
-                    :fieldValue="$lead->client_name_salutation ?? ''"></x-forms.text>
+                    :fieldValue="$lead->client_name ?? ''"></x-forms.text>
             </div>
             <div class="col-md-12">
                 <x-forms.email fieldId="email" :fieldLabel="__('app.email')" fieldName="email"
@@ -36,6 +36,26 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-12 password-section d-none">
+                <x-forms.label class="mt-3" fieldId="password" :fieldLabel="__('app.password')"
+                    :popover="__('messages.requiredForLogin')">
+                </x-forms.label>
+                <x-forms.input-group>
+                    <input type="password" name="password" id="password" class="form-control height-35 f-14">
+                    <x-slot name="preappend">
+                        <button type="button" data-toggle="tooltip" data-original-title="@lang('app.viewPassword')"
+                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
+                                class="fa fa-eye"></i></button>
+                    </x-slot>
+                    <x-slot name="append">
+                        <button id="random_password" type="button" data-toggle="tooltip"
+                            data-original-title="@lang('modules.client.generateRandomPassword')"
+                            class="btn btn-outline-secondary border-grey height-35"><i
+                                class="fa fa-random"></i></button>
+                    </x-slot>
+                </x-forms.input-group>
+                <small class="form-text text-muted">@lang('placeholders.password')</small>
+            </div>
 
         </div>
     </div>
@@ -60,6 +80,14 @@
         $('#password').val(randPassword);
     });
 
+    $('input[type=radio][name=login]').change(function() {
+        if (this.value == 'enable') {
+            $('.password-section').removeClass('d-none');
+        } else {
+            $('.password-section').addClass('d-none');
+        }
+    });
+
     $('#save-category').click(function() {
         var url = "{{ route('clients.store') }}";
         $.easyAjax({
@@ -74,10 +102,6 @@
                         $('#client_list_id').html('<option value="">--</option>' +
                             response.teamData);
                         $('#client_list_id').selectpicker('refresh');
-
-                        $('#client_billing_address').addClass('d-none');
-                        $('#client_billing_address_editable').removeClass('d-none').val('');
-
                         $('#project_id').html(response.project);
                         $('#project_id').selectpicker('refresh');
 

@@ -29,7 +29,7 @@ $addInvoicesPermission = user()->permission('add_invoices');
         data['clientID'] = clientID;
     });
     const showTable = () => {
-        window.LaravelDataTables["invoices-table"].draw(true);
+        window.LaravelDataTables["invoices-table"].draw(false);
     }
 
     $('#quick-action-type').change(function() {
@@ -163,7 +163,7 @@ $addInvoicesPermission = user()->permission('add_invoices');
             },
             success: function(response) {
                 if (response.status == "success") {
-                    window.LaravelDataTables["invoices-table"].draw(true);
+                    window.LaravelDataTables["invoices-table"].draw(false);
                 }
             }
         });
@@ -184,7 +184,7 @@ $addInvoicesPermission = user()->permission('add_invoices');
             success: function(response) {
                 if (response.status == "success") {
                     $.unblockUI();
-                    window.LaravelDataTables["invoices-table"].draw(true);
+                    window.LaravelDataTables["invoices-table"].draw(false);
                 }
             }
         });

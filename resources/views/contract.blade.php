@@ -77,10 +77,6 @@
             margin-top: 0;
         }
 
-        .rtl .preloader-container {
-            margin-right: 0;
-        }
-
         .fc a[data-navlink] {
             color: #99a5b5;
         }
@@ -104,11 +100,11 @@
 
 </head>
 
-<body id="body" class="h-100 bg-additional-grey {{ isRtl('rtl') }}">
+<body id="body" class="h-100 bg-additional-grey">
 
-<div class="container content-wrapper">
+<div class="content-wrapper container">
 
-    <div class="border-0 card invoice">
+    <div class="card border-0 invoice">
         <!-- CARD BODY START -->
         <div class="card-body">
             <div class="invoice-table-wrapper">
@@ -116,7 +112,7 @@
                     <tr class="inv-logo-heading">
                         <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ $company->company_name }}"
                                  class="logo"/></td>
-                        <td align="right" class="mt-4 font-weight-bold f-21 text-dark text-uppercase mt-lg-0 mt-md-0">
+                        <td align="right" class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                             @lang('app.menu.contract')</td>
                     </tr>
                     <tr class="inv-num">
@@ -128,7 +124,7 @@
                             </p><br>
                         </td>
                         <td align="right">
-                            <table class="mt-3 inv-num-date text-dark f-13">
+                            <table class="inv-num-date text-dark f-13 mt-3">
                                 <tr>
                                     <td class="bg-light-grey border-right-0 f-w-500">
                                         @lang('modules.contracts.contractNumber')</td>
@@ -165,8 +161,8 @@
                     <tr class="inv-unpaid">
                         <td class="f-14 text-dark">
                             <p class="mb-0 text-left"><span
-                                    class="text-dark-grey ">@lang("app.client")</span><br>
-                                {{ $contract->client->name_salutation }}<br>
+                                    class="text-dark-grey text-capitalize">@lang("app.client")</span><br>
+                                {{ $contract->client->name }}<br>
                                 {{ $contract->client->clientDetails->company_name }}<br>
                                 {!! nl2br($contract->client->clientDetails->address) !!}</p>
                         </td>
@@ -190,10 +186,10 @@
                 <h5>@lang('modules.contracts.notes')</h5>
                 <p class="f-15">{{ $contract->contract_note }}</p>
                 <h5>@lang('app.description')</h5>
-                <div class="p-0 pb-3 ql-editor">{!! $contract->contract_detail !!}</div>
+                <div class="ql-editor p-0">{!! $contract->contract_detail !!}</div>
 
                 @if ($contract->amount != 0)
-                    <div class="pt-3 text-right border-top">
+                    <div class="text-right pt-3 border-top">
                         <h4>@lang('modules.contracts.contractValue'):
                             {{ currency_format($contract->amount, $contract->currency->id) }}</h4>
                     </div>
@@ -202,25 +198,21 @@
 
             <hr class="mt-1 mb-1">
             @if ($contract->signature)
-                <div class="d-flex flex-column float-right margin-top: 20px;">
-                    <h6>@lang('modules.estimates.clientsignature')</h6>
-                    <img src="{{ $contract->signature->signature }}" style="width: 200px;">
-                    <p>@lang('app.client_name'):- {{ $contract->signature->full_name }}<br>
-                        @lang('app.place'):- {{ $contract->signature->place }}<br>
-                        @lang('app.date'):- {{ $contract->signature->date->translatedFormat($company->date_format) }}
-                    </p>
-                </div>
+            <div class="d-flex flex-column float-right margin-top: 20px;">
+                <h6>@lang('modules.estimates.clientsignature')</h6>
+                <img src="{{ $contract->signature->signature }}" style="width: 200px;">
+                <p>@lang('app.client_name'):- {{ $contract->signature->full_name }}<br>
+                    @lang('app.place'):- {{ $contract->signature->place }}<br>
+                    @lang('app.date'):- {{ $contract->signature->date->translatedFormat($company->date_format) }}</p>
+            </div>
             @endif
 
             @if ($contract->company_sign)
-                <div class="d-flex flex-column">
-                    <h6>@lang('modules.estimates.companysignature')</h6>
-                    <img src="{{$contract->company_signature}}" style="width: 200px;">
-                    <p>@lang('app.date'):- {{ $contract->sign_date->translatedFormat($company->date_format) }}</p>
-                    @if($contract->signer)
-                    <p style="margin-top: -16px;">@lang('app.signBy') : {{ $contract->signer ? $contract->signer->name : '--' }}</p>
-                    @endif
-                </div>
+            <div class="d-flex flex-column">
+                <h6>@lang('modules.estimates.companysignature')</h6>
+                <img src="{{$contract->company_signature}}" style="width: 200px;">
+                <p>@lang('app.date'):- {{ $contract->sign_date->translatedFormat($company->date_format) }}</p>
+            </div>
             @endif
 
             <div id="signature-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
@@ -236,18 +228,17 @@
 
         <!-- CARD FOOTER START -->
         <div
-            class="py-0 mb-4 bg-white border-0 card-footer d-flex justify-content-end py-lg-4 py-md-4 mb-lg-3 mb-md-3 ">
+            class="card-footer bg-white border-0 d-flex justify-content-end py-0 py-lg-4 py-md-4 mb-4 mb-lg-3 mb-md-3 ">
 
-            <x-forms.button-cancel :link="route('contracts.index')" class="mb-2 mr-3 border-0">@lang('app.cancel')
+            <x-forms.button-cancel :link="route('contracts.index')" class="border-0 mr-3 mb-2">@lang('app.cancel')
             </x-forms.button-cancel>
 
-            <x-forms.link-secondary :link="route('front.contract.download', $contract->hash)" class="mb-2 mr-3"
-                                    icon="download">@lang('app.download')
+            <x-forms.link-secondary :link="route('front.contract.download', $contract->hash)" class="mr-3 mb-2" icon="download">@lang('app.download')
             </x-forms.link-secondary>
 
             @if (!$contract->signature)
                 <x-forms.link-primary class="mb-2" link="javascript:;" data-toggle="modal"
-                                      data-target="#signature-modal" icon="check">@lang('app.sign')
+                data-target="#signature-modal" icon="check">@lang('app.sign')
                 </x-forms.link-primary>
             @endif
 
@@ -258,7 +249,7 @@
 
     {{-- Custom fields data --}}
     @if (isset($fields) && count($fields) > 0)
-        <div class="mt-4 row">
+        <div class="row mt-4">
             <!-- TASK STATUS START -->
             <div class="col-md-12">
                 <x-cards.data>
@@ -282,8 +273,8 @@
                 {{__('app.loading')}}
             </div>
             <div class="modal-footer">
-                <button type="button" class="mr-3 rounded btn-cancel" data-dismiss="modal">Close</button>
-                <button type="button" class="rounded btn-primary">Save changes</button>
+                <button type="button" class="btn-cancel rounded mr-3" data-dismiss="modal">Close</button>
+                <button type="button" class="btn-primary rounded">Save changes</button>
             </div>
         </div>
     </div>

@@ -2,9 +2,14 @@
 
 namespace App\DataTables;
 
+use Carbon\Carbon;
+use App\Models\Holiday;
 use App\Models\Designation;
+use App\DataTables\BaseDataTable;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
+use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\EloquentDataTable;
 
 class DesignationDataTable extends BaseDataTable
 {
@@ -31,7 +36,9 @@ class DesignationDataTable extends BaseDataTable
         return datatables()
             ->eloquent($query)
             ->addIndexColumn()
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->editColumn('name', function ($row) {
                 $name = '<h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('designations.show', [$row->id]) . '" class="openRightModal">' . $row->name . '</a></h5>';
 
@@ -44,8 +51,9 @@ class DesignationDataTable extends BaseDataTable
                 if ($parent) {
                     return $parent->name;
                 }
-
-                return '-';
+                else {
+                    return '-';
+                }
 
             })
             ->addColumn('action', function ($row) {
@@ -82,7 +90,9 @@ class DesignationDataTable extends BaseDataTable
                 return $action;
             })
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['check', 'action', 'name']);
     }
 

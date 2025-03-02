@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\EmailNotificationSetting;
 use App\Models\Task;
 use App\Models\User;
+use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
@@ -49,17 +50,11 @@ class TaskCompleted extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
+            array_push($via, 'slack');
         }
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
             array_push($via, OneSignalChannel::class);
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.taskComplete.subject'), $this->task->heading);
         }
 
         return $via;
@@ -73,17 +68,16 @@ class TaskCompleted extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('tasks.show', $this->task->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $projectTitle = (!is_null($this->task->project)) ? __('app.project') . ' - ' . $this->task->project->project_name : '';
 
         $content = __('email.taskComplete.subject') . '<br>' . __('email.taskComplete.completedBy') . ': ' . $this->completedBy->name . '<br>' . __('app.task') . ': ' . $this->task->heading . '<br>' . $projectTitle;
-        $taskShortCode = (!is_null($this->task->task_short_code)) ? '#' . $this->task->task_short_code : ' ';
 
-        $build
-            ->subject(__('email.taskComplete.subject') . $taskShortCode . ' - ' . config('app.name') . '.')
+        return $build
+            ->subject(__('email.taskComplete.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -91,10 +85,6 @@ class TaskCompleted extends BaseNotification
                 'actionText' => __('email.taskComplete.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -118,16 +108,24 @@ class TaskCompleted extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return \Illuminate\Notifications\Messages\SlackMessage
+     * @return SlackMessage
      */
     public function toSlack($notifiable)
     {
-        $url = route('tasks.show', $this->task->id);
-        $url = getDomainSpecificUrl($url, $this->company);
+        $slack = $notifiable->company->slackSetting;
 
-        return $this->slackBuild($notifiable)
-            ->content('*' . __('email.taskComplete.subject') . '*' . "\n" . '<' . $url . '|' . $this->task->heading . '>' . "\n" . ' #' . $this->task->task_short_code . (!is_null($this->task->project) ? "\n" . __('app.project') . ' - ' . $this->task->project->project_name : ''));
+        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->to('@' . $notifiable->employee[0]->slack_username)
+                ->content('*' . __('email.taskComplete.subject') . '*' . "\n" . '<' . route('tasks.show', $this->task->id) . '|' . $this->task->heading . '>' . "\n" . ' #' . $this->task->task_short_code . (!is_null($this->task->project) ? "\n" . __('app.project') . ' - ' . $this->task->project->project_name : ''));
+        }
 
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image($slack->slack_logo_url)
+            ->content('*' . __('email.taskComplete.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

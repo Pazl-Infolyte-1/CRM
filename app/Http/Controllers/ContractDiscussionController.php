@@ -16,7 +16,6 @@ class ContractDiscussionController extends AccountBaseController
         $this->pageTitle = 'app.menu.contracts';
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('contracts', $this->user->modules));
-
             return $next($request);
         });
     }
@@ -32,7 +31,7 @@ class ContractDiscussionController extends AccountBaseController
         $contractDiscussion->contract_id = $request->contract_id;
         $contractDiscussion->save();
 
-        $this->discussions = ContractDiscussion::with('user')->where('contract_id', $request->contract_id)->orderByDesc('id')->get();
+        $this->discussions = ContractDiscussion::with('user')->where('contract_id', $request->contract_id)->orderBy('id', 'desc')->get();
         $view = view('contracts.discussions.show', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'view' => $view]);
@@ -58,7 +57,7 @@ class ContractDiscussionController extends AccountBaseController
         $comment->message = $request->comment;
         $comment->save();
 
-        $this->discussions = ContractDiscussion::with('user')->where('contract_id', $comment->contract_id)->orderByDesc('id')->get();
+        $this->discussions = ContractDiscussion::with('user')->where('contract_id', $comment->contract_id)->orderBy('id', 'desc')->get();
         $view = view('contracts.discussions.show', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'view' => $view]);
@@ -77,7 +76,7 @@ class ContractDiscussionController extends AccountBaseController
 
         $comment_contract_id = $comment->contract_id;
         $comment->delete();
-        $this->discussions = ContractDiscussion::with('user')->where('contract_id', $comment_contract_id)->orderByDesc('id')->get();
+        $this->discussions = ContractDiscussion::with('user')->where('contract_id', $comment_contract_id)->orderBy('id', 'desc')->get();
         $view = view('contracts.discussions.show', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'view' => $view]);

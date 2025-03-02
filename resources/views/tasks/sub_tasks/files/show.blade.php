@@ -5,12 +5,16 @@
 
 @forelse($files as $file)
 <x-file-card :fileName="$file->filename" :dateAdded="$file->created_at->diffForHumans()">
-    <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
+    @if ($file->icon == 'images')
+        <img src="{{ $file->file_url }}">
+    @else
+        <i class="fa {{ $file->icon }} text-lightest"></i>
+    @endif
 
     @if ($viewTaskFilePermission == 'all' || ($viewTaskFilePermission == 'added' && $file->added_by == user()->id))
         <x-slot name="action">
             <div class="dropdown ml-auto file-action">
-                <button class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
+                <button class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
                     type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fa fa-ellipsis-h"></i>
                 </button>

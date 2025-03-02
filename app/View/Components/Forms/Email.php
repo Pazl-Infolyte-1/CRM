@@ -2,12 +2,10 @@
 
 namespace App\View\Components\Forms;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Email extends Component
 {
-
     public $fieldLabel;
     public $fieldRequired;
     public $fieldPlaceholder;
@@ -15,7 +13,6 @@ class Email extends Component
     public $fieldName;
     public $fieldId;
     public $popover;
-    public $fieldReadOnly;
     public $fieldHelp;
 
     /**
@@ -23,7 +20,7 @@ class Email extends Component
      *
      * @return void
      */
-    public function __construct($fieldLabel, $fieldPlaceholder, $fieldName, $fieldId, $fieldRequired = false, $fieldValue = null, $popover = null, $fieldHelp = null, $fieldReadOnly = false)
+    public function __construct($fieldLabel, $fieldPlaceholder, $fieldName, $fieldId, $fieldRequired = false, $fieldValue = null, $popover = null, $fieldHelp = null)
     {
         $this->fieldLabel = $fieldLabel;
         $this->fieldRequired = $fieldRequired;
@@ -33,13 +30,12 @@ class Email extends Component
         $this->fieldId = $fieldId;
         $this->popover = $popover;
         $this->fieldHelp = $fieldHelp;
-        $this->fieldReadOnly = $fieldReadOnly;
     }
 
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {

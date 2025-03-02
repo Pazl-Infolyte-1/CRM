@@ -128,35 +128,26 @@ class ProjectFactory extends Factory
             'notes' => fake()->paragraph,
             'completion_percent' => fake()->numberBetween(40, 100),
             'feedback' => fake()->realText(),
-            'project_short_code' => substr($this->initials($projectName), 0, 3),
+            'project_short_code' => $this->initials($projectName),
             'calculate_task_progress' => 'false',
         ];
     }
 
     protected function initials($str): string
     {
-        $str = preg_replace('/\s+/', ' ', $str);
         $ret = '';
 
         $array = explode(' ', $str);
 
-        if (count($array) === 1 || count($array) === 0) {
-            return $this->clean(strtoupper(substr($str, -4)));
+        if (count($array) === 1) {
+            return strtoupper(substr($str, -4));
         }
 
         foreach ($array as $word) {
             $ret .= strtoupper($word[0]);
         }
 
-        return $this->clean($ret);
-    }
-
-    protected function clean($string): array|string|null
-    {
-        $string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
-        $string = preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
-
-        return preg_replace('/-+/', '-', $string); // Replaces multiple hyphens with single one.
+        return $ret;
     }
 
 }

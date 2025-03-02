@@ -61,7 +61,7 @@
                                 <a class="nav-item nav-link f-15 payfast" data-toggle="tab"
                                    href="{{ route('payment-gateway-settings.index') }}?tab=payfast" role="tab"
                                    aria-controls="nav-payfast" aria-selected="false"><img style="height: 15px;"
-                                                                                          src="{{ asset('img/payfast.png') }}"> @lang('app.payfast')
+                                                                                          src="{{ asset('img/payfast-logo.png') }}"> @lang('app.payfast')
                                     <i
                                         class="fa fa-circle f-12 ml-1 {{ $credentials->payfast_status == 'active' ? 'text-light-green' : 'text-red' }}"></i>
                                 </a>

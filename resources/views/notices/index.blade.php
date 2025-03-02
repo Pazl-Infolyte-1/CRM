@@ -111,7 +111,7 @@ $addNoticePermission = user()->permission('add_notice');
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["notice-board-table"].draw(true);
+            window.LaravelDataTables["notice-board-table"].draw(false);
         }
 
         $('#search-text-field').on('keyup', function() {

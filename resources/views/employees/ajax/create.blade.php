@@ -1,6 +1,5 @@
 @php
 $addDesignationPermission = user()->permission('add_designation');
-$addDepartmentPermission = user()->permission('add_department');
 @endphp
 
 <link rel="stylesheet" href="{{ asset('vendor/css/tagify.css') }}">
@@ -9,13 +8,13 @@ $addDepartmentPermission = user()->permission('add_department');
     <div class="col-sm-12">
         <x-form id="save-employee-data-form">
 
-            <div class="bg-white rounded add-client">
-                <h4 class="p-20 mb-0 f-21 font-weight-normal  border-bottom-grey">
+            <div class="add-client bg-white rounded">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('modules.employees.accountDetails')</h4>
-                <div class="p-20 row">
+                <div class="row p-20">
                     <div class="col-lg-9">
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-lg-2 col-md-3">
                                 <x-forms.text fieldId="employee_id" :fieldLabel="__('modules.employees.employeeId')"
                                     fieldName="employee_id" :fieldValue="((!$checkifExistEmployeeId) ? ($lastEmployeeID+1) : '')" fieldRequired="true"
                                     :fieldPlaceholder="__('modules.employees.employeeIdInfo')" :popover="__('modules.employees.employeeIdHelp')">
@@ -30,7 +29,7 @@ $addDepartmentPermission = user()->permission('add_department');
                                     @endforeach
                                 </x-forms.select>
                             </div>
-                            <div class="col-lg-3 col-md-6">
+                            <div class="col-lg-4 col-md-6">
                                 <x-forms.text fieldId="name" :fieldLabel="__('modules.employees.employeeName')"
                                     fieldName="name" fieldRequired="true" :fieldPlaceholder="__('placeholders.name')">
                                 </x-forms.text>
@@ -41,8 +40,27 @@ $addDepartmentPermission = user()->permission('add_department');
                                 </x-forms.text>
                             </div>
                             <div class="col-lg-4 col-md-6">
-                                <x-forms.datepicker fieldId="date_of_birth" :fieldLabel="__('modules.employees.dateOfBirth')"
-                                    fieldName="date_of_birth" :fieldPlaceholder="__('placeholders.date')" />
+                                <x-forms.label class="mt-3" fieldId="password"
+                                    :fieldLabel="__('app.password')" fieldRequired="true">
+                                </x-forms.label>
+                                <x-forms.input-group>
+
+                                    <input type="password" name="password" id="password"
+                                        class="form-control height-35 f-14">
+                                    <x-slot name="preappend">
+                                        <button type="button" data-toggle="tooltip"
+                                            data-original-title="@lang('app.viewPassword')"
+                                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
+                                                class="fa fa-eye"></i></button>
+                                    </x-slot>
+                                    <x-slot name="append">
+                                        <button id="random_password" type="button" data-toggle="tooltip"
+                                            data-original-title="@lang('modules.client.generateRandomPassword')"
+                                            class="btn btn-outline-secondary border-grey height-35"><i
+                                                class="fa fa-random"></i></button>
+                                    </x-slot>
+                                </x-forms.input-group>
+                                <small class="form-text text-muted">@lang('placeholders.password')</small>
                             </div>
                             <div class="col-lg-4 col-md-6">
                                 <x-forms.label class="my-3" fieldId="category_id"
@@ -57,12 +75,12 @@ $addDepartmentPermission = user()->permission('add_department');
                                         @endforeach
                                     </select>
 
-                                    @if ($addDesignationPermission == 'all')
+                                    {{-- @if ($addDesignationPermission == 'all' || $addDesignationPermission == 'added')
                                         <x-slot name="append">
                                             <button id="designation-setting-add" type="button"
                                                 class="btn btn-outline-secondary border-grey">@lang('app.add')</button>
                                         </x-slot>
-                                    @endif
+                                    @endif --}}
                                 </x-forms.input-group>
                             </div>
                             <div class="col-lg-4 col-md-6">
@@ -77,13 +95,6 @@ $addDepartmentPermission = user()->permission('add_department');
                                             <option value="{{ $team->id }}">{{ $team->team_name }}</option>
                                         @endforeach
                                     </select>
-
-                                    @if ($addDepartmentPermission == 'all')
-                                        <x-slot name="append">
-                                            <button id="department-add" type="button"
-                                                class="btn btn-outline-secondary border-grey">@lang('app.add')</button>
-                                        </x-slot>
-                                    @endif
                                 </x-forms.input-group>
                             </div>
                         </div>
@@ -97,9 +108,9 @@ $addDepartmentPermission = user()->permission('add_department');
                         <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country"
                             search="true">
                             @foreach ($countries as $item)
-                                <option data-tokens="{{ $item->iso3 }}" data-phonecode = "{{$item->phonecode}}" data-iso="{{ $item->iso }}"
+                                <option data-tokens="{{ $item->iso3 }}" data-phonecode = "{{$item->phonecode}}"
                                     data-content="<span class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span> {{ $item->nicename }}"
-                                    value="{{ $item->id }}" @selected($item->id == user()->country_id)>{{ $item->nicename }}</option>
+                                    value="{{ $item->id }}">{{ $item->nicename }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -113,7 +124,7 @@ $addDepartmentPermission = user()->permission('add_department');
                                 search="true">
 
                                 @foreach ($countries as $item)
-                                    <option data-tokens="{{ $item->name }}" data-country-iso="{{ $item->iso }}"
+                                    <option data-tokens="{{ $item->name }}"
                                             data-content="{{$item->flagSpanCountryCode()}}"
                                             value="{{ $item->phonecode }}">{{ $item->phonecode }}
                                     </option>
@@ -136,6 +147,10 @@ $addDepartmentPermission = user()->permission('add_department');
                         <x-forms.datepicker fieldId="joining_date" :fieldLabel="__('modules.employees.joiningDate')"
                             fieldName="joining_date" :fieldPlaceholder="__('placeholders.date')" fieldRequired="true"
                             :fieldValue="now(company()->timezone)->format(company()->date_format)" />
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <x-forms.datepicker fieldId="date_of_birth" :fieldLabel="__('modules.employees.dateOfBirth')"
+                            fieldName="date_of_birth" :fieldPlaceholder="__('placeholders.date')" />
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.select fieldId="reporting_to" :fieldLabel="__('modules.employees.reportingTo')"
@@ -164,14 +179,14 @@ $addDepartmentPermission = user()->permission('add_department');
                         </x-forms.select>
                     </div>
                     <div class="col-md-12">
-                        <div class="my-3 form-group">
+                        <div class="form-group my-3">
                             <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.address')"
                                 fieldName="address" fieldId="address" :fieldPlaceholder="__('placeholders.address')">
                             </x-forms.textarea>
                         </div>
                     </div>
                     <div class="col-md-12">
-                        <div class="my-3 form-group">
+                        <div class="form-group my-3">
                             <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.about')"
                                 fieldName="about_me" fieldId="about_me" fieldPlaceholder="">
                             </x-forms.textarea>
@@ -180,12 +195,12 @@ $addDepartmentPermission = user()->permission('add_department');
 
                 </div>
 
-                <h4 class="p-20 mb-0 f-21 font-weight-normal  border-top-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
                     @lang('modules.client.clientOtherDetails')</h4>
-                <div class="p-20 row">
+                <div class="row p-20">
                     <div class="col-lg-3 col-md-6">
-                        <div class="my-3 form-group">
-                            <label class="mb-12 f-14 text-dark-grey w-100"
+                        <div class="form-group my-3">
+                            <label class="f-14 text-dark-grey mb-12 w-100"
                                 for="usr">@lang('modules.client.clientCanLogin')</label>
                             <div class="d-flex">
                                 <x-forms.radio fieldId="login-yes" :fieldLabel="__('app.yes')" fieldName="login"
@@ -197,8 +212,8 @@ $addDepartmentPermission = user()->permission('add_department');
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-6">
-                        <div class="my-3 form-group">
-                            <label class="mb-12 f-14 text-dark-grey w-100"
+                        <div class="form-group my-3">
+                            <label class="f-14 text-dark-grey mb-12 w-100"
                                 for="usr">@lang('modules.emailSettings.emailNotifications')</label>
                             <div class="d-flex">
                                 <x-forms.radio fieldId="notification-yes" :fieldLabel="__('app.yes')" fieldValue="yes"
@@ -252,11 +267,11 @@ $addDepartmentPermission = user()->permission('add_department');
                                 @lang('sms::modules.telegramBotNameInfo')
                             </p>
                             <p class="text-bold"><span id="telegram-link-text">https://t.me/{{ sms_setting()->telegram_bot_name }}</span>
-                                <a href="javascript:;" class="p-1 py-2 ml-1 rounded btn-copy btn-secondary f-12"
+                                <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
                                     data-clipboard-target="#telegram-link-text">
-                                    <i class="mx-1 fa fa-copy"></i>@lang('app.copy')</a>
-                                <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="p-1 py-2 ml-1 rounded btn-secondary f-12">
-                                    <i class="mx-1 fa fa-copy"></i>@lang('app.openInNewTab')</a>
+                                    <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
+                                <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="btn-secondary f-12 rounded p-1 py-2 ml-1">
+                                    <i class="fa fa-copy mx-1"></i>@lang('app.openInNewTab')</a>
                             </p>
                         </div>
                     @endif
@@ -302,24 +317,9 @@ $addDepartmentPermission = user()->permission('add_department');
                     <div class="col-lg-3 col-md-6">
                         <x-forms.select fieldId="marital_status" :fieldLabel="__('modules.employees.maritalStatus')"
                             fieldName="marital_status" :fieldPlaceholder="__('placeholders.date')">
-                            @foreach (\App\Enums\MaritalStatus::cases() as $status)
-                                <option value="{{ $status->value }}">{{ $status->label() }}</option>
-                            @endforeach
+                            <option value="unmarried">@lang('modules.leaves.unmarried')</option>
+                            <option value="married">@lang('modules.leaves.married')</option>
                         </x-forms.select>
-                    </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <x-forms.label class="my-3" fieldId="category_id"
-                            :fieldLabel="__('app.menu.businessAddresses')" fieldRequired="true">
-                        </x-forms.label>
-                        <x-forms.input-group>
-                            <select class="form-control select-picker" name="company_address"
-                                id="company_address" data-live-search="true">
-                                @foreach ($companyAddresses as $address)
-                                    <option value="{{ $address->id }}">{{ $address->location }}</option>
-                                @endforeach
-                            </select>
-                        </x-forms.input-group>
                     </div>
 
                     <div class="col-lg-3 col-md-6 d-none marriage_date">
@@ -405,7 +405,7 @@ $addDepartmentPermission = user()->permission('add_department');
 
         $('#marital_status').change(function(){
             var value = $(this).val();
-            if(value == '{{ \App\Enums\MaritalStatus::Married->value }}') {
+            if(value == 'married') {
                 $('.marriage_date').removeClass('d-none');
             }
             else {
@@ -508,44 +508,34 @@ $addDepartmentPermission = user()->permission('add_department');
         });
 
         $('#designation-setting-add').click(function() {
-            const url = "{{ route('designations.create') }}?model=true";
+            const url = "{{ route('designations.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         })
 
-        $('#department-add').click(function() {
-            const url = "{{ route('departments.create') }}?model=true";
+        $('.department-setting').click(function() {
+            const url = "{{ route('departments.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $(document).ready(function () {
-            function updatePhoneCode() {
-                var phonecode = $('#country').find(':selected').data('phonecode');
-                var iso = $('#country').find(':selected').data('iso');
-
-                $('#country_phonecode').find('option').each(function () {
-                    if ($(this).data('country-iso') === iso) {
-                        $(this).val(phonecode);
-                        $(this).prop('selected', true); // Set the option as selected
-                    }
-                });
-                $('.select-picker').selectpicker('refresh');
-            }
-
-            // Trigger on country change
-            $('#country').change(function () {
-                updatePhoneCode();
-            });
-
-            // Call the function once when the page loads
-            updatePhoneCode();
+        $('#country').change(function(){
+            var phonecode = $(this).find(':selected').data('phonecode');
+            $('#country_phonecode').val(phonecode);
+            $('.select-picker').selectpicker('refresh');
         });
-
 
 
         init(RIGHT_MODAL);
     });
+
+    function checkboxChange(parentClass, id) {
+        var checkedData = '';
+        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
+            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
+        });
+        $('#' + id).val(checkedData);
+    }
 
     $('.cropper').on('dropify.fileReady', function(e) {
         var inputId = $(this).find('input').attr('id');

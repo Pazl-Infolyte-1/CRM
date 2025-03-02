@@ -12,7 +12,7 @@ class EmployeeShiftScheduleListener
     /**
      * Handle the event.
      *
-     * @param EmployeeShiftScheduleEvent $event
+     * @param \App\Events\EmployeeShiftScheduleEvent $event
      * @return void
      */
     public function handle(EmployeeShiftScheduleEvent $event)

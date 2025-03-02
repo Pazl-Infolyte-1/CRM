@@ -5,15 +5,13 @@
         <!-- TASK BOARD HEADER START -->
         <div class="d-flex mt-4 mx-1 b-p-header align-items-center">
             <a href="javascript:;" class="d-grid f-8 mb-3 text-lightest collapse-column"
-               data-column-id="{{ $column->id }}" data-type="maximize" data-toggle="tooltip"
-               data-original-title=@lang('app.expand')>
+                data-column-id="{{ $column->id }}" data-type="maximize" data-toggle="tooltip" data-original-title=@lang('app.expand')>
                 <i class="fa fa-chevron-right ml-1"></i>
                 <i class="fa fa-chevron-left"></i>
             </a>
 
             <p class="mb-3 mx-0 f-15 text-dark-grey font-weight-bold"><i class="fa fa-circle mb-2 text-red"
-                                                                         style="color: {{ $column->label_color }}"></i>{{ $column->slug == 'completed' || $column->slug == 'incomplete' ? __('app.' . $column->slug) : $column->column_name }}
-            </p>
+                    style="color: {{ $column->label_color }}"></i>{{ $column->slug == 'completed' || $column->slug == 'incomplete' ? __('app.' . $column->slug) : $column->column_name }}</p>
 
             <span
                 class="b-p-badge bg-grey f-13 px-2 py-2 text-lightest font-weight-bold rounded d-inline-block">{{ $column->tasks_count }}</span>
@@ -29,7 +27,7 @@
         <!-- TASK BOARD HEADER START -->
         <div class="d-flex m-3 b-p-header">
             <p class="mb-0 f-15 mr-3 text-dark-grey font-weight-bold"><i class="fa fa-circle mr-2 text-yellow"
-                                                                         style="color: {{ $column->label_color }}"></i>{{ $column->slug == 'completed' || $column->slug == 'incomplete' ? __('app.' . $column->slug) : $column->column_name }}
+                    style="color: {{ $column->label_color }}"></i>{{ $column->slug == 'completed' || $column->slug == 'incomplete' ? __('app.' . $column->slug) : $column->column_name }}
             </p>
 
             <span
@@ -37,7 +35,7 @@
 
             <span class="ml-auto d-flex align-items-center">
                 <a href="javascript:;" class="d-flex f-8 text-lightest collapse-column"
-                   data-column-id="{{ $column->id }}" data-type="minimize" data-toggle="tooltip" data-original-title=@lang('app.collapse')>
+                    data-column-id="{{ $column->id }}" data-type="minimize" data-toggle="tooltip" data-original-title=@lang('app.collapse')>
                     <i class="fa fa-chevron-right mr-1"></i>
                     <i class="fa fa-chevron-left"></i>
                 </a>
@@ -50,7 +48,7 @@
             <!-- MAIN TASKS START -->
             <div class="b-p-tasks" id="drag-container-{{ $column->id }}" data-column-id="{{ $column->id }}">
                 @forelse ($column['tasks'] as $task)
-                    <x-cards.public-task-card :draggable="'false'" :task="$task"/>
+                    <x-cards.public-task-card :draggable="'false'" :task="$task" />
                 @empty
                     @if ($column->tasks_count == 0)
                         <div class="card rounded bg-white border-grey b-shadow-4 m-1 mb-3 no-task-card move-disable">
@@ -76,8 +74,8 @@
                 <!-- TASK BOARD FOOTER START -->
                 <div class="d-flex m-3 justify-content-center">
                     <a class="f-13 text-dark-grey f-w-500 load-more-tasks" data-column-id="{{ $column->id }}"
-                       data-total-tasks="{{ $column->tasks_count }}"
-                       href="javascript:;">@lang('modules.tasks.loadMore')</a>
+                        data-total-tasks="{{ $column->tasks_count }}"
+                        href="javascript:;">@lang('modules.tasks.loadMore')</a>
                 </div>
                 <!-- TASK BOARD FOOTER END -->
             @endif
@@ -86,6 +84,7 @@
     </div>
     <!-- BOARD PANEL 2 END -->
 
+
 @endforeach
 
 <!-- Drag and Drop Plugin -->
@@ -93,22 +92,22 @@
     var arraylike = document.getElementsByClassName('b-p-tasks');
     var containers = Array.prototype.slice.call(arraylike);
     var drake = dragula({
-        containers: containers,
-        moves: function (el, source, handle, sibling) {
-            if (el.classList.contains('move-disable') || !KTUtil.isDesktopDevice()) {
-                return false;
-            }
+            containers: containers,
+            moves: function(el, source, handle, sibling) {
+                if (el.classList.contains('move-disable') || !KTUtil.isDesktopDevice()) {
+                    return false;
+                }
 
-            return true; // elements are always draggable by default
-        },
-    })
-        .on('drag', function (el) {
+                return true; // elements are always draggable by default
+            },
+        })
+        .on('drag', function(el) {
             el.className = el.className.replace('ex-moved', '');
-        }).on('drop', function (el) {
+        }).on('drop', function(el) {
             el.className += ' ex-moved';
-        }).on('over', function (el, container) {
+        }).on('over', function(el, container) {
             container.className += ' ex-over';
-        }).on('out', function (el, container) {
+        }).on('out', function(el, container) {
             container.className = container.className.replace('ex-over', '');
         });
 </script>

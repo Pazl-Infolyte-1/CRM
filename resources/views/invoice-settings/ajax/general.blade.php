@@ -9,13 +9,13 @@
         <div class="col-lg-6">
             <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel="__('modules.invoiceSettings.logo')"
-                            fieldName="logo" fieldId="logo" :fieldValue="$invoiceSetting->masked_logo_url"
+                            fieldName="logo" fieldId="logo" :fieldValue="$invoiceSetting->logo_url"
                             :popover="__('messages.invoiceLogoTooltip')"/>
         </div>
         <div class="col-lg-6">
             <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel="__('modules.invoiceSettings.authorisedSignatorySignature')"
-                            fieldName="authorised_signatory_signature" fieldId="authorised_signatory_signature" :fieldValue="$invoiceSetting->masked_authorised_signatory_signature_url"
+                            fieldName="authorised_signatory_signature" fieldId="authorised_signatory_signature" :fieldValue="$invoiceSetting->authorised_signatory_signature_url"
                             :popover="__('messages.authorisedSignatorySignatureTooltip')"/>
         </div>
 
@@ -161,18 +161,6 @@
                                     fieldId="invoice_terms"
                                     :fieldPlaceholder="__('placeholders.invoices.invoiceTerms')"
                                     :fieldValue="$invoiceSetting->invoice_terms">
-                </x-forms.textarea>
-            </div>
-        </div>
-
-        <div class="col-lg-12 mt-3">
-            <div class="form-group my-3">
-                <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2"
-                                    :fieldLabel="__('modules.invoiceSettings.otherInfo')"
-                                    fieldName="other_info"
-                                    fieldId="other_info"
-                                    :fieldPlaceholder="__('placeholders.invoices.otherInfo')"
-                                    :fieldValue="$invoiceSetting->other_info">
                 </x-forms.textarea>
             </div>
         </div>

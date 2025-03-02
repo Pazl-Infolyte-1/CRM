@@ -19,20 +19,18 @@
         <!-- DATE END -->
 
         <!-- CLIENT START -->
-        @if (in_array('clients', user_modules()))
-            <div class="select-box d-flex  py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
-                <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.client')</p>
-                <div class="select-status">
-                    <select class="form-control select-picker" name="employee" id="clientID" data-live-search="true"
-                        data-size="8">
-                        <option value="all">@lang('app.all')</option>
-                        @foreach ($clients as $client)
-                            <x-user-option :user="$client" />
-                        @endforeach
-                    </select>
-                </div>
+        <div class="select-box d-flex  py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.client')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="employee" id="clientID" data-live-search="true"
+                    data-size="8">
+                    <option value="all">@lang('app.all')</option>
+                    @foreach ($clients as $client)
+                        <x-user-option :user="$client" />
+                    @endforeach
+                </select>
             </div>
-        @endif
+        </div>
         <!-- CLIENT END -->
 
         <!-- PROJECT START -->
@@ -154,7 +152,7 @@
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["payments-table"].draw(true);
+            window.LaravelDataTables["payments-table"].draw(false);
             pieChart();
         }
 
@@ -185,7 +183,7 @@
 
         $('#reset-filters').click(function() {
             $('#filter-form')[0].reset();
-            // getDate()
+            getDate()
 
             $('.filter-box .select-picker').selectpicker("refresh");
             $('#reset-filters').addClass('d-none');

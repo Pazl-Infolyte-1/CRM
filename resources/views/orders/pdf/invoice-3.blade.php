@@ -386,7 +386,6 @@
 
         .word-break {
             word-wrap:break-word;
-            word-break: break-all;
         }
 
 
@@ -430,18 +429,11 @@
         <section id="client-info">
             @if(($order->client->name || $order->client->email || $order->client->mobile || $order->clientDetails->company_name || $order->clientDetails->address )
                 && ($invoiceSetting->show_client_name == 'yes' || $invoiceSetting->show_client_email == 'yes' || $invoiceSetting->show_client_phone == 'yes' || $invoiceSetting->show_client_company_name == 'yes' || $invoiceSetting->show_client_company_address == 'yes'))
-                @if ($order->project)
-                    <span>@lang('modules.invoices.project'):</span>
-                    <div>
-                        <span class="bold">{{$order->project->project_name}}</span>
-                    </div>
-                @endif
-
                 <span>@lang('modules.invoices.billedTo'):</span>
 
                 @if ($order->client->name && $invoiceSetting->show_client_name == 'yes')
                     <div>
-                        <span class="bold">{{ $order->client->name_salutation }}</span>
+                        <span class="bold">{{ $order->client->name }}</span>
                     </div>
                 @endif
 
@@ -453,7 +445,7 @@
 
                 @if ($order->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                     <div>
-                        <span>{{ $order->client->mobile_with_phonecode }}</span>
+                        <span>{{ $order->client->mobile }}</span>
                     </div>
                 @endif
 
@@ -503,21 +495,20 @@
                     @else
                     <th class="qty"> </th>
                     @endif
-                <th>@lang('app.sku')</th>
                 <th>@lang("modules.invoices.unitPrice")</th>
                 <th>@lang("modules.invoices.tax")</th>
                 <th>@lang("modules.invoices.price") ({!! htmlentities($order->currency->currency_code)  !!})</th>
             </tr>
 
             <?php $count = 0; ?>
-            @foreach($order->items->sortBy('field_order') as $item)
+            @foreach($order->items as $item)
                 @if($item->type == 'item')
             <tr data-iterate="item">
                 <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
-                <td class="word-break">
+                <td>
                     {{ $item->item_name }}
                     @if(!is_null($item->item_summary))
-                        <p class="item-summary  mb-3 word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                        <p class="item-summary  mb-3">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                     @endif
                     @if ($item->orderItemImage)
                         <p class="mt-2">
@@ -529,7 +520,6 @@
                     <td>{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                 @endif
                 <td>{{ $item->quantity }}</td>
-                <td>{{ $item->sku }}</td>
                 <td>{{ currency_format($item->unit_price, $order->currency_id, false) }}</td>
                 <td>{{ $item->tax_list }}</td>
                 <td>{{ currency_format($item->amount, $order->currency_id, false) }}</td>
@@ -586,10 +576,7 @@
 
         <div class="notes word-break">
             @if(!is_null($order->note))
-                <br>{!! nl2br($order->note) !!}<br>
-            @endif
-            @if (!is_null($invoiceSetting->other_info))
-                <br>{!! nl2br($invoiceSetting->other_info) !!}
+                <br>{!! nl2br($order->note) !!}
             @endif
         </div>
 

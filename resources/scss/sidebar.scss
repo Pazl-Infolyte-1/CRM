@@ -179,7 +179,6 @@
   display: block !important;
   white-space: nowrap;
   overflow: auto;
-  overflow-x: hidden;
 
   @include media-breakpoint-down(md){
     height: calc(100% - 63px);
@@ -187,7 +186,7 @@
 
   li  {
     position: relative;
-    //box-shadow: 0 1px 0 0 $dark_border;
+    box-shadow: 0 1px 0 0 $dark_border;
 
     .accordionItemContent a{
       padding: 0.5rem 1.2rem;
@@ -203,9 +202,6 @@
       line-height: 1.87;
       white-space: nowrap;
       display: block;
-        width: 230px;
-        overflow: hidden;
-      text-overflow: ellipsis;
       align-items: center;
       padding: 10px 20px 10px 20px;
 

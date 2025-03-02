@@ -3,16 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Helper\Reply;
+use App\Models\AttendanceSetting;
 use App\Models\DashboardWidget;
-use App\Models\DealFollowUp;
 use App\Models\EmployeeDetails;
 use App\Models\Event;
 use App\Models\Holiday;
-use App\Models\LeadPipeline;
 use App\Models\Leave;
 use App\Models\ProjectTimeLog;
 use App\Models\ProjectTimeLogBreak;
-use App\Models\PushNotificationSetting;
 use App\Models\Task;
 use App\Models\TaskboardColumn;
 use App\Models\Ticket;
@@ -30,7 +28,7 @@ use Carbon\CarbonPeriod;
 use Froiden\Envato\Traits\AppBoot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Nwidart\Modules\Facades\Module;
 
 class DashboardController extends AccountBaseController
 {
@@ -41,10 +39,13 @@ class DashboardController extends AccountBaseController
     {
         parent::__construct();
         $this->pageTitle = 'app.menu.dashboard';
-
         $this->middleware(function ($request, $next) {
-            // WORKSUITESAAS
-            abort_403(user()->is_superadmin);
+            $this->viewOverviewDashboard = user()->permission('view_overview_dashboard');
+            $this->viewProjectDashboard = user()->permission('view_project_dashboard');
+            $this->viewClientDashboard = user()->permission('view_client_dashboard');
+            $this->viewHRDashboard = user()->permission('view_hr_dashboard');
+            $this->viewTicketDashboard = user()->permission('view_ticket_dashboard');
+            $this->viewFinanceDashboard = user()->permission('view_finance_dashboard');
 
             return $next($request);
         });
@@ -56,18 +57,9 @@ class DashboardController extends AccountBaseController
      */
     public function index()
     {
-
         $this->isCheckScript();
-        session()->forget(['qr_clock_in']);
+
         if (in_array('employee', user_roles())) {
-
-            $this->viewOverviewDashboard = user()->permission('view_overview_dashboard');
-            $this->viewProjectDashboard = user()->permission('view_project_dashboard');
-            $this->viewClientDashboard = user()->permission('view_client_dashboard');
-            $this->viewHRDashboard = user()->permission('view_hr_dashboard');
-            $this->viewTicketDashboard = user()->permission('view_ticket_dashboard');
-            $this->viewFinanceDashboard = user()->permission('view_finance_dashboard');
-
             return $this->employeeDashboard();
         }
 
@@ -78,18 +70,12 @@ class DashboardController extends AccountBaseController
 
     public function widget(Request $request, $dashboardType)
     {
-        $data = $request->except('_token');
+        $data = $request->all();
+        unset($data['_token']);
+        DashboardWidget::where('status', 1)->where('dashboard_type', $dashboardType)->update(['status' => 0]);
 
-        // Step 1: Reset all widgets' status to 0
-        DashboardWidget::where('status', 1)
-            ->where('dashboard_type', $dashboardType)
-            ->update(['status' => 0]);
-
-        // Step 2: Update the status to 1 for widgets present in the request
-        if (!empty($data)) {
-            DashboardWidget::where('dashboard_type', $dashboardType)
-                ->whereIn('widget_name', array_keys($data))
-                ->update(['status' => 1]);
+        foreach ($data as $key => $widget) {
+            DashboardWidget::where('widget_name', $key)->where('dashboard_type', $dashboardType)->update(['status' => 1]);
         }
 
         return Reply::success(__('messages.updateSuccess'));
@@ -98,6 +84,7 @@ class DashboardController extends AccountBaseController
     public function checklist()
     {
         if (in_array('admin', user_roles())) {
+            $this->isCheckScript();
 
             return view('dashboard.checklist', $this->data);
         }
@@ -124,73 +111,6 @@ class DashboardController extends AccountBaseController
             || $this->sidebarUserPermissions['view_finance_dashboard'] == 4) {
 
             $tab = request('tab');
-
-            $this->widgetToModuleMap = [
-                'total_clients' => 'clients',
-                'total_employees' => 'employees',
-                'total_projects' => 'projects',
-                'total_unpaid_invoices' => 'invoices',
-                'total_hours_logged' => 'timelogs',
-                'total_pending_tasks' => 'tasks',
-                'total_today_attendance' => 'attendance',
-                'total_unresolved_tickets' => 'tickets',
-                'recent_earnings' => 'payments',
-                'settings_leaves' => 'leaves',
-                'new_tickets' => 'tickets',
-                'overdue_tasks' => 'tasks',
-                'pending_follow_up' => 'tasks',
-                'project_activity_timeline' => 'projects',
-                'user_activity_timeline' => 'users',
-                'timelogs' => 'timelogs',
-
-                'total_project' => 'projects',
-                'total_overdue_project' => 'projects',
-                'status_wise_project' => 'projects',
-                'pending_milestone' => 'projects',
-
-                'total_leads' => 'leads',
-                'total_lead_conversions' => 'leads',
-                'total_contracts_generated' => 'contracts',
-                'total_contracts_signed' => 'contracts',
-                'client_wise_earnings' => 'clients',
-                'client_wise_timelogs' => 'clients',
-                'lead_vs_status' => 'leads',
-                'lead_vs_source' => 'leads',
-                'latest_client' => 'leads',
-                'recent_login_activities' => 'clients',
-                'total_deals' => 'leads',
-
-                'total_leaves_approved' => 'leaves',
-                'total_new_employee' => 'employees',
-                'total_employee_exits' => 'employees',
-                'average_attendance' => 'attendance',
-                'department_wise_employee' => 'employees',
-                'designation_wise_employee' => 'employees',
-                'gender_wise_employee' => 'employees',
-                'role_wise_employee' => 'employees',
-                'leaves_taken' => 'leaves',
-                'late_attendance_mark' => 'attendance',
-                'headcount' => 'employees',
-                'joining_vs_attrition' => 'employees',
-                'birthday' => 'employees',
-
-                'total_tickets' => 'tickets',
-                'total_unassigned_ticket' => 'tickets',
-                'type_wise_ticket' => 'tickets',
-                'status_wise_ticket' => 'tickets',
-                'channel_wise_ticket' => 'tickets',
-
-                'total_paid_invoices' => 'invoices',
-                'total_expenses' => 'expenses',
-                'total_earnings' => 'invoices',
-                'total_pending_amount' => 'invoices',
-                'invoice_overview' => 'invoices',
-                'estimate_overview' => 'estimates',
-                'proposal_overview' => 'leads',
-                'earnings_by_client' => 'clients',
-                'earnings_by_projects' => 'projects',
-
-            ];
 
             switch ($tab) {
             case 'project':
@@ -243,7 +163,9 @@ class DashboardController extends AccountBaseController
             }
 
             if (request()->ajax()) {
-                return $this->returnAjax($this->view);
+                $html = view($this->view, $this->data)->render();
+
+                return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
             }
 
             if (!isset($this->activeTab)) {
@@ -262,7 +184,7 @@ class DashboardController extends AccountBaseController
     public function weekTimelog()
     {
         $now = now(company()->timezone);
-        $attndcSetting = attendance_setting();
+        $attndcSetting = AttendanceSetting::first();
         $this->timelogDate = $timelogDate = Carbon::parse(request()->date);
         $this->weekStartDate = $now->copy()->startOfWeek($attndcSetting->week_start_from);
         $this->weekEndDate = $this->weekStartDate->copy()->addDays(7);
@@ -274,33 +196,16 @@ class DashboardController extends AccountBaseController
         $this->weekWiseTimelogs = ProjectTimeLog::weekWiseTimelogs($this->weekStartDate->copy()->toDateString(), $this->weekEndDate->copy()->toDateString(), user()->id);
         $this->weekWiseTimelogBreak = ProjectTimeLogBreak::weekWiseTimelogBreak($this->weekStartDate->toDateString(), $this->weekEndDate->toDateString(), user()->id);
 
-        $this->dayMinutes = $this->dateWiseTimelogs->sum('total_minutes');
-        $this->dayBreakMinutes = $this->dateWiseTimelogBreak->sum('total_minutes');
-        $loggedMinutes = $this->dayMinutes - $this->dayBreakMinutes;
-
-        $this->totalDayMinutes = $this->formatTime($loggedMinutes);
-        $this->totalDayBreakMinutes = $this->formatTime($this->dayBreakMinutes);
-
         $html = view('dashboard.employee.week_timelog', $this->data)->render();
 
         return Reply::dataOnly(['html' => $html]);
-    }
-
-    private function formatTime($totalMinutes)
-    {
-        $hours = intdiv($totalMinutes, 60);
-        $minutes = $totalMinutes % 60;
-
-        return $hours > 0
-            ? $hours . 'h' . ($minutes > 0 ? ' ' . sprintf('%02dm', $minutes) : '')
-            : ($minutes > 0 ? sprintf('%dm', $minutes) : '0s');
     }
 
     public function privateCalendar()
     {
         if (request()->filter) {
             $employee_details = EmployeeDetails::where('user_id', user()->id)->first();
-            $employee_details->calendar_view = request()->filter ? request()->filter : null;
+            $employee_details->calendar_view = (request()->filter != false) ? request()->filter : null;
             $employee_details->save();
             session()->forget('user');
         }
@@ -309,13 +214,11 @@ class DashboardController extends AccountBaseController
         $endDate = Carbon::parse(request('end'));
 
         // get calendar view current logined user
-        $calendar_filter_array = explode(',', user()->employeeDetail->calendar_view);
+        $calendar_filter_array = explode(',', user()->employeeDetails->calendar_view);
 
         $eventData = array();
 
-        $viewEventPerm = user()->permission('view_events');
-
-        if (!is_null($viewEventPerm) && $viewEventPerm != 'none') {
+        if (!is_null(user()->permission('view_events')) && user()->permission('view_events') != 'none') {
 
             if (in_array('events', $calendar_filter_array)) {
                 // Events
@@ -346,30 +249,11 @@ class DashboardController extends AccountBaseController
             }
 
         }
-        $user = user();
-        $viewHolidayPerm = user()->permission('view_holiday');
 
-        if (!is_null($viewHolidayPerm) && $viewHolidayPerm != 'none') {
+        if (!is_null(user()->permission('view_holiday')) && user()->permission('view_holiday') != 'none') {
             if (in_array('holiday', $calendar_filter_array)) {
                 // holiday
-                $holidays = Holiday::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
-                    ->where(function ($query) use ($user) {
-                        $query->where(function ($subquery) use ($user) {
-                                $subquery->where(function ($q) use ($user) {
-                                    $q->where('department_id_json', 'like', '%"' . $user->employeeDetail->department_id . '"%')
-                                        ->orWhereNull('department_id_json');
-                                });
-                                $subquery->where(function ($q) use ($user) {
-                                    $q->where('designation_id_json', 'like', '%"' . $user->employeeDetail->designation_id . '"%')
-                                        ->orWhereNull('designation_id_json');
-                                });
-                                $subquery->where(function ($q) use ($user) {
-                                    $q->where('employment_type_json', 'like', '%"' . $user->employeeDetail->employment_type . '"%')
-                                        ->orWhereNull('employment_type_json');
-                                });
-                        });
-                    });
-                $holidays = $holidays->get();
+                $holidays = Holiday::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])->get();
 
                 foreach ($holidays as $holiday) {
                     $eventData[] = [
@@ -385,14 +269,11 @@ class DashboardController extends AccountBaseController
 
         }
 
-        $viewTaskPerm = user()->permission('view_tasks');
-
-        if (!is_null($viewTaskPerm) && $viewTaskPerm != 'none') {
+        if (!is_null(user()->permission('view_tasks')) && user()->permission('view_tasks') != 'none') {
 
             if (in_array('task', $calendar_filter_array)) {
                 // tasks
                 $completedTaskColumn = TaskboardColumn::completeColumn();
-
                 $tasks = Task::with('boardColumn')
                     ->where('board_column_id', '<>', $completedTaskColumn->id)
                     ->whereHas('users', function ($query) {
@@ -417,16 +298,14 @@ class DashboardController extends AccountBaseController
             }
         }
 
-        $viewTicketPerm = user()->permission('view_tickets');
-
-        if (!is_null($viewTicketPerm) && $viewTicketPerm != 'none') {
+        if (!is_null(user()->permission('view_tickets')) && user()->permission('view_tickets') != 'none') {
 
             if (in_array('tickets', $calendar_filter_array)) {
                 // tickets
                 $tickets = Ticket::where('user_id', user()->id)
                     ->whereBetween(DB::raw('DATE(tickets.`updated_at`)'), [$startDate->toDateTimeString(), $endDate->endOfDay()->toDateTimeString()])->get();
 
-                foreach ($tickets as $ticket) {
+                foreach ($tickets as $key => $ticket) {
                     $eventData[] = [
                         'id' => $ticket->ticket_number,
                         'title' => $ticket->subject,
@@ -440,9 +319,7 @@ class DashboardController extends AccountBaseController
 
         }
 
-        $viewleavePerm = user()->permission('view_leave');
-
-        if (!is_null($viewleavePerm) && $viewleavePerm != 'none') {
+        if (!is_null(user()->permission('view_leave')) && user()->permission('view_leave') != 'none') {
 
             if (in_array('leaves', $calendar_filter_array)) {
                 // approved leaves of all emoloyees with employee name
@@ -469,102 +346,7 @@ class DashboardController extends AccountBaseController
             }
         }
 
-        $viewDealPerm = user()->permission('view_deals');
-
-        if (!is_null($viewDealPerm) && $viewDealPerm != 'none') {
-
-            if (in_array('follow_ups', $calendar_filter_array)) {
-                // follow ups
-                $followUps = DealFollowUp::with('lead')->whereHas('lead.leadAgent', function ($query) {
-                        $query->where('user_id', user()->id);
-                })
-                    ->whereBetween(DB::raw('DATE(next_follow_up_date)'), [$startDate->startOfDay()->toDateTimeString(), $endDate->endOfDay()->toDateTimeString()])
-                    ->get();
-
-
-                foreach ($followUps as $followUp) {
-                    $eventData[] = [
-                        'id' => $followUp->id,
-                        'title' => $followUp->lead->name,
-                        'start' => $followUp->next_follow_up_date->timezone(company()->timezone),
-                        'end' => $followUp->next_follow_up_date->timezone(company()->timezone),
-                        'event_type' => 'follow_up',
-                        'extendedProps' => ['bg_color' => '#1d82f5', 'color' => '#fff', 'icon' => 'fa-thumbs-up']
-                    ];
-                }
-            }
-
-        }
-
         return $eventData;
     }
-
-    public function getLeadStage($pipelineId)
-    {
-        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
-        $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
-        $startDate = $this->startDate->toDateString();
-        $endDate = $this->endDate->toDateString();
-
-        $this->leadPipelines = LeadPipeline::all();
-
-        $this->leadStatusChart = $this->leadStatusChart($startDate, $endDate, $pipelineId);
-
-        return $this->returnAjax('dashboard.ajax.lead-by-pipeline');
-
-    }
-
-    public function beamAuth()
-    {
-        $userID = 'wrkst-'.user()->id;
-        $userIDInQueryParam = request()->user_id;
-
-        if ($userID != $userIDInQueryParam) {
-            return response('Inconsistent request', 401);
-
-        } else {
-            $beamsClient = new \Pusher\PushNotifications\PushNotifications([
-                'instanceId' => push_setting()->instance_id,
-                'secretKey' => push_setting()->beam_secret,
-            ]);
-
-            $beamsToken = $beamsClient->generateToken($userID);
-            return response()->json($beamsToken);
-        }
-
-    }
-
-    public function sendPushNotifications($usersIDs, $title, $body)
-    {
-        $setting = PushNotificationSetting::first();
-        if ($setting->beams_push_status && count($usersIDs) > 0) {
-            $beamsClient = new \Pusher\PushNotifications\PushNotifications([
-            'instanceId' =>  $setting->instance_id,
-            'secretKey' =>  $setting->beam_secret,
-            ]);
-
-
-            $pushIDs = [];
-
-            foreach ($usersIDs[0] as $key => $uid) {
-                $pushIDs[] = 'wrkst-' . $uid;
-            }
-
-            $publishResponse = $beamsClient->publishToUsers(
-            $pushIDs,
-            array(
-              'web' => array(
-                'notification' => array(
-                  'title' => $title,
-                  'body' => $body,
-                  'icon' => companyOrGlobalSetting()->logo_url
-                  )
-              )
-            ));
-        }
-
-        return true;
-    }
-
 
 }

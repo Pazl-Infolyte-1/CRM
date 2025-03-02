@@ -26,8 +26,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
  * @method static \Illuminate\Database\Eloquent\Builder|UserLeadboardSetting whereCompanyId($value)
- * @property int|null $pipeline_stage_id
- * @method static \Illuminate\Database\Eloquent\Builder|UserLeadboardSetting wherePipelineStageId($value)
  * @mixin \Eloquent
  */
 class UserLeadboardSetting extends BaseModel

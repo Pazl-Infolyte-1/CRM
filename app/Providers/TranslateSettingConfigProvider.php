@@ -13,7 +13,7 @@ class TranslateSettingConfigProvider extends ServiceProvider
     public function register()
     {
         try {
-            // TODO: To be removed in next update
+
             if (Schema::hasTable('translate_settings')) {
                 $translateSetting = DB::table('translate_settings')->first();
 

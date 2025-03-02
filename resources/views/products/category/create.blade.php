@@ -86,8 +86,8 @@
                     success: function(response) {
                         if (response.status === 'success') {
                             $('#cat-' + id).fadeOut();
-                            $('#product_category_ids').html(response.data);
-                            $('#product_category_ids').selectpicker('refresh');
+                            $('#product_category_id').html(response.data);
+                            $('#product_category_id').selectpicker('refresh');
                             // $(MODAL_LG).modal('hide');
                         }
                     }
@@ -106,12 +106,9 @@
             data: $('#createProjectCategory').serialize(),
             success: function(response) {
                 if (response.status === 'success') {
-                    $('#product_category_ids').html(response.data);
-                    $('#product_category_ids').selectpicker('refresh');
+                    $('#product_category_id').html(response.data);
+                    $('#product_category_id').selectpicker('refresh');
                     $(MODAL_LG).modal('hide');
-
-                    $('#sub_category_id').html('<option value="">--</option>' + response.subCategoryData);
-                    $('#sub_category_id').selectpicker('refresh');
                 }
             }
         })
@@ -141,8 +138,8 @@
                 blockUI: true,
                 success: function(response) {
                     if (response.status == 'success') {
-                        $('#product_category_ids').html(response.data);
-                        $('#product_category_ids').selectpicker('refresh');
+                        $('#product_category_id').html(response.data);
+                        $('#product_category_id').selectpicker('refresh');
                     }
                 }
             })

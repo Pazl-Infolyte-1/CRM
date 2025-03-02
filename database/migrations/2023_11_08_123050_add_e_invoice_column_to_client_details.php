@@ -12,11 +12,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::whenTableDoesntHaveColumn('company_addresses', 'country_id', function (Blueprint $table) {
-            $table->unsignedInteger('country_id')->nullable()->after('company_id');
-            $table->foreign('country_id')->references('id')->on('countries')->onDelete('set null');
-        });
-
         Schema::whenTableDoesntHaveColumn('client_details', 'electronic_address', function (Blueprint $table) {
             $table->string('electronic_address')->nullable();
             $table->string('electronic_address_scheme')->nullable();

@@ -62,8 +62,6 @@ class CreateTranslations extends Command
                 Translation::create($data);
             }
         }
-
-        return Command::SUCCESS;
     }
 
 }

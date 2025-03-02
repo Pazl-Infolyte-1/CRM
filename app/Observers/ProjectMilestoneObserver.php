@@ -11,10 +11,6 @@ class ProjectMilestoneObserver
     {
         if (!isRunningInConsoleOrSeeding()) {
             $projectMilestone->last_updated_by = user()->id;
-
-            if (company()) {
-                $projectMilestone->company_id = company()->id;
-            }
         }
     }
 
@@ -22,12 +18,7 @@ class ProjectMilestoneObserver
     {
         if (!isRunningInConsoleOrSeeding()) {
             $projectMilestone->added_by = user()->id;
-
-            if (company()) {
-                $projectMilestone->company_id = company()->id;
-            }
         }
-
     }
 
 }

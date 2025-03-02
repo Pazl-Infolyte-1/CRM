@@ -22,7 +22,7 @@
     <!-- HEADING START -->
     <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar">
         <div class="px-lg-4 px-md-4 px-3 py-3">
-            <h4 class="mb-0 f-21 font-weight-normal "><i class="bi bi-cart3"></i> @lang('app.cart')</h4>
+            <h4 class="mb-0 f-21 font-weight-normal text-capitalize"><i class="bi bi-cart3"></i> @lang('app.cart')</h4>
         </div>
 
         <div class="px-lg-4 px-md-4 px-3 py-3 cart_empty">
@@ -51,7 +51,7 @@
              <x-form-actions class="c-inv-btns d-block d-lg-flex d-md-flex">
                 <div class="d-flex mb-3 mb-lg-0 mb-md-0">
 
-                    <x-forms.button-cancel :link="route('products.index')" class="border-0 mr-3">@lang('app.viewProducts')
+                    <x-forms.button-cancel :link="route('products.index')" class="border-0 mr-3">@lang('app.view') @lang('app.menu.products')
                     </x-forms.button-cancel>
 
                 </div>
@@ -164,14 +164,13 @@
                                         <td class="border-bottom-0">
                                             <div class="select-others height-35 rounded border-0">
                                                 <select id="multiselect" disabled name="taxes[{{ $key }}][]"
-                                                        multiple="multiple"
-                                                        class="select-picker type customSequence border-0 bg-additional-grey tax" data-size="3">
+                                                    multiple="multiple"
+                                                    class="select-picker type customSequence border-0 bg-additional-grey tax" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}"
-                                                                data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                            <option data-rate="{{ $tax->rate_percent }}"
                                                                 @if (isset($item->product->taxes) && array_search($tax->id, json_decode($item->product->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                                            {{ $tax->tax_name }}:
-                                                            {{ $tax->rate_percent }}%</option>
+                                                                {{ $tax->tax_name }}:
+                                                                {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -213,7 +212,7 @@
 
             <!-- TOTAL, DISCOUNT START -->
             <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-                <table width="100%" class="text-right f-14 ">
+                <table width="100%" class="text-right f-14 text-capitalize">
                     <tbody>
                         <tr>
                             <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -256,7 +255,7 @@
             <!-- NOTE AND TERMS AND CONDITIONS START -->
             <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
                 <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                    <label class="f-14 text-dark-grey mb-12  w-100"
+                    <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
                         for="usr">@lang('app.clientNote')</label>
                     <textarea class="form-control" name="note" id="note" rows="4"></textarea>
                 </div>
@@ -273,7 +272,7 @@
                     </x-forms.button-primary>
 
                     <x-forms.link-secondary class="mr-3" :link="route('products.index')">
-                        @lang('app.viewProducts')
+                        @lang('app.view') @lang('app.menu.products')
                     </x-forms.link-secondary>
 
                     <x-forms.button-cancel :link="route('products.index')" class="border-0 mr-3">@lang('app.cancel')
@@ -320,11 +319,11 @@
                     _token: "{{ csrf_token() }}"
                 },
                 success: function(response) {
-                    $(this).closest('.item-row').fadeOut(300, function() {
-                        $(this).remove();
+                    $this.closest('.item-row').fadeOut(300, function() {
+                        $this.remove();
                         $('select.customSequence').each(function(index) {
-                            $(this).attr('name', 'taxes[' + index + '][]');
-                            $(this).attr('id', 'multiselect' + index + '');
+                            $this.attr('name', 'taxes[' + index + '][]');
+                            $this.attr('id', 'multiselect' + index + '');
                         });
                         calculateTotal();
                     });

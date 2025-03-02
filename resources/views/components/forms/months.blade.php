@@ -1,18 +1,15 @@
 @props([
-    'selectedMonth' => '',
-    'fieldRequired' => false,
-    'all'=>false
+    'selectedMonth'=>'',
+    'fieldRequired'=>false,
 ])
 
-@if(!$fieldRequired)
-    <option value="">--</option>
-@endif
-@if($all)
-    <option value="">@lang('app.all')</option>
-@endif
+    @if(!$fieldRequired)<option value="">--</option> @endif
 
-@foreach(range(1, \Carbon\Carbon::MONTHS_PER_YEAR) as $monthNumber)
-    <option {{ $selectedMonth == $monthNumber ? 'selected' : '' }} value="{{ $monthNumber }}">
-        {{ now()->startOfMonth()->month($monthNumber)->translatedFormat('F') }}
+    @foreach(range(1,\Carbon\Carbon::MONTHS_PER_YEAR) as $monthNumber))
+
+    <option @selected ($selectedMonth == $monthNumber) value="{{$monthNumber}}">
+
+        {{now()->startOfMonth()->month($monthNumber)->translatedFormat('F')}}
     </option>
-@endforeach
+
+    @endforeach

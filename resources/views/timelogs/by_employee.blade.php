@@ -63,7 +63,7 @@
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="project_id" id="project_id" data-live-search="true"
@@ -78,7 +78,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.status')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="status" id="status" data-live-search="true"
@@ -93,7 +93,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.invoiceGenerate')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.invoiceGenerate')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="invoice_generate" id="invoice_generate"
@@ -262,20 +262,16 @@ $addTimelogPermission = user()->permission('add_timelogs');
             $('.hide-user-timelogs').addClass('hide');
 
             var employee = $(this).data('user-id');
+            var startDate = $('#start-date').val();
 
-            const dateRangePicker = $('#datatableRange').data('daterangepicker');
-
-            let startDate = $('#datatableRange').val();
-            let endDate;
-
-            if (startDate === '') {
+            if (startDate == '') {
                 startDate = null;
+            }
+
+            var endDate = $('#end-date').val();
+
+            if (endDate == '') {
                 endDate = null;
-            } else {
-                startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
-                endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
-                $('#start-date').val(startDate);
-                $('#end-date').val(endDate);
             }
 
             var projectID = $('#project_id').val();
@@ -402,6 +398,8 @@ $addTimelogPermission = user()->permission('add_timelogs');
                 window.location = url + '?startDate=' + encodeURIComponent(startDate) + '&endDate=' + encodeURIComponent(endDate) + '&projectID=' + projectID + '&employee=' + employee;
             });
         @endif
+
+        showTable();
 
         $(document).ready(function () {
 

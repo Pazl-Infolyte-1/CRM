@@ -29,7 +29,6 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItemImage whereInvoiceItemId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItemImage whereSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItemImage whereUpdatedAt($value)
- * @property-read mixed $file
  * @mixin \Eloquent
  */
 class InvoiceItemImage extends BaseModel

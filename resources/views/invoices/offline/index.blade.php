@@ -1,6 +1,6 @@
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">
-        @lang('modules.invoices.payOffline')21
+        @lang('modules.invoices.payOffline')
     </h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
@@ -16,18 +16,13 @@
                                 fieldName="offlineMethod" search="true">
                                 <option value="">@lang('modules.payments.offlineMethodMsg')</option>
                                 @foreach($methods as $method)
-                                    @php
-                                        $description = "<p class='my-0 f-11 text-dark-grey'>$method->description</p>"
-                                    @endphp
-                                    <option value="{{ $method->id }}"
-                                            data-content="{!! '<strong>'.$method->name."</strong> ".$description !!}"
-                                    >
+                                    <option value="{{ $method->id }}">{{ $method->name }}</option>
                                 @endforeach
                             </x-forms.select>
                         </div>
                         <div class="col-lg-12 col-md-12 mt-3 d-none" id="offline_description_div">
                             <div class="form-group c-inv-select mb-0">
-                                <label class="f-14 text-dark-grey mb-12  w-100"
+                                <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
                                     for="usr">@lang('modules.invoices.paymentDescription')</label>
                                 <p class="f-15" id="offline_description"></p>
                             </div>
@@ -60,18 +55,7 @@
             type: "POST",
             redirect: true,
             file: true,
-            disableButton: true,
-            buttonSelector: '#save-offline-payment',
-            data: $('#offline-payment').serialize(),
-            success: function(response) {
-                if (response.status === 'success') {
-                    $(MODAL_LG).modal('hide');
-                    $('.payNowButton').hide();
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 800);
-                }
-            }
+            data: $('#offline-payment').serialize()
         })
     });
 

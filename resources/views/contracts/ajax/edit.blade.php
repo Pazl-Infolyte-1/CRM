@@ -3,19 +3,14 @@ $manageContractTypePermission = user()->permission('manage_contract_type');
 $addClientPermission = user()->permission('add_clients');
 @endphp
 
-@if (!in_array('clients', user_modules()))
-    <x-alert class="mb-3" type="danger" icon="exclamation-circle"><span>@lang('messages.enableClientModule')</span>
-        <x-forms.link-secondary icon="arrow-left" :link="route('contracts.show', $contract->id)">@lang('app.back')</x-forms.link-secondary>
-    </x-alert>
-@else
-
 <div class="row">
     <div class="col-sm-12">
         <x-form id="save-contract-data-form">
             @method('PUT')
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
-                    @lang('app.contractDetails')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                    @lang('app.menu.contract') @lang('app.details')</h4>
+
                 <div class="row p-20">
                                     <!-- CONTRACT NUMBER START -->
                 <div class="col-md-2">
@@ -132,7 +127,7 @@ $addClientPermission = user()->permission('add_clients');
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-top-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
                     @lang('modules.client.clientDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-6 col-lg-4">
@@ -179,13 +174,14 @@ $addClientPermission = user()->permission('add_clients');
                     <div class="col-md-6">
                         <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel="__('modules.contracts.alternateAddress')" fieldName="alternate_address"
-                            fieldId="alternate_address" :fieldPlaceholder="__('placeholders.address')"
-                            :fieldValue="$contract->alternate_address">
+                            fieldId="alternate_address" :fieldPlaceholder="__('placeholders.address')">
+                            {{ $contract->alternate_address }}
                         </x-forms.textarea>
                     </div>
                     <div class="col-md-6">
                         <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.contracts.notes')"
                             fieldName="note" fieldId="note" :fieldValue="$contract->contract_note">
+                            {{ $contract->contract_note ?? '' }}
                         </x-forms.textarea>
                     </div>
 
@@ -205,7 +201,7 @@ $addClientPermission = user()->permission('add_clients');
     </div>
 </div>
 
-@endif
+
 <script>
     $(document).ready(function() {
 

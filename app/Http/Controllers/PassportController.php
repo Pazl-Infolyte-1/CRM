@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Helper\Files;
 use App\Helper\Reply;
 use App\Models\Passport;
 use Illuminate\Http\Request;
+use App\Models\EmployeeDetails;
 use App\Http\Requests\StorePassportRequest;
 use App\Http\Requests\UpdatePassportRequest;
 
@@ -25,8 +27,8 @@ class PassportController extends Controller
         $passport->passport_number = $request->passport_number;
         $passport->user_id = $userId;
         $passport->company_id = company()->id;
-        $passport->issue_date = companyToYmd($request->issue_date);
-        $passport->expiry_date = companyToYmd($request->expiry_date);
+        $passport->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d');
+        $passport->expiry_date = Carbon::createFromFormat($this->company->date_format, $request->expiry_date)->format('Y-m-d');
         $passport->added_by = user()->id;
         $passport->country_id = $request->nationality;
 
@@ -50,8 +52,8 @@ class PassportController extends Controller
     {
         $passport = Passport::findOrFail($id);
         $passport->passport_number = $request->passport_number;
-        $passport->issue_date = companyToYmd($request->issue_date);
-        $passport->expiry_date = companyToYmd($request->expiry_date);
+        $passport->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d');
+        $passport->expiry_date = Carbon::createFromFormat($this->company->date_format, $request->expiry_date)->format('Y-m-d');
         $passport->country_id = $request->nationality;
 
         if($request->file_delete == 'yes')

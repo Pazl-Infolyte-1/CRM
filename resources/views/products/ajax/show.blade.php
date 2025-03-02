@@ -6,10 +6,10 @@ $deletePermission = user()->permission('delete_product');
     <div class="row">
         <div class="col-sm-12">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-10">
-                            <h3 class="heading-h1 mb-3">@lang('app.productsDetails')</h3>
+                            <h3 class="heading-h1 mb-3">@lang('app.menu.products') @lang('app.details')</h3>
                         </div>
                         <div class="col-lg-2 col-2 text-right">
                             @if (
@@ -18,7 +18,7 @@ $deletePermission = user()->permission('delete_product');
                                 )
                                 <div class="dropdown">
                                     <button
-                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>
                                     </button>
@@ -49,7 +49,6 @@ $deletePermission = user()->permission('delete_product');
                             <x-cards.data-row :label="__('modules.invoices.tax')" :value="!empty($taxValue) ? $taxValue : '--'" />
                             <x-cards.data-row :label="__('modules.unitType.unitType')" :value="$product->unit->unit_type ?? '--'" />
                             <x-cards.data-row :label="__('app.hsnSac')" :value="$product->hsn_sac_code ?? '--'" />
-                            <x-cards.data-row :label="__('app.sku')" :value="$product->sku ?? '--'" />
                             <x-cards.data-row :label="__('modules.productCategory.productCategory')"
                                 :value="$product->category->category_name ?? '--'" />
                             <x-cards.data-row :label="__('modules.productCategory.productSubCategory')"
@@ -73,7 +72,7 @@ $deletePermission = user()->permission('delete_product');
 
                             @if ($product->files)
                                 <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                                    <p class="mb-0 text-lightest f-14 w-30 ">{{ __('modules.productImage') }}</p>
+                                    <p class="mb-0 text-lightest f-14 w-30 text-capitalize">{{ __('modules.productImage') }}</p>
                                     <p class="mb-0 text-dark-grey f-14 w-70 text-wrap">
                                         @foreach ($product->files as $file)
                                             <a href="javascript:;" class="img-lightbox" data-image-url="{{ $file->file_url }}">

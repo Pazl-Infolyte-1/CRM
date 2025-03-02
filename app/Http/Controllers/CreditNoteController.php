@@ -110,12 +110,12 @@ class CreditNoteController extends AccountBaseController
             $this->totalDiscount = $this->discount;
         }
 
-        $this->view = 'credit-notes.ajax.create';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('credit-notes.ajax.create', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'credit-notes.ajax.create';
         return view('credit-notes.create', $this->data);
 
     }
@@ -184,7 +184,6 @@ class CreditNoteController extends AccountBaseController
         $creditNote->total = round($request->total, 2);
         $creditNote->adjustment_amount = round($request->adjustment_amount, 2);
         $creditNote->currency_id = $request->currency_id;
-        $creditNote->note = trim_editor($request->note);
         $creditNote->save();
 
         if ($invoice) {
@@ -251,7 +250,6 @@ class CreditNoteController extends AccountBaseController
 
         endforeach;
 
-
         // Log search
         $this->logSearchEntry($creditNote->id, $creditNote->cn_number, 'creditnotes.show', 'creditNote');
 
@@ -270,8 +268,8 @@ class CreditNoteController extends AccountBaseController
             || ($this->viewPermission == 'owned' && $this->creditNote->client_id == user()->id)
         ));
 
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         if ($this->creditNote->file != null) {
             return response()->download(storage_path('app/public/credit-note-files') . '/' . $this->creditNote->file);
@@ -281,16 +279,15 @@ class CreditNoteController extends AccountBaseController
         $pdf = $pdfOption['pdf'];
         $filename = $pdfOption['fileName'];
 
-        return request()->view ? $pdf->stream($filename . '.pdf') : $pdf->download($filename . '.pdf');
-
+        return $pdf->download($filename . '.pdf');
     }
 
     public function domPdfObjectForDownload($id)
     {
         $this->invoiceSetting = invoice_setting();
-        $this->creditNote = CreditNotes::with('client')->findOrFail($id);
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        $this->creditNote = CreditNotes::findOrFail($id);
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         $this->invoiceNumber = 0;
 
@@ -358,15 +355,13 @@ class CreditNoteController extends AccountBaseController
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
-        // $pdf->loadView('credit-notes.pdf.' . $this->creditNoteSetting->template, $this->data);
-        $customCss = '<style>
-                * { text-transform: none !important; }
-            </style>';
+        $pdf->loadView('credit-notes.pdf.' . $this->creditNoteSetting->template, $this->data);
 
-        $pdf->loadHTML($customCss . view('credit-notes.pdf.' . $this->invoiceSetting->template, $this->data)->render());
-
+        $dom_pdf = $pdf->getDomPDF();
+        $canvas = $dom_pdf->getCanvas();
+        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
         $filename = $this->creditNote->cn_number;
-
+        // Return $pdf->stream();
         return [
             'pdf' => $pdf,
             'fileName' => $filename
@@ -460,13 +455,6 @@ class CreditNoteController extends AccountBaseController
             }
         }
 
-        if($this->creditNote->discount_type == 'percent') {
-            $discountAmount = $this->creditNote->discount;
-            $this->discountType = $discountAmount.'%';
-        }else {
-            $discountAmount = $this->creditNote->discount;
-            $this->discountType = currency_format($discountAmount, $this->creditNote->currency_id);
-        }
 
         $this->invoiceExist = false;
 
@@ -573,12 +561,12 @@ class CreditNoteController extends AccountBaseController
             ->where('client_id', $this->creditNote->client_id);
         $this->nonPaidInvoices = $this->nonPaidInvoices->with('payment', 'currency')->get();
 
-        $this->view = 'credit-notes.ajax.apply_to_invoices';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('credit-notes.ajax.apply_to_invoices', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'credit-notes.ajax.apply_to_invoices';
         return view('credit-notes.create', $this->data);
     }
 
@@ -655,12 +643,12 @@ class CreditNoteController extends AccountBaseController
         $this->creditNote = CreditNotes::with('payment')->findOrFail($id);
         $this->payments = Payment::with('invoice')->where('credit_notes_id', $id)->get();
 
-        $this->view = 'credit-notes.ajax.credited_invoices';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('credit-notes.ajax.credited_invoices', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'credit-notes.ajax.credited_invoices';
         return view('credit-notes.create', $this->data);
     }
 

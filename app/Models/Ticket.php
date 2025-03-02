@@ -78,30 +78,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read int|null $mention_user_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $ticketMention
  * @property-read int|null $ticket_mention_count
- * @property int|null $project_id
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TicketActivity> $activities
- * @property-read int|null $activities_count
- * @property-read \App\Models\Project|null $project
- * @method static \Illuminate\Database\Eloquent\Builder|Ticket whereProjectId($value)
  * @mixin \Eloquent
  */
 class Ticket extends BaseModel
 {
 
-    use HasCompany, SoftDeletes, HasFactory, CustomFieldsTrait;
-
-    const CUSTOM_FIELD_MODEL = 'App\Models\Ticket';
+    use HasCompany;
+    use SoftDeletes, HasFactory;
+    use CustomFieldsTrait;
 
     protected $casts = [
         'deleted_at' => 'datetime',
     ];
-
     protected $appends = ['created_on'];
 
-    public function group()
-    {
-        return $this->belongsTo(TicketGroup::class, 'group_id');
-    }
+    const CUSTOM_FIELD_MODEL = 'App\Models\Ticket';
 
     public function requester(): BelongsTo
     {
@@ -140,15 +131,16 @@ class Ticket extends BaseModel
 
     public function getCreatedOnAttribute()
     {
+        $setting = company();
 
         if (is_null($this->created_at)) {
             return '';
         }
 
-        return $this->created_at->timezone(company()->timezone)->format('d M Y H:i');
+        return $this->created_at->timezone($setting->timezone)->format('d M Y H:i');
     }
 
-    public function badge($tag = 'p'): string
+    public function badge($tag = 'p')
     {
 
         $latestReplyUser = $this->latestReply?->user;
@@ -157,10 +149,10 @@ class Ticket extends BaseModel
         $selfReplyCount = $this->reply()->where('user_id', $latestReplyUser?->id)->count();
 
         if ($totalReply > 1 && ($totalReply !== $selfReplyCount) && $latestReplyUser && $latestReplyUser->id !== user()->id) {
-            return '<' . $tag . ' class="mb-0"><span class="badge badge-secondary mr-1 bg-info">' . __('app.newResponse') . '</span></' . $tag . '>';
+            return '<'.$tag.' class="mb-0"><span class="badge badge-secondary mr-1 bg-info">' . __('app.newResponse') . '</span></'.$tag.'>';
         }
 
-        return $totalReply == 1 || ($totalReply == $selfReplyCount) ? '<' . $tag . ' class="mb-0"><span class="badge badge-secondary mr-1 bg-dark-green">' . __('app.new') . '</span></' . $tag . '>' : '';
+        return $totalReply == 1 || ($totalReply == $selfReplyCount) ? '<'.$tag.' class="mb-0"><span class="badge badge-secondary mr-1 bg-dark-green">' . __('app.new') . '</span></'.$tag.'>' : '';
     }
 
     public function mentionUser(): BelongsToMany
@@ -183,53 +175,4 @@ class Ticket extends BaseModel
         return $this->hasMany(TicketActivity::class, 'ticket_id')->latest();
     }
 
-    /*
-     * Permissions
-     */
-    public function hasAllPermission($permission): bool
-    {
-        return $permission == 'all';
-    }
-
-    public function hasAddedPermission($permission): bool
-    {
-        return $permission == 'added' && user()->id == $this->added_by;
-    }
-
-    public function hasOwnedPermission($permission): bool
-    {
-        return $permission == 'owned' && (user()->id == $this->agent_id || user()->id == $this->user_id);
-    }
-
-    public function hasBothPermission($permission): bool
-    {
-        return $permission == 'both' && (user()->id == $this->agent_id || user()->id == $this->added_by || user()->id == $this->user_id);
-    }
-
-    public function canViewTicket(): bool
-    {
-        return $this->hasPermission(user()->permission('view_tickets'));
-    }
-
-    public function canDeleteTicket(): bool
-    {
-        return $this->hasPermission(user()->permission('delete_tickets'));
-    }
-
-    public function canEditTicket(): bool
-    {
-        return $this->hasPermission(user()->permission('edit_tickets'));
-    }
-
-    public function hasPermission($permission): bool
-    {
-        return $this->hasAllPermission($permission) ||
-            $this->hasAddedPermission($permission) ||
-            $this->hasOwnedPermission($permission) ||
-            $this->hasBothPermission($permission);
-    }
-
-    /*
-     * Permissions End here
-     */
 }

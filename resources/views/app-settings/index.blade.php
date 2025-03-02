@@ -5,12 +5,7 @@
     <!-- SETTINGS START -->
     <div class="w-100 d-flex ">
 
-        {{-- SAAS --}}
-        @if(user()->is_superadmin)
-            <x-super-admin.setting-sidebar :activeMenu="$activeSettingMenu"/>
-        @else
-            <x-setting-sidebar :activeMenu="$activeSettingMenu"/>
-        @endif
+        <x-setting-sidebar :activeMenu="$activeSettingMenu" />
 
         <x-setting-card>
             <x-slot name="buttons">
@@ -24,25 +19,20 @@
                                href="{{ route('app-settings.index') }}" role="tab" aria-controls="nav-ticketAgents"
                                aria-selected="true">@lang('app.menu.appSettings')
                             </a>
-                            @if(!user()->is_superadmin && in_array('clients', user_modules()))
-                                <a class="nav-item nav-link f-15 client-signup-setting"
-                                   href="{{ route('app-settings.index') }}?tab=client-signup-setting" role="tab"
-                                   aria-controls="nav-ticketTypes" aria-selected="true"
-                                   ajax="false">@lang('app.clientSignUpSettings')
-                                </a>
-                            @endif
-                            @if(user()->is_superadmin)
-                                <a class="nav-item nav-link f-15 file-upload-setting"
-                                   href="{{ route('app-settings.index') }}?tab=file-upload-setting" role="tab"
-                                   aria-controls="nav-ticketTypes" aria-selected="true" ajax="false">@lang('modules.accountSettings.fileUploadSetting')
-                                </a>
-
-                                <a class="nav-item nav-link f-15 google-map-setting"
-                                   href="{{ route('app-settings.index') }}?tab=google-map-setting" role="tab"
-                                   aria-controls="nav-ticketTypes" aria-selected="true"
-                                   ajax="false">@lang('app.googleMapSettings')
-                                </a>
-                            @endif
+                            <a class="nav-item nav-link f-15 client-signup-setting"
+                               href="{{ route('app-settings.index') }}?tab=client-signup-setting" role="tab"
+                               aria-controls="nav-ticketTypes" aria-selected="true"
+                               ajax="false">@lang('app.clientSignUpSettings')
+                            </a>
+                            <a class="nav-item nav-link f-15 file-upload-setting"
+                               href="{{ route('app-settings.index') }}?tab=file-upload-setting" role="tab"
+                               aria-controls="nav-ticketTypes" aria-selected="true" ajax="false">@lang('modules.accountSettings.fileUploadSetting')
+                            </a>
+                            <a class="nav-item nav-link f-15 google-map-setting"
+                               href="{{ route('app-settings.index') }}?tab=google-map-setting" role="tab"
+                               aria-controls="nav-ticketTypes" aria-selected="true"
+                               ajax="false">@lang('app.googleMapSettings')
+                            </a>
                         </div>
                     </nav>
                 </div>

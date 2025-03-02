@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Helper\Reply;
 use App\Http\Requests\StoreBusinessAddress;
 use App\Models\CompanyAddress;
-use App\Models\EmployeeDetails;
-use App\View\Components\Employee;
 
 class BusinessAddressController extends AccountBaseController
 {
@@ -18,7 +16,6 @@ class BusinessAddressController extends AccountBaseController
         $this->activeSettingMenu = 'business_address';
         $this->middleware(function ($request, $next) {
             abort_403(user()->permission('manage_company_setting') !== 'all');
-
             return $next($request);
         });
     }
@@ -26,14 +23,12 @@ class BusinessAddressController extends AccountBaseController
     public function index()
     {
         $this->companyAddresses = CompanyAddress::all();
-
         return view('company-address.index', $this->data);
     }
 
     public function create()
     {
         $this->countries = countries();
-
         return view('company-address.create', $this->data);
     }
 
@@ -56,7 +51,6 @@ class BusinessAddressController extends AccountBaseController
     {
         $this->countries = countries();
         $this->companyAddress = CompanyAddress::findOrfail($id);
-
         return view('company-address.edit', $this->data);
     }
 
@@ -91,7 +85,6 @@ class BusinessAddressController extends AccountBaseController
     public function destroy($id)
     {
         CompanyAddress::destroy($id);
-
         return Reply::success(__('messages.deleteSuccess'));
     }
 

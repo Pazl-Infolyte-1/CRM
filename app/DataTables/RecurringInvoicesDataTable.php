@@ -2,9 +2,10 @@
 
 namespace App\DataTables;
 
-use App\Models\GlobalSetting;
+use App\DataTables\BaseDataTable;
 use App\Models\Invoice;
 use App\Models\InvoiceSetting;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Button;
@@ -112,7 +113,7 @@ class RecurringInvoicesDataTable extends BaseDataTable
                 }
 
                 if ($row->status != 'paid' && $row->credit_note == 0 && $row->status != 'draft' && $row->status != 'canceled') {
-                    $action .= '<a class="dropdown-item" href="' . url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.payments.paymentLink') . '</a>';
+                    $action .= '<a class="dropdown-item" href="' . route('front.invoice', $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.payments.paymentLink') . '</a>';
                 }
 
                 if ($row->credit_note == 0 && $row->status == 'paid' && !in_array('client', user_roles())) {
@@ -261,12 +262,12 @@ class RecurringInvoicesDataTable extends BaseDataTable
             ->select('invoices.id', 'invoices.project_id', 'invoices.client_id', 'invoices.invoice_number', 'invoices.currency_id', 'invoices.total', 'invoices.status', 'invoices.issue_date', 'invoices.credit_note', 'invoices.show_shipping_address', 'invoices.send_status', 'invoices.invoice_recurring_id', 'invoices.hash', 'invoices.company_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $model = $model->where(DB::raw('DATE(invoices.`issue_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
             $model = $model->where(DB::raw('DATE(invoices.`issue_date`)'), '<=', $endDate);
         }
 

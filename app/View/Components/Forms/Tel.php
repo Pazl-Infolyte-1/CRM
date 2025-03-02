@@ -2,12 +2,10 @@
 
 namespace App\View\Components\Forms;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Tel extends Component
 {
-
     public $fieldLabel;
     public $fieldRequired;
     public $fieldPlaceholder;
@@ -33,7 +31,7 @@ class Tel extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {

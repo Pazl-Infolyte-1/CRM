@@ -44,14 +44,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $unit_id
  * @property-read \App\Models\UnitType|null $unit
  * @method static \Illuminate\Database\Eloquent\Builder|OrderItems whereUnitId($value)
- * @property string|null $sku
- * @method static \Illuminate\Database\Eloquent\Builder|OrderItems whereSku($value)
  * @mixin \Eloquent
  */
 class OrderItems extends BaseModel
 {
 
-    protected $fillable = ['order_id', 'product_id', 'item_name', 'item_summary', 'type', 'quantity', 'unit_price', 'amount', 'hsn_sac_code', 'taxes', 'unit_id', 'sku', 'field_order'];
+    protected $fillable = ['order_id', 'product_id', 'item_name', 'item_summary', 'type', 'quantity', 'unit_price', 'amount', 'hsn_sac_code', 'taxes', 'unit_id'];
 
     protected $with = ['orderItemImage', 'product'];
 

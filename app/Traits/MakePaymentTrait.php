@@ -2,7 +2,10 @@
 
 namespace App\Traits;
 
+use App\Models\Invoice;
 use App\Models\Payment;
+use Illuminate\Support\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 
 trait MakePaymentTrait
 {
@@ -10,11 +13,11 @@ trait MakePaymentTrait
     /**
      * makePayment to generate payment of invoice.
      *
-     * @param string|null $gateway
-     * @param int|float $amount
-     * @param Invoice|Collection $invoice
-     * @param array|int|string $transactionId This can be single transaction id or array of transaction ids
-     * @param string $status (default: 'pending')
+     * @param  string|null $gateway
+     * @param  int|float $amount
+     * @param  Invoice|Collection $invoice
+     * @param  array|int|string $transactionId This can be single transaction id or array of transaction ids
+     * @param  string $status (default: 'pending')
      * @return Payment $payment
      */
     public function makePayment($gateway, $amount, $invoice, $transactionId, $status = 'pending')
@@ -45,11 +48,6 @@ trait MakePaymentTrait
         $payment->save();
 
         return $payment;
-    }
-
-    public function getWebhook()
-    {
-        return response()->json(['message' => 'This URL should not be accessed directly. Only POST requests are allowed.']);
     }
 
 }

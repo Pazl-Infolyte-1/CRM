@@ -44,10 +44,8 @@ class PublicUrlController extends Controller
         $invoiceSetting = $contract->company->invoiceSetting;
         $fields = [];
 
-        $getCustomFieldGroupsWithFields = $contract->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        if ($contract->getCustomFieldGroupsWithFields()) {
+            $fields = $contract->getCustomFieldGroupsWithFields()->fields;
         }
 
         return view('contract', [
@@ -76,7 +74,7 @@ class PublicUrlController extends Controller
         $sign->contract_id = $this->contract->id;
         $sign->email = $request->email;
         $sign->place = $request->place;
-        $sign->date = now();
+        $sign->date = Carbon::now()->format('Y-m-d');
         $imageName = null;
 
         if ($request->signature_type == 'signature') {
@@ -110,10 +108,8 @@ class PublicUrlController extends Controller
         $company = $contract->company;
         $fields = [];
 
-        $getCustomFieldGroupsWithFields = $contract->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        if ($contract->getCustomFieldGroupsWithFields()) {
+            $fields = $contract->getCustomFieldGroupsWithFields()->fields;
         }
 
         $this->invoiceSetting = $contract->company->invoiceSetting;
@@ -123,10 +119,14 @@ class PublicUrlController extends Controller
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         $pdf->loadView('contracts.contract-pdf', ['contract' => $contract, 'company' => $company, 'fields' => $fields, 'invoiceSetting' => $this->invoiceSetting]);
+
+        $dom_pdf = $pdf->getDomPDF();
+        $canvas = $dom_pdf->getCanvas();
+        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
 
         $filename = 'contract-' . $contract->id;
 
@@ -251,8 +251,8 @@ class PublicUrlController extends Controller
 
         $invoice->company_id = $company->id;
         $invoice->client_id = $estimate->client_id;
-        $invoice->issue_date = now($company->timezone)->format('Y-m-d');
-        $invoice->due_date = now($company->timezone)->addDays($company->invoiceSetting->due_after)->format('Y-m-d');
+        $invoice->issue_date = Carbon::now($company->timezone)->format('Y-m-d');
+        $invoice->due_date = Carbon::now($company->timezone)->addDays($company->invoiceSetting->due_after)->format('Y-m-d');
         $invoice->sub_total = round($estimate->sub_total, 2);
         $invoice->discount = round($estimate->discount, 2);
         $invoice->discount_type = $estimate->discount_type;
@@ -323,8 +323,8 @@ class PublicUrlController extends Controller
     {
         $this->estimate = Estimate::with('client', 'clientdetails')->where('hash', $id)->firstOrFail();
         $this->invoiceSetting = $this->estimate->company->invoiceSetting;
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         $pdfOption = $this->domPdfObjectForDownload($id);
         $pdf = $pdfOption['pdf'];
@@ -339,8 +339,8 @@ class PublicUrlController extends Controller
         $this->estimate = Estimate::where('hash', $id)->firstOrFail();
         $this->company = $this->estimate->company;
         $this->invoiceSetting = $this->company->invoiceSetting;
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         $this->discount = 0;
 
@@ -400,6 +400,9 @@ class PublicUrlController extends Controller
 
         $pdf->loadView('estimates.pdf.' . $this->invoiceSetting->template, $this->data);
 
+        $dom_pdf = $pdf->getDomPDF();
+        $canvas = $dom_pdf->getCanvas();
+        $canvas->page_text(530, 820, null, null, 10);
         $filename = $this->estimate->estimate_number;
 
         return [

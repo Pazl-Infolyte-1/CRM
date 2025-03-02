@@ -2,12 +2,10 @@
 
 namespace App\View\Components\Filters;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class MoreFilterBox extends Component
 {
-
     public $extraSlot;
 
     /**
@@ -23,7 +21,7 @@ class MoreFilterBox extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {

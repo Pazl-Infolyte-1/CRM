@@ -10,11 +10,6 @@
         </div>
     </div>
     <div class="row @if ($credentials->paystack_status == 'deactive') d-none @endif" id="paystack_details">
-        @if(user()->is_superadmin)
-            <div class="col-lg-12">
-                <x-alert type="info" icon="info-circle"> @lang('superadmin.paystackPackageMessage')</x-alert>
-            </div>
-        @endif
         <div class="col-lg-12">
             <x-forms.select fieldId="paystack_mode" :fieldLabel="__('app.selectEnvironment')" fieldName="paystack_mode">
                 <option value="sandbox" @if ($credentials->paystack_mode == 'sandbox') selected @endif>@lang('app.sandbox')</option>

@@ -70,7 +70,7 @@
         <x-filters.more-filter-box>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.client')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.client')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="clientID" data-live-search="true" data-container="body" data-size="8">
@@ -83,7 +83,7 @@
                 </div>
             </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tasks.assignTo')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.assignTo')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="assignedTo" data-live-search="true" data-container="body" data-size="8">
@@ -97,7 +97,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tasks.assignBy')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.assignBy')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="assignedBY" data-live-search="true" data-container="body" data-size="8">
@@ -111,7 +111,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.label')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.label')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="label" data-live-search="true" data-container="body" data-size="8">
@@ -127,7 +127,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 "
+                <label class="f-14 text-dark-grey mb-12 text-capitalize"
                     for="usr">@lang('modules.taskCategory.taskCategory')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -142,7 +142,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.billableTask')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.billableTask')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="billable_task" data-live-search="true" data-container="body" data-size="8">
@@ -171,7 +171,8 @@
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
                     <x-forms.link-primary :link="route('tasks.create')" class="mr-3 openRightModal float-left" icon="plus">
-                        @lang('app.addTask')
+                        @lang('app.add')
+                        @lang('app.task')
                     </x-forms.link-primary>
                 @endif
             </div>

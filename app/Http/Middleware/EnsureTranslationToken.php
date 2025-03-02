@@ -17,15 +17,7 @@ class EnsureTranslationToken
     public function handle(Request $request, Closure $next): Response
     {
         if (isWorksuite()) {
-            //            abort_403(!(user()->permission('manage_language_setting') == 'all'));
-        }
-
-        if (isWorksuiteSaas() ) {
-            if (!(user() instanceof \App\Models\User)) {
-                session(['user' => auth()->user()->user]);
-            }
-
-            abort_403(!(user()->permission('manage_superadmin_language_settings') == 'all'));
+            abort_403(!(user()->permission('manage_language_setting') == 'all'));
         }
 
         return $next($request);

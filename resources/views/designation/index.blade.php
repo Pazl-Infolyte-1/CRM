@@ -43,7 +43,7 @@
         <x-filters.more-filter-box>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.menu.designation')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.menu.designation')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="parent_id" id="parent_id"
@@ -128,7 +128,7 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["Designation-table"].draw(true);
+            window.LaravelDataTables["Designation-table"].draw(false);
         }
 
         $('#parent_id, #child').on('change keyup',

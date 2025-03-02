@@ -71,6 +71,7 @@
     <x-forms.button-primary id="save-category" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
 
+<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 <script>
     $('#colorpicker').colorpicker({
         "color": "#16813D"

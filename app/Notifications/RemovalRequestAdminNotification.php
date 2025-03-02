@@ -30,20 +30,16 @@ class RemovalRequestAdminNotification extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
 
         $content = __('email.removalRequestAdmin.text');
 
-        $build
+        return $build
             ->subject(__('email.removalRequestAdmin.subject') . ' ' . config('app.name') . __('!'))
             ->markdown('mail.email', [
                 'content' => $content,
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

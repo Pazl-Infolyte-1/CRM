@@ -65,10 +65,7 @@
                 <div id="addMoreBox1" class="row my-3">
                     <div class="col-md-10">
                         <div class="form-group">
-                            {{-- <label class="control-label" >@lang('app.value')</label> --}}
-                            <x-forms.label fieldId="value" fieldRequired="true"
-                                           :fieldLabel="__('app.value')">
-                            </x-forms.label>
+                            <label class="control-label">@lang('app.value')</label>
                             <input class="form-control height-35 f-14" name="value[]" type="text" value=""
                                    placeholder=""/>
                         </div>

@@ -33,7 +33,7 @@ class GdprController extends AccountBaseController
 
         $this->consents = PurposeConsent::with(['user' => function($query) {
             $query->where('client_id', $this->user->id)
-                ->orderByDesc('created_at');
+                ->orderBy('created_at', 'desc');
         }])->get();
 
         $tab = request('tab');

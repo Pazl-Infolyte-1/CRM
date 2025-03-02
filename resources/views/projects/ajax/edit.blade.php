@@ -15,15 +15,15 @@ $createPublicProjectPermission = user()->permission('create_public_project');
     <div class="col-sm-12">
         <x-form id="save-project-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('modules.projects.projectInfo')</h4>
                 <div class="row p-20">
-                    <div class="col-lg-4 col-md-4">
+                    <div class="col-lg-6 col-md-6">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.taskShortCode')"
-                            fieldName="project_code" fieldRequired="false" fieldId="project_code"
+                            fieldName="project_code" fieldRequired="true" fieldId="project_code"
                             :fieldPlaceholder="__('placeholders.writeshortcode')" :fieldValue="$project->project_short_code" />
                     </div>
-                    <div class="col-lg-8 col-md-8">
+                    <div class="col-lg-4 col-md-6">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.projects.projectName')"
                             fieldName="project_name" fieldRequired="true" fieldId="project_name"
                             :fieldValue="$project->project_name" :fieldPlaceholder="__('placeholders.project')" />
@@ -32,7 +32,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                     <div class="col-md-6 col-lg-4">
                         <x-forms.datepicker fieldId="start_date" fieldRequired="true"
                             :fieldLabel="__('modules.projects.startDate')" fieldName="start_date"
-                            :fieldValue="($project->start_date ? $project->start_date->format(company()->date_format) : '')"
+                            :fieldValue="$project->start_date->format(company()->date_format)"
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
 
@@ -43,7 +43,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
 
-                    <div class="{{ $project->deadline == null ? 'col-md-8' : 'col-md-6 col-lg-4' }}">
+                    <div class="col-md-6 col-lg-3">
                         <div class="form-group">
                             <div class="d-flex mt-5">
                                 <x-forms.checkbox fieldId="without_deadline"
@@ -61,7 +61,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
-                                    <option @selected($project->category_id == $category->id) value="{{ $category->id }}">
+                                    <option @if ($project->category_id == $category->id) selected @endif value="{{ $category->id }}">
                                         {{ $category->category_name }}</option>
                                 @endforeach
                             </select>
@@ -76,16 +76,16 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                         </x-forms.input-group>
                     </div>
 
-                    @if (!in_array('client', user_roles()) && ($editProjectMembersPermission == 'all' || $editPermission == 'all'))
+                    @if (!in_array('client', user_roles()))
                         <div class="col-md-4">
                             <x-forms.label class="my-3" fieldId="department" :fieldLabel="__('app.department')">
                             </x-forms.label>
                             <x-forms.input-group>
-                                <select class="form-control multiple-users" multiple name="team_id[]" id="employee_department"
+                                <select class="form-control select-picker" name="team_id" id="employee_department"
                                     data-live-search="true">
+                                    <option value="">--</option>
                                     @foreach ($teams as $team)
-                                        <option data-content="<span class='badge badge-pill badge-light border p-2'>{{ $team->team_name }}</span>"
-                                        @selected(in_array($team->id, $departmentIds)) value="{{ $team->id }}">
+                                        <option @if ($project->team_id === $team->id) selected @endif value="{{ $team->id }}">
                                             {{ $team->team_name }}
                                         </option>
                                     @endforeach
@@ -94,18 +94,25 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                         </div>
                     @endif
 
-                    <div class="col-md-4 @if(!in_array('clients', user_modules())) d-none @endif">
-
+                    <div class="col-md-4">
+                        <x-forms.label class="my-3" fieldId="client_id" :fieldLabel="__('app.client')">
+                        </x-forms.label>
                         <x-forms.input-group>
-                            <x-client-selection-dropdown labelClass="my-3" :clients="$clients" fieldRequired="false"
-                                                         :selected="$project->client_id ?? null"/>
-{{--                            @if ($addClientPermission == 'all' || $addClientPermission == 'added')--}}
-{{--                                <x-slot name="append">--}}
-{{--                                    <button id="add-client" type="button"--}}
-{{--                                        class="btn btn-outline-secondary border-grey"--}}
-{{--                                        data-toggle="tooltip" data-original-title="{{__('modules.client.addNewClient') }}">@lang('app.add')</button>--}}
-{{--                                </x-slot>--}}
-{{--                            @endif--}}
+                            <select class="form-control select-picker" name="client_id" id="client_id"
+                                data-live-search="true" data-size="8">
+                                <option value="">--</option>
+                                @foreach ($clients as $client)
+                                    <x-user-option :user="$client" :selected="$project->client_id == $client->id"/>
+                                @endforeach
+                            </select>
+
+                            @if ($addClientPermission == 'all' || $addClientPermission == 'added')
+                                <x-slot name="append">
+                                    <button id="add-client" type="button"
+                                        class="btn btn-outline-secondary border-grey"
+                                        data-toggle="tooltip" data-original-title="{{__('modules.client.addNewClient') }}">@lang('app.add')</button>
+                                </x-slot>
+                            @endif
                         </x-forms.input-group>
                     </div>
 
@@ -117,48 +124,6 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                             <div id="project_summary">{!! $project->project_summary !!}</div>
                             <textarea name="project_summary" id="project_summary-text"
                                 class="d-none">{!! $project->project_summary !!}</textarea>
-                        </div>
-                    </div>
-
-                    <div class="col-md-12 col-lg-4">
-                        <div class="form-group my-3">
-                            <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
-                                for="usr">@lang('modules.projects.viewPublicGanttChart')</label>
-                            <div class="d-flex">
-                                <x-forms.radio fieldId="public_gantt_chart-yes" :fieldLabel="__('app.enable')" fieldName="public_gantt_chart"
-                                    fieldValue="enable" :checked="$project->public_gantt_chart == 'enable'"  checked="true">
-                                </x-forms.radio>
-                                <x-forms.radio fieldId="public_gantt_chart-no" :fieldLabel="__('app.disable')" fieldValue="disable"
-                                    fieldName="public_gantt_chart" :checked="$project->public_gantt_chart == 'disable'"></x-forms.radio>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-12 col-lg-4">
-                        <div class="form-group my-3">
-                            <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
-                                for="usr">@lang('app.public') @lang('modules.tasks.taskBoard')</label>
-                            <div class="d-flex">
-                                <x-forms.radio fieldId="public_taskboard-yes" :fieldLabel="__('app.enable')" fieldName="public_taskboard"
-                                    fieldValue="enable" :checked="$project->public_taskboard == 'enable'"  checked="true">
-                                </x-forms.radio>
-                                <x-forms.radio fieldId="public_taskboard-no" :fieldLabel="__('app.disable')" fieldValue="disable"
-                                    fieldName="public_taskboard" :checked="$project->public_taskboard == 'disable'"></x-forms.radio>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-12 col-lg-4">
-                        <div class="form-group my-3">
-                            <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
-                                for="usr">@lang('modules.projects.needApproval')</label>
-                            <div class="d-flex">
-                                <x-forms.radio fieldId="need_approval_by_admin-yes" :fieldLabel="__('app.enable')" fieldName="need_approval_by_admin"
-                                    fieldValue="1" :checked="$project->need_approval_by_admin == '1'"  checked="true">
-                                </x-forms.radio>
-                                <x-forms.radio fieldId="need_approval_by_admin-no" :fieldLabel="__('app.disable')" fieldValue="0"
-                                    fieldName="need_approval_by_admin" :checked="$project->need_approval_by_admin == '0'"></x-forms.radio>
-                            </div>
                         </div>
                     </div>
 
@@ -188,46 +153,24 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                     @if ($editProjectMembersPermission == 'all' || $editPermission == 'all')
                         <div class="col-md-12 @if ($project->public == 1) d-none @endif" id="edit_members">
                            <div class="form-group my-3">
-
-                            @php
-                                // Retrieve selected employee IDs and their statuses
-                                $selectedEmployeeIds = $project->members->pluck('user_id')->toArray();
-                                $selectedEmployees = $employees->filter(function ($employee) use ($selectedEmployeeIds) {
-                                    return in_array($employee->id, $selectedEmployeeIds);
-                                });
-
-                                // Get the active employees list
-                                $activeEmployees = $employees->filter(function ($employee) {
-                                    return $employee->status === 'active';
-                                });
-
-                                $employeesToShow = $activeEmployees->merge($selectedEmployees->filter(function ($employee) {
-                                    return !$employee->is_active;
-                                }));
-                            @endphp
-                                <x-forms.label fieldId="selectAssignee"
-                                fieldRequired="true" :fieldLabel="__('modules.tasks.assignTo')">
+                                <x-forms.label fieldId="selectAssignee" :fieldLabel="__('modules.tasks.assignTo')">
                                 </x-forms.label>
                                 <x-forms.input-group>
                                     <select class="form-control multiple-users" multiple name="member_id[]"
                                         id="selectEmployee" data-live-search="true" data-size="8">
-                                        @foreach ($employeesToShow as $item)
+                                        @foreach ($employees as $item)
                                             @php
                                                 $selected = '';
-                                                $isMember = false;
                                             @endphp
 
                                             @foreach ($project->members as $member)
                                                 @if ($member->user->id == $item->id)
                                                     @php
                                                         $selected = 'selected';
-                                                        $isMember = true;
                                                     @endphp
                                                 @endif
                                             @endforeach
-                                            @if ($item->status === 'active' || $isMember)
-                                                <x-user-option :user="$item" :selected="$selected" :pill="true"/>
-                                            @endif
+                                            <x-user-option :user="$item" :selected="$selected" :pill="true"/>
                                         @endforeach
                                     </select>
                                     @if ($addEmployeePermission == 'all' || $addEmployeePermission == 'added')
@@ -282,7 +225,8 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                             @foreach ($projectStatus as $status)
                                 <option
                                 data-content="<i class='fa fa-circle mr-1 f-15' style='color:{{$status->color}}'></i>{{ $status->status_name }}"
-                                @selected($project->status == $status->status_name)
+                                @if ($project->status == $status->status_name)
+                                selected @endif
                                 value="{{$status->status_name}}">
                                 </option>
 
@@ -314,7 +258,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-top-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
                     @lang('modules.client.clientOtherDetails')</h4>
 
                 <div class="row p-20">
@@ -322,7 +266,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                         <x-forms.select fieldId="currency_id" :fieldLabel="__('modules.invoices.currency')"
                             fieldName="currency_id" search="true">
                             @foreach ($currencies as $currency)
-                                <option @selected($currency->id == $project->currency_id) value="{{ $currency->id }}">
+                                <option @if ($currency->id == $project->currency_id) selected @endif value="{{ $currency->id }}">
                                     {{ $currency->currency_symbol . ' (' . $currency->currency_code . ')' }}
                                 </option>
                             @endforeach
@@ -364,23 +308,10 @@ $createPublicProjectPermission = user()->permission('create_public_project');
 
                     @if ($editPermission == 'all')
                         <div class="col-lg-3 col-md-6">
-                            @php
-                                $activeEmployees = $employees->filter(function ($employee) {
-                                    return $employee->status !== 'deactive';
-                                });
-
-                                $selectedEmployee = $employees->firstWhere('id', $project->added_by);
-
-                                if ($selectedEmployee && $selectedEmployee->status === 'deactive') {
-                                    $employeesToShow = $activeEmployees->push($selectedEmployee);
-                                } else {
-                                    $employeesToShow = $activeEmployees;
-                                }
-                            @endphp
                             <x-forms.select fieldId="added_by" :fieldLabel="__('app.added').' '.__('app.by')"
                                 fieldName="added_by">
                                 <option value="">--</option>
-                                @foreach ($employeesToShow as $item)
+                                @foreach ($employees as $item)
                                     <x-user-option :user="$item" :selected="$project->added_by == $item->id" />
                                 @endforeach
                             </x-forms.select>
@@ -488,10 +419,8 @@ $createPublicProjectPermission = user()->permission('create_public_project');
             var check = $('#without_deadline').is(":checked") ? true : false;
             if (check == true) {
                 $('#deadlineBox').hide();
-                $('#without_deadline').closest('.col-md-6.col-lg-4').removeClass('col-md-6 col-lg-4').addClass('col-md-8');
             } else {
                 $('#deadlineBox').show();
-                $('#without_deadline').closest('.col-md-8').removeClass('col-md-8').addClass('col-md-6 col-lg-4');
             }
         });
         const atValues = @json($userData);
@@ -608,13 +537,20 @@ $createPublicProjectPermission = user()->permission('create_public_project');
         init(RIGHT_MODAL);
     });
 
+    function checkboxChange(parentClass, id){
+        var checkedData = '';
+        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
+            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
+        });
+        $('#'+id).val(checkedData);
+    }
+
     $('#save-project-data-form').on('change', '#employee_department', function () {
             let id = $(this).val();
-            if (id === '' || id.length === 0) {
+            if (id === '') {
                 id = 0;
             }
-            let userId = '{{ $project->members->pluck("user.id")->implode(",") }}';
-            let url = "{{ route('departments.members', ':id') }}?userId="+userId;
+            let url = "{{ route('departments.members', ':id') }}";
             url = url.replace(':id', id);
 
             $.easyAjax({

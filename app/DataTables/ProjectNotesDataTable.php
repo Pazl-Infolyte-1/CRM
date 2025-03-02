@@ -2,10 +2,10 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\ProjectNote;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Illuminate\Support\Facades\DB;
 
 class ProjectNotesDataTable extends BaseDataTable
 {
@@ -33,7 +33,9 @@ class ProjectNotesDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">';
@@ -73,7 +75,7 @@ class ProjectNotesDataTable extends BaseDataTable
                 return $action;
             })
             ->editColumn('note_title', function ($row) {
-                if ($row->ask_password == 1) {
+                if (!in_array('admin', user_roles()) && $row->ask_password == 1) {
                     return '<a href="javascript:;" class="ask-for-password" style="color:black;" data-project-note-id="' . $row->id . '">' . $row->title . '</a>';
                 }
 
@@ -95,7 +97,9 @@ class ProjectNotesDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['action', 'check', 'note_type', 'note_title']);
     }
 
@@ -107,10 +111,10 @@ class ProjectNotesDataTable extends BaseDataTable
     {
         $request = $this->request();
 
-        $projects = $model->where('project_notes.project_id', $request->projectID);
 
         if (in_array('client', user_roles())) {
-            $projects = $projects->where('project_notes.client_id', $this->user->id);
+            $projects = $model->where('project_notes.client_id', $this->user->id)
+                ->where('project_notes.project_id', $request->projectID);
 
             $projects->where(function ($query) {
                 return $query->where('project_notes.is_client_show', 1)
@@ -121,21 +125,13 @@ class ProjectNotesDataTable extends BaseDataTable
                     ->where('project_notes.client_id', $this->user->id);
             });
         }
+        else {
+            $projects = $model->where('project_notes.project_id', $request->projectID);
+        }
+
+        $projects->leftJoin('project_user_notes', 'project_user_notes.project_note_id', '=', 'project_notes.id');
 
         if (!in_array('admin', user_roles())) {
-            $projects->where(function ($query) {
-                $query->where('project_notes.type', 0)
-                    ->orWhere(function ($query) {
-                          $query->where('project_notes.type', 1)
-                              ->whereExists(function ($query) {
-                                    $query->select(DB::raw(1))
-                                        ->from('project_user_notes')
-                                        ->whereRaw('project_user_notes.project_note_id = project_notes.id')
-                                        ->where('project_user_notes.user_id', user()->id);
-                              });
-                    });
-            });
-
             if ($this->viewProjectNotePermission == 'added') {
                 $projects->where('project_notes.added_by', user()->id);
 

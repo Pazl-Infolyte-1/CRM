@@ -43,7 +43,7 @@
         <x-filters.more-filter-box>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 "
+                <label class="f-14 text-dark-grey mb-12 text-capitalize"
                        for="usr">@lang('modules.department.title')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -129,7 +129,7 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["departments-table"].draw(true);
+            window.LaravelDataTables["departments-table"].draw(false);
         }
 
         $('#parent_id, #child').on('change keyup',

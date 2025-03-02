@@ -6,6 +6,7 @@ use App\Models\EmployeeShift;
 use App\Models\EmployeeShiftSchedule;
 use App\Models\User;
 use Carbon\Carbon;
+use DB;
 use Illuminate\Database\Seeder;
 
 class ShiftSeeder extends Seeder

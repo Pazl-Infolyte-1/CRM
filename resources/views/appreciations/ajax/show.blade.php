@@ -6,10 +6,10 @@ $deletePermission = user()->permission('delete_appreciation');
     <div class="row">
         <div class="col-sm-12">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-10">
-                            <h3 class="heading-h1 mb-3">@lang('app.appreciationDetails')</h3>
+                            <h3 class="heading-h1 mb-3">@lang('modules.appreciations.appreciation') @lang('app.details')</h3>
                         </div>
                         <div class="col-lg-2 col-2 text-right">
 
@@ -18,7 +18,7 @@ $deletePermission = user()->permission('delete_appreciation');
                                 ($editPermission == 'owned' && $appreciation->added_by == user()->id))
                                 <div class="dropdown">
                                     <button
-                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true"
                                         aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>
@@ -47,7 +47,7 @@ $deletePermission = user()->permission('delete_appreciation');
                 <div class="card-body">
 
                     <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                        <p class="mb-0 text-lightest f-14 w-30 ">@lang('modules.appreciations.appreciationType')</p>
+                        <p class="mb-0 text-lightest f-14 w-30 text-capitalize">@lang('modules.appreciations.appreciationType')</p>
                         <div class="mb-0 text-dark-grey f-14 w-70 text-wrap ql-editor p-0">
                             @if(isset($appreciation->award->awardIcon->icon))
                                 <x-award-icon :award="$appreciation->award" />
@@ -60,13 +60,13 @@ $deletePermission = user()->permission('delete_appreciation');
                     <x-cards.data-row :label="__('app.summary')" :value="!empty($appreciation->summary) ? $appreciation->summary : '--'" html="true" />
 
                     <div class="col-12 px-0 pb-3 d-flex">
-                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                             @lang('modules.appreciations.awardTo')</p>
                         <x-employee :user="$appreciation->awardTo" />
                     </div>
                     @if ($appreciation->image_url)
                         <div class="col-12 px-0 pb-3 d-flex">
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                                 @lang('modules.appreciations.photo')</p>
                             <img src="{{ $appreciation->image_url }}" class="logo mw-250 img-thumbnail" />
                         </div>

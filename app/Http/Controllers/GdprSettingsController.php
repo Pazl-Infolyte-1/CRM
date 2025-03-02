@@ -203,7 +203,7 @@ class GdprSettingsController extends AccountBaseController
 
     public function approveRejectLead($id, $type)
     {
-        $removal = RemovalRequestDeal::findorFail($id);
+        $removal = RemovalRequestLead::findorFail($id);
         $removal->status = $type;
         $removal->save();
 

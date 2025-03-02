@@ -76,7 +76,6 @@ class AttendanceSetting extends BaseModel
 {
 
     use HasCompany;
-    protected $fillable = ['qr_enable', 'default_employee_shift'];
 
     public function shift(): BelongsTo
     {

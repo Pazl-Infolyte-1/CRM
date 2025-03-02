@@ -4,7 +4,7 @@
 
     <!-- NAVBAR LEFT(MOBILE MENU COLLAPSE) START-->
     <div class="navbar-left float-left d-flex align-items-center">
-        <x-app-title class="d-none d-lg-flex" :pageTitle="$pageTitle"></x-app-title>
+        <x-app-title class="d-none d-lg-flex" :pageTitle="__($pageTitle)"></x-app-title>
 
         <div class="d-block d-lg-none menu-collapse cursor-pointer position-relative" onclick="openMobileMenu()">
             <div class="mc-wrap">
@@ -14,7 +14,7 @@
             </div>
         </div>
 
-        @if (in_array('admin', user_roles()) && $checkListCompleted < $checkListTotal && App::environment('codecanyon') && isWorksuite())
+        @if (in_array('admin', user_roles()) && $checkListCompleted < $checkListTotal && App::environment('codecanyon'))
             <div class="ml-3 d-none d-lg-block d-md-block">
                 <span class="f-12 mb-1"><a href="{{ route('checklist') }}" class="text-lightest ">
                         @lang('modules.accountSettings.setupProgress')</a>
@@ -41,34 +41,7 @@
             @endif
         </span>
 
-        {{-- SAAS --}}
-        @if(isWorksuiteSaas())
-            @if(session('impersonate'))
-                <x-forms.link-primary icon="stop" data-toggle="tooltip" data-original-title="{{ __('superadmin.stopImpersonationTooltip') }}" data-placement="left" :link="route('superadmin.superadmin.stop_impersonate')" class="mr-3">
-                    @lang('superadmin.stopImpersonation')
-                </x-forms.link-primary>
-            @endif
-
-            {{-- SAAS --}}
-            @if (in_array(company()->package->default, ['yes']) && in_array('admin', user_roles()))
-                <a href="{{ route('billing.upgrade_plan') }}" class='btn-primary btn btn-sm rounded mr-3 f-12 py-2 px-3' data-toggle="tooltip" data-original-title="{{ __('superadmin.packages.upgradePlan') }}" >
-                    <i class="bi bi-stars"></i>
-                    @if (is_null($selfActiveTimer)) {{ __('superadmin.packages.upgradePlan') }} @endif
-                </a>
-            @elseif (in_array(company()->package->default, ['trial']) && in_array('admin', user_roles()))
-                <a href="{{ route('billing.upgrade_plan') }}" class='btn-light border btn btn-sm rounded mr-3 f-12 py-2 px-3 font-weight-semibold d-none d-lg-block' data-toggle="tooltip" data-original-title="{{ __('superadmin.packages.upgradePlan') }}" >
-                    @php
-                        $daysLeftInTrial = now(company()->timezone)->diffInDays(\Carbon\Carbon::parse(company()->licence_expire_on)->addDays(1), false);
-                    @endphp
-                    <i @class(['bi bi-circle-fill', 'text-success' => ($daysLeftInTrial >= 0), 'text-danger' => ($daysLeftInTrial < 0)])></i>
-                    @if (is_null($selfActiveTimer)) {{ ($daysLeftInTrial > 0) ? $daysLeftInTrial . ' ' . __('superadmin.packages.daysLeftTrial') : __('superadmin.packages.trialExpired') }} @endif
-                </a>
-            @endif
-
-        @endif
-
         <ul>
-        @if (checkCompanyPackageIsValid(user()->company_id))
             <!-- SEARCH START -->
             <li data-toggle="tooltip" data-placement="top" title="{{__('app.search')}}" class="d-none d-sm-block">
                 <div class="d-flex align-items-center">
@@ -220,8 +193,6 @@
                     </div>
                 </div>
             </li>
-        @endif
-
             <!-- NOTIFICATIONS END -->
             <!-- LOGOUT START -->
             <li data-toggle="tooltip" data-placement="top" title="{{__('app.logout')}}">

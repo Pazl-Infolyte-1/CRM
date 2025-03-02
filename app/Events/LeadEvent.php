@@ -12,15 +12,18 @@ class LeadEvent
 
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $task;
+    public $notifyUser;
     public $notificationName;
     /**
      * @var Lead
      */
-    public $leadContact;
+    public $lead;
 
-    public function __construct(Lead $leadContact, $notificationName)
+    public function __construct(Lead $lead, $notifyUser, $notificationName)
     {
-        $this->leadContact = $leadContact;
+        $this->lead = $lead;
+        $this->notifyUser = $notifyUser;
         $this->notificationName = $notificationName;
     }
 

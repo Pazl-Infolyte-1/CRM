@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-colorpicker.css') }}" />
 
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.addNewLeaveType')</h5>
+    <h5 class="modal-title">@lang('app.addNew') @lang('modules.leaves.leaveType')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 <div class="modal-body">
@@ -20,47 +20,35 @@
 
                         <input type="hidden" value="true" name="page_reload" id="page_reload">
                         <h3 class="heading-h3 mt-4">@lang('app.general')</h3>
-
+                        
                         <div class="row">
-
+            
                             <div class="col-lg-4">
                                 <x-forms.text :fieldLabel="__('modules.leaves.leaveType')"
                                     :fieldPlaceholder="__('placeholders.leaveType')" fieldName="type_name" fieldId="type_name"
                                     fieldValue="" :fieldRequired="true" />
                             </div>
-
-                            <div class="col-lg-4">
-                                <x-forms.select fieldId="leavetype" :fieldLabel="__('modules.leaves.leaveAllotmentType')" fieldName="leavetype" search="true">
-                                    <option value="monthly">@lang('app.monthlyLeaveType')</option>
-                                    <option value="yearly">@lang('app.yearlyLeaveType')</option>
-                                </x-forms.select>
-                            </div>
-
-
-                            <div class="col-lg-4" id="yearly-leave-field" style="display: none;">
-                                <x-forms.number :fieldLabel="__('modules.leaves.noOfYearlyLeaves')"
-                                                fieldName="yearly_leave_number" fieldId="yearly_leave_number" fieldValue="0" minValue="0" :popover="__('messages.leave.noOfYearlyLeaves')"/>
-                            </div>
-
-                            <div class="col-lg-4" id="monthly-leave-field">
-                                <x-forms.number :fieldLabel="__('modules.leaves.noOfMonthlyLeaves')"
-                                                fieldName="monthly_leave_number" fieldId="monthly_leave_number" fieldValue="0" minValue="0" :popover="__('messages.leave.noOfMonthlyLeaves')"/>
-                            </div>
-
+            
                             <div class="col-lg-4">
                                 <x-forms.select fieldId="paid" :fieldLabel="__('modules.leaves.leavePaidStatus')" fieldName="paid" search="true" :popover="__('messages.leave.paidStatus')">
                                     <option value="1">@lang('app.paid')</option>
                                     <option value="0">@lang('app.unpaid')</option>
                                 </x-forms.select>
                             </div>
-
-                            <div class="col-lg-4" id="monthly-leave-limit">
+            
+                            <div class="col-lg-4">
+                                <x-forms.number :fieldLabel="__('modules.leaves.noOfLeaves')"
+                                    fieldName="leave_number" fieldId="leave_number" fieldValue="0" fieldRequired="true" minValue="0" :popover="__('messages.leave.noOfLeaves')"/>
+                            </div>
+            
+            
+                            <div class="col-lg-4">
                                 <x-forms.number :fieldLabel="__('modules.leaves.monthLimit')"
                                     fieldName="monthly_limit" fieldId="monthly_limit" fieldValue="0"
-                                    :fieldHelp="__('modules.leaves.monthLimitInfo')" minValue="0"
+                                    fieldRequired="true" :fieldHelp="__('modules.leaves.monthLimitInfo')" minValue="0"
                                     :popover="__('messages.leave.monthlyLimit')"/>
                             </div>
-
+            
                             <div class="col-lg-4">
                                 <div class="form-group my-3">
                                     <x-forms.label fieldId="colorselector" fieldRequired="true"
@@ -69,7 +57,7 @@
                                     <x-forms.input-group id="colorpicker">
                                         <input type="text" class="form-control height-35 f-14"
                                             placeholder="{{ __('placeholders.colorPicker') }}" name="color" id="colorselector">
-
+            
                                         <x-slot name="append">
                                             <span class="input-group-text height-35 colorpicker-input-addon"><i></i></span>
                                         </x-slot>
@@ -77,12 +65,12 @@
                                 </div>
                             </div>
                         </div>
-
-
+                    
+                        
                     </div>
                     <div class="tab-pane" id="promotion">
                         <h3 class="heading-h3 mt-4">@lang('modules.leaves.entitlement')</h3>
-
+                        
                         <div class="row">
                             <div class="col-lg-6">
                                 <div class="form-group my-3">
@@ -114,36 +102,18 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-6">
                                 <div class="form-group my-3">
                                     <div class="d-flex align-items-center">
                                         <label class="f-14 mb-12 mt-2 text-dark-grey mr-1">@lang('modules.leaves.unusedLeaves')</label>
                                         &nbsp;<i class="fa fa-question-circle text-dark-grey" data-toggle="popover" data-placement="top" data-html="true"
                                                 data-content="{{__('messages.leave.unusedLeave')}}" data-trigger="hover"></i>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <x-forms.input-group>
                                                 <select name="unused_leave" class="select-picker form-control">
                                                     <option value="carry forward">@lang('modules.leaves.carryForward')</option>
                                                     <option value="lapse">@lang('modules.leaves.lapse')</option>
                                                     <option value="paid">@lang('app.paid')</option>
-                                                </select>
-                                            </x-forms.input-group>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4">
-                                <div class="form-group my-3">
-                                    <div class="d-flex align-items-center">
-                                        <label class="f-14 mb-12 mt-2 text-dark-grey mr-1">@lang('modules.leaves.overutilization')</label>
-                                        &nbsp;<i class="fa fa-question-circle text-dark-grey" data-toggle="popover" data-placement="top" data-html="true"
-                                                data-content="{{__('messages.leave.overutilization')}}" data-trigger="hover"></i>
-                                        <div class="col-md-7">
-                                            <x-forms.input-group>
-                                                <select name="over_utilization" class="select-picker form-control">
-                                                    <option value="not_allowed">@lang('modules.leaves.doNotAllow')</option>
-                                                    <option value="allow_paid">@lang('modules.leaves.allowPaid')</option>
-                                                    <option value="allow_unpaid">@lang('modules.leaves.allowUnpaid')</option>
                                                 </select>
                                             </x-forms.input-group>
                                         </div>
@@ -163,7 +133,7 @@
                     </div>
                     <div class="tab-pane" id="vacation">
                         <h3 class="heading-h3 mt-4">@lang('modules.leaves.applicability')</h3>
-
+               
                         <div class="row">
                             <div class="col-lg-4">
                                 <div class="form-group my-3">
@@ -187,9 +157,8 @@
                                             data-content="{{__('messages.leave.maritalStatus')}}" data-trigger="hover"></i>
                                     <select class="form-control multiple-option" multiple name="marital_status[]"
                                         id="marital_status" data-live-search="true" data-size="8">
-                                        @foreach (\App\Enums\MaritalStatus::cases() as $status)
-                                            <option selected value="{{ $status->value }}">{{ $status->label() }}</option>
-                                        @endforeach
+                                        <option value="married" selected>@lang('modules.leaves.married')</option>
+                                        <option value="unmarried" selected>@lang('modules.leaves.unmarried')</option>
                                     </select>
                                 </div>
                             </div>
@@ -240,7 +209,7 @@
 
             </div>
         </x-form>
-
+       
     </div>
 </div>
 <div class="modal-footer">
@@ -248,10 +217,10 @@
     <x-forms.button-primary id="save-leave-setting" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
 
+<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
+
 <script>
     $(document).ready(function () {
-
-        $('#monthly-leave-limit').hide();
         setTimeout(function () {
             $('[data-toggle="popover"]').popover();
         }, 500);
@@ -262,25 +231,6 @@
     $('#colorpicker').colorpicker({
         "color": "#16813D"
     });
-
-    $('#leavetype').change(function() {
-        if ($(this).val() == 'monthly') {
-            $('#yearly-leave-field').hide();
-            $('#yearly_leave_number').attr('required', false);
-            $('#monthly-leave-field').show();
-            $('#monthly_leave_number').attr('required', true);
-            $('#monthly-leave-limit').hide();
-            $('#monthly_limit').attr('required', false);
-        } else {
-            $('#yearly-leave-field').show();
-            $('#yearly_leave_number').attr('required', true);
-            $('#monthly-leave-field').hide();
-            $('#monthly_leave_number').attr('required', false);
-            $('#monthly-leave-limit').show();
-            $('#monthly_limit').attr('required', true);
-        }
-    });
-
 
     $(".multiple-option").selectpicker({
         actionsBox: true,

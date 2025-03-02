@@ -22,7 +22,7 @@ $addInvoicePermission = user()->permission('add_invoices');
 
                     @if (in_array('timelogs', user_modules()))
                         <x-forms.link-secondary class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 openRightModal" icon="plus" :link="route('invoices.create', ['type' => 'timelog', 'project_id' => $project->id])">
-                            @lang('app.createTimeLogInvoice')
+                            @lang('app.create') @lang('app.timeLog') @lang('app.invoice')
                         </x-forms.link-secondary>
                     @endif
 
@@ -102,7 +102,7 @@ $addInvoicePermission = user()->permission('add_invoices');
         data['searchText'] = searchText;
     });
     const showTable = () => {
-        window.LaravelDataTables["invoices-table"].draw(true);
+        window.LaravelDataTables["invoices-table"].draw(false);
     }
 
     $('#clientID, #project_id, #status')
@@ -231,7 +231,7 @@ $addInvoicePermission = user()->permission('add_invoices');
             },
             success: function(response) {
                 if (response.status == "success") {
-                    window.LaravelDataTables["invoices-table"].draw(true);
+                    window.LaravelDataTables["invoices-table"].draw(false);
                 }
             }
         });
@@ -252,7 +252,7 @@ $addInvoicePermission = user()->permission('add_invoices');
             success: function(response) {
                 if (response.status == "success") {
                     $.unblockUI();
-                    window.LaravelDataTables["invoices-table"].draw(true);
+                    window.LaravelDataTables["invoices-table"].draw(false);
                 }
             }
         });

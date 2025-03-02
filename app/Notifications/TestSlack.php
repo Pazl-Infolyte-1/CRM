@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use Illuminate\Notifications\Messages\SlackMessage;
+
 class TestSlack extends BaseNotification
 {
 
@@ -27,21 +29,17 @@ class TestSlack extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = getDomainSpecificUrl(route('login'));
         $content = __('email.notificationIntro');
 
-        $build
+        return $build
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.notificationAction')
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -60,15 +58,20 @@ class TestSlack extends BaseNotification
 
     public function toSlack($notifiable)
     {
+        $slack = $notifiable->company->slackSetting;
 
-
-        if ($this->slackUserNameCheck($notifiable)) {
-
-            return $this->slackBuild($notifiable)
+        if (count($notifiable->employee) > 0 && !is_null($notifiable->employee[0]->slack_username)) {
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image(asset_url_local_s3('slack-logo/' . $slack->slack_logo))
+                ->to('@' . $notifiable->employee[0]->slack_username)
                 ->content('This is a test notification.');
         }
 
-        return $this->slackRedirectMessage('email.test.slack', $notifiable);
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image(asset_url_local_s3('slack-logo/' . $slack->slack_logo))
+            ->content('*' . 'Test slack' . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
 }

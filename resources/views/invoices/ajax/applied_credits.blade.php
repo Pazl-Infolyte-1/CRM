@@ -3,7 +3,7 @@
 
        <!--  USER CARDS START -->
        <div class="col-lg-12 col-md-12 mb-4 mb-xl-0 mb-lg-4 mb-md-0">
-           <h4 class="my-3 f-21  font-weight-bold">{{ $invoice->invoice_number }}</h4>
+           <h4 class="my-3 f-21 text-capitalize font-weight-bold">{{ $invoice->invoice_number }}</h4>
 
            <div class="row">
 
@@ -18,7 +18,7 @@
 
            </div>
 
-           <h4 class="mt-5 mb-3 f-21  font-weight-bold">@lang('app.menu.payments')</h4>
+           <h4 class="mt-5 mb-3 f-21 text-capitalize font-weight-bold">@lang('app.menu.payments')</h4>
 
            <x-cards.data padding="false">
                <x-table class="table-hover">
@@ -55,7 +55,7 @@
                            </td>
                            <td class="text-right">
                                {{-- If payment done from payment gateway, then payment cannot be removed.  --}}
-                               @if (((is_null($payment->transaction_id) && is_null($payment->payload_id) && !$invoice->credit_note && $payment->gateway) || ($payment->gateway == 'Offline' || $payment->gateway == '')) && !in_array('client', user_roles()))
+                               @if ((is_null($payment->transaction_id) && is_null($payment->payload_id) && !$invoice->credit_note && $payment->gateway) || ($payment->gateway == 'Offline' || $payment->gateway == '') && !in_array('client', user_roles()))
                                     <x-forms.button-secondary
                                         onclick="deleteAppliedCredit({{ $payment->invoice_id }}, {{ $payment->id }})"
                                         icon="trash">

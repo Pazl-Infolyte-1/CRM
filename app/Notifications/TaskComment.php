@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
 use App\Models\Task;
+use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
 
@@ -48,17 +49,12 @@ class TaskComment extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
+            array_push($via, 'slack');
         }
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
+
             array_push($via, OneSignalChannel::class);
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.taskComment.subject'), $this->task->heading);
         }
 
         return $via;
@@ -72,18 +68,18 @@ class TaskComment extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('tasks.show', [$this->task->id, 'view' => 'comments']);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $heading = __('email.taskComment.subject') . ' - ' . $this->task->heading . ' #' . $this->task->task_short_code . '<br>';
-        $projectName = ($this->task->project != null) ? '<br>' . __('app.project') . ' - ' . $this->task->project->project_name . '<br>' : '<br>';
-        $comment = '<br>' . __('app.comment') . ' - ' . $this->taskComment->comment . '<br>';
-        $commentBy = ($this->taskComment && $this->taskComment->user) ? __('email.taskComment.commentedBy') . ' - ' . $this->taskComment->user->name . '<br>' : '<br>';
+        $projectName = ($this->task->project != null) ? '<br>'. __('app.project') . ' - ' . $this->task->project->project_name. '<br>' : '<br>';
+        $comment = '<br>'. __('app.comment') . ' - ' . $this->taskComment->comment . '<br>';
+        $commentBy = ($this->taskComment && $this->taskComment->user) ? __('email.taskComment.commentedBy') . ' - ' . $this->taskComment->user->name. '<br>' : '<br>';
 
         $content = $heading . $projectName . $comment . $commentBy;
 
-        $build
+        return $build
             ->subject(__('email.taskComment.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
@@ -92,10 +88,6 @@ class TaskComment extends BaseNotification
                 'actionText' => __('email.taskComment.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -119,18 +111,24 @@ class TaskComment extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return \Illuminate\Notifications\Messages\SlackMessage
+     * @return SlackMessage
      */
     public function toSlack($notifiable)
     {
+        $slack = $notifiable->company->slackSetting;
 
-        if ($this->slackUserNameCheck($notifiable)) {
-            return $this->slackBuild($notifiable)
+        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->to('@' . $notifiable->employee[0]->slack_username)
                 ->content('*' . __('email.taskComment.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code);
         }
 
-        return $this->slackRedirectMessage('email.discussionReply.subject', $notifiable);
-
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image($slack->slack_logo_url)
+            ->content('*' . __('email.taskComment.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

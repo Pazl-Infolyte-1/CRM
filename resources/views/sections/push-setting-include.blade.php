@@ -17,7 +17,7 @@
                     showCredit: false,
                     theme: "inverse",
                     size: "small",
-                    position: '{{ isRtl() ? 'bottom-left' : 'bottom-right' }}',
+                    position: '{{ user()->rtl ? 'bottom-left' : 'bottom-right' }}',
                     text: {
                         'tip.state.unsubscribed': "@lang('app.onesignal.tip.state.unsubscribed')",
                         'tip.state.subscribed': "@lang('app.onesignal.tip.state.subscribed')",
@@ -94,51 +94,6 @@
     </script>
 @endif
 
-@if ($pushSetting->beams_push_status == 'active')
-    <script src="https://js.pusher.com/beams/1.0/push-notifications-cdn.js" async></script>
-
-    <script>
-        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
-
-    </script>
-
-    <script>
-        $(document).ready(function () {
-        const currentUserId = "wrkst-{{ user()->id }}"; // Get this from your auth system
-
-        const beamsClient = new PusherPushNotifications.Client({
-            instanceId: "{{ push_setting()->instance_id }}",
-        });
-
-        const beamsTokenProvider = new PusherPushNotifications.TokenProvider({
-            url: "{{ route('dashboard.beam_auth') }}",
-        });
-
-        beamsClient.start()
-        .then(() => beamsClient.addDeviceInterest('Worksuite'))
-        .then(() => beamsClient.setUserId(currentUserId, beamsTokenProvider))
-        .then(() => console.log('Successfully registered and subscribed!'))
-        .catch(console.error);
-
-        beamsClient
-        .getUserId()
-        .then((userId) => {
-            console.log(userId, currentUserId);
-            // Check if the Beams user matches the user that is currently logged in
-            if (userId !== currentUserId) {
-            // Unregister for notifications
-            return beamsClient.stop();
-            }
-        })
-        .catch(console.error);
-        });
-    </script>
-@endif
-
 @if ($pusherSettings->status)
     <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
 
@@ -150,6 +105,6 @@
             cluster: '{{ $pusherSettings->pusher_cluster }}',
             forceTLS: '{{ $pusherSettings->force_tls }}'
         });
-
+        
     </script>
 @endif

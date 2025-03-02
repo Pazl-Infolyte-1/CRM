@@ -6,23 +6,11 @@
 
 @if ($manageEmployeeShiftPermission != 'all')
     <style>
-        .fc-event {
+        .fc-event{
             cursor: default;
         }
     </style>
-@endif
 
-@if ($shiftRotation)
-    <x-cards.data class="mb-4 mt-4">
-        <div class="d-flex justify-content-between">
-            <div class="col-6 d-flex">
-                <h5>@lang('modules.attendance.assignedRotation') :</h5>
-                <p class="text-dark-grey ml-2">
-                    {{ $shiftRotation->rotation_frequency != 'monthly' ? $shiftRotation->rotation_name . ' [ ' . $shiftRotation->rotation_frequency . ' ' . __('app.at') . ' ' . \Carbon\Carbon::parse($shiftRotation->rotation_time)->format(company()->time_format) . ' ]' : $shiftRotation->rotation_name . ' [ ' . $shiftRotation->rotation_frequency . ' ' . __('app.onDate') . ' ' . $shiftRotation->rotation_date . ' ]' }}
-                </p>
-            </div>
-        </div>
-    </x-cards.data>
 @endif
 
 <x-cards.data class="mt-4">
@@ -51,8 +39,7 @@
         selectable: (manageShiftPermission == 'all'),
         selectMirror: true,
         select: function(arg) {
-            getEventDetail("{{ $employee->id }}", arg.start.getDate(), arg.start.getMonth() + 1, arg.start
-                .getFullYear());
+            getEventDetail("{{ $employee->id }}", arg.start.getDate(), arg.start.getMonth()+1, arg.start.getFullYear());
             calendar.unselect()
         },
         eventClick: function(arg) {

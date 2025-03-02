@@ -3,6 +3,7 @@
 namespace App\Http\Requests\TimeLogSetting;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTimeLog extends CoreRequest
 {

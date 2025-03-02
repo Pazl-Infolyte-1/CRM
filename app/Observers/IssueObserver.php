@@ -19,7 +19,7 @@ class IssueObserver
     public function deleting(Issue $issue)
     {
         $notifyData = ['App\Notifications\NewIssue'];
-        Notification::deleteNotification($notifyData, $issue->id);
+        \App\Models\Notification::deleteNotification($notifyData, $issue->id);
 
     }
 

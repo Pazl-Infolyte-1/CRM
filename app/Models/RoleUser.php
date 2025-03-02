@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Scopes\ActiveScope;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -27,7 +26,7 @@ class RoleUser extends BaseModel
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id')->withoutGlobalScope(ActiveScope::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function role(): BelongsTo

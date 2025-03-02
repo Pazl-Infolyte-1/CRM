@@ -85,6 +85,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder|Expense whereBankAccountId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Expense whereDefaultCurrencyId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Expense whereExchangeRate($value)
+
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
@@ -117,7 +118,7 @@ class Expense extends BaseModel
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'project_id')->withTrashed();
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     public function category(): BelongsTo
@@ -174,8 +175,7 @@ class Expense extends BaseModel
     {
         return Attribute::make(
             get: function () {
-                $currency = (company() == null) ? $this->company->currency_id : company()->currency_id;
-                if ($this->currency_id == $currency) {
+                if ($this->currency_id == company()->currency_id) {
                     return $this->price;
                 }
 
@@ -183,14 +183,9 @@ class Expense extends BaseModel
                     return $this->price;
                 }
 
-                return ($this->price * ((float)$this->exchange_rate));
+                return (($this->price * (float)$this->exchange_rate) / company()->currency->exchange_rate);
             },
         );
-    }
-
-    public function bankAccount()
-    {
-        return $this->belongsTo(BankAccount::class, 'bank_account_id');
     }
 
 }

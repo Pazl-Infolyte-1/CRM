@@ -84,7 +84,7 @@
                             </div>
                             <div class="col-lg-5">
                                 <x-forms.label class="mt-3" fieldId="google_recaptcha_secret"
-                                               :fieldLabel="__('app.googleRecaptchaV3SecretKey')" fieldRequired="true">
+                                               :fieldLabel="__('app.googleRecaptchaKeyV2Secret')" fieldRequired="true">
                                 </x-forms.label>
                                 <x-forms.input-group>
                                     <input type="password"

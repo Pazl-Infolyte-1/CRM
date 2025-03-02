@@ -7,7 +7,7 @@
     <div class="col-sm-12">
         <x-form id="updateAppreciationType" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('modules.appreciations.editAppreciationType')</h4>
                 <div class="row p-20">
                     <div class="col-lg-12">
@@ -60,8 +60,8 @@
                             <div class="col-md-6">
                                 <x-forms.select fieldId="status" :fieldLabel="__('app.status')"
                                                 fieldName="status">
-                                    <option @selected($appreciationType->status == 'active') value="active">@lang('app.active')</option>
-                                    <option @selected($appreciationType->status == 'inactive')  value="inactive">@lang('app.inactive')</option>
+                                    <option @if ($appreciationType->status == 'active') selected @endif value="active">@lang('app.active')</option>
+                                    <option @if ($appreciationType->status == 'inactive') selected @endif value="inactive">@lang('app.inactive')</option>
                                 </x-forms.select>
                             </div>
 
@@ -90,6 +90,7 @@
     </div>
 </div>
 
+<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 <script>
     $(document).ready(function() {
         $('#colorpicker').colorpicker({

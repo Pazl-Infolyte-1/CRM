@@ -7,7 +7,6 @@ use App\Http\Requests\ProjectMembers\SaveGroupMembers;
 use App\Http\Requests\ProjectMembers\StoreProjectMembers;
 use App\Models\EmployeeDetails;
 use App\Models\Project;
-use App\Models\ProjectDepartment;
 use App\Models\ProjectMember;
 use App\Models\Team;
 use App\Models\User;
@@ -128,11 +127,6 @@ class ProjectMemberController extends AccountBaseController
                     $member->save();
                 }
             }
-
-            ProjectDepartment::create([
-                'project_id' => $project->id,
-                'team_id' => $group
-            ]);
         }
 
         return Reply::success(__('messages.recordSaved'));

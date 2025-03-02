@@ -62,6 +62,8 @@
     </div>
 </x-form>
 
+
+<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 <script>
     $('#colorpickeredit').colorpicker({"color": "{{$projectStatusSetting->color}}"});
 

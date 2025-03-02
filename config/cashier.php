@@ -54,9 +54,6 @@ return [
             'customer.deleted',
             'invoice.payment_action_required',
             'invoice.payment_succeeded',
-            'invoice.payment_failed',
-            'payment_intent.payment_failed',
-            'payment_intent.succeeded',
         ],
     ],
 

@@ -21,11 +21,10 @@ trait TicketDashboard
      */
     public function ticketDashboard()
     {
-        $this->viewTicketDashboard = user()->permission('view_ticket_dashboard');
         abort_403($this->viewTicketDashboard !== 'all');
 
         $this->pageTitle = 'app.ticketDashboard';
-        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
+        $this->startDate  = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
         $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
         $startDate = $this->startDate->startOfDay()->toDateTimeString();
         $endDate = $this->endDate->endOfDay()->toDateTimeString();
@@ -35,28 +34,35 @@ trait TicketDashboard
             return $value->status == '1';
         })->pluck('widget_name')->toArray();
 
-        $ticketCounts = Ticket::select('id')->whereBetween('updated_at', [$startDate, $endDate])
-            ->selectRaw(
-                'SUM(CASE WHEN status IN ("open", "pending") THEN 1 ELSE 0 END) as totalUnresolvedTickets,
-         SUM(CASE WHEN status IN ("resolved", "closed") THEN 1 ELSE 0 END) as totalResolvedTickets,
-         SUM(CASE WHEN status IN ("open", "pending") AND agent_id IS NULL THEN 1 ELSE 0 END) as totalUnassignedTicket'
-            )
-            ->first();
+        $this->totalUnresolvedTickets = Ticket::whereBetween('updated_at', [$startDate, $endDate])
+            ->where(function ($query) {
+                $query->where('status', '=', 'open')
+                    ->orWhere('status', '=', 'pending');
+            })
+            ->count();
 
-        $this->totalUnresolvedTickets = $ticketCounts->totalUnresolvedTickets;
-        $this->totalResolvedTickets = $ticketCounts->totalResolvedTickets;
-        $this->totalUnassignedTicket = $ticketCounts->totalUnassignedTicket;
+        $this->totalResolvedTickets = Ticket::whereBetween('updated_at', [$startDate, $endDate])
+            ->where(function ($query) {
+                $query->where('status', '=', 'resolved')
+                    ->orWhere('status', '=', 'closed');
+            })
+            ->count();
 
+        $this->totalUnassignedTicket = Ticket::whereBetween('updated_at', [$startDate, $endDate])
+            ->where(function ($query) {
+                $query->where('status', '=', 'open')
+                    ->orWhere('status', '=', 'pending');
+            })
+            ->whereNull('agent_id')
+            ->count();
 
         $this->ticketTypeChart = $this->ticketTypeChart($startDate, $endDate);
         $this->ticketStatusChart = $this->ticketStatusChart($startDate, $endDate);
         $this->ticketChannelChart = $this->ticketChannelChart($startDate, $endDate);
 
-        $this->newTickets = Ticket::with('requester')
-            ->where('status', 'open')
+        $this->newTickets = Ticket::with('requester')->where('status', 'open')
             ->whereBetween('updated_at', [$startDate, $endDate])
-            ->orderByDesc('updated_at')
-            ->get();
+            ->orderBy('updated_at', 'desc')->get();
 
         $this->view = 'dashboard.ajax.ticket';
     }
@@ -68,8 +74,8 @@ trait TicketDashboard
      */
     public function ticketTypeChart($startDate, $endDate)
     {
-        $tickets = TicketType::withCount(['tickets as tickets_within_date_range' => function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('updated_at', [$startDate, $endDate]);
+        $tickets = TicketType::withCount(['tickets' => function ($query) use ($startDate, $endDate) {
+            return $query->whereBetween('updated_at', [$startDate, $endDate]);
         }])->get();
 
         $data['labels'] = $tickets->pluck('type')->toArray();
@@ -83,30 +89,45 @@ trait TicketDashboard
             $data['colors'] = [];
         }
 
-        $data['values'] = $tickets->pluck('tickets_within_date_range')->toArray();
+        $data['values'] = $tickets->pluck('tickets_count')->toArray();
 
         return $data;
     }
 
     public function ticketStatusChart($startDate, $endDate)
     {
-        $statusCounts = Ticket::whereBetween('updated_at', [$startDate, $endDate])
+        $tickets = Ticket::whereBetween('updated_at', [$startDate, $endDate])
             ->select(DB::raw('count(id) as totalTicket'), 'status')
             ->groupBy('status')
-            ->pluck('totalTicket', 'status'); // Use pluck for efficient data retrieval
+            ->get();
 
-        $data['colors'] = [
-            'closed' => '#1d82f5', // Predefined color mapping
-            'pending' => '#FCBD01',
-            'resolved' => '#2CB100',
-            'open' => '#D30000',
-        ];
+        $data['colors'] = [];
+        $data['labels'] = [];
+        $labels = $tickets->pluck('status')->toArray();
 
-        $data['labels'] = $statusCounts->keys()->map(function ($status) {
-            return __('app.' . $status); // Map key with translation
-        })->toArray();
+        foreach ($labels as $key => $value) {
+            $data['labels'][] = __('app.' . $value);
 
-        $data['values'] = $statusCounts->pluck('totalTicket')->toArray();
+            switch ($value) {
+            case 'closed':
+                $data['colors'][] = '#1d82f5';
+                break;
+
+            case 'pending':
+                $data['colors'][] = '#FCBD01';
+                break;
+
+            case 'resolved':
+                $data['colors'][] = '#2CB100';
+                break;
+
+            case 'open':
+                $data['colors'][] = '#D30000';
+                break;
+            }
+        }
+
+        $data['values'] = $tickets->pluck('totalTicket')->toArray();
 
         return $data;
     }

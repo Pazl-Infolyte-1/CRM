@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Payment;
 
+use Carbon\Carbon;
 use Stripe\Stripe;
 use App\Helper\Reply;
 use App\Models\Invoice;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Traits\MakePaymentTrait;
 use App\Http\Controllers\Controller;
@@ -27,7 +29,6 @@ class StripeController extends Controller
         $stripeCredentials = PaymentGatewayCredentials::first();
 
         /** setup Stripe credentials **/
-        // Company Specific
         Stripe::setApiKey($stripeCredentials->stripe_mode == 'test' ? $stripeCredentials->test_stripe_secret : $stripeCredentials->live_stripe_secret);
         $this->pageTitle = __('app.stripe');
     }
@@ -42,12 +43,11 @@ class StripeController extends Controller
     {
         $redirectRoute = 'invoices.show';
         $invoice = Invoice::findOrFail($id);
-        $param = 'invoice';
+
         $paymentIntentId = $request->paymentIntentId;
 
         if(isset($request->type) && $request->type == 'order'){
             $redirectRoute = 'orders.show';
-            $param = 'order';
             $invoice = Invoice::where('order_id', $id)->latest()->first();
         }
 
@@ -55,7 +55,7 @@ class StripeController extends Controller
         $invoice->status = 'paid';
         $invoice->save();
 
-        return $this->makeStripePayment($redirectRoute, $id, $param);
+        return $this->makeStripePayment($redirectRoute, $id);
     }
 
     public function paymentWithStripePublic(Request $request, $hash)
@@ -68,16 +68,13 @@ class StripeController extends Controller
         $this->makePayment('Stripe', $invoice->amountDue(), $invoice, $paymentIntentId, 'complete');
         $invoice->status = 'paid';
         $invoice->save();
-        return $this->makeStripePayment($redirectRoute, $hash, 'hash');
+        return $this->makeStripePayment($redirectRoute, $hash);
     }
 
-    private function makeStripePayment($redirectRoute, $id , $param = null)
+    private function makeStripePayment($redirectRoute, $id)
     {
-        $param = $param ?? 'invoice';
-        $signedUrl = url()->temporarySignedRoute($redirectRoute, now()->addDays(\App\Models\GlobalSetting::SIGNED_ROUTE_EXPIRY), [$param => $id]);
         Session::put('success', __('messages.paymentSuccessful'));
-        
-        return Reply::redirect($signedUrl, __('messages.paymentSuccessful'));
+        return Reply::redirect(route($redirectRoute, $id), __('messages.paymentSuccessful'));
     }
 
 }

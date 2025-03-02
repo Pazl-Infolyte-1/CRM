@@ -90,8 +90,6 @@ class ArchiveProjectsDataTable extends BaseDataTable
 
                     return implode(',', $members);
                 }
-
-                return '--';
             })
             ->editColumn('project_name', function ($row) {
 
@@ -101,9 +99,25 @@ class ArchiveProjectsDataTable extends BaseDataTable
                     </div>
                 </div>';
             })
-            ->editColumn('start_date', fn($row) => $row->start_date ? $row->start_date->translatedFormat($this->company->date_format) : '')
-            ->editColumn('deadline', fn($row) => $row->deadline ? $row->deadline->translatedFormat($this->company->date_format) : '-')
-            ->editColumn('client_id', fn($row) => is_null($row->client_id) ? '' : view('components.client', ['user' => $row->client]))
+            ->editColumn('start_date', function ($row) {
+                return $row->start_date->translatedFormat($this->company->date_format);
+            })
+            ->editColumn('deadline', function ($row) {
+                if ($row->deadline) {
+                    return $row->deadline->translatedFormat($this->company->date_format);
+                }
+
+                return '-';
+            })
+            ->editColumn('client_id', function ($row) {
+                if (is_null($row->client_id)) {
+                    return '';
+                }
+
+                return view('components.client', [
+                    'user' => $row->client
+                ]);
+            })
             ->editColumn('status', function ($row) {
 
                 $projectStatus = ProjectStatusSetting::all();
@@ -120,7 +134,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
                 if ($row->completion_percent < 50) {
                     $statusColor = 'danger';
                 }
-                elseif ($row->completion_percent < 75) {
+                elseif ($row->completion_percent >= 50 && $row->completion_percent < 75) {
                     $statusColor = 'warning';
                 }
                 else {
@@ -131,9 +145,13 @@ class ArchiveProjectsDataTable extends BaseDataTable
                 <div class="progress-bar f-12 bg-' . $statusColor . '" role="progressbar" style="width: ' . $row->completion_percent . '%;" aria-valuenow="' . $row->completion_percent . '" aria-valuemin="0" aria-valuemax="100">' . $row->completion_percent . '%</div>
               </div>';
             })
-            ->addColumn('completion_export', fn($row) => $row->completion_percent . '% ' . __('app.complete'))
+            ->addColumn('completion_export', function ($row) {
+                return $row->completion_percent . '% ' . __('app.complete');
+            })
             ->addIndexColumn()
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['project_name', 'action', 'completion_percent', 'members', 'status', 'client_id', 'check'])
             ->removeColumn('project_summary')
             ->removeColumn('notes')

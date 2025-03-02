@@ -42,7 +42,6 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|TaskFile whereTaskId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|TaskFile whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|TaskFile whereUserId($value)
- * @property-read mixed $file
  * @mixin \Eloquent
  */
 class TaskFile extends BaseModel

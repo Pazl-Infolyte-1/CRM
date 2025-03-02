@@ -3,7 +3,7 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-md-8">
                             <h3 class="heading-h1 mb-3">{{ $task->heading }}</h3>
@@ -11,7 +11,7 @@
                         <div class="col-md-4 text-right">
                             <div class="dropdown">
                                 <button
-                                    class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
+                                    class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
                                     type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <i class="fa fa-ellipsis-h"></i>
                                 </button>
@@ -30,7 +30,7 @@
 
                 <div class="card-body">
                     <div class="col-12 px-0 pb-3 d-flex">
-                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">@lang('app.project')</p>
+                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">@lang('app.project')</p>
                         <p class="mb-0 text-dark-grey f-14">
                             @if ($task->project_template_id)
                                     {{ $task->projectTemplate->project_name }}
@@ -41,7 +41,7 @@
 
                     </div>
                     <div class="col-12 px-0 pb-3 d-flex">
-                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                             @lang('modules.tasks.priority')</p>
                         <p class="mb-0 text-dark-grey f-14">
                             @if ($task->priority == 'high')
@@ -56,7 +56,7 @@
                     </div>
 
                     <div class="col-12 px-0 pb-3 d-flex">
-                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                             @lang('modules.tasks.assignTo')</p>
                         <p class="mb-0 text-dark-grey f-14">
                         @foreach ($task->usersMany as $item)
@@ -74,34 +74,6 @@
                                       :value="$task->category->category_name ?? '--'" html="true" />
                     <x-cards.data-row :label="__('app.description')" :value="$task->description" html="true" />
 
-                    @if (($taskSettings->label == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
-                        @php
-                            // Convert task_labels string to an array of IDs
-                            $taskLabelIds = explode(',', $task->task_labels);
-                        @endphp
-                        <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                @lang('app.label')</p>
-                            <p class="mb-0 text-dark-grey f-14 w-70">
-                                @forelse ($taskLabelList->filter(function ($label) use ($taskLabelIds) {
-                                    return in_array($label->id, $taskLabelIds);
-                                }) as $key => $label)
-                                    <span class='badge badge-secondary'
-                                          style='background-color: {{ $label->label_color }}'
-                                          @if ($label->description)
-                                                data-toggle="popover"
-                                                data-placement="top"
-                                                data-content="{!! $label->description !!}"
-                                                data-html="true"
-                                                data-trigger="hover"
-                                            @endif
-                                          >{!! $label->label_name !!} </span>
-                                @empty
-                                    --
-                                @endforelse
-                            </p>
-                        </div>
-                    @endif
                 </div>
             </div>
 

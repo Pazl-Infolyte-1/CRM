@@ -31,8 +31,6 @@ class RemoveSeenNotification extends Command
     public function handle()
     {
         Notification::whereNotNull('read_at')->delete();
-
-        return Command::SUCCESS;
     }
 
 }

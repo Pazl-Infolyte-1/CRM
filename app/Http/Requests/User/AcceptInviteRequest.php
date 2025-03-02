@@ -25,13 +25,6 @@ class AcceptInviteRequest extends FormRequest
      */
     public function rules()
     {
-        \Illuminate\Support\Facades\Validator::extend('check_superadmin', function ($attribute, $value, $parameters, $validator) {
-            return !\App\Models\User::withoutGlobalScopes([\App\Scopes\ActiveScope::class, \App\Scopes\CompanyScope::class])
-                ->where('email', $value)
-                ->where('is_superadmin', 1)
-                ->exists();
-        });
-
         $invite = UserInvitation::where('invitation_code', request()->invite)
             ->where('status', 'active')
             ->first();
@@ -51,16 +44,9 @@ class AcceptInviteRequest extends FormRequest
             $rules['terms_and_conditions'] = 'required';
         }
 
-        $rules['email'] = 'required|email:rfc,strict|check_superadmin|unique:users,email,null,id,company_id,' . $invite->company->id;
+        $rules['email'] = 'required|email:rfc|unique:users,email,null,id,company_id,' . $invite->company->id;
 
         return $rules;
-    }
-
-    public function messages()
-    {
-        return [
-            'email.check_superadmin' => __('superadmin.emailAlreadyExist'),
-        ];
     }
 
 }

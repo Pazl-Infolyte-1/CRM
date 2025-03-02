@@ -18,8 +18,8 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
     <div class="col-sm-12">
         <x-form id="save-expense-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
-                    @lang('app.expenseDetails')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                    @lang('app.expense') @lang('app.details')</h4>
                 <div class="row p-20">
                     <div class="col-md-6 col-lg-4">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.expenses.itemName')"
@@ -32,8 +32,8 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                         <x-forms.select :fieldLabel="__('modules.invoices.currency')" fieldName="currency"
                             fieldRequired="true" fieldId="currency">
                             @foreach ($currencies as $currency)
-                                <option @if ($currency->id == $expense->currency_id) selected @endif value="{{ $currency->id }}" data-currency-name="{{ $currency->currency_code }}">
-                                    {{ $currency->currency_code }} ({{ $currency->currency_symbol }})
+                                <option @if ($currency->id == $expense->currency_id) selected @endif value="{{ $currency->id }}" data-currency-name="{{ $currency->currency_name }}">
+                                    {{ $currency->currency_name }} - ({{ $currency->currency_symbol }})
                                 </option>
                             @endforeach
                         </x-forms.select>
@@ -51,7 +51,8 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                             <input type="hidden" name="user_id" value="{{ $expense->user_id }}">
                         @endif
                         <div class="col-md-6 col-lg-4">
-                            <x-forms.label class="mt-3" fieldId="user_id" :fieldLabel="__('app.employee')">
+                            <x-forms.label class="mt-3" fieldId="user_id" :fieldLabel="__('app.employee')"
+                                fieldRequired="true">
                             </x-forms.label>
                             <x-forms.input-group>
                                 <select class="form-control select-picker" name="user_id" id="user_id"
@@ -190,8 +191,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                     <input type="text" id="start_date" name="issue_date"
                                         class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
                                         placeholder="@lang('placeholders.date')"
-                                        value="{{ $expense->issue_date->translatedFormat(company()->date_format) }}" @if(count($expense->recurrings) > 0) disabled @endif>
-                                    <input type="hidden" name="hidden_issue_date" value="{{ $expense->issue_date->translatedFormat(company()->date_format) }}">
+                                        value="{{ $expense->issue_date->translatedFormat(company()->date_format) }}" @if(count($expense->recurrings) > 0) readonly @endif>
                                 </div>
                                 <small class="form-text text-muted">@lang('modules.recurringInvoice.invoiceDate')</small>
                             </div>
@@ -243,8 +243,6 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                     <input type="hidden" id="next_expense" value="{{ $expense->issue_date->translatedFormat(company()->date_format) }}">
                 </div>
             </div>
-            
-            <x-forms.custom-field :fields="$fields" :model="$exp"></x-forms.custom-field>
 
             <x-form-actions>
                 <x-forms.button-primary id="save-expense-form" class="mr-3" icon="check">@lang('app.save')
@@ -276,7 +274,6 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
             $('#project_id').prop('disabled', true);
             $('#bank_account_id').prop('disabled', true);
             $('#expense_category_id').prop('disabled', true);
-            $('#addExpenseCategory').prop('disabled', true).css('cursor', 'not-allowed');
             $('#rotation').prop('disabled', true);
         }
 
@@ -353,10 +350,16 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
 
         });
 
-        <x-forms.custom-field-filejs/>
-
         init(RIGHT_MODAL);
     });
+
+    function checkboxChange(parentClass, id) {
+        var checkedData = '';
+        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
+            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
+        });
+        $('#' + id).val(checkedData);
+    }
 
     $('body').on('change keyup', '#rotation, #billing_cycle', function () {
         var billingCycle = $('#billing_cycle').val();

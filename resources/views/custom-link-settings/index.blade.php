@@ -21,7 +21,7 @@
 
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
-                    <h2 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                         @lang('app.menu.customLinkSetting')</h2>
                 </div>
             </x-slot>
@@ -40,7 +40,7 @@
     <script>
 
         $('body').on('click', '.delete-table-row', function () {
-            const id = $(this).data('custom_link-id');
+            var id = $(this).data('custom_link-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
                 text: "@lang('messages.recoverRecord')",
@@ -84,21 +84,21 @@
         });
 
         $('#addNewCustomLink').click(function () {
-            const url = "{{ route('custom-link-settings.create') }}";
+        const url = "{{ route('custom-link-settings.create') }}";
 
-            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-            $.ajaxModal(MODAL_LG, url);
+        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_LG, url);
         });
 
         $("body").on("click", ".edit-channel", function () {
-            const custom_linkId = $(this).data('custom_link-id');
-            let url = "{{ route('custom-link-settings.edit', ':id') }}";
+        var custom_linkId = $(this).data('custom_link-id');
+        var url = "{{ route('custom-link-settings.edit', ':id') }}";
 
-            url = url.replace(':id', custom_linkId);
-            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-            $.ajaxModal(MODAL_LG, url);
+        url = url.replace(':id', custom_linkId);
+        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_LG, url);
         });
 
     </script>
-
+    
 @endpush

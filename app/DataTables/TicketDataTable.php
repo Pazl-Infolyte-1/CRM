@@ -2,27 +2,29 @@
 
 namespace App\DataTables;
 
+use Carbon\Carbon;
 use App\Models\Ticket;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
+use App\DataTables\BaseDataTable;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
-use App\Models\TicketSettingForAgents;
-use App\Models\TicketGroup;
-use App\Models\TicketTagList;
 
 class   TicketDataTable extends BaseDataTable
 {
 
+    private $deleteTicketPermission;
     private $viewTicketPermission;
-    private $ignoreTrashed;
+    private $editTicketPermission;
 
-    public function __construct($ignoreTrashed = false)
+    public function __construct()
     {
         parent::__construct();
+        $this->deleteTicketPermission = user()->permission('delete_tickets');
+
         $this->viewTicketPermission = user()->permission('view_tickets');
-        $this->ignoreTrashed = $ignoreTrashed;
+        $this->editTicketPermission = user()->permission('edit_tickets');
     }
 
     /**
@@ -34,10 +36,11 @@ class   TicketDataTable extends BaseDataTable
     public function dataTable($query)
     {
         $datatables = datatables()->eloquent($query);
-        $datatables->addColumn('check', fn($row) => $this->checkBox($row));
+        $datatables->addColumn('check', function ($row) {
+            return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+        });
         $datatables->addIndexColumn();
         $datatables->addColumn('action', function ($row) {
-
             $action = '<div class="task_view">';
 
             $action .= '<div class="dropdown">
@@ -47,15 +50,25 @@ class   TicketDataTable extends BaseDataTable
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->ticket_number . '" tabindex="0">';
 
-            if ($row->canViewTicket() || $row->agent_id == null) {
+            if (
+                $this->viewTicketPermission == 'all'
+                || ($this->viewTicketPermission == 'added' && user()->id == $row->added_by)
+                || ($this->viewTicketPermission == 'owned' && (user()->id == $row->user_id || $row->agent_id == user()->id))
+                || ($this->viewTicketPermission == 'both' && (user()->id == $row->user_id || $row->agent_id == user()->id || $row->added_by == user()->id))
+            ) {
                 $action .= '<a href="' . route('tickets.show', [$row->ticket_number]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
             }
 
-            if ($row->canDeleteTicket()) {
+            if (
+                $this->deleteTicketPermission == 'all'
+                || ($this->deleteTicketPermission == 'added' && user()->id == $row->added_by)
+                || ($this->deleteTicketPermission == 'owned' && (user()->id == $row->agent_id || user()->id == $row->user_id))
+                || ($this->deleteTicketPermission == 'both' && (user()->id == $row->agent_id || user()->id == $row->added_by || user()->id == $row->user_id))
+            ) {
                 $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-ticket-id="' . $row->id . '">
-                <i class="fa fa-trash mr-2"></i>
-                ' . trans('app.delete') . '
-            </a>';
+                            <i class="fa fa-trash mr-2"></i>
+                            ' . trans('app.delete') . '
+                        </a>';
             }
 
             $action .= '</div>
@@ -77,8 +90,12 @@ class   TicketDataTable extends BaseDataTable
         });
 
         $datatables->addColumn('status', function ($row) {
-            if ($row->canEditTicket($row)) {
-
+            if (
+                $this->editTicketPermission == 'all'
+                || ($this->editTicketPermission == 'added' && user()->id == $row->added_by)
+                || ($this->editTicketPermission == 'owned' && (user()->id == $row->user_id || $row->agent_id == user()->id))
+                || ($this->editTicketPermission == 'both' && (user()->id == $row->user_id || $row->agent_id == user()->id || $row->added_by == user()->id))
+            ) {
                 $status = '<select class="form-control select-picker change-status" data-ticket-id="' . $row->id . '">';
                 $status .= '<option ';
 
@@ -125,24 +142,44 @@ class   TicketDataTable extends BaseDataTable
 
             return '<i class="fa fa-circle mr-2 text-' . $status[0] . '"></i>' . $status[1];
 
+            /* status end */
         });
-        $datatables->editColumn('ticket_status', fn($row) => $row->status);
-        $datatables->editColumn('subject', fn($row) => '<a href="' . route('tickets.show', $row->ticket_number) . '" class="text-darkest-grey">' . $row->subject . '</a>' . $row->badge());
-        $datatables->addColumn('name', fn($row) => $row->requester ? $row->requester->name : $row->ticket_number);
+        $datatables->editColumn('ticket_status', function ($row) {
+            return $row->status;
+        });
+        $datatables->editColumn('subject', function ($row) {
+            return '<a href="' . route('tickets.show', $row->ticket_number) . '" class="text-darkest-grey" >' . $row->subject . '</a>' . $row->badge();
+        });
+        $datatables->addColumn('name', function ($row) {
+            return $row->requester ? $row->requester->name : $row->ticket_number;
+        });
         $datatables->editColumn('user_id', function ($row) {
             if (is_null($row->requester)) {
                 return '';
             }
 
-            $viewComponent = $row->requester->hasRole('employee') ? 'components.employee' : 'components.client';
+            if ($row->requester->hasRole('employee')) {
+                return view('components.employee', [
+                    'user' => $row->requester
+                ]);
+            }
 
-            return view($viewComponent, ['user' => $row->requester]);
+            return view('components.client', [
+                'user' => $row->requester
+            ]);
+
+        });
+        $datatables->editColumn('updated_at', function ($row) {
+            return $row->created_at->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format);
         });
 
-        $datatables->editColumn('updated_at', fn($row) => $row->created_at?->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format));
-        $datatables->setRowId(fn($row) => 'row-' . $row->id);
+        $datatables->setRowId(function ($row) {
+            return 'row-' . $row->id;
+        });
+
         $datatables->orderColumn('user_id', 'name $1');
         $datatables->orderColumn('status', 'id $1');
+
         $datatables->removeColumn('agent_id');
         $datatables->removeColumn('channel_id');
         $datatables->removeColumn('type_id');
@@ -164,28 +201,17 @@ class   TicketDataTable extends BaseDataTable
     {
         $request = $this->request();
 
-        $model = $model->with('requester', 'agent', 'latestReply.user:id,name,image', 'group.enabledAgents')
+        $model = $model->with('requester', 'agent')
             ->select('tickets.*')
-            ->leftJoin('projects', 'projects.id', 'tickets.project_id')
             ->join('users', 'users.id', '=', 'tickets.user_id');
 
-        // filter where project is soft deleted
-        if (!$this->ignoreTrashed) {
-            $model->where(function ($query) {
-                $query->whereNotNull('tickets.project_id')
-                    ->whereHas('project', function ($q) {
-                        $q->whereNull('projects.deleted_at');
-                    })->orWhereNull('tickets.project_id');
-            });
-        }
-
         if (!is_null($request->startDate) && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $model->where(DB::raw('DATE(tickets.updated_at)'), '>=', $startDate);
         }
 
         if (!is_null($request->endDate) && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
             $model->where(DB::raw('DATE(tickets.updated_at)'), '<=', $endDate);
         }
 
@@ -236,122 +262,34 @@ class   TicketDataTable extends BaseDataTable
             $model->where('tickets.type_id', '=', $request->typeId);
         }
 
-        $tagIds = is_array($request->tagId) ? $request->tagId : explode(',', $request->tagId);
-        $totalTagLists = TicketTagList::all();
-        $totaltags = ($totalTagLists->count() + 1) - count($tagIds);
-
-        if (is_array($request->tagId) && $request->tagId[0] !== 'all') {
-            $model->join('ticket_tags', 'ticket_tags.ticket_id', 'tickets.id')
-              ->whereIn('ticket_tags.tag_id', $tagIds)
-              ->groupBy('tickets.id');
-        } elseif(is_array($request->tagId) && $request->tagId[0] !== 'all' && $totaltags > 0){
-            $model->join('ticket_tags', 'ticket_tags.ticket_id', 'tickets.id')
-                ->whereIn('ticket_tags.tag_id', $tagIds)
-                ->groupBy('tickets.id');
-        } elseif(is_array($request->tagId) && $request->tagId[0] == 'all' && $totaltags > 0 && count($tagIds) !== 1){
-            $model->leftJoin('ticket_tags', 'ticket_tags.ticket_id', '=', 'tickets.id')
-                ->where(function ($query) use ($tagIds) {
-                    $query->whereIn('ticket_tags.tag_id', $tagIds)
-                        ->orWhereNull('ticket_tags.tag_id');
-                })->groupBy('tickets.id');
-        }elseif(is_array($request->tagId) && $request->tagId[0] == 'all' && count($tagIds) == 1){
-            $model->whereNotExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('ticket_tags')
-                        ->whereColumn('ticket_tags.ticket_id', 'tickets.id');
-                });
+        if (!is_null($request->tagId) && $request->tagId != 'all') {
+            $model->join('ticket_tags', 'ticket_tags.ticket_id', 'tickets.id');
+            $model->where('ticket_tags.tag_id', '=', $request->tagId);
         }
 
         if (!is_null($request->projectID) && $request->projectID != 'all') {
             $model->whereHas('project', function ($q) use ($request) {
-                $q->withTrashed()->where('tickets.project_id', $request->projectID);
+                $q->where('project_id', $request->projectID);
             });
         }
 
-        $userAssignedInGroup = false;
-        if(in_array('employee', user_roles()) && !in_array('admin', user_roles()) && !in_array('client', user_roles())){
-            $userAssignedInGroup = TicketGroup::whereHas('enabledAgents', function ($query) {
-                $query->where('agent_id', user()->id)->orWhereNull('agent_id');
-            })->exists();
+        if ($this->viewTicketPermission == 'owned') {
+            $model->where(function ($query) {
+                $query->where('tickets.user_id', '=', user()->id)
+                    ->orWhere('tickets.agent_id', '=', user()->id);
+            });
         }
 
-        if($userAssignedInGroup == false){
+        if ($this->viewTicketPermission == 'both') {
+            $model->where(function ($query) {
+                $query->where('tickets.user_id', '=', user()->id)
+                    ->orWhere('tickets.added_by', '=', user()->id)
+                    ->orWhere('tickets.agent_id', '=', user()->id);
+            });
+        }
 
-            if ($this->viewTicketPermission == 'owned') {
-                $model->where(function ($query) {
-                    $query->where('tickets.user_id', '=', user()->id)
-                        ->orWhere('agent_id', '=', user()->id);
-                });
-            }
-
-            if ($this->viewTicketPermission == 'both') {
-                $model->where(function ($query) {
-                    $query->where('tickets.user_id', '=', user()->id)
-                        ->orWhere('tickets.added_by', '=', user()->id)
-                        ->orWhere('agent_id', '=', user()->id);
-                });
-            }
-
-            if ($this->viewTicketPermission == 'added') {
-                $model->where('tickets.added_by', '=', user()->id);
-            }
-        }else{
-
-            $ticketSetting = TicketSettingForAgents::first();
-
-            if($ticketSetting?->ticket_scope == 'group_tickets'){
-
-                $userGroupIds = TicketGroup::whereHas('enabledAgents', function ($query) {
-                    $query->where('agent_id', user()->id);
-                })->pluck('id')->toArray();
-
-                $ticketSettingGroupIds = is_array($ticketSetting?->group_id) ? $ticketSetting?->group_id : explode(',', $ticketSetting?->group_id);
-
-                // Find the common group IDs
-                $commonGroupIds = array_intersect($userGroupIds, $ticketSettingGroupIds);
-
-                if($commonGroupIds){
-                    $model->where(function ($query) use ($commonGroupIds) {
-                        $query->where(function ($subQuery) use ($commonGroupIds) {
-                            // Conditions related to user and agent
-                            $subQuery->where('tickets.user_id', '=', user()->id)
-                                ->orWhere('tickets.added_by', '=', user()->id)
-                                ->orWhere('tickets.agent_id', '=', user()->id)
-                                ->orWhere('tickets.agent_id', '!=', user()->id)
-                                ->whereIn('tickets.group_id', $commonGroupIds);
-                        })
-                        // Add orWhere for tickets where agent_id is null
-                        ->orWhere(function ($subQuery) use ($commonGroupIds) {
-                            $subQuery->whereNull('tickets.agent_id')
-                                ->whereIn('tickets.group_id', $commonGroupIds);
-                        });
-                    });
-                }else{
-                    $model->where(function ($query) use ($userGroupIds) {
-                        $query->where(function ($subQuery) use ($userGroupIds) {
-                            // Conditions related to user and agent
-                            $subQuery->where('tickets.user_id', '=', user()->id)
-                                ->orWhere('tickets.added_by', '=', user()->id)
-                                ->orWhere('tickets.agent_id', '=', user()->id)
-                                ->orWhere('tickets.agent_id', '!=', user()->id)
-                                ->whereIn('tickets.group_id', $userGroupIds);
-                        })
-                        // Add orWhere for tickets where agent_id is null
-                        ->orWhere(function ($subQuery) use ($userGroupIds) {
-                            $subQuery->whereNull('tickets.agent_id')
-                                ->whereIn('tickets.group_id', $userGroupIds);
-                        });
-                    });
-                }
-            }
-
-            if($ticketSetting?->ticket_scope == 'assigned_tickets'){
-                $model->where(function ($query) {
-                    $query->where('agent_id', '=', user()->id)
-                    ->orWhere('tickets.user_id', '=', user()->id)
-                    ->orWhere('tickets.added_by', '=', user()->id);
-                });
-            }
+        if ($this->viewTicketPermission == 'added') {
+            $model->where('tickets.added_by', '=', user()->id);
         }
 
         if ($request->searchText != '') {

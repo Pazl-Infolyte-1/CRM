@@ -64,17 +64,17 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.dateFilterOn')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.dateFilterOn')</label>
                 <div class="select-filter mb-4">
                     <select class="form-control select-picker" name="date_filter_on" id="date_filter_on">
                         <option value="start_date">@lang('app.startDate')</option>
                         <option value="due_date">@lang('app.dueDate')</option>
-                        <option value="completed_on">@lang('app.dateCompleted')</option>
+                        <option value="completed_on">@lang('app.date') @lang('app.completed')</option>
                     </select>
                 </div>
             </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tickets.type')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tickets.type')</label>
                 <div class="select-filter mb-4">
                     <select class="form-control select-picker" name="pinned" id="pinned" data-container="body">
                         <option value="all">@lang('app.all')</option>
@@ -83,24 +83,22 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                     </select>
                 </div>
             </div>
-            @if (in_array('projects', user_modules()))
-                <div class="more-filter-items">
-                    <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
-                    <div class="select-filter mb-4">
-                        <div class="select-others">
-                            <select class="form-control select-picker" name="project_id_filter" id="project_id_filter" data-live-search="true"
-                                data-container="body" data-size="8">
-                                <option value="all">@lang('app.all')</option>
-                                @foreach ($projects as $project)
-                                    <option value="{{ $project->id }}">{{ $project->project_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+            <div class="more-filter-items">
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
+                <div class="select-filter mb-4">
+                    <div class="select-others">
+                        <select class="form-control select-picker" name="project_id_filter" id="project_id_filter" data-live-search="true"
+                            data-container="body" data-size="8">
+                            <option value="all">@lang('app.all')</option>
+                            @foreach ($projects as $project)
+                                <option value="{{ $project->id }}">{{ $project->project_name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
-            @endif
+            </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.client')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.client')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="clientID" data-live-search="true"
@@ -116,7 +114,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                 </div>
             </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tasks.assignTo')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.assignTo')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="assignedTo" data-live-search="true"
@@ -135,7 +133,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tasks.assignBy')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.assignBy')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="assignedBY" data-live-search="true"
@@ -150,7 +148,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.label')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.label')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="label" data-live-search="true" data-container="body"
@@ -167,28 +165,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tasks.priority')</label>
-                <div class="select-filter mb-4">
-                    <div class="select-others">
-                        <select class="form-control select-picker" id="priority" data-live-search="true" data-container="body"
-                            data-size="8">
-                            <option value="all">@lang('app.all')</option>
-                            <option
-                                data-content="<i class='fa fa-circle mr-2' style='color: #dd0000'></i> @lang('modules.tasks.high')"
-                                value="high">@lang('modules.tasks.high')</option>
-                        <option   value="medium"
-                                data-content="<i class='fa fa-circle mr-2' style='color: #ffc202'></i> @lang('modules.tasks.medium')"
-                                >@lang('modules.tasks.medium')</option>
-                        <option
-                                data-content="<i class='fa fa-circle mr-2' style='color: #0a8a1f'></i> @lang('modules.tasks.low')"
-                                value="low">@lang('modules.tasks.low')</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 "
+                <label class="f-14 text-dark-grey mb-12 text-capitalize"
                     for="usr">@lang('modules.taskCategory.taskCategory')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -204,7 +181,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.billableTask')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.billableTask')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="billable_task" data-live-search="true"
@@ -217,22 +194,20 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                 </div>
             </div>
 
-            @if (in_array('projects', user_modules()))
-                <div class="more-filter-items">
-                    <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.projects.milestones')</label>
-                    <div class="select-filter mb-4">
-                        <div class="select-others">
-                            <select class="form-control select-picker" id="milestone_id" data-live-search="true"
-                                data-container="body" data-size="8">
-                                <option value="all">@lang('app.all')</option>
-                                @foreach ($milestones as $milestone)
-                                    <option value="{{ $milestone->id }}">{{ $milestone->milestone_title . ($milestone->project->project_short_code ? ' (' . $milestone->project->project_short_code . ')' : '')}}</option>
-                                @endforeach
-                            </select>
-                        </div>
+            <div class="more-filter-items">
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.projects.milestones')</label>
+                <div class="select-filter mb-4">
+                    <div class="select-others">
+                        <select class="form-control select-picker" id="milestone_id" data-live-search="true"
+                            data-container="body" data-size="8">
+                            <option value="all">@lang('app.all')</option>
+                            @foreach ($milestones as $milestone)
+                                <option value="{{ $milestone->id }}">{{ $milestone->milestone_title }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
-            @endif
+            </div>
 
         </x-filters.more-filter-box>
         <!-- MORE FILTERS END -->
@@ -289,21 +264,6 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
 
                 <a href="javascript:;" class="btn btn-secondary f-14 show-pinned" data-toggle="tooltip"
                     data-original-title="@lang('app.pinned')"><i class="side-icon bi bi-pin-angle"></i></a>
-
-                @if(in_array('admin', user_roles()) || in_array('employee', user_roles()))
-                    <a href="{{ route('tasks.waiting-approval') }}" class="btn btn-secondary f-14 show-waiting-approval-task" data-toggle="tooltip"
-                        data-original-title="@lang('app.menu.waiting-approval')">
-                        <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="#000000" width="18" height="18">
-                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                            <g id="SVGRepo_iconCarrier">
-                                <path d="m 7 0 c -0.554688 0 -1 0.445312 -1 1 h -2 c -1.644531 0 -3 1.355469 -3 3 v 9 c 0 1.644531 1.355469 3 3 3 h 2 c 0.550781 0 1 -0.449219 1 -1 s -0.449219 -1 -1 -1 h -2 c -0.570312 0 -1 -0.429688 -1 -1 v -9 c 0 -0.570312 0.429688 -1 1 -1 h 1 v 1 c 0 0.554688 0.445312 1 1 1 h 4 c 0.554688 0 1 -0.445312 1 -1 v -1 h 1 c 0.570312 0 1 0.429688 1 1 v 2 c 0 0.550781 0.449219 1 1 1 s 1 -0.449219 1 -1 v -2 c 0 -1.644531 -1.355469 -3 -3 -3 h -2 c 0 -0.554688 -0.445312 -1 -1 -1 z m 0 0" fill="#2e3436"></path>
-                                <path d="m 8.875 8 c -0.492188 0 -0.875 0.382812 -0.875 0.875 v 6.25 c 0 0.492188 0.382812 0.875 0.875 0.875 h 6.25 c 0.492188 0 0.875 -0.382812 0.875 -0.875 v -6.25 c 0 -0.492188 -0.382812 -0.875 -0.875 -0.875 z m 2.125 1 h 2 v 2.5 s 0 0.5 -0.5 0.5 h -1 c -0.5 0 -0.5 -0.5 -0.5 -0.5 z m 0.5 4 h 1 c 0.277344 0 0.5 0.222656 0.5 0.5 v 1 c 0 0.277344 -0.222656 0.5 -0.5 0.5 h -1 c -0.277344 0 -0.5 -0.222656 -0.5 -0.5 v -1 c 0 -0.277344 0.222656 -0.5 0.5 -0.5 z m 0 0" class="warning" fill="#ff7800"></path>
-                            </g>
-                        </svg>
-                        @if($waitingApprovalCount > 0)<span class="badge badge-pill badge-danger position-absolute">{{ $waitingApprovalCount }}</span>@endif
-                    </a>
-                @endif
             </div>
         </div>
 
@@ -355,7 +315,6 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             var assignedTo = $('#assignedTo').val();
             var status = $('#status').val();
             var label = $('#label').val();
-            var priority = $('#priority').val();
             var category_id = $('#category_id').val();
             var billable = $('#billable_task').val();
             var pinned = $('#pinned').val();
@@ -369,7 +328,6 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             data['status'] = status;
             data['status'] = status;
             data['label'] = label;
-            data['priority'] = priority;
             data['category_id'] = category_id;
             data['billable'] = billable;
             data['projectId'] = projectID;
@@ -384,7 +342,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             window.LaravelDataTables["allTasks-table"].draw(true);
         }
 
-        $('#milestone_id, #billable_task, #status, #clientID, #category_id, #assignedBY, #assignedTo, #label, #priority, #project_id_filter, #pinned, #date_filter_on')
+        $('#milestone_id, #billable_task, #status, #clientID, #category_id, #assignedBY, #assignedTo, #label, #project_id_filter, #pinned, #date_filter_on')
             .on('change keyup',
                 function() {
                     if ($('#status').val() != "not finished") {
@@ -406,9 +364,6 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                         $('#reset-filters').removeClass('d-none');
                         showTable();
                     } else if ($('#label').val() != "all") {
-                        $('#reset-filters').removeClass('d-none');
-                        showTable();
-                    } else if ($('#priority').val() != "all") {
                         $('#reset-filters').removeClass('d-none');
                         showTable();
                     } else if ($('#billable_task').val() != "all") {
@@ -512,67 +467,45 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
 
         $('body').on('click', '.delete-table-row', function() {
             var id = $(this).data('user-id');
-            let activeRunning = $(this).data('active-running');
+            Swal.fire({
+                title: "@lang('messages.sweetAlertTitle')",
+                text: "@lang('messages.recoverRecord')",
+                icon: 'warning',
+                showCancelButton: true,
+                focusConfirm: false,
+                confirmButtonText: "@lang('messages.confirmDelete')",
+                cancelButtonText: "@lang('app.cancel')",
+                customClass: {
+                    confirmButton: 'btn btn-primary mr-3',
+                    cancelButton: 'btn btn-secondary'
+                },
+                showClass: {
+                    popup: 'swal2-noanimation',
+                    backdrop: 'swal2-noanimation'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var url = "{{ route('tasks.destroy', ':id') }}";
+                    url = url.replace(':id', id);
 
-            if (activeRunning == 1) {
+                    var token = "{{ csrf_token() }}";
 
-                Swal.fire({
-                    title: "@lang('messages.taskTimerRunning')",
-                    text: "@lang('messages.stopTheTimer')",
-                    icon: 'warning',
-                    showConfirmButton: true,
-                    confirmButtonText: "@lang('messages.timerOkay')",
-                    customClass: {
-                        confirmButton: 'btn btn-primary'
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-
-                    }
-                });
-            } else {
-                Swal.fire({
-                    title: "@lang('messages.sweetAlertTitle')",
-                    text: "@lang('messages.recoverRecord')",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    focusConfirm: false,
-                    confirmButtonText: "@lang('messages.confirmDelete')",
-                    cancelButtonText: "@lang('app.cancel')",
-                    customClass: {
-                        confirmButton: 'btn btn-primary mr-3',
-                        cancelButton: 'btn btn-secondary'
-                    },
-                    showClass: {
-                        popup: 'swal2-noanimation',
-                        backdrop: 'swal2-noanimation'
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        var url = "{{ route('tasks.destroy', ':id') }}";
-                        url = url.replace(':id', id);
-
-                        var token = "{{ csrf_token() }}";
-
-                        $.easyAjax({
-                            type: 'POST',
-                            url: url,
-                            data: {
-                                '_token': token,
-                                '_method': 'DELETE'
-                            },
-                            success: function(response) {
-                                if (response.status == "success") {
-                                    showTable();
-                                }
+                    $.easyAjax({
+                        type: 'POST',
+                        url: url,
+                        data: {
+                            '_token': token,
+                            '_method': 'DELETE'
+                        },
+                        success: function(response) {
+                            if (response.status == "success") {
+                                showTable();
                             }
-                        });
-                    }
-                });
-            }
-
+                        }
+                    });
+                }
+            });
         });
 
         const applyQuickAction = () => {
@@ -605,82 +538,25 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             var token = "{{ csrf_token() }}";
             var id = $(this).data('task-id');
             var status = $(this).val();
-            var needApproval = $(this).data('need-approval');
-            var projectAdmin = $(this).data('project-admin');
-            var loginUser = "{{ user()->id }}";
-
-            var rolesJson = `{!! addslashes(json_encode(user()->roles)) !!}`; // Fetch roles JSON and escape special characters
-            var roles = JSON.parse(rolesJson); // Parse JSON string to JavaScript object
-
-            function isAdmin() {
-                for (var i = 0; i < roles.length; i++) {
-                    if (roles[i].name === 'admin') {
-                        return true;
-                    }
-                }
-            }
 
             if (id != "" && status != "") {
-                if(status == 'completed' && !isAdmin() && projectAdmin != loginUser && needApproval == 1){
-                    Swal.fire({
-                        title: "@lang('messages.sweetAlertTitle')",
-                        text: "@lang('messages.approvalmsgsent')",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        focusConfirm: false,
-                        confirmButtonText: "@lang('app.yes')",
-                        cancelButtonText: "@lang('app.no')",
-                        customClass: {
-                            confirmButton: 'btn btn-primary mr-3',
-                            cancelButton: 'btn btn-secondary'
-                        },
-                        showClass: {
-                            popup: 'swal2-noanimation',
-                            backdrop: 'swal2-noanimation'
-                        },
-                        buttonsStyling: false
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            var url = "{{ route('tasks.send_approval', ':id') }}";
-                            url = url.replace(':id', id);
+                $.easyAjax({
+                    url: url,
+                    type: "POST",
+                    container: '.content-wrapper',
+                    blockUI: true,
+                    data: {
+                        '_token': token,
+                        taskId: id,
+                        status: status,
+                        sortBy: 'id'
+                    },
+                    success: function(response) {
+                        $('#timer-clock').html(response.clockHtml);
+                        window.LaravelDataTables["allTasks-table"].draw(false);
+                    }
+                });
 
-                            var token = "{{ csrf_token() }}";
-                            var isApproval = 1;
-                            $.easyAjax({
-                                type: 'POST',
-                                url: url,
-                                data: {
-                                    '_token': token,
-                                    taskId: id,
-                                    isApproval: isApproval,
-                                    '_method': 'POST'
-                                },
-                                success: function(response) {
-                                    if (response.status == "success") {
-                                        showTable();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }else{
-                    $.easyAjax({
-                        url: url,
-                        type: "POST",
-                        container: '.content-wrapper',
-                        blockUI: true,
-                        data: {
-                            '_token': token,
-                            taskId: id,
-                            status: status,
-                            sortBy: 'id'
-                        },
-                        success: function(response) {
-                            $('#timer-clock').html(response.clockHtml);
-                            window.LaravelDataTables["allTasks-table"].draw(true);
-                        }
-                    });
-                }
             }
         });
 
@@ -719,45 +595,45 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
 
                         $('#timer-clock').html(response.clockHtml);
                         if ($('#allTasks-table').length) {
-                            window.LaravelDataTables["allTasks-table"].draw(true);
+                            window.LaravelDataTables["allTasks-table"].draw(false);
                         }
                     }
                 }
             })
         });
 
-        // $('#allTasks-table').on('click', '.stop-timer', function() {
-        //     var id = $(this).data('time-id');
-        //     var url = "{{ route('timelogs.stop_timer', ':id') }}";
-        //     url = url.replace(':id', id);
-        //     var token = '{{ csrf_token() }}';
-        //     $.easyAjax({
-        //         url: url,
-        //         blockUI: true,
-        //         container: '#allTasks-table',
-        //         type: "POST",
-        //         data: {
-        //             timeId: id,
-        //             _token: token
-        //         },
-        //         success: function(response) {
-        //             if (response.activeTimerCount > 0) {
-        //                 $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
-        //             } else {
-        //                 $('#show-active-timer .active-timer-count').addClass('d-none');
-        //             }
+        $('#allTasks-table').on('click', '.stop-timer', function() {
+            var id = $(this).data('time-id');
+            var url = "{{ route('timelogs.stop_timer', ':id') }}";
+            url = url.replace(':id', id);
+            var token = '{{ csrf_token() }}';
+            $.easyAjax({
+                url: url,
+                blockUI: true,
+                container: '#allTasks-table',
+                type: "POST",
+                data: {
+                    timeId: id,
+                    _token: token
+                },
+                success: function(response) {
+                    if (response.activeTimerCount > 0) {
+                        $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
+                    } else {
+                        $('#show-active-timer .active-timer-count').addClass('d-none');
+                    }
 
-        //             if (response.activeTimer == null) {
-        //                 $('#timer-clock').html('');
-        //                 runTimeClock = false;
-        //             }
+                    if (response.activeTimer == null) {
+                        $('#timer-clock').html('');
+                        runTimeClock = false;
+                    }
 
-        //             if ($('#allTasks-table').length) {
-        //                 window.LaravelDataTables["allTasks-table"].draw(true);
-        //             }
-        //         }
-        //     })
-        // });
+                    if ($('#allTasks-table').length) {
+                        window.LaravelDataTables["allTasks-table"].draw(false);
+                    }
+                }
+            })
+        });
 
         $('#allTasks-table').on('click', '.resume-timer', function() {
             var id = $(this).data('time-id');
@@ -782,97 +658,12 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
 
                         $('#timer-clock').html(response.clockHtml);
                         if ($('#allTasks-table').length) {
-                            window.LaravelDataTables["allTasks-table"].draw(true);
+                            window.LaravelDataTables["allTasks-table"].draw(false);
                         }
                     }
                 }
             })
         });
-
-        $('body').on('click', '#pinnedTaskItem', function () {
-            var type = $(this).data('pinned');
-                var id = $(this).data('task-id');
-                var pinType = 'task';
-
-                var dataPin = type.trim(type);
-                if (dataPin == 'pinned') {
-                    Swal.fire({
-                        title: "@lang('messages.sweetAlertTitle')",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        focusConfirm: false,
-                        confirmButtonText: "@lang('messages.confirmUnpin')",
-                        cancelButtonText: "@lang('app.cancel')",
-                        customClass: {
-                            confirmButton: 'btn btn-primary mr-3',
-                            cancelButton: 'btn btn-secondary'
-                        },
-                        showClass: {
-                            popup: 'swal2-noanimation',
-                            backdrop: 'swal2-noanimation'
-                        },
-                        buttonsStyling: false
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            var url = "{{ route('tasks.destroy_pin', ':id') }}";
-                            url = url.replace(':id', id);
-
-                            var token = "{{ csrf_token() }}";
-                            $.easyAjax({
-                                type: 'POST',
-                                url: url,
-                                data: {
-                                    '_token': token,
-                                    'type': pinType
-                                },
-                                success: function (response) {
-                                    if (response.status == "success") {
-                                        window.location.reload();
-                                    }
-                                }
-                            })
-                        }
-                    });
-
-                } else {
-                    Swal.fire({
-                        title: "@lang('messages.sweetAlertTitle')",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        focusConfirm: false,
-                        confirmButtonText: "@lang('messages.confirmPin')",
-                        cancelButtonText: "@lang('app.cancel')",
-                        customClass: {
-                            confirmButton: 'btn btn-primary mr-3',
-                            cancelButton: 'btn btn-secondary'
-                        },
-                        showClass: {
-                            popup: 'swal2-noanimation',
-                            backdrop: 'swal2-noanimation'
-                        },
-                        buttonsStyling: false
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            var url = "{{ route('tasks.store_pin') }}?type=" + pinType;
-
-                            var token = "{{ csrf_token() }}";
-                            $.easyAjax({
-                                type: 'POST',
-                                url: url,
-                                data: {
-                                    '_token': token,
-                                    'task_id': id
-                                },
-                                success: function (response) {
-                                    if (response.status == "success") {
-                                        window.location.reload();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-            });
 
         $('#allTasks-table').on('click', '.pause-timer', function() {
             var id = $(this).data('time-id');
@@ -901,20 +692,13 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                         runTimeClock = false;
 
                         if ($('#allTasks-table').length) {
-                            window.LaravelDataTables["allTasks-table"].draw(true);
+                            window.LaravelDataTables["allTasks-table"].draw(false);
                         }
                     }
                 }
             })
         });
 
-        $('#allTasks-table').on('click', '.stop-timer', function() {
-            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
-            var id = $(this).data('time-id');
-            url = url.replace(':id', id);
-            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-            $.ajaxModal(MODAL_LG, url);
-        })
 
     </script>
 @endpush

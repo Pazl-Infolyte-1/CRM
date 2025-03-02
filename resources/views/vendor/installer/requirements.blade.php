@@ -25,4 +25,7 @@
 @stop
 @section('scripts')
     <script src="{{ asset('installer/js/jQuery-2.2.0.min.js') }}"></script>
+    <script>
+
+    </script>
 @endsection

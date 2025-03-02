@@ -1,7 +1,6 @@
 /node_modules
 /public/hot
 /public/storage
-/public/css/app-custom.css
 /public/user-uploads/*
 !public/user-uploads/.htaccess
 /storage/*.key
@@ -32,10 +31,3 @@ resources/lang/*
 !resources/lang/eng/
 !resources/lang/vendor/backup/eng
 !resources/lang/eng.json
-froiden-verify/
-resources/views/sections/custom_script.blade.php
-demo_db_copy.sql
-database/maxmind/
-public/css/app-custom.css
-public/css/theme-custom.css
-public/css/custom-css/theme-custom.css

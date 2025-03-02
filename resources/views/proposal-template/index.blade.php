@@ -80,7 +80,7 @@
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["proposal-template-table"].draw(true);
+            window.LaravelDataTables["proposal-template-table"].draw(false);
         }
 
         $('#search-text-field').on('change keyup',

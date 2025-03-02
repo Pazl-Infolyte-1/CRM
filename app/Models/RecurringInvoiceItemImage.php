@@ -31,7 +31,6 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItemImage whereUpdatedAt($value)
  * @property int $invoice_recurring_item_id
  * @method static \Illuminate\Database\Eloquent\Builder|RecurringInvoiceItemImage whereInvoiceRecurringItemId($value)
- * @property-read mixed $file
  * @mixin \Eloquent
  */
 class RecurringInvoiceItemImage extends BaseModel

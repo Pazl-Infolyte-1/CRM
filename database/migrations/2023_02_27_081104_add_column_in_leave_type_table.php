@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\MaritalStatus;
 use App\Models\Company;
 use App\Models\Designation;
 use App\Models\EmployeeDetails;
@@ -47,7 +46,7 @@ return new class extends Migration
 
                 LeaveType::where('company_id', $company->id)->update([
                     'gender' => ['male', 'female', 'others'],
-                    'marital_status' => MaritalStatus::toArray(),
+                    'marital_status' => ['married', 'unmarried'],
                     'department' => json_encode($teams),
                     'designation' => json_encode($designations),
                     'role' => json_encode($roles),
@@ -60,7 +59,7 @@ return new class extends Migration
             'gender' => 'male'
         ]);
         EmployeeDetails::whereNull('marital_status')->update([
-            'marital_status' => MaritalStatus::Single
+            'marital_status' => 'unmarried'
         ]);
 
     }

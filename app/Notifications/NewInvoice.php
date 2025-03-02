@@ -5,9 +5,8 @@ namespace App\Notifications;
 use App\Models\Invoice;
 use App\Models\EmailNotificationSetting;
 use App\Http\Controllers\InvoiceController;
-use App\Models\GlobalSetting;
+use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
-use Illuminate\Support\Facades\App;
 
 class NewInvoice extends BaseNotification
 {
@@ -38,18 +37,12 @@ class NewInvoice extends BaseNotification
     {
         $via = ($this->emailSetting->send_email == 'yes' && $notifiable->email_notifications && $notifiable->email != '') ? ['mail', 'database'] : ['database'];
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
             array_push($via, OneSignalChannel::class);
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.invoice.subject'), $this->invoice->invoice_number);
+            array_push($via, 'slack');
         }
 
         return $via;
@@ -63,7 +56,7 @@ class NewInvoice extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $newInvoice = parent::build($notifiable);
+        $newInvoice = parent::build();
 
         if (($this->invoice->project && !is_null($this->invoice->project->client)) || !is_null($this->invoice->client_id)) {
             // For Sending pdf to email
@@ -72,15 +65,12 @@ class NewInvoice extends BaseNotification
             if ($pdfOption = $invoiceController->domPdfObjectForDownload($this->invoice->id)) {
                 $pdf = $pdfOption['pdf'];
                 $filename = $pdfOption['fileName'];
-                $newInvoice->attachData($pdf->output(), $filename . '.pdf');
 
-                App::setLocale($notifiable->locale ?? $this->company->locale ?? 'en');
-
-                $url = url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->invoice->hash);
+                $url = route('front.invoice', $this->invoice->hash);
                 $url = getDomainSpecificUrl($url, $this->company);
-                $content = __('email.invoice.text') . '<br>' . __('app.invoiceNumber') . ': ' .$this->invoice->invoice_number ;
+                $content = __('email.invoice.text');
 
-                $newInvoice->subject(__('email.invoice.subject') . ' (' . $this->invoice->invoice_number . ') - ' . config('app.name') . '.')
+                $newInvoice->subject(__('email.invoice.subject') . ' - ' . config('app.name') . '.')
                     ->markdown('mail.email', [
                         'url' => $url,
                         'content' => $content,
@@ -88,6 +78,7 @@ class NewInvoice extends BaseNotification
                         'actionText' => __('email.viewInvoice'),
                         'notifiableName' => $notifiable->name
                     ]);
+                $newInvoice->attachData($pdf->output(), $filename . '.pdf');
 
                 return $newInvoice;
             }
@@ -111,8 +102,21 @@ class NewInvoice extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        return $this->slackBuild($notifiable)
-            ->content(__('email.hello') . ' ' . $notifiable->name . ' ' . __('email.invoice.subject'));
+        $slack = $notifiable->company->slackSetting;
+
+        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->to('@' . $notifiable->employee[0]->slack_username)
+                ->image($slack->slack_logo_url)
+                ->content(__('email.hello')  . ' ' .  $notifiable->name .' '. __('email.invoice.subject'));
+        }
+
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image($slack->slack_logo_url)
+            ->content('*' . __('email.invoice.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+
 
     }
 

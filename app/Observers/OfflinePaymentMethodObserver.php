@@ -7,10 +7,10 @@ use App\Models\OfflinePaymentMethod;
 class OfflinePaymentMethodObserver
 {
 
-    public function creating(OfflinePaymentMethod $offlinePaymentMethod)
+    public function creating(OfflinePaymentMethod $notification)
     {
         if (company()) {
-            $offlinePaymentMethod->company_id = company()->id;
+            $notification->company_id = company()->id;
         }
     }
 

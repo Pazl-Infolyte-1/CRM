@@ -5,38 +5,28 @@
             <span class="d-inline-block text-truncate mw-300">{{ $pageTitle }}</span>
 
             <span class="text-lightest f-12 f-w-500 ml-2 mw-250 text-truncate">
-                @if(user()?->is_superadmin)
-                    <a href="{{ route('superadmin.super_admin_dashboard') }}" class="text-lightest">@lang('app.menu.home')</a> &bull;
-                @else
-                    <a href="{{ route('dashboard') }}" class="text-lightest">@lang('app.menu.home')</a> &bull;
-                @endif
+                <a href="{{ route('dashboard') }}" class="text-lightest">@lang('app.menu.home')</a> &bull;
                 @php
                     $link = '';
                 @endphp
 
                 @for ($i = 1; $i <= count(Request::segments()); $i++)
-                    @if (($i < count(Request::segments())) && ($i > 0))
+                    @if (($i < count(Request::segments())) && ($i> 0))
                         @php $link .= '/' . Request::segment($i); @endphp
 
                         @if (Request::segment($i) != 'account')
-                            @php
-                                $langKey = 'app.'.str(Request::segment($i))->camel();
+                            <a href="{{str_contains(url()->current(),'public')?'/public'.$link:$link }}" class="text-lightest">
+                                @php
+                                    $langKey = 'app.'.str(Request::segment($i))->camel();
 
-                            
-                                if (!Lang::has($langKey)) {
-                                    $langKey = str($langKey)->replace('app.', 'app.menu.')->__toString();
-                                }
-                                $segmentText = Lang::has($langKey) ? __($langKey) : ucwords(str_replace('-', ' ', Request::segment($i)));
-                                $segmentLink = str_contains(url()->current(), 'public') ? '/public' . $link : $link;
-                            @endphp
+                                    if (!Lang::has($langKey)) {
+                                        $langKey = str($langKey)->replace('app.', 'app.menu.')->__toString();
+                                    }
 
-                            @if (in_array(Request::segment($i), App\Enums\NonClickableSegments::getValues()))
-                                {{ $segmentText }} &bull;
-                            @else
-                                <a href="{{ $segmentLink }}" class="text-lightest">
-                                    {{ $segmentText }}
-                                </a> &bull;
-                            @endif
+                                @endphp
+
+                                {{ Lang::has($langKey) ? __($langKey) : ucwords(str_replace('-', ' ', Request::segment($i)))}}
+                </a> &bull;
                         @endif
                     @else
                         {{ $pageTitle }}

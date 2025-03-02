@@ -1788,9 +1788,9 @@ namespace App\Models{
  * @property-read \App\Models\Currency|null $currency
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\LeadFiles[] $files
  * @property-read int|null $files_count
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\DealFollowUp[] $follow
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\LeadFollowUp[] $follow
  * @property-read int|null $follow_count
- * @property-read \App\Models\DealFollowUp|null $followup
+ * @property-read \App\Models\LeadFollowUp|null $followup
  * @property-read mixed $extras
  * @property-read mixed $icon
  * @property-read mixed $image_url
@@ -1934,6 +1934,7 @@ namespace App\Models{
  * @property int|null $last_updated_by
  * @property-read mixed $file_url
  * @property-read mixed $icon
+ * @property-read \App\Models\Lead $lead
  * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles query()
@@ -1956,7 +1957,7 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * App\Models\DealFollowUp
+ * App\Models\LeadFollowUp
  *
  * @property int $id
  * @property int $lead_id
@@ -1967,19 +1968,20 @@ namespace App\Models{
  * @property int|null $added_by
  * @property int|null $last_updated_by
  * @property-read mixed $icon
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp query()
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereAddedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereLastUpdatedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereLeadId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereNextFollowUpDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereRemark($value)
- * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereUpdatedAt($value)
+ * @property-read \App\Models\Lead $lead
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp query()
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereAddedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereLastUpdatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereLeadId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereNextFollowUpDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereRemark($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereUpdatedAt($value)
  */
-	class DealFollowUp extends \Eloquent {}
+	class LeadFollowUp extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -3275,6 +3277,7 @@ namespace App\Models{
  * @property-read mixed $icon
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\ProposalItem[] $items
  * @property-read int|null $items_count
+ * @property-read \App\Models\Lead $lead
  * @property-read \App\Models\ProposalSign|null $signature
  * @method static \Illuminate\Database\Eloquent\Builder|Proposal newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Proposal newQuery()

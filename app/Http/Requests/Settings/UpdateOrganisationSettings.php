@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Settings;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateOrganisationSettings extends CoreRequest
 {
@@ -26,7 +27,7 @@ class UpdateOrganisationSettings extends CoreRequest
     {
         $rules = [
             'company_name' => 'required|max:60',
-            'company_email' => 'required|email:rfc,strict|max:100',
+            'company_email' => 'required|email:rfc|max:100',
             'company_phone' => 'required|max:20',
             'website' => 'nullable|url|max:50'
         ];

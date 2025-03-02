@@ -82,10 +82,10 @@ class IncomeVsExpenseReportController extends AccountBaseController
 
             if ($invoice->currency_id != $this->company->currency_id && $invoice->total > 0 && $exchangeRate > 0) {
                 /** @phpstan-ignore-next-line */
-                $incomes[$invoice->date] += floatval($invoice->total) * floatval($exchangeRate);
+                $incomes[$invoice->date] += floor($invoice->total / $exchangeRate);
             }
             else {
-                $incomes[$invoice->date] += floatval($invoice->total);
+                $incomes[$invoice->date] += round($invoice->total, 2);
             }
         }
 
@@ -121,10 +121,10 @@ class IncomeVsExpenseReportController extends AccountBaseController
 
             if ($expenseResult->currency_id != $this->company->currency_id && $expenseResult->price > 0 && $exchangeRate > 0) {
                 /** @phpstan-ignore-next-line */
-                $expenses[$expenseResult->date] += floatval($expenseResult->price) * floatval($exchangeRate);
+                $expenses[$expenseResult->date] += round(floatval($expenseResult->price) / floatval($exchangeRate), 2);
             }
             else {
-                $expenses[$expenseResult->date] += floatval($expenseResult->price);
+                $expenses[$expenseResult->date] += round(floatval($expenseResult->price), 2);
             }
         }
 

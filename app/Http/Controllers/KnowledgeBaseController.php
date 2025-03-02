@@ -6,6 +6,7 @@ use App\Helper\Reply;
 use Illuminate\Http\Request;
 use App\Models\KnowledgeBase;
 use App\Models\KnowledgeBaseCategory;
+use App\Http\Controllers\AccountBaseController;
 use App\Http\Requests\KnowledgeBase\KnowledgeBaseStore;
 
 class KnowledgeBaseController extends AccountBaseController
@@ -17,7 +18,6 @@ class KnowledgeBaseController extends AccountBaseController
         $this->pageTitle = 'app.menu.knowledgebase';
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('knowledgebase', $this->user->modules));
-
             return $next($request);
         });
     }
@@ -36,12 +36,9 @@ class KnowledgeBaseController extends AccountBaseController
         $this->categories = KnowledgeBaseCategory::with('knowledgebase')->get();
         $this->knowledgebases = KnowledgeBase::with('knowledgebasecategory');
 
-        if (!in_array('admin', user_roles())) {
+        if (!in_array('admin', user_roles()))
+        {
             $this->knowledgebases = $this->knowledgebases->where('to', in_array('client', user_roles()) ? 'client' : 'employee');
-
-            // Show only those records which has  knowledgebase means do not show categories that
-            // Does not belong to them
-            $this->categories = KnowledgeBaseCategory::with('knowledgebase')->whereHas('knowledgebase')->get();
         }
 
         if (request()->id != '') {
@@ -49,8 +46,7 @@ class KnowledgeBaseController extends AccountBaseController
             $this->activeMenu = str_replace(' ', '_', $category->name);
             $this->knowledgebases = $this->knowledgebases->where('category_id', request('id'));
 
-        }
-        else {
+        } else {
             $this->activeMenu = 'all_category';
         }
 
@@ -82,12 +78,10 @@ class KnowledgeBaseController extends AccountBaseController
 
         if (request()->ajax()) {
             $html = view('knowledge-base.ajax.create', $this->data)->render();
-
             return Reply::dataOnly(['status' => 'success', 'html' => $html, 'categories' => $this->categories, 'selected_category_id' => $id, 'title' => $this->pageTitle]);
         }
 
         $this->view = 'knowledge-base.ajax.create';
-
         return view('knowledge-base.create', $this->data);
     }
 
@@ -105,15 +99,13 @@ class KnowledgeBaseController extends AccountBaseController
         $knowledgeBase->added_by = user()->id;
         $knowledgeBase->save();
 
-        $redirectUrl = route('knowledgebase.index') . '?id=' . $knowledgeBase->category_id;
-
-        return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => $redirectUrl, 'knowledgeBaseId' => $knowledgeBase->id]);
+        return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => route('knowledgebase.index'), 'knowledgeBaseId' => $knowledgeBase->id]);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -123,21 +115,20 @@ class KnowledgeBaseController extends AccountBaseController
 
         $this->knowledge = KnowledgeBase::findOrFail($id);
 
-        $this->pageTitle = __('modules.knowledgeBase.knowledgebase');
-
-        $this->view = 'knowledge-base.ajax.show';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $this->pageTitle = __('modules.knowledgeBase.knowledgebase');
+            $html = view('knowledge-base.ajax.show', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'knowledge-base.ajax.show';
         return view('knowledge-base.create', $this->data);
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
 
@@ -151,11 +142,12 @@ class KnowledgeBaseController extends AccountBaseController
 
         $this->pageTitle = __('modules.knowledgeBase.updateknowledge');
 
-        $this->view = 'knowledge-base.ajax.edit';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('knowledge-base.ajax.edit', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'knowledge-base.ajax.edit';
 
         return view('knowledge-base.create', $this->data);
     }
@@ -173,15 +165,13 @@ class KnowledgeBaseController extends AccountBaseController
         $knowledge->added_by = user()->id;
         $knowledge->save();
 
-        $redirectUrl = route('knowledgebase.index') . '?id=' . $knowledge->category_id;
-
-        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => $redirectUrl]);
+        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('knowledgebase.index')]);
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
@@ -190,7 +180,6 @@ class KnowledgeBaseController extends AccountBaseController
         abort_403(!in_array($this->deletePermission, ['all', 'added']));
 
         KnowledgeBase::destroy($id);
-
         return Reply::successWithData(__('messages.deleteSuccess'), ['redirectUrl' => route('knowledgebase.index')]);
 
     }
@@ -200,10 +189,9 @@ class KnowledgeBaseController extends AccountBaseController
         switch ($request->action_type) {
         case 'delete':
             $this->deleteRecords($request);
-
-            return Reply::success(__('messages.deleteSuccess'));
+                return Reply::success(__('messages.deleteSuccess'));
         default:
-            return Reply::error(__('messages.selectAction'));
+                return Reply::error(__('messages.selectAction'));
         }
     }
 
@@ -219,8 +207,9 @@ class KnowledgeBaseController extends AccountBaseController
     {
         $model = KnowledgeBase::query();
 
-        if ($srch_query != '') {
-            $model->where('heading', 'LIKE', '%' . $srch_query . '%');
+        if ($srch_query != '')
+        {
+            $model->where('heading', 'LIKE', '%'.$srch_query.'%');
         }
 
         if (in_array('employee', user_roles()) && !in_array('admin', user_roles())) {

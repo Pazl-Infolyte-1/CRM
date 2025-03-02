@@ -30,7 +30,7 @@ $manageCategoryPermission = user()->permission('manage_discussion_category');
         <div class="d-flex" id="table-actions">
             @if (($addDiscussionPermission == 'all' || $addDiscussionPermission == 'added' || $project->project_admin == user()->id) && !$project->trashed())
                 <x-forms.button-primary class="mr-3 float-left" id="add-discussion" icon="plus" data-redirect-url="{{ route('projects.show', $project->id) . '?tab=discussion' }}">
-                    @lang('app.newDiscussion')
+                    @lang('app.new') @lang('modules.projects.discussion')
                 </x-forms.button-primary>
             @endif
 
@@ -85,7 +85,7 @@ $manageCategoryPermission = user()->permission('manage_discussion_category');
     });
 
     const showTable = () => {
-        window.LaravelDataTables["discussion-table"].draw(true);
+        window.LaravelDataTables["discussion-table"].draw(false);
     }
 
     $('#discussion_category').change(function() {
@@ -127,7 +127,7 @@ $manageCategoryPermission = user()->permission('manage_discussion_category');
                     },
                     success: function(response) {
                         if (response.status == "success") {
-                            window.LaravelDataTables["discussion-table"].draw(true);
+                            window.LaravelDataTables["discussion-table"].draw(false);
                         }
                     }
                 });

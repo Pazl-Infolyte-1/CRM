@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Language;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class AutoTranslateRequest extends CoreRequest
 {

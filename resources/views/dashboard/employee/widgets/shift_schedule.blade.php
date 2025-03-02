@@ -27,9 +27,7 @@
                                     @endif
 
                                     @if (!is_null($weekShifts[$key]->remarks) && $weekShifts[$key]->remarks != '')
-                                        <i class="fa fa-info-circle text-dark-grey" data-toggle="popover"
-                                           data-placement="top" data-content="{{ $weekShifts[$key]->remarks }}"
-                                           data-html="true" data-trigger="hover"></i>
+                                        <i class="fa fa-info-circle text-dark-grey" data-toggle="popover" data-placement="top" data-content="{{ $weekShifts[$key]->remarks }}" data-html="true" data-trigger="hover"></i>
                                     @endif
                                 @else
                                     {!! $weekShifts[$key] !!}
@@ -41,18 +39,14 @@
                                         @if (!is_null($weekShifts[$key]->requestChange) && $weekShifts[$key]->requestChange->status == 'waiting')
                                             <div class="task_view">
                                                 <a href="javascript:;"
-                                                   data-shift-schedule-id="{{ $weekShifts[$key]->id }}"
-                                                   data-shift-schedule-date="{{ $weekDate->translatedFormat('Y-m-d') }}"
-                                                   data-shift-id="{{$weekShifts[$key]->shift->id}}"
-                                                   class="taskView border-right-0 request-shift-change f-11">@lang('modules.attendance.requestPending')</a>
+                                                   data-shift-schedule-id="{{ $weekShifts[$key]->id }}" data-shift-schedule-date="{{ $weekDate->translatedFormat(company()->date_format) }}"
+                                                   data-shift-id="{{$weekShifts[$key]->shift->id}}" class="taskView border-right-0 request-shift-change f-11">@lang('modules.attendance.requestPending')</a>
                                             </div>
                                         @else
                                             <div class="task_view">
                                                 <a href="javascript:;"
-                                                   data-shift-schedule-id="{{ $weekShifts[$key]->id }}"
-                                                   data-shift-schedule-date="{{ $weekDate->translatedFormat('Y-m-d') }}"
-                                                   data-shift-id="{{$weekShifts[$key]->shift->id}}"
-                                                   class="taskView border-right-0 request-shift-change f-11">@lang('modules.attendance.requestChange')</a>
+                                                   data-shift-schedule-id="{{ $weekShifts[$key]->id }}" data-shift-schedule-date="{{ $weekDate->translatedFormat(company()->date_format) }}"
+                                                   data-shift-id="{{$weekShifts[$key]->shift->id}}" class="taskView border-right-0 request-shift-change f-11">@lang('modules.attendance.requestChange')</a>
                                             </div>
                                         @endif
                                     @else

@@ -5,6 +5,8 @@ namespace App\Notifications;
 use App\Models\EmailNotificationSetting;
 use App\Models\Project;
 use App\Models\SlackSetting;
+use App\Models\Task;
+use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
 
@@ -33,7 +35,7 @@ class ProjectNoteMention extends BaseNotification
     /**
      * Get the notification's delivery channels.
      *
-     * @param mixed $notifiable
+     * @param  mixed $notifiable
      * @return array
      */
     public function via($notifiable)
@@ -45,17 +47,11 @@ class ProjectNoteMention extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
+            array_push($via, 'slack');
         }
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
             array_push($via, OneSignalChannel::class);
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.projectNote.mentionSubject'), $this->project->project_name);
         }
 
         return $via;
@@ -64,7 +60,7 @@ class ProjectNoteMention extends BaseNotification
     /**
      * Get the mail representation of the notification.
      *
-     * @param mixed $notifiable
+     * @param  mixed $notifiable
      * @return \Illuminate\Notifications\Messages\MailMessage
      */
     public function toMail($notifiable)
@@ -74,15 +70,15 @@ class ProjectNoteMention extends BaseNotification
 
         $content = __('email.projectNote.mentionText') . ' - ' . $this->project->project_name . '<br>';
 
-        return parent::build($notifiable)
+        return parent::build()
             ->subject(__('email.projectNote.mentionSubject') . ' - ' . config('app.name') . '.')
             ->markdown(
                 'mail.email', [
-                    'url' => $url,
-                    'content' => $content,
-                    'themeColor' => $this->company->header_color,
-                    'actionText' => __('email.projectNote.action'),
-                    'notifiableName' => $notifiable->name
+                'url' => $url,
+                'content' => $content,
+                'themeColor' => $this->company->header_color,
+                'actionText' => __('email.projectNote.action'),
+                'notifiableName' => $notifiable->name
                 ]
             );
 
@@ -91,7 +87,7 @@ class ProjectNoteMention extends BaseNotification
     /**
      * Get the array representation of the notification.
      *
-     * @param mixed $notifiable
+     * @param  mixed $notifiable
      * @return array
      */
 //phpcs:ignore
@@ -107,15 +103,26 @@ class ProjectNoteMention extends BaseNotification
     /**
      * Get the Slack representation of the notification.
      *
-     * @param mixed $notifiable
-     * @return \Illuminate\Notifications\Messages\SlackMessage
+     * @param  mixed $notifiable
+     * @return SlackMessage
      */
     public function toSlack($notifiable)
     {
+        $slack = $notifiable->company->slackSetting;
 
-        return $this->slackBuild($notifiable)
-            ->content('*' . __('email.projectNote.mentionText') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . $this->project->project_name);
+        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
 
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->to('@' . $notifiable->employee[0]->slack_username)
+                ->content('*' . __('email.projectNote.mentionText') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . $this->project->project_name);
+        }
+
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image($slack->slack_logo_url)
+            ->content('*' . __('email.projectNote.mentionSubject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

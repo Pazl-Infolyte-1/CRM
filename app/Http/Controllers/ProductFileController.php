@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Helper\Files;
 use App\Models\Product;
 use App\Models\ProductFiles;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 
 class ProductFileController extends AccountBaseController

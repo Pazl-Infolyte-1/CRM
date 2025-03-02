@@ -30,7 +30,6 @@ use App\Traits\HasCompany;
  * @method static \Illuminate\Database\Eloquent\Builder|TaskLabelList whereProjectId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|TaskLabelList whereCompanyId($value)
  * @mixin \Eloquent
- * @property-read \App\Models\Company $company
  */
 class TaskLabelList extends BaseModel
 {

@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Models\Deal;
+use App\Models\Lead;
 use App\Models\LeadStatus;
 use App\Models\User;
 use App\Models\UserLeadboardSetting;
@@ -29,7 +29,7 @@ class LeadStatusObserver
         $defaultStatus = LeadStatus::where('default', 1)->first();
         abort_403($defaultStatus->id == $leadStatus->id);
 
-        Deal::where('status_id', $leadStatus->id)->update(['status_id' => $defaultStatus->id]);
+        Lead::where('status_id', $leadStatus->id)->update(['status_id' => $defaultStatus->id]);
     }
 
     public function creating(LeadStatus $leadStatus)

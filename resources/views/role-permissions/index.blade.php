@@ -30,7 +30,7 @@
 
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
-                    <h2 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                         @lang($pageTitle)</h2>
                 </div>
             </x-slot>
@@ -40,7 +40,7 @@
                     <div class="d-flex justify-content-between border rounded my-3 px-4 py-2 align-items-center">
                         <div>
                             <div class="heading-h4">{{ $role->display_name }}</div>
-                            <div class="simple-text text-lightest mt-1">{{ $role->name == 'employee' ? ($role->users_count - $otherRoleUserCount) : $role->users_count }} @lang('app.member')
+                            <div class="simple-text text-lightest mt-1">{{ $role->users_count }} @lang('app.member')
                             </div>
                         </div>
                         <div>
@@ -66,7 +66,6 @@
 
 @push('scripts')
     <script>
-
         $('body').on('click', '.view-permission', function() {
             var roleId = $(this).data('role-id');
             var url = "{{ route('role-permissions.permissions') }}";
@@ -88,10 +87,6 @@
                         } else {
                             $('.role-permissions').html('');
                             $('#role-permission-' + roleId).html(response.html);
-
-                            setTimeout(function(){
-                                $('[data-toggle="popover"]').popover();
-                            }, 300);
                         }
                     }
                 }

@@ -26,17 +26,10 @@ class StoreCustomTicket extends CoreRequest
      */
     public function rules()
     {
-        \Illuminate\Support\Facades\Validator::extend('check_superadmin', function ($attribute, $value, $parameters, $validator) {
-            return !\App\Models\User::withoutGlobalScopes([\App\Scopes\ActiveScope::class, \App\Scopes\CompanyScope::class])
-                ->where('email', $value)
-                ->where('is_superadmin', 1)
-                ->exists();
-        });
-
         $setting = \global_setting();
         $rules = array();
         $rules['name'] = 'required';
-        $rules['email'] = 'required|email:rfc,strict|check_superadmin';
+        $rules['email'] = 'required|email:rfc';
         $rules['ticket_subject'] = 'required';
         $rules['assign_group'] = 'required';
         $rules['message'] = 'required|sometimes';
@@ -58,13 +51,6 @@ class StoreCustomTicket extends CoreRequest
         $attributes = $this->customFieldsAttributes($attributes);
 
         return $attributes;
-    }
-
-    public function messages()
-    {
-        return [
-            'email.check_superadmin' => __('superadmin.emailCantUse'),
-        ];
     }
 
 }

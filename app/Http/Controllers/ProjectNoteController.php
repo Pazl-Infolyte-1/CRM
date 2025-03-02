@@ -49,12 +49,12 @@ class ProjectNoteController extends AccountBaseController
 
         $this->userData = $userData;
 
-        $this->view = 'projects.notes.create';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('projects.notes.create', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'projects.notes.create';
         return view('projects.create', $this->data);
     }
 
@@ -126,13 +126,13 @@ class ProjectNoteController extends AccountBaseController
 
         $this->pageTitle = $this->note->title;
 
-        $this->view = 'projects.notes.show';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('projects.notes.show', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
-        return redirect(route('projects.show', $this->note->project_id) . '?tab=notes');
+        $this->view = 'projects.notes.show';
+        return view('payments.create', $this->data);
 
     }
 
@@ -160,12 +160,12 @@ class ProjectNoteController extends AccountBaseController
 
         $this->pageTitle = __('app.editProjectNote');
 
-        $this->view = 'projects.notes.edit';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('projects.notes.edit', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'projects.notes.edit';
         return view('projects.create', $this->data);
     }
 

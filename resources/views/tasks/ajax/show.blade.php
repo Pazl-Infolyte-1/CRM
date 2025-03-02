@@ -1,19 +1,18 @@
 @php
-    $editTaskPermission = user()->permission('edit_tasks');
-    $sendReminderPermission = user()->permission('send_reminder');
-    $changeStatusPermission = user()->permission('change_status');
-    $viewProjectPermission = user()->permission('view_projects');
+$editTaskPermission = user()->permission('edit_tasks');
+$sendReminderPermission = user()->permission('send_reminder');
+$changeStatusPermission = user()->permission('change_status');
+$viewProjectPermission = user()->permission('view_projects');
 
 @endphp
 
 <div id="task-detail-section">
 
-
     <h3 class="heading-h1 mb-3">{{ $task->heading }}</h3>
     <div class="row">
         <div class="col-sm-9">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-8 col-10">
                             @if ($changeStatusPermission == 'all'
@@ -22,133 +21,82 @@
                             || ($changeStatusPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
                             || ($task->project && $task->project->project_admin == user()->id)
                             )
-                            {{-- approval_send --}}
-                                @php
-                                    $userRoles = user_roles();
-                                    $isAdmin = in_array('admin', $userRoles);
-                                    $isEmployee = in_array('employee', $userRoles);
-                                @endphp
-
-                                @if($task->project && $task->project->need_approval_by_admin == 1 && ($isEmployee && $task->project->project_admin != user()->id) && !$isAdmin && $task->boardColumn->slug != 'completed')
-                                    <x-forms.button-primary icon="check" data-send-approval="1"
-                                                            class="send-approval mr-2 mb-2 mb-lg-0 mb-md-0
-                                                            {{ $task->approval_send == 1 ? 'disabled' : '' }}">
-                                        @lang('modules.tasks.sendForApproval')
+                                @if ($task->boardColumn->slug != 'completed')
+                                    <x-forms.button-primary icon="check" data-status="completed"
+                                        class="change-task-status mr-2 mb-2 mb-lg-0 mb-md-0">
+                                        @lang('modules.tasks.markComplete')
                                     </x-forms.button-primary>
                                 @else
-                                    @if ($task->boardColumn->slug != 'completed')
-                                        <x-forms.button-primary icon="check" data-status="completed"
-                                                                class="change-task-status mr-2 mb-2 mb-lg-0 mb-md-0">
-                                            @lang('modules.tasks.markComplete')
-                                        </x-forms.button-primary>
-                                    @else
-                                        <x-forms.button-secondary icon="times" data-status="incomplete"
-                                                                class="change-task-status mr-3">
-                                            @lang('modules.tasks.markIncomplete')
-                                        </x-forms.button-secondary>
-                                    @endif
+                                    <x-forms.button-secondary icon="times" data-status="incomplete"
+                                        class="change-task-status mr-3">
+                                        @lang('modules.tasks.markIncomplete')
+                                    </x-forms.button-secondary>
                                 @endif
                             @endif
 
                             @if ($task->boardColumn->slug != 'completed' && !is_null($task->is_task_user) && in_array('timelogs', user_modules()))
                                 @if (is_null($task->userActiveTimer))
-                                    @if($task->approval_send == 0)
-                                        <x-forms.button-secondary id="start-task-timer" icon="play">
-                                            @lang('modules.timeLogs.startTimer')
-                                        </x-forms.button-secondary>
-                                    @endif
-                                @else
-                                    <span class="border p-2 rounded mr-2 bg-light"><i
-                                            class="fa fa-clock mr-1"></i><span
-                                            id="active-task-timer">{{ $task->userActiveTimer->timer }}</span></span>
+                                    <x-forms.button-secondary id="start-task-timer" icon="play">
+                                        @lang('modules.timeLogs.startTimer')
+                                    </x-forms.button-secondary>
+                                @elseif (!is_null($task->userActiveTimer))
+
+                                    <span class="border p-2 rounded mr-2 bg-light"><i class="fa fa-clock mr-1"></i><span id="active-task-timer">{{ $task->userActiveTimer->timer }}</span></span>
 
                                     @if (is_null($task->userActiveTimer->activeBreak))
-                                        <x-forms.button-secondary icon="pause-circle"
-                                                                  data-time-id="{{ $task->userActiveTimer->id }}"
-                                                                  id="pause-timer-btn" class="mr-2"
-                                                                  data-url="{{ url()->current() }}">@lang('modules.timeLogs.pauseTimer')
-                                        </x-forms.button-secondary>
+                                        <x-forms.button-secondary icon="pause-circle" data-time-id="{{ $task->userActiveTimer->id }}" id="pause-timer-btn" class="mr-2" data-url="{{ url()->current() }}">@lang('modules.timeLogs.pauseTimer')</x-forms.button-secondary>
 
                                         <x-forms.button-secondary data-time-id="{{ $task->userActiveTimer->id }}"
-                                                                  id="stop-task-timer" icon="stop-circle"
-                                                                  data-url="{{ url()->current() }}">
+                                            id="stop-task-timer" icon="stop-circle" data-url="{{ url()->current() }}">
                                             @lang('modules.timeLogs.stopTimer')
                                         </x-forms.button-secondary>
                                     @else
-                                        <x-forms.button-secondary id="resume-timer-btn" icon="play-circle"
-                                                                  data-url="{{ url()->current() }}"
-                                                                  data-time-id="{{ $task->userActiveTimer->activeBreak->id }}">
-                                            @lang('modules.timeLogs.resumeTimer')
-                                        </x-forms.button-secondary>
+                                        <x-forms.button-secondary id="resume-timer-btn" icon="play-circle" data-url="{{ url()->current() }}"
+                                        data-time-id="{{ $task->userActiveTimer->activeBreak->id }}">@lang('modules.timeLogs.resumeTimer')</x-forms.button-secondary>
                                     @endif
 
                                 @endif
                             @endif
                         </div>
-                        <div class="col-2 col-lg-4 d-flex justify-content-end text-right">
+                        <div class="col-lg-4 col-2 text-right">
                             <div class="dropdown">
                                 <button
-                                    class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
+                                    class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
                                     type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <i class="fa fa-ellipsis-h"></i>
                                 </button>
 
                                 <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
-                                     aria-labelledby="dropdownMenuLink" tabindex="0">
+                                    aria-labelledby="dropdownMenuLink" tabindex="0">
 
                                     @if ($sendReminderPermission == 'all' && $task->boardColumn->slug != 'completed')
                                         <a class="dropdown-item" id="reminderButton"
-                                           href="javascript:;">@lang('modules.tasks.reminder')</a>
+                                            href="javascript:;">@lang('modules.tasks.reminder')</a>
                                     @endif
 
-                                    @php
-                                        $trashBtn = (!is_null($task->project) && is_null($task->project->deleted_at)) ? true : (is_null($task->project) ? true : false) ;
-                                    @endphp
-
-                                    @if ($trashBtn && $editTaskPermission == 'all'
-                                    || ($editTaskPermission == 'added' && $task->added_by == user()->id)
-                                    || ($editTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
-                                    || ($editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
-                                    || ($task->project && $task->project->project_admin == user()->id))
-                                        @php
-                                            $hideEditButton = false;
-
-                                            // Check if project approval is enabled and if the task is sent for approval
-                                            if ($task->project && $task->project->need_approval_by_admin == 1) {
-                                                if ($task->approval_send == 1) {
-                                                    // Task approval sent, hide edit button for non-approved users
-                                                    if (!in_array(user()->type, ['user']) && $task->project->project_admin != user()->id) {
-                                                        $hideEditButton = true;
-                                                    }elseif (in_array(user()->type, ['user']) && in_array(user()->type, ['admin'])) {
-                                                        $hideEditButton = false;
-                                                    }
-                                                }
-                                            }
-                                        @endphp
-                                        @if (!$hideEditButton)
-                                            <a class="dropdown-item openRightModal"
+                                    @if ($editTaskPermission == 'all' || ($editTaskPermission == 'added' && $task->added_by == user()->id) || ($task->project && $task->project->project_admin == user()->id))
+                                        <a class="dropdown-item openRightModal"
                                             href="{{ route('tasks.edit', $task->id) }}">@lang('app.edit')
-                                                @lang('app.task')</a>
+                                            @lang('app.task')</a>
 
-                                            <hr class="my-1">
-                                        @endif
+                                        <hr class="my-1">
                                     @endif
 
                                     @php $pin = $task->pinned() @endphp
 
                                     @if ($pin)
                                         <a class="dropdown-item" href="javascript:;" id="pinnedItem"
-                                           data-pinned="pinned">@lang('app.unpin')
+                                            data-pinned="pinned">@lang('app.unpin')
                                             @lang('app.task')</a>
                                     @else
                                         <a class="dropdown-item" href="javascript:;" id="pinnedItem"
-                                           data-pinned="unpinned">@lang('app.pin')
+                                            data-pinned="unpinned">@lang('app.pin')
                                             @lang('app.task')</a>
                                     @endif
 
                                     @if (($taskSettings->copy_task_link == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                                         <a class="dropdown-item btn-copy" href="javascript:;"
-                                           data-clipboard-text="{{ url()->temporarySignedRoute('front.task_detail', now()->addDays(App\Models\GlobalSetting::SIGNED_ROUTE_EXPIRY), $task->hash) }}">@lang('modules.tasks.copyTaskLink')</a>
+                                        data-clipboard-text="{{ route('front.task_detail', $task->hash) }}">@lang('modules.tasks.copyTaskLink')</a>
                                     @endif
                                 </div>
                             </div>
@@ -159,8 +107,7 @@
                 <div class="card-body">
                     @if (($taskSettings->project == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                         <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                            @if (in_array('projects', user_modules()))
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">@lang('app.project')</p>
+                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">@lang('app.project')</p>
                             <p class="mb-0 text-dark-grey f-14 w-70">
                                 @if ($task->project_id)
                                     @if ($task->project->status == 'in progress')
@@ -179,80 +126,77 @@
                                     || ($viewProjectPermission == 'owned' && user()->id == $task->project->client_id && in_array('client', user_roles()))
                                     || ($viewProjectPermission == 'both' && (user()->id == $task->project->client_id || user()->id == $task->added_by))
                                     )
-                                        <a href="{{ route('projects.show', $task->project_id) }}"
-                                           class="text-dark-grey">
-                                            {{ $task->project->project_name }}</a>
+                                    <a href="{{ route('projects.show', $task->project_id) }}" class="text-dark-grey">
+                                        {{ $task->project->project_name }}</a>
                                     @else
-                                        {{ $task->project->project_name }}
+                                    {{ $task->project->project_name }}
                                     @endif
                                 @else
                                     --
                                 @endif
                             </p>
-                            @endif
 
                         </div>
                     @endif
 
                     @if (($taskSettings->priority == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()) )
                         <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                                 @lang('modules.tasks.priority')</p>
-                            <p class="mb-0 text-dark-grey f-14 w-70">
-                                @if ($task->priority == 'high')
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    @if ($task->priority == 'high')
                                     <i class="fa fa-circle mr-1 text-red f-10"></i>
-                                @elseif ($task->priority == 'medium')
+                                    @elseif ($task->priority == 'medium')
                                     <i class="fa fa-circle mr-1 text-yellow f-10"></i>
-                                @else
+                                    @else
                                     <i class="fa fa-circle mr-1 text-dark-green f-10"></i>
-                                @endif
-                                @lang('app.'.$task->priority)
-                            </p>
+                                    @endif
+                                    @lang('app.'.$task->priority)
+                                </p>
                         </div>
                     @endif
 
                     @if (($taskSettings->assigned_to == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                         <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                                 @lang('modules.tasks.assignTo')</p>
-                            @if (count($task->users) > 0)
-                                @if (count($task->users) > 1)
-                                    @foreach ($task->users as $item)
-                                        <div class="taskEmployeeImg rounded-circle mr-1">
-                                            <a href="{{ route('employees.show', $item->id) }}">
-                                                <img data-toggle="tooltip" data-original-title="{{ $item->name }}"
-                                                     src="{{ $item->image_url }}">
-                                            </a>
-                                        </div>
-                                    @endforeach
+                                @if (count($task->users) > 0)
+                                    @if (count($task->users) > 1)
+                                        @foreach ($task->users as $item)
+                                            <div class="taskEmployeeImg rounded-circle mr-1">
+                                                <a href="{{ route('employees.show', $item->id) }}">
+                                                    <img data-toggle="tooltip" data-original-title="{{ $item->name }}"
+                                                        src="{{ $item->image_url }}">
+                                                </a>
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        @foreach ($task->users as $item)
+                                            <x-employee :user="$item" />
+                                        @endforeach
+                                    @endif
                                 @else
-                                    @foreach ($task->users as $item)
-                                        <x-employee :user="$item"/>
-                                    @endforeach
-                                @endif
-                            @else
                                 --
                             @endif
                         </div>
                     @endif
 
                     <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">@lang('modules.taskShortCode')</p>
+                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">@lang('modules.taskShortCode')</p>
                         <p class="mb-0 text-dark-grey f-14 w-70">
-                            {{ ($task->task_short_code) ?  : '--' }}
+                           {{ ($task->task_short_code) ? $task->task_short_code : '--' }}
                         </p>
                     </div>
 
-                    <x-cards.data-row :label="__('modules.projects.milestones')"
-                                      :value="$task->milestone->milestone_title ?? '--'"/>
+                    <x-cards.data-row :label="__('modules.projects.milestones')" :value="$task->milestone->milestone_title ?? '--'" />
 
                     @if (($taskSettings->assigned_by == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                         @if ($task->created_by)
                             <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                                     @lang('modules.tasks.assignBy')</p>
                                 {{-- <p class="mb-0 text-dark-grey f-14 w-70"> --}}
-                                <x-employee :user="$task->createBy"/>
+                                <x-employee :user="$task->createBy" />
                                 {{-- </p> --}}
                             </div>
                         @endif
@@ -260,20 +204,15 @@
 
                     @if (($taskSettings->label == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                         <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                                 @lang('app.label')</p>
                             <p class="mb-0 text-dark-grey f-14 w-70">
                                 @forelse ($task->labels as $key => $label)
                                     <span class='badge badge-secondary'
-                                          style='background-color: {{ $label->label_color }}'
-                                          @if ($label->description)
-                                                data-toggle="popover"
-                                                data-placement="top"
-                                                data-content="{!! $label->description !!}"
-                                                data-html="true"
-                                                data-trigger="hover"
-                                            @endif
-                                            >{!! $label->label_name !!} </span>
+                                        style='background-color: {{ $label->label_color }}'>{{ $label->label_name }} </span>
+                                        @if ($label->description)
+                                            <i class="fa fa-question-circle" data-toggle="popover" data-placement="top" data-content="{{ $label->description }}" data-html="true" data-trigger="hover"></i>
+                                        @endif
                                 @empty
                                     --
                                 @endforelse
@@ -283,21 +222,17 @@
 
                     @if (in_array('gitlab', user_modules()) && isset($gitlabIssue))
                         <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                            <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                                 GitLab</p>
                             <div class="mb-0 w-70">
                                 <div class='card border'>
-                                    <div
-                                        class="card-body bg-white d-flex justify-content-between p-2 align-items-center rounded">
+                                    <div class="card-body bg-white d-flex justify-content-between p-2 align-items-center rounded">
                                         <h4 class="f-13 f-w-500 mb-0">
                                             <img src="{{ asset('img/gitlab-icon-rgb.png') }}" class="height-35">
-                                            <a href="{{ $gitlabIssue['web_url'] }}" class="text-darkest-grey f-w-500"
-                                               target="_blank">#{{ $gitlabIssue['iid'] }} {{ $gitlabIssue['title'] }} <i
-                                                    class="fa fa-external-link-alt"></i></a>
+                                            <a href="{{ $gitlabIssue['web_url'] }}" class="text-darkest-grey f-w-500" target="_blank">#{{ $gitlabIssue['iid'] }} {{ $gitlabIssue['title'] }} <i class="fa fa-external-link-alt"></i></a>
                                         </h4>
                                         <div>
-                                            <span
-                                                class="badge badge-{{ $gitlabIssue['state'] == 'opened' ? 'danger' : 'success' }}">{{ $gitlabIssue['state'] }}</span>
+                                            <span class="badge badge-{{ $gitlabIssue['state'] == 'opened' ? 'danger' : 'success' }}">{{ $gitlabIssue['state'] }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -305,21 +240,21 @@
                         </div>
                     @endif
 
-                    @if (($taskSettings->task_category == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
-                        <x-cards.data-row :label="__('modules.tasks.taskCategory')"
-                                          :value="$task->category->category_name ?? '--'" html="true"/>
-                    @endif
+                        @if (($taskSettings->task_category == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
+                            <x-cards.data-row :label="__('modules.tasks.taskCategory')"
+                                              :value="$task->category->category_name ?? '--'" html="true"/>
+                        @endif
 
-                    @if (($taskSettings->description == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
-                        <x-cards.data-row :label="__('app.description')"
-                                          :value="!empty($task->description) ? $task->description : '--'"
-                                          html="true"/>
-                    @endif
+                        @if (($taskSettings->description == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
+                            <x-cards.data-row :label="__('app.description')"
+                                              :value="!empty($task->description) ? $task->description : '--'"
+                                              html="true"/>
+                        @endif
 
-                    {{-- Custom fields data --}}
-                    @if (($taskSettings->custom_fields == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
-                        <x-forms.custom-field-show :fields="$fields" :model="$task"></x-forms.custom-field-show>
-                    @endif
+                        {{-- Custom fields data --}}
+                        @if (($taskSettings->custom_fields == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
+                            <x-forms.custom-field-show :fields="$fields" :model="$task"></x-forms.custom-field-show>
+                        @endif
 
                 </div>
             </div>
@@ -334,26 +269,26 @@
 
                             @if (($taskSettings->files == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                                 <x-tab-item class="ajax-tab" :active="(request('view') === 'file' || !request('view'))"
-                                            :link="route('tasks.show', $task->id).'?view=file'">@lang('app.file')</x-tab-item>
+                                :link="route('tasks.show', $task->id).'?view=file'">@lang('app.file')</x-tab-item>
                             @endif
 
                             @if (($taskSettings->sub_task == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                                 <x-tab-item class="ajax-tab" :active="(request('view') === 'sub_task')"
-                                            :link="route('tasks.show', $task->id).'?view=sub_task'">
-                                    @lang('modules.tasks.subTask')</x-tab-item>
+                                :link="route('tasks.show', $task->id).'?view=sub_task'">
+                                @lang('modules.tasks.subTask')</x-tab-item>
                             @endif
 
                             @if (($taskSettings->comments == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                                 @if ($viewTaskCommentPermission != 'none')
                                     <x-tab-item class="ajax-tab" :active="(request('view') === 'comments')"
-                                                :link="route('tasks.show', $task->id).'?view=comments'">
+                                        :link="route('tasks.show', $task->id).'?view=comments'">
                                         @lang('modules.tasks.comment')</x-tab-item>
                                 @endif
                             @endif
 
                             @if ((($taskSettings->time_logs == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles())) && in_array('timelogs', user_modules()))
                                 <x-tab-item class="ajax-tab" :active="(request('view') === 'time_logs')"
-                                            :link="route('tasks.show', $task->id).'?view=time_logs'">
+                                    :link="route('tasks.show', $task->id).'?view=time_logs'">
                                     @lang('app.menu.timeLogs')
                                     @if ($task->active_timer_all_count > 0)
                                         <i class="fa fa-clock text-primary f-12 ml-1"></i>
@@ -364,13 +299,13 @@
                             @if (($taskSettings->notes == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                                 @if ($viewTaskNotePermission != 'none')
                                     <x-tab-item class="ajax-tab" :active="(request('view') === 'notes')"
-                                                :link="route('tasks.show', $task->id).'?view=notes'">@lang('app.notes')</x-tab-item>
+                                    :link="route('tasks.show', $task->id).'?view=notes'">@lang('app.notes')</x-tab-item>
                                 @endif
                             @endif
 
                             @if (($taskSettings->history == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                                 <x-tab-item class="ajax-tab" :active="(request('view') === 'history')"
-                                            :link="route('tasks.show', $task->id).'?view=history'">@lang('modules.tasks.history')
+                                    :link="route('tasks.show', $task->id).'?view=history'">@lang('modules.tasks.history')
                                 </x-tab-item>
                             @endif
                         </x-tab-section>
@@ -389,13 +324,14 @@
             @endif
 
 
+
         </div>
 
         <div class="col-sm-3">
             <x-cards.data>
                 @if (($taskSettings->status == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                     <p class="f-w-500"><i class="fa fa-circle mr-1 text-yellow"
-                                          style="color: {{ $task->boardColumn->label_color }}"></i>{{ $task->boardColumn->column_name }}
+                            style="color: {{ $task->boardColumn->label_color }}"></i>{{ $task->boardColumn->column_name }}
                     </p>
                 @endif
 
@@ -408,23 +344,15 @@
                             @endif
 
                             @if ($pin)
-                                <span class='badge badge-success'><i
-                                        class='fa fa-thumbtack'></i> @lang('app.pinned')</span>
+                                <span class='badge badge-success'><i class='fa fa-thumbtack'></i> @lang('app.pinned')</span>
                             @endif
                         </div>
                     @endif
                 @endif
 
-                <div class="col-12 px-0 pb-3 d-lg-flex d-block">
-                    <p class="mb-0 text-lightest w-50 f-14 ">
-                        {{ __('modules.expensesRecurring.created_at') }}
-                    </p>
-                    <p class="mb-0 text-dark-grey w-50 f-14">{{ $task->created_at->timezone(company()->timezone)->format(company()->date_format . ' ' . company()->time_format) }}</p>
-                </div>
-
                 @if (($taskSettings->start_date == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                     <div class="col-12 px-0 pb-3 d-lg-flex d-block">
-                        <p class="mb-0 text-lightest w-50 f-14 ">{{ __('app.startDate') }}
+                        <p class="mb-0 text-lightest w-50 f-14 text-capitalize">{{ __('app.startDate') }}
                         </p>
                         <p class="mb-0 text-dark-grey w-50 f-14">
                             @if(!is_null($task->start_date))
@@ -438,7 +366,7 @@
 
                 @if (($taskSettings->due_date == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                     <div class="col-12 px-0 pb-3 d-lg-flex d-block">
-                        <p class="mb-0 text-lightest w-50 f-14 ">{{ __('app.dueDate') }}
+                        <p class="mb-0 text-lightest w-50 f-14 text-capitalize">{{ __('app.dueDate') }}
                         </p>
                         <p class="mb-0 text-dark-grey w-50 f-14">
                             @if(!is_null($task->due_date))
@@ -453,7 +381,7 @@
                 @if (($taskSettings->time_estimate == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles()))
                     @if ($task->estimate_hours > 0 || $task->estimate_minutes > 0)
                         <div class="col-12 px-0 pb-3 d-lg-flex d-block">
-                            <p class="mb-0 text-lightest w-50 f-14 ">
+                            <p class="mb-0 text-lightest w-50 f-14 text-capitalize">
                                 {{ __('modules.tasks.setTimeEstimate') }}
                             </p>
                             <p class="mb-0 text-dark-grey w-50 f-14">{{ $task->estimate_hours }} @lang('app.hrs') {{ $task->estimate_minutes }} @lang('app.mins')</p>
@@ -481,13 +409,12 @@
 
                 @if ((($taskSettings->hours_logged == 'yes' && in_array('client', user_roles())) || in_array('admin', user_roles()) || in_array('employee', user_roles())) && in_array('timelogs', user_modules()))
                     <div class="col-12 px-0 pb-3 d-lg-flex d-block">
-                        <p class="mb-0 text-lightest w-50 f-14 ">
+                        <p class="mb-0 text-lightest w-50 f-14 text-capitalize">
                             {{ __('modules.employees.hoursLogged') }}
                         </p>
                         <p class="mb-0 text-dark-grey w-50 f-14">{{ $timeLog }}</p>
                     </div>
                 @endif
-
             </x-cards.data>
 
         </div>
@@ -498,7 +425,7 @@
     <script>
         var clipboard = new ClipboardJS('.btn-copy');
 
-        clipboard.on('success', function (e) {
+        clipboard.on('success', function(e) {
             Swal.fire({
                 icon: 'success',
                 text: '@lang("app.copied")',
@@ -519,7 +446,7 @@
     </script>
 
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
 
             var $worked = $("#active-task-timer");
 
@@ -557,63 +484,12 @@
                 $worked.html(ts);
                 setTimeout(updateTimer, 1000);
             }
-
             if ($('#stop-task-timer').length) {
                 setTimeout(updateTimer, 1000);
             }
 
-            $('body').on('click', '.send-approval', function () {
-                if ($(this).hasClass('disabled')) {
-                    return false; // Exit early if the button is disabled
-                }
-
-                var id = '{{ $task->id }}';
-                Swal.fire({
-                    title: "@lang('messages.sweetAlertTitle')",
-                    text: "@lang('messages.approvalmsg')",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    focusConfirm: false,
-                    confirmButtonText: "@lang('app.yes')",
-                    cancelButtonText: "@lang('app.cancel')",
-                    customClass: {
-                        confirmButton: 'btn btn-primary mr-3',
-                        cancelButton: 'btn btn-secondary'
-                    },
-                    showClass: {
-                        popup: 'swal2-noanimation',
-                        backdrop: 'swal2-noanimation'
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        var url = "{{ route('tasks.send_approval', ':id') }}";
-                        url = url.replace(':id', id);
-
-                        var token = "{{ csrf_token() }}";
-                        var isApproval = $(this).data('send-approval');
-                        $.easyAjax({
-                            type: 'POST',
-                            url: url,
-                            data: {
-                                '_token': token,
-                                taskId: id,
-                                isApproval: isApproval,
-                                '_method': 'POST'
-                            },
-                            success: function (response) {
-                                console.log(response);
-                                if (response.status == "success") {
-                                    window.location.reload();
-                                }
-                            }
-                        });
-                    }
-                });
-            });
-
             //    change task status
-            $('#task-detail-section').on('click', '.change-task-status', function () {
+            $('body').on('click', '.change-task-status', function() {
                 var status = $(this).data('status');
 
                 var id = '{{ $task->id }}';
@@ -631,7 +507,7 @@
                         data: {
                             '_token': token
                         },
-                        success: function (data) {
+                        success: function(data) {
                             if (data.taskCount > 0) {
                                 Swal.fire({
                                     title: "@lang('messages.sweetAlertTitle')",
@@ -669,7 +545,30 @@
 
             });
 
-            $('body').on('click', '#pinnedItem', function () {
+            $('#stop-task-timer').click(function() {
+                var id = $(this).data('time-id');
+                var url = "{{ route('timelogs.stop_timer', ':id') }}";
+                url = url.replace(':id', id);
+                var token = '{{ csrf_token() }}';
+
+                let currentUrl = $(this).data('url');
+
+                $.easyAjax({
+                    url: url,
+                    blockUI: true,
+                    type: "POST",
+                    data: {
+                        timeId: id,
+                        currentUrl: currentUrl,
+                        _token: token
+                    },
+                    success: function(data) {
+                        window.location.reload();
+                    }
+                })
+            });
+
+            $('body').on('click', '#pinnedItem', function() {
                 var type = $('#pinnedItem').attr('data-pinned');
                 var id = '{{ $task->id }}';
                 var pinType = 'task';
@@ -705,7 +604,7 @@
                                     '_token': token,
                                     'type': pinType
                                 },
-                                success: function (response) {
+                                success: function(response) {
                                     if (response.status == "success") {
                                         window.location.reload();
                                     }
@@ -743,7 +642,7 @@
                                     '_token': token,
                                     'task_id': id
                                 },
-                                success: function (response) {
+                                success: function(response) {
                                     if (response.status == "success") {
                                         window.location.reload();
                                     }
@@ -754,7 +653,7 @@
                 }
             });
 
-            $(".ajax-tab").click(function (event) {
+            $(".ajax-tab").click(function(event) {
                 event.preventDefault();
 
                 $('.task-tabs .ajax-tab').removeClass('active');
@@ -770,7 +669,7 @@
                     data: {
                         'json': true
                     },
-                    success: function (response) {
+                    success: function(response) {
                         if (response.status == "success") {
                             $('#nav-tabContent').html(response.html);
                         }
@@ -792,14 +691,14 @@
                         status: status,
                         sortBy: 'id'
                     },
-                    success: function (data) {
+                    success: function(data) {
                         window.location.reload();
                     }
                 })
             }
 
 
-            $('body').on('click', '.delete-comment', function () {
+            $('body').on('click', '.delete-comment', function() {
                 var id = $(this).data('row-id');
                 Swal.fire({
                     title: "@lang('messages.sweetAlertTitle')",
@@ -832,7 +731,7 @@
                                 '_token': token,
                                 '_method': 'DELETE'
                             },
-                            success: function (response) {
+                            success: function(response) {
                                 if (response.status == "success") {
                                     $('#comment-list').html(response.view);
                                 }
@@ -842,7 +741,7 @@
                 });
             });
 
-            $('body').on('click', '.edit-comment', function () {
+            $('body').on('click', '.edit-comment', function() {
                 var id = $(this).data('row-id');
                 var url = "{{ route('taskComment.edit', ':id') }}";
                 url = url.replace(':id', id);
@@ -850,7 +749,7 @@
                 $.ajaxModal(MODAL_LG, url);
             });
 
-            $('body').on('click', '.delete-subtask', function () {
+            $('body').on('click', '.delete-subtask', function() {
                 var id = $(this).data('row-id');
                 Swal.fire({
                     title: "@lang('messages.sweetAlertTitle')",
@@ -883,7 +782,7 @@
                                 '_token': token,
                                 '_method': 'DELETE'
                             },
-                            success: function (response) {
+                            success: function(response) {
                                 if (response.status == "success") {
                                     $('#sub-task-list').html(response.view);
                                 }
@@ -893,7 +792,7 @@
                 });
             });
 
-            $('body').on('click', '.edit-subtask', function () {
+            $('body').on('click', '.edit-subtask', function() {
                 var id = $(this).data('row-id');
                 var url = "{{ route('sub-tasks.edit', ':id') }}";
                 url = url.replace(':id', id);
@@ -901,7 +800,7 @@
                 $.ajaxModal(MODAL_LG, url);
             });
 
-            $('body').on('change', '.task-check', function () {
+            $('body').on('change', '.task-check', function() {
                 if ($(this).is(':checked')) {
                     var status = 'complete';
                 } else {
@@ -920,7 +819,7 @@
                         subTaskId: id,
                         status: status
                     },
-                    success: function (response) {
+                    success: function(response) {
                         if (response.status == "success") {
 
                             $('#sub-task-list').html(response.view);
@@ -930,7 +829,7 @@
                 })
             });
 
-            $('body').on('click', '.delete-file', function () {
+            $('body').on('click', '.delete-file', function() {
                 var id = $(this).data('row-id');
                 Swal.fire({
                     title: "@lang('messages.sweetAlertTitle')",
@@ -963,7 +862,7 @@
                                 '_token': token,
                                 '_method': 'DELETE'
                             },
-                            success: function (response) {
+                            success: function(response) {
                                 if (response.status == "success") {
                                     $('#task-file-list').html(response.view);
                                 }
@@ -973,7 +872,7 @@
                 });
             });
 
-            $('body').on('click', '.delete-note', function () {
+            $('body').on('click', '.delete-note', function() {
                 var id = $(this).data('row-id');
                 Swal.fire({
                     title: "@lang('messages.sweetAlertTitle')",
@@ -1006,7 +905,7 @@
                                 '_token': token,
                                 '_method': 'DELETE'
                             },
-                            success: function (response) {
+                            success: function(response) {
                                 if (response.status == "success") {
                                     $('#note-list').html(response.view);
                                 }
@@ -1016,7 +915,7 @@
                 });
             });
 
-            $('body').on('click', '.edit-note', function () {
+            $('body').on('click', '.edit-note', function() {
                 var id = $(this).data('row-id');
                 var url = "{{ route('task-note.edit', ':id') }}";
                 url = url.replace(':id', id);
@@ -1024,7 +923,7 @@
                 $.ajaxModal(MODAL_LG, url);
             });
 
-            $('#start-task-timer').click(function () {
+            $('#start-task-timer').click(function() {
                 var task_id = "{{ $task->id }}";
                 var project_id = "{{ $task->project_id }}";
                 var user_id = "{{ user()->id }}";
@@ -1042,7 +941,7 @@
                         '_token': token,
                         user_id: user_id
                     },
-                    success: function (response) {
+                    success: function(response) {
                         if (response.status == 'success') {
                             window.location.reload();
                         }
@@ -1050,7 +949,7 @@
                 })
             });
 
-            $('body').on('click', '#reminderButton', function () {
+            $('body').on('click', '#reminderButton', function() {
                 Swal.fire({
                     title: "@lang('messages.sweetAlertTitle')",
                     text: "@lang('messages.sendReminder')",
@@ -1086,7 +985,7 @@
                 });
             });
 
-            $('body').on('click', '.comment-like', function () {
+            $('body').on('click', '.comment-like', function() {
                 var commentId = $(this).data('comment-id');
                 var emojiName = $(this).data('emoji');
                 var token = '{{ csrf_token() }}';
@@ -1101,11 +1000,11 @@
                     data: {
                         '_token': token,
                         'commentId': commentId,
-                        'emojiName': emojiName
+                        'emojiName':emojiName
                     },
-                    success: function (response) {
+                    success: function(response) {
                         if (response.status == "success") {
-                            $("#emoji-" + commentId).html(response.view);
+                        $("#emoji-"+commentId).html(response.view);
                         }
 
                     }
@@ -1113,15 +1012,6 @@
             });
 
             init(RIGHT_MODAL);
-
-            $('#stop-task-timer').on('click', function () {
-                var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
-                var id = $(this).data('time-id');
-                url = url.replace(':id', id);
-                $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-                $.ajaxModal(MODAL_LG, url);
-            })
-
         });
     </script>
 </div>

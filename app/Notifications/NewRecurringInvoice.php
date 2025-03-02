@@ -45,13 +45,13 @@ class NewRecurringInvoice extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('recurring-invoices.show', $this->invoice->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.newInvoiceRecurring.subject') . '.' . '<br>' . __('email.newInvoiceRecurring.text') . '<br>' . __('app.total') . ': ' . $this->invoice->currency->currency_symbol . $this->invoice->total;
 
-        $build
+        return $build
             ->subject(__('email.newInvoiceRecurring.subject'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -60,10 +60,6 @@ class NewRecurringInvoice extends BaseNotification
                 'actionText' => __('email.newInvoiceRecurring.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

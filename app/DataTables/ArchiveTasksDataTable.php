@@ -2,10 +2,11 @@
 
 namespace App\DataTables;
 
-use App\Helper\Common;
+use App\DataTables\BaseDataTable;
 use App\Models\ProjectTimeLogBreak;
 use App\Models\Task;
 use App\Models\TaskboardColumn;
+use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
@@ -43,7 +44,9 @@ class ArchiveTasksDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->addColumn('action', function ($row) {
                 $taskUsers = $row->users->pluck('id')->toArray();
 
@@ -64,12 +67,10 @@ class ArchiveTasksDataTable extends BaseDataTable
                     || ($row->project_admin == user()->id)
                     || ($this->editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $row->added_by == user()->id))
                 ) {
-                    if (request()->trashedData != 'true') {
-                        $action .= '<a class="dropdown-item openRightModal" href="' . route('tasks.edit', [$row->id]) . '">
+                    $action .= '<a class="dropdown-item openRightModal" href="' . route('tasks.edit', [$row->id]) . '">
                                 <i class="fa fa-edit mr-2"></i>
                                 ' . trans('app.edit') . '
                             </a>';
-                    }
                 }
 
                 if ($this->deleteTaskPermission == 'all'
@@ -101,7 +102,20 @@ class ArchiveTasksDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->editColumn('due_date', fn($row) => Common::dateColor($row->due_date))
+            ->editColumn('due_date', function ($row) {
+                if (is_null($row->due_date)) {
+                    return '--';
+                }
+
+                if ($row->due_date->endOfDay()->isPast()) {
+                    return '<span class="text-danger">' . $row->due_date->translatedFormat($this->company->date_format) . '</span>';
+                }
+                elseif ($row->due_date->isToday()) {
+                    return '<span class="text-success">' . __('app.today') . '</span>';
+                }
+
+                return '<span >' . $row->due_date->translatedFormat($this->company->date_format) . '</span>';
+            })
             ->editColumn('users', function ($row) {
                 if (count($row->users) == 0) {
                     return '--';
@@ -161,8 +175,12 @@ class ArchiveTasksDataTable extends BaseDataTable
                     }
                 }
             })
-            ->editColumn('clientName', fn($row) => $row->clientName ?? '-')
-            ->addColumn('task', fn($row) => $row->heading)
+            ->editColumn('clientName', function ($row) {
+                return ($row->clientName) ? $row->clientName : '-';
+            })
+            ->addColumn('task', function ($row) {
+                return $row->heading;
+            })
             ->addColumn('timeLogged', function ($row) {
 
                 $timeLog = '--';
@@ -172,8 +190,7 @@ class ArchiveTasksDataTable extends BaseDataTable
 
                     $breakMinutes = ProjectTimeLogBreak::taskBreakMinutes($row->id);
                     $totalMinutes = $totalMinutes - $breakMinutes;
-                    $timeLog = CarbonInterval::formatHuman($totalMinutes);
-                    /** @phpstan-ignore-line */
+                    $timeLog = CarbonInterval::formatHuman($totalMinutes); /** @phpstan-ignore-line */
                 }
 
                 return $timeLog;
@@ -235,11 +252,14 @@ class ArchiveTasksDataTable extends BaseDataTable
                     return $status;
 
                 }
-
-                return '<i class="fa fa-circle mr-1 text-yellow" style="color: ' . $row->boardColumn->label_color . '"></i>' . $row->boardColumn->column_name;
+                else {
+                    return '<i class="fa fa-circle mr-1 text-yellow"
+                    style="color: ' . $row->boardColumn->label_color . '"></i>' . $row->boardColumn->column_name;
+                }
             })
-            ->addColumn('status', fn ($row) => $row->boardColumn->column_name ?? '-')
-
+            ->addColumn('status', function ($row) {
+                return $row->boardColumn->column_name;
+            })
             ->editColumn('project_name', function ($row) {
                 if (is_null($row->project_id)) {
                     return '-';
@@ -247,7 +267,9 @@ class ArchiveTasksDataTable extends BaseDataTable
 
                 return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project_name . '</a>';
             })
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['board_column', 'action', 'project_name', 'clientName', 'due_date', 'users', 'heading', 'check', 'timeLogged', 'timer'])
             ->removeColumn('project_id')
             ->removeColumn('image')
@@ -266,11 +288,11 @@ class ArchiveTasksDataTable extends BaseDataTable
         $endDate = null;
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
         }
 
         $projectId = $request->projectId;

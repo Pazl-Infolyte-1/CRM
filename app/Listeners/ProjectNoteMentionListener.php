@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\ProjectNoteMentionEvent;
+use App\Events\TaskCommentEvent;
 use App\Models\User;
 use App\Notifications\ProjectNoteMention;
 use Illuminate\Support\Facades\Notification;
@@ -13,7 +14,7 @@ class ProjectNoteMentionListener
     /**
      * Handle the event.
      *
-     * @param ProjectNoteMentionEvent $event
+     * @param  ProjectNoteMentionEvent $event
      * @return void
      */
 

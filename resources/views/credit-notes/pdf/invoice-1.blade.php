@@ -253,7 +253,6 @@
 
         .word-break {
             word-wrap: break-word;
-            word-break: break-all;
         }
 
         #invoice-table td {
@@ -302,12 +301,6 @@
                     <div>
                         @if (!is_null($creditNote->project) && !is_null($creditNote->project->client) && !is_null($creditNote->project->client->clientDetails))
                             <small>@lang('modules.invoices.billedTo'):</small>
-                            <div>
-                                <span class="bold">{{ $creditNote->client->name_salutation }}</span>
-                            </div>
-                            <div>
-                                <span>{{ $creditNote->client->email }}</span>
-                            </div>
                             <h3 class="name">
                                 {{ $creditNote->project->client->clientDetails->company_name }}
                             </h3>
@@ -324,7 +317,7 @@
 
                             @if ($invoiceSetting->show_project == 1 && isset($creditNote->project))
                                 <br><br>
-                                <span class="text-dark-grey ">@lang('modules.invoices.projectName'):</span><br>
+                                <span class="text-dark-grey text-capitalize">@lang('modules.invoices.projectName'):</span><br>
                                 {{ $creditNote->project->project_name }}
                             @endif
 
@@ -332,16 +325,10 @@
                                 <div> @lang('app.gstIn'):
                                     {{ $creditNote->project->client->clientDetails->gst_number }} </div>
                             @endif
-                        @elseif(!is_null($creditNote->client_id) && !is_null($creditNote->client) && !is_null($creditNote->client->clientDetails))
-                            <small><b>@lang('modules.invoices.billedTo'):</b></small>
-                            <div>
-                                <span class="bold">{{ $creditNote->client->name_salutation }}</span>
-                            </div>
-                            <div>
-                                <span>{{ $creditNote->client->email }}</span>
-                            </div>
-                            <div>{{ $creditNote->clientDetails->company_name }}</div>
-                            <div>
+                        @elseif(!is_null($creditNote->client_id) && !is_null($creditNote->clientDetails))
+                            <small>@lang('modules.invoices.billedTo'):</small>
+                            <h3 class="name">{{ $creditNote->clientDetails->company_name }}</h3>
+                            <div class="mb-3">
                                 <b>@lang('app.address') :</b>
                                 <div>{!! nl2br($creditNote->clientDetails->address) !!}</div>
                             </div>
@@ -434,7 +421,7 @@
                         <tr style="page-break-inside: avoid;">
                             <td class="no">{{ ++$count }}</td>
                             <td class="desc">
-                                <h3 class="word-break">{{ $item->item_name }}</h3>
+                                <h3>{{ $item->item_name }}</h3>
                                 @if (!is_null($item->item_summary))
                                     <table>
                                         <tr>
@@ -487,13 +474,7 @@
                         @if ($invoiceSetting->hsn_sac_code_show)
                             <td class="qty">&nbsp;</td>
                         @endif
-                        <td class="desc">@lang('modules.invoices.discount'):
-                            @if($creditNote->discount_type == 'percent')
-                                {{$creditNote->discount}}%
-                            @else
-                                {{ currency_format($creditNote->discount, $creditNote->currency_id) }}
-                            @endif
-                            </td>
+                        <td class="desc">@lang('modules.invoices.discount')</td>
                         <td class="unit">{{ currency_format($discount, $creditNote->currency_id, false) }}</td>
                     </tr>
                 @endif
@@ -522,7 +503,7 @@
                         {{ currency_format($creditNote->creditAmountUsed(), $creditNote->currency_id, false) }}</td>
                 </tr>
                 <tr dontbreak="true">
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">@lang('app.adjustmentAmount')</td>
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">@lang('app.adjustment') @lang('app.amount')</td>
                     <td style="text-align: center">
                         {{ currency_format($creditNote->adjustment_amount, $creditNote->currency_id, false) }}</td>
                 </tr>
@@ -538,11 +519,7 @@
             @if (!is_null($creditNote->note))
                 {!! nl2br($creditNote->note) !!}<br>
             @endif
-            {!! nl2br($creditNoteSetting->invoice_terms) !!}<br>
-
-            @if (isset($invoiceSetting->other_info))
-                <br>{!! nl2br($invoiceSetting->other_info) !!}
-            @endif
+            {!! nl2br($creditNoteSetting->invoice_terms) !!}
         </p>
 
     </main>

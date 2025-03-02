@@ -116,7 +116,7 @@ class InvoiceRecurringObserver
     public function deleting(RecurringInvoice $invoice)
     {
         $notifyData = ['App\Notifications\InvoiceRecurringStatus', 'App\Notifications\NewRecurringInvoice',];
-        Notification::deleteNotification($notifyData, $invoice->id);
+        \App\Models\Notification::deleteNotification($notifyData, $invoice->id);
     }
 
 }

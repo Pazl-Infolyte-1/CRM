@@ -8,7 +8,7 @@
         top: 107px;
         z-index: unset;
     }
-
+    
 
 </style>
 
@@ -17,7 +17,7 @@
         <div class="pt-2">
             <i class="fa fa-exclamation-triangle"></i> @lang('messages.customPermissionError')
         </div>
-        <x-forms.button-secondary id="reset-user-permissions" icon="sync">@lang('app.resetPermissions')</x-forms.button-secondary>
+        <x-forms.button-secondary id="reset-user-permissions" icon="sync">@lang('app.reset') @lang('modules.permission.permissions')</x-forms.button-secondary>
     </div>
 </x-alert>
 
@@ -26,7 +26,7 @@
         @lang('messages.adminPermissionError')
     </x-alert>
 @else
-   
+
     <x-table class="table-bordered table-hover mt-4 permisison-table bg-white rounded" headType="thead-light">
         <x-slot name="thead">
             <th width="20%">
@@ -39,36 +39,27 @@
             <th width="16%"></th>
         </x-slot>
         @foreach ($modulesData as $moduleData)
-            @php
-                $notPermited = !in_array($moduleData->module_name, $employeeModules) ? 'disabled' : null;
-            @endphp
             <tr>
-                
                 <td>@lang('modules.module.'.$moduleData->module_name)
-                    @if($notPermited)
-                        <i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="@lang('messages.moduleDisabled')" data-html="true" data-trigger="hover"></i>
-                    @endif
                 </td>
                 @foreach ($moduleData->permissions as $permission)
                     @php
-                        $permissionType = $employee->customised_permissions === 1 ? $employee->permissionTypeId($permission->name) : $role->permissionType($permission->id);
+                        $permissionType = $employee->permissionTypeId($permission->name);
                         $allowedPermissions = json_decode($permission->allowed_permissions);
                     @endphp
                     <td>
-                        <select class="role-permission-select border-0" data-permission-id="{{ $permission->id }}" {{ $notPermited }}>
+                        <select class="role-permission-select border-0" data-permission-id="{{ $permission->id }}">
                             @if (!is_null($allowedPermissions))
-                                @foreach ($allowedPermissions as $key => $item)
-                                    @php
-                                        $type = $employee->customised_permissions === 1 ? $key : $item;
-                                    @endphp
-                                    <option @if ($permissionType == $type) selected @endif
+                                @foreach ($allowedPermissions as $key=>$item)
+                                    <option @if ($permissionType == $key) selected @endif
                                     @if (!$permissionType && $item == 5) selected @endif value="{{ $item }}">
-                                    @lang('app.'.$key)</option>
-                                @endforeach
+                                    @lang('app.'.$key)</option>                            
+                                @endforeach                            
                             @endif
                         </select>
                     </td>
                 @endforeach
+
 
                 @if (count($moduleData->permissions) < 4)
                     @for ($i = 1; $i <= 4 - count($moduleData->permissions); $i++) <td>--</td> @endfor
@@ -76,7 +67,7 @@
 
                 <td class="text-center bg-light border-left">
                     <div class="p-2">
-                        @if ($moduleData->custom_permissions_count > 0  && in_array($moduleData->module_name,$employeeModules))
+                        @if ($moduleData->custom_permissions_count > 0)
                             <a href="javascript:;" data-module-id="{{ $moduleData->id }}"
                                 class="text-dark-grey show-custom-permission dropdown-toggle">
                                 @lang('app.more') <i class="fa fa-chevron-down"></i>
@@ -162,7 +153,7 @@
                 },
                 success: function(response) {
                     if (response.status == 'success') {
-                        window.location.reload();
+                        window.location.reload();                        
                     }
                 }
             });

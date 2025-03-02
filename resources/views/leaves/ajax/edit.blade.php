@@ -9,7 +9,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
     <div class="col-sm-12">
         <x-form id="save-lead-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('app.menu.editLeaves')</h4>
                 <div class="row p-20">
 
@@ -46,10 +46,13 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($leaveQuotas as $leaveQuota)
-                                    @if($leaveQuota->leaveType && $leaveQuota->leaveType->leaveTypeCondition($leaveQuota->leaveType, $leaveUser)
-                                    && $leaveQuota->leaveType->deleted_at == null
-                                    )
-                                        <option @selected($leave->leave_type_id == $leaveQuota->leaveType->id) value="{{ $leaveQuota->leaveType->id }}">{{ $leaveQuota->leaveType->type_name }} ({{ $leaveQuota->leaves_remaining }})</option>
+                                    @php
+                                        $leaveType = new \App\Models\LeaveType();
+                                    @endphp
+
+                                    @if($leaveType->leaveTypeCodition($leaveQuota, $userRole))
+                                        <option @if ($leave->leave_type_id == $leaveQuota->id) selected @endif value="{{ $leaveQuota->id }}">
+                                            {{ $leaveQuota->type_name }}</option>
                                     @endif
                                 @endforeach
                             </select>
@@ -68,9 +71,9 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                         <div class="col-lg-3 col-md-6">
                             <x-forms.select fieldId="status" :fieldLabel="__('app.status')" fieldName="status"
                                 search="true">
-                                <option @selected($leave->status == 'approved') value="approved">@lang('app.approved')</option>
-                                <option @selected($leave->status == 'pending') value="pending">@lang('app.pending')</option>
-                                <option @selected($leave->status == 'rejected') value="rejected">@lang('app.rejected')</option>
+                                <option @if ($leave->status == 'approved') selected @endif value="approved">@lang('app.approved')</option>
+                                <option @if ($leave->status == 'pending') selected @endif value="pending">@lang('app.pending')</option>
+                                <option @if ($leave->status == 'rejected') selected @endif value="rejected">@lang('app.rejected')</option>
                             </x-forms.select>
                         </div>
                     @endif
@@ -118,26 +121,27 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                     </div>
 
                     <div class="col-sm-12">
-                        <div  class="d-flex flex-wrap mt-3" id="leave-file-list">
+                        <div div class="d-flex flex-wrap mt-3" id="leave-file-list">
                             @forelse($leave->files as $file)
                             <x-file-card :fileName="$file->filename" :dateAdded="$file->created_at->diffForHumans()">
-                                        <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
-
+                                @if ($file->icon == 'images')
+                                        <img src="{{ $file->file_url }}">
+                                    @else
+                                        <i class="fa {{ $file->icon }} text-lightest"></i>
+                                    @endif
                                         <x-slot name="action">
                                             <div class="dropdown ml-auto file-action">
-                                                <button class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
+                                                <button class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
                                                     type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                     <i class="fa fa-ellipsis-h"></i>
                                                 </button>
 
                                                 <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                                     aria-labelledby="dropdownMenuLink" tabindex="0">
-                                                    @if ($file->icon == 'images')
-                                                        <a class="img-lightbox cursor-pointer d-block text-dark-grey f-13 pt-3 px-3" data-image-url="{{ $file->file_url }}" href="javascript:;">@lang('app.view')</a>
-                                                    @else
-                                                        <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank" href="{{ $file->file_url }}">@lang('app.view')</a>
-                                                    @endif
-
+                                                        @if ($file->icon = 'images')
+                                                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank"
+                                                                href="{{ $file->file_url }}">@lang('app.view')</a>
+                                                        @endif
                                                         <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "
                                                             href="{{ route('leave-files.download', md5($file->id)) }}">@lang('app.download')</a>
 
@@ -196,7 +200,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
         });
         leaveDropzone.on('sending', function(file, xhr, formData) {
             var ids = "{{ $leave->id }}";
-            formData.append('leave_ids[]', ids);
+            formData.append('leave_id', ids);
             $.easyBlockUI();
         });
         leaveDropzone.on('uploadprogress', function() {
@@ -290,83 +294,35 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             });
 
         $('#save-leave-form').click(function() {
-            let markleave = 'no';
+
             const url = "{{ route('leaves.update', $leave->id) }}";
 
-            function sendeditAjaxRequest(){
-                $.easyAjax({
-                    url: url,
-                    container: '#save-lead-data-form',
-                    type: "POST",
-                    disableButton: true,
-                    blockUI: true,
-                    buttonSelector: "#save-leave-form",
-                    data: $('#save-lead-data-form').serialize()+ '&markLeave='+markleave,
-                    success: function(response) {
+            $.easyAjax({
+                url: url,
+                container: '#save-lead-data-form',
+                type: "POST",
+                disableButton: true,
+                blockUI: true,
+                buttonSelector: "#save-leave-form",
+                data: $('#save-lead-data-form').serialize(),
+                success: function(response) {
 
+                    if (response.status == 'success') {
                         if (response.status == 'success') {
-                                if(leaveDropzone.getQueuedFiles().length > 0) {
-                                    leaveDropzone.processQueue();
-                                }
-                                window.location.href = response.redirectUrl;
-
-                        }
-
-                        if (response.status == 'attendanceMarked') {
-                            Swal.fire({
-                                title: "@lang('messages.sweetAlertTitle')",
-                                text: "@lang('messages.attendanceIsMarked')",
-                                icon: 'warning',
-                                showCancelButton: true,
-                                focusConfirm: false,
-                                confirmButtonText: "@lang('app.apply')",
-                                cancelButtonText: "@lang('app.cancel')",
-                                customClass: {
-                                    confirmButton: 'btn btn-primary mr-3',
-                                    cancelButton: 'btn btn-secondary'
-                                },
-                                showClass: {
-                                    popup: 'swal2-noanimation',
-                                    backdrop: 'swal2-noanimation'
-                                },
-                                buttonsStyling: false
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    markleave = 'yes';
-                                    sendeditAjaxRequest();
-                                }
-                            });
+                            if(leaveDropzone.getQueuedFiles().length > 0) {
+                                leaveDropzone.processQueue();
+                            }
+                            window.location.href = response.redirectUrl;
                         }
                     }
-                });
-            }
-
-            sendeditAjaxRequest();
+                }
+            });
         });
 
         $('body').on('click', '.add-lead-type', function() {
             var url = "{{ route('leaveType.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
-        });
-
-        $('#user_id').change(function() {
-            var id = $(this).val();
-            if (id == '') {
-                id = 0;
-            }
-            var url = "{{ route('employee-leaves.employee_leave_types', ':id') }}";
-            url = url.replace(':id', id);
-            $.easyAjax({
-                url: url,
-                type: "GET",
-                container: '#save-lead-data-form',
-                blockUI: true,
-                success: function(data) {
-                    $('#leave_type_id').html(data.data);
-                    $('#leave_type_id').selectpicker('refresh');
-                }
-            })
         });
 
         init(RIGHT_MODAL);

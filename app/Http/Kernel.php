@@ -2,10 +2,6 @@
 
 namespace App\Http;
 
-use App\Http\Middleware\DisableFrontend;
-use App\Http\Middleware\EmailVerified;
-use App\Http\Middleware\MultiCompanySelect;
-use App\Http\Middleware\SuperAdmin;
 use App\Http\Middleware\TrimStrings;
 use Froiden\Envato\Middleware\XSS;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -71,16 +67,7 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'email_verified' => EmailVerified::class,
-
-        // WORKSUITESAAS
-        'super-admin' => SuperAdmin::class,
-        'multi-company-select' => MultiCompanySelect::class,
-        'disable-frontend' => DisableFrontend::class,
-        'admin-or-super-admin' => \App\Http\Middleware\AdminOrSuperAdmin::class,
         'translation' => \App\Http\Middleware\EnsureTranslationToken::class,
-        'check-company-package' => \App\Http\Middleware\CheckCompanyPackage::class,
-        'auto-logout' => \App\Http\Middleware\AutoLogout::class,
     ];
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helper\Reply;
+use App\Models\Company;
 use App\Models\TicketCustomForm;
 use Illuminate\Http\Request;
 

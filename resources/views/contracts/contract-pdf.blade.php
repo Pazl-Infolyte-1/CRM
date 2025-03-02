@@ -146,7 +146,7 @@
             text-transform: uppercase;
         }
 
-        . {
+        .text-capitalize {
             text-transform: capitalize;
         }
 
@@ -363,8 +363,8 @@
                             <td class="f-14 text-black">
 
                                 <p class="line-height mb-0">
-                                    <span class="text-grey ">@lang('app.client')</span><br>
-                                    {{ $contract->client->name_salutation }}<br>
+                                    <span class="text-grey text-capitalize">@lang('app.client')</span><br>
+                                    {{ $contract->client->name }}<br>
                                     {{ $contract->client->clientDetails->company_name }}
                                     {!! nl2br($contract->client->clientDetails->address) !!}
                                 </p>
@@ -397,13 +397,13 @@
     </table>
 
     <div>
-        <h5 class="text-grey ">@lang('app.subject')</h5>
+        <h5 class="text-grey text-capitalize">@lang('app.subject')</h5>
         <p class="f-15 text-black">{{ $contract->subject }}</p>
 
-        <h5 class="text-grey ">@lang('modules.contracts.notes')</h5>
+        <h5 class="text-grey text-capitalize">@lang('modules.contracts.notes')</h5>
         <p class="f-15 text-black">{{ $contract->contract_note }}</p>
 
-        <h5 class="text-grey ">@lang('app.description')</h5>
+        <h5 class="text-grey text-capitalize">@lang('app.description')</h5>
         <p class="f-15 text-black">{!! nl2br(pdfStripTags($contract->contract_detail)) !!}</p>
 
         @if ($contract->amount != 0)
@@ -420,19 +420,16 @@
                 {!! Html::image($contract->signature->signature, '', ['class' => '', 'height' => '75px']) !!}
                 <p>Client Name:- {{ $contract->signature->full_name }}<br>
                     Place:- {{ $contract->signature->place }}<br>
-                    Date:- {{ $contract->signature->date->timezone($company->timezone) }}
+                    Date:- {{ $contract->signature->date }}
                 </p>
             </div>
         @endif
 
         @if ($contract->company_sign)
             <div style="text-align: right; margin-top: -260px">
-                <h4 class="name" style="margin-bottom: 10px;">@lang('modules.estimates.companysignature')</h4>
+                <h4 class="name" style="margin-bottom: 20px;">@lang('modules.estimates.companysignature')</h4>
                 <img src="{{ $contract->company_signature }}" style="width: 200px;">
-                <p>Date:- {{ $contract->sign_date->timezone($company->timezone) }}</p>
-                @if($contract->signer)
-                <p style="margin-top: -16px;">Sign By : {{ $contract->signer ? $contract->signer->name : '--' }}</p>
-                @endif
+                <p>Date:- {{ $contract->sign_date }}</p>
             </div>
         @endif
     </div>

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
+use Illuminate\Notifications\Messages\SlackMessage;
 
 class NewUserViaLink extends BaseNotification
 {
@@ -38,13 +39,7 @@ class NewUserViaLink extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.newUserViaLink.subject'), $this->new_user->name);
+            array_push($via, 'slack');
         }
 
         return $via;
@@ -59,14 +54,14 @@ class NewUserViaLink extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
 
         $url = route('employees.show', $this->new_user->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.newUserViaLink.text') . '<br>' . __('app.name') . ':- ' . $this->new_user->name . '<br>' . __('app.email') . ':- ' . $this->new_user->email;
 
-        $build
+        return $build
             ->subject(__('email.newUserViaLink.subject') . ' ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
@@ -75,10 +70,6 @@ class NewUserViaLink extends BaseNotification
                 'actionText' => __('email.newUserViaLink.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -101,16 +92,23 @@ class NewUserViaLink extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return \Illuminate\Notifications\Messages\SlackMessage
+     * @return SlackMessage
      */
     public function toSlack($notifiable)
     {
+        $slack = $notifiable->company->slackSetting;
 
         try {
-            return $this->slackBuild($notifiable)
-                ->content('*' . __('email.newUserViaLink.subject') . ' ' . config('app.name') . '!*' . "\n" . __('email.newUserViaLink.text'). "\n" . __('app.name') . ': ' . $this->new_user->name . "\n" . __('app.email') . ': ' . $this->new_user->email);
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->to('@' . $notifiable->slack_username)
+                ->content('*' . __('email.newUserViaLink.subject') . ' ' . config('app.name') . '!*' . "\n" . __('email.newUserViaLink.text'));
         } catch (\Exception $e) {
-            return $this->slackRedirectMessage('email.newUserViaLink.subject', $notifiable);
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->content('*' . __('email.newUserViaLink.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
         }
 
     }

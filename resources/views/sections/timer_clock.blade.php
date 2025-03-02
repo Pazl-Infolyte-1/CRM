@@ -16,7 +16,7 @@
                 <i class="fa fa-play-circle text-primary"></i>
             </a>
         @endif
-        <a href="javascript:;" class="stop-active-timer" id="stop-active-timer" data-toggle="tooltip"
+        <a href="javascript:;" class="stop-active-timer" data-toggle="tooltip"
             data-original-title="{{ __('modules.timeLogs.stopTimer') }}" data-url="{{ url()->current() }}"
             data-time-id="{{ $selfActiveTimer->id }}">
             <i class="fa fa-stop-circle text-danger"></i>
@@ -27,7 +27,7 @@
     @if (is_null($selfActiveTimer->activeBreak))
         <a href="javascript:;"
             class='btn-danger btn btn-sm rounded mr-3 f-14 py-2 px-2 stop-active-timer d-block d-sm-none mr-2'
-            data-time-id="{{ $selfActiveTimer->id }}" data-url="{{ url()->current() }}" id="stop-active-timer">
+            data-time-id="{{ $selfActiveTimer->id }}" data-url="{{ url()->current() }}">
             {{ __('modules.timeLogs.stopTimer') }}
         </a>
     @endif
@@ -97,15 +97,5 @@
                 });
             }
         });
-
-@if(!is_null($selfActiveTimer))
-    $('.stop-active-timer').click(function(){
-        var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
-        var id = "{{$selfActiveTimer->id}}";
-        url = url.replace(':id', id);
-        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-        $.ajaxModal(MODAL_LG, url);
-    })
-@endif
 
 </script>

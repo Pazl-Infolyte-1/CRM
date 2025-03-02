@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * App\Models\EmployeeShift
@@ -16,7 +15,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $color
  * @property string $office_start_time
  * @property string $office_end_time
- * @property string $auto_clock_out_time
  * @property string|null $halfday_mark_time
  * @property int $late_mark_duration
  * @property int $clockin_in_day
@@ -50,10 +48,5 @@ class EmployeeShift extends BaseModel
     use HasFactory, HasCompany;
 
     protected $guarded = ['id'];
-
-    public function employeeShiftSchedules(): HasMany
-    {
-        return $this->hasMany(EmployeeShiftSchedule::class, 'employee_shift_id', 'id');
-    }
 
 }

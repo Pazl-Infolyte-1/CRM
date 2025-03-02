@@ -77,14 +77,14 @@
     @include('sections.datatable_js')
 
     <script>
-        $('#projects-template-table').on('preXhr.dt', function(e, settings, data) {
+        $('#project-template-table').on('preXhr.dt', function(e, settings, data) {
 
             var searchText = $('#search-text-field').val();
 
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["projects-template-table"].draw(true);
+            window.LaravelDataTables["project-template-table"].draw(false);
         }
 
         $('#search-text-field').on('change keyup',
@@ -198,7 +198,7 @@
         });
 
         const applyQuickAction = () => {
-            var rowdIds = $("#projects-template-table input:checkbox:checked").map(function() {
+            var rowdIds = $("#project-template-table input:checkbox:checked").map(function() {
                 return $(this).val();
             }).get();
 

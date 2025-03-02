@@ -1,9 +1,4 @@
 <div class="d-flex px-4 py-3 c-inv-desc item-row">
-    <div class="d-flex align-items-center">
-        <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-        <input type="hidden" name="sort_order[]"
-               value="{{ $item->id }}">
-    </div>
 
     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
         <table width="100%">
@@ -18,7 +13,6 @@
                     <td width="10%" class="border-0" align="right">
                         @lang('modules.invoices.qty')
                     </td>
-                    <td width="10%" class="border-0" align="right">@lang('app.sku')</td>
                     <td width="10%" class="border-0" align="right">
                         @lang("modules.invoices.unitPrice")</td>
                     <td width="13%" class="border-0" align="right">
@@ -55,15 +49,9 @@
                         <input type="hidden" name="unit_id[]" value="{{ $item->unit_id }}">
                     </td>
                     <td class="border-bottom-0">
-                        <input type="text" min="1"
-                            class="f-14 border-0 w-100 text-right form-control"
-                            data-item-id="{{ $item->id }}" placeholder="{{ $item->sku }}"
-                            value="{{ $item->sku }}" name="sku[]" readonly >
-                    </td>
-                    <td class="border-bottom-0">
                         <input type="number" min="1"
                             class="f-14 border-0 w-100 text-right cost_per_item bg-additional-grey" placeholder="0.00"
-                            value="{{ $item->price }}" name="cost_per_item[]" {{ $user->isAdmin($user->id) ? '' : 'readonly' }}>
+                            value="{{ $item->price }}" name="cost_per_item[]" readonly>
                     </td>
                     <td class="border-bottom-0">
                         <input class="form-control height-35 f-14 border-0 w-100 text-right bg-additional-grey"

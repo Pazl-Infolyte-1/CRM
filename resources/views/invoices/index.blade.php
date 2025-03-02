@@ -4,12 +4,6 @@
     @include('sections.datatable_css')
 @endpush
 
-<style>
-    div.status-cell {
-        width: 200px;
-    }
-</style>
-
 @section('filter-section')
 
     <x-filters.filter-box>
@@ -23,7 +17,7 @@
         </div>
         <!-- DATE END -->
 
-        @if (!in_array('client', user_roles()) && in_array('clients', user_modules()))
+        @if (!in_array('client', user_roles()))
             <!-- CLIENT START -->
             <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
                 <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.client')</p>
@@ -69,7 +63,7 @@
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="project_id" id="filter_project_id"
@@ -84,7 +78,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.status')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="status" id="status" data-live-search="true"
@@ -100,8 +94,6 @@
                                 @lang('app.partial')</option>
                             <option {{ request('status') == 'canceled' ? 'selected' : '' }} value="canceled">
                                 @lang('app.canceled')</option>
-                            <option {{ request('status') == 'pending-confirmation' ? 'selected' : '' }} value="pending-confirmation">
-                                @lang('app.pendingConfirmation')</option>
                         </select>
                     </div>
                 </div>
@@ -138,10 +130,10 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
                         @lang('app.invoiceRecurring')
                     </x-forms.link-secondary>
                 @endif
-                @if ($addInvoicesPermission == 'all' && in_array('projects', user_modules()))
+                @if ($addInvoicesPermission == 'all')
                     <x-forms.link-secondary class="mr-3 float-left mb-2 mb-lg-0 mb-md-0" icon="plus"
                         :link="route('invoices.create', ['type' => 'timelog'])">
-                        @lang('app.createTimeLogInvoice')
+                        @lang('app.create') @lang('app.timeLog') @lang('app.invoice')
                     </x-forms.link-secondary>
                 @endif
 
@@ -173,26 +165,25 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
     <script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
     <script>
         $(function() {
-            var clipboard = new ClipboardJS('.btn-copy');
+        var clipboard = new ClipboardJS('.btn-copy');
 
-            clipboard.on('success', function(e) {
-                Swal.fire({
-                    icon: 'success',
-                    text: '@lang("app.copied")',
-                    toast: true,
-                    position: 'top-end',
-                    timer: 3000,
-                    timerProgressBar: true,
-                    showConfirmButton: false,
-                    customClass: {
-                        confirmButton: 'btn btn-primary',
-                    },
-                    showClass: {
-                        popup: 'swal2-noanimation',
-                        backdrop: 'swal2-noanimation'
-                    },
-                })
-            });
+        clipboard.on('success', function(e) {
+            Swal.fire({
+                icon: 'success',
+                text: '@lang("app.copied")',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                },
+                showClass: {
+                    popup: 'swal2-noanimation',
+                    backdrop: 'swal2-noanimation'
+                },
+            })
         });
 
         $('#invoices-table').on('preXhr.dt', function(e, settings, data) {
@@ -226,7 +217,7 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
         });
 
         const showTable = () => {
-            window.LaravelDataTables["invoices-table"].draw(true);
+            window.LaravelDataTables["invoices-table"].draw(false);
         }
 
         $('#clientID, #filter_project_id, #status')
@@ -409,19 +400,22 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
             })
         };
 
-        $('body').on('click', '.approveButton', function() {
+        $('body').on('click', '.sendButton', function() {
             var id = $(this).data('invoice-id');
-            var url = "{{ route('invoices.approve_offline_invoice', ':id') }}";
+            var dataType = $(this).data('type');
+            var url = "{{ route('invoices.send_invoice', ':id') }}";
             url = url.replace(':id', id);
 
             var token = "{{ csrf_token() }}";
+
             $.easyAjax({
                 type: 'POST',
                 url: url,
                 container: '#invoices-table',
                 blockUI: true,
                 data: {
-                    '_token': token
+                    '_token': token,
+                    'data_type' : dataType
                 },
                 success: function(response) {
                     if (response.status == "success") {
@@ -429,77 +423,6 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
                     }
                 }
             });
-        });
-
-        $('body').on('click', '.sendButton', function() {
-            var id = $(this).data('invoice-id');
-            var dataType = $(this).data('type');
-            var invoiceAmt = $(this).data('amt');
-            var url = "{{ route('invoices.send_invoice', ':id') }}";
-            url = url.replace(':id', id);
-
-            var token = "{{ csrf_token() }}";
-
-            if(invoiceAmt == 0 && invoiceAmt != null)
-            {
-                Swal.fire({
-                            title: "@lang('messages.sweetAlertTitle')",
-                            text: "@lang('messages.markAsPaid')",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            focusConfirm: false,
-                            confirmButtonText: "@lang('app.yes')",
-                            cancelButtonText: "@lang('app.no')",
-                            customClass: {
-                                confirmButton: 'btn btn-primary mr-3',
-                                cancelButton: 'btn btn-secondary'
-                            },
-                            showClass: {
-                                popup: 'swal2-noanimation',
-                                backdrop: 'swal2-noanimation'
-                            },
-                            buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-
-                        $.easyAjax({
-                            type: 'POST',
-                            url: url,
-                            container: '#invoices-table',
-                            blockUI: true,
-                            data: {
-                                '_token': token,
-                                'data_type' : dataType
-                            },
-                            success: function(response) {
-                                if (response.status == "success") {
-                                    showTable();
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-            else
-            {
-                $.easyAjax({
-                    type: 'POST',
-                    url: url,
-                    container: '#invoices-table',
-                    blockUI: true,
-                    data: {
-                        '_token': token,
-                        'data_type' : dataType
-                    },
-                    success: function(response) {
-                        if (response.status == "success") {
-                            showTable();
-                        }
-                    }
-                });
-            }
-
-
         });
 
         $('body').on('click', '.reminderButton', function() {
@@ -590,7 +513,7 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
                 blockUI: true,
                 success: function(response) {
                     if (response.status === 'success') {
-                        window.LaravelDataTables["invoices-table"].draw(true);
+                        window.LaravelDataTables["invoices-table"].draw(false);
                     }
                 }
             });
@@ -607,15 +530,13 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $( document ).ready(function() {
-            @if (!is_null(request('start')) && !is_null(request('end')))
+        @if (request('start') && request('end'))
             $('#datatableRange').val('{{ request('start') }}' +
             ' @lang("app.to") ' + '{{ request('end') }}');
             $('#datatableRange').data('daterangepicker').setStartDate("{{ request('start') }}");
             $('#datatableRange').data('daterangepicker').setEndDate("{{ request('end') }}");
-                showTable();
-            @endif
-        });
-
+            showTable();
+        @endif
+    });
     </script>
 @endpush

@@ -6,6 +6,7 @@ use App\Helper\Reply;
 use App\Http\Requests\SubTask\StoreSubTask;
 use App\Models\SubTask;
 use App\Models\Task;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class SubTaskController extends AccountBaseController
@@ -56,8 +57,10 @@ class SubTaskController extends AccountBaseController
         $subTask->task_id = $request->task_id;
         $subTask->description = trim_editor($request->description);
 
-        $subTask->start_date = ($request->start_date != '') ? companyToYmd($request->start_date) : null;
-        $subTask->due_date = ($request->due_date != '') ? companyToYmd($request->due_date) : null;
+        if ($request->start_date != '' && $request->due_date != '') {
+            $subTask->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
+            $subTask->due_date = Carbon::createFromFormat($this->company->date_format, $request->due_date)->format('Y-m-d');
+        }
 
         $subTask->assigned_to = $request->user_id ? $request->user_id : null;
 
@@ -113,8 +116,8 @@ class SubTaskController extends AccountBaseController
         $subTask = SubTask::findOrFail($id);
         $subTask->title = $request->title;
         $subTask->description = trim_editor($request->description);
-        $subTask->start_date = ($request->start_date != '') ? companyToYmd($request->start_date) : null;
-        $subTask->due_date = ($request->due_date != '') ? companyToYmd($request->due_date) : null;
+        $subTask->start_date = ($request->start_date != '') ? Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d') : null;
+        $subTask->due_date = ($request->due_date != '') ? Carbon::createFromFormat($this->company->date_format, $request->due_date)->format('Y-m-d') : null;
         $subTask->assigned_to = $request->user_id ? $request->user_id : null;
         $subTask->save();
 

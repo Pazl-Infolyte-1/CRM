@@ -58,7 +58,7 @@
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.employee')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.employee')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="employee2" data-live-search="true" data-container="body" data-size="8">
@@ -74,7 +74,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.project')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="project_id" id="project_id2" data-container="body" data-live-search="true" data-size="8">
@@ -87,7 +87,7 @@
                 </div>
             </div>
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.category')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.category')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="category_id" id="category_id" data-container="body" data-live-search="true" data-size="8">
@@ -128,12 +128,6 @@ $recurringExpensesPermission = user()->permission('manage_recurring_expense');
                     <x-forms.link-secondary :link="route('recurring-expenses.index')" class="mr-3 float-left"
                         icon="sync">
                         @lang('app.menu.expensesRecurring')
-                    </x-forms.link-secondary>
-                @endif
-                @if ($addExpensesPermission == 'all' || $addExpensesPermission == 'added')
-                    <x-forms.link-secondary :link="route('expenses.import')" class="mr-3 float-left openRightModal"
-                                            icon="file-upload">
-                        @lang('app.importExcel')
                     </x-forms.link-secondary>
                 @endif
             </div>
@@ -201,7 +195,7 @@ $recurringExpensesPermission = user()->permission('manage_recurring_expense');
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["expenses-table"].draw(true);
+            window.LaravelDataTables["expenses-table"].draw(false);
         }
 
         $('#filter-status, #employee2,#project_id2,#category_id')

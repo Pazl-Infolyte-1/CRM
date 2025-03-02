@@ -56,7 +56,7 @@ $addEstimatePermission = user()->permission('add_estimates');
         data['clientID'] = clientID;
     });
     const showTable = () => {
-        window.LaravelDataTables["invoices-table"].draw(true);
+        window.LaravelDataTables["invoices-table"].draw(false);
     }
 
     $('#quick-action-type').change(function() {
@@ -140,7 +140,7 @@ $addEstimatePermission = user()->permission('add_estimates');
                     blockUI: true,
                     success: function(response) {
                         if (response.status == "success") {
-                            window.LaravelDataTables["invoices-table"].draw(true);
+                            window.LaravelDataTables["invoices-table"].draw(false);
                         }
                     }
                 });
@@ -233,7 +233,7 @@ $addEstimatePermission = user()->permission('add_estimates');
             },
             success: function(response) {
                 if (response.status == "success") {
-                    window.LaravelDataTables["invoices-table"].draw(true);
+                    window.LaravelDataTables["invoices-table"].draw(false);
                 }
             }
         });

@@ -22,11 +22,6 @@ class AttendanceObserver
             $attendance->added_by = user()->id;
         }
 
-        if ($attendance->work_from_type != 'other') {
-            $attendance->working_from = $attendance->work_from_type;
-        }
-        
-
         $attendance->company_id = $attendance->user->company_id;
     }
 

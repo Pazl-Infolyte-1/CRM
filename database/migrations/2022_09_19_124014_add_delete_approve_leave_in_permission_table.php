@@ -24,14 +24,14 @@ return new class extends Migration {
         if (!is_null($module)) {
 
             $permissionName = 'delete_approve_leaves';
-            $permission = Permission::updateOrCreate(
-                ['module_id' => $module->id, 'name' => $permissionName],
-                [
-                    'display_name' => ucwords(str_replace('_', ' ', $permissionName)),
-                    'is_custom' => 1,
-                    'allowed_permissions' => Permission::ALL_ADDED_NONE
-                ]
-            );
+
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'display_name' => ucwords(str_replace('_', ' ', $permissionName)),
+                'is_custom' => 1,
+                'module_id' => $module->id,
+                'allowed_permissions' => Permission::ALL_NONE
+            ]);
 
             $companies = Company::select('id')->get();
 

@@ -14,7 +14,7 @@
 
         Swal.fire({
             title: "Support Expired",
-            html: supportText + "<br>Please renew your support for one-click updates.<br><br> You can still update the application manually by following the documentation <a href='https://froiden.freshdesk.com/support/solutions/articles/43000554421-update-application-manually' target='_blank'>Update Application Manually</a>",
+            html: supportText + "<br>Please renew your support for one-click updates.",
             showCancelButton: true,
             confirmButtonText: "Renew Now",
             denyButtonText: `Free Support Guidelines`,
@@ -130,12 +130,6 @@
             url: '{!! route("admin.updateVersion.download") !!}',
             success: function (response) {
                 clearInterval(refreshPercent);
-
-                if(response.status === 'fail'){
-                    updateAreaDiv.html(`<i><span class='text-red'><strong>Update Failed</strong> :</span> ${response.message}</i>`)
-                    return false;
-                }
-
                 $('#percent-complete').css('width', '100%');
                 $('#percent-complete').html('100%');
                 $('#download-progress').append("<i><span class='text-success'>Download complete.</span> Now Installing...Please wait (This may take few minutes.)</i>");
@@ -205,7 +199,7 @@
     }
 
     function getPurchaseData() {
-        const token = "{{ csrf_token() }}";
+        var token = "{{ csrf_token() }}";
         $.easyAjax({
             type: 'POST',
             url: "{{ route('purchase-verified') }}",

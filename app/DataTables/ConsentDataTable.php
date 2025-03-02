@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\PurposeConsent;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Button;
@@ -22,7 +23,9 @@ class ConsentDataTable extends BaseDataTable
         return datatables()
             ->eloquent($query)
             ->addIndexColumn()
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view mr-1">
@@ -41,7 +44,12 @@ class ConsentDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->editColumn('created_at', fn($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format))
+            ->editColumn(
+                'created_at',
+                function ($row) {
+                    return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
+                }
+            )
             ->rawColumns(['status', 'action', 'check']);
     }
 

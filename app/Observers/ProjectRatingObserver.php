@@ -26,7 +26,7 @@ class ProjectRatingObserver
         }
 
         $notifyData = ['App\Notifications\RatingUpdate'];
-        Notification::deleteNotification($notifyData, $rating->id);
+        \App\Models\Notification::deleteNotification($notifyData, $rating->id);
 
     }
 

@@ -2,16 +2,19 @@
 
 namespace App\Exports;
 
+use App\Models\EmployeeDetails;
+use App\Models\EmployeeShiftSchedule;
 use App\Models\Holiday;
+use App\Models\Leave;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class ShiftScheduleExport implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
@@ -60,7 +63,7 @@ class ShiftScheduleExport implements FromCollection, WithHeadings, WithMapping, 
 
         $event->sheet->getDelegate()->getStyle('b:ag')
             ->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
     }
 
     public function headings(): array
@@ -117,8 +120,7 @@ class ShiftScheduleExport implements FromCollection, WithHeadings, WithMapping, 
         if ($startDate->month == $endDate->month) {
             $this->daysInMonth = Carbon::parse('01-' . $endDate->month . '-' . $this->year)->daysInMonth;
 
-        }
-        else {
+        } else {
             $this->daysInMonth = Carbon::parse('01-' . $startDate->month . '-' . $this->year)->daysInMonth;
         }
 
@@ -132,19 +134,20 @@ class ShiftScheduleExport implements FromCollection, WithHeadings, WithMapping, 
         foreach ($employees as $employee) {
             $employeedata[$employee_index]['employee_name'] = $employee->name;
 
-            if ($this->viewType != 'week') {
+            if($this->viewType != 'week'){
                 $dataTillToday = array_fill(1, $now->copy()->format('d'), '--');
                 $dataFromTomorrow = array_fill($now->copy()->addDay()->format('d'), ((int)$this->daysInMonth - (int)$now->copy()->format('d')), '--');
                 $employeedata[$employee_index]['dates'] = array_replace($dataTillToday, $dataFromTomorrow);
             }
-            else {
+            else
+            {
                 $period = CarbonPeriod::create($this->startdate, $this->enddate); // Get All Dates from start to end date
                 $employeedata[$employee_index]['dates'] = [];
-
+        
                 foreach ($period->toArray() as $date) {
                     $employeedata[$employee_index]['dates'][$date->day] = '--';
                 }
-
+        
             }
 
             foreach ($employee->shifts as $shift) {
@@ -170,13 +173,14 @@ class ShiftScheduleExport implements FromCollection, WithHeadings, WithMapping, 
             foreach ($employee->leaves as $leave) {
 
                 if ($leave->duration != 'half day') {
-                    $employeedata[$employee_index]['dates'][$leave->leave_date->day] = __('app.leave') . ': ' . $leave->type->type_name;
+                    $employeedata[$employee_index]['dates'][$leave->leave_date->day] = __('app.leave').': '.$leave->type->type_name;
                     $shiftColorCode[$leave->leave_date->day] = '';
                 }
             }
 
             foreach ($this->holidays as $holiday) {
-                if (in_array($holiday->date->day, array_keys($employeedata[$employee_index]['dates']))) {
+                if(in_array($holiday->date->day, array_keys($employeedata[$employee_index]['dates'])))
+                {
                     if ($employeedata[$employee_index]['dates'][$holiday->date->day] == 'Absent' || $employeedata[$employee_index]['dates'][$holiday->date->day] == '--') {
                         $employeedata[$employee_index]['dates'][$holiday->date->day] = 'Holiday';
                         $holidayOccasions[$holiday->date->day] = $holiday->occassion;
@@ -190,7 +194,7 @@ class ShiftScheduleExport implements FromCollection, WithHeadings, WithMapping, 
         }
 
         $employeedata = collect($employeedata);
-
+        
         self::$sum = $employeedata;
 
         return $employeedata;
@@ -206,18 +210,20 @@ class ShiftScheduleExport implements FromCollection, WithHeadings, WithMapping, 
         $startDate = Carbon::parse($this->weekStartDate)->day;
         $this->weekEndDate = Carbon::parse($this->weekStartDate->copy()->addDays(6))->day;
 
-        if ($this->viewType != 'week') {
+        if($this->viewType != 'week')
+        {
             $num = isset($employeedata['dates']) ? count($employeedata['dates']) : 0;
 
             for ($index = 1; $index <= $num; $index++) {
                 $data[] = $employeedata['dates'][$index];
             }
         }
-        else {
+        else
+        {
             $num = isset($employeedata['dates']) ? count($employeedata['dates']) : 0;
 
             $period = CarbonPeriod::create($this->startdate, $this->enddate); // Get All Dates from start to end date
-
+    
             foreach ($period->toArray() as $date) {
                 $data[] = $employeedata['dates'][$date->day];
             }

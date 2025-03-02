@@ -13,7 +13,7 @@ class ContractSignedListener
     /**
      * Handle the event.
      *
-     * @param ContractSignedEvent $event
+     * @param \App\Events\ContractSignedEvent $event
      * @return void
      */
     public function handle(ContractSignedEvent $event)

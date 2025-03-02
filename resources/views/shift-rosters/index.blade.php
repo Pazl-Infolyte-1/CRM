@@ -16,17 +16,10 @@
             padding: 1rem 0.25rem !important;
         }
 
-        .change-shiftno {
-            padding: 1rem 0.25rem !important;
-        }
-
         #week-end-date, #week-start-date {
             z-index: 0;
         }
 
-        #attendance-data .form-control:focus, .form-control:hover {
-            border-color: #e9ecef;
-        }
 </style>
 
     @if ($manageEmployeeShifts != 'all')
@@ -74,8 +67,8 @@
             <div class="select-status">
                 <select class="form-control select-picker" name="view_type" id="view_type" data-live-search="true"
                     data-size="8">
-                    <option value="week">@lang('app.weeklyView')</option>
-                    <option value="month">@lang('app.monthlyView')</option>
+                    <option value="week">@lang('app.weekly') @lang('app.view')</option>
+                    <option value="month">@lang('app.monthly') @lang('app.view')</option>
                 </select>
             </div>
         </div>

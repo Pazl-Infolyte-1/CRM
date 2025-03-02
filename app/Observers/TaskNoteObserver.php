@@ -67,10 +67,9 @@ class TaskNoteObserver
 
                 }
 
-            }
-            else {
+            } else {
 
-                event(new TaskNoteEvent($task, $note->created_at, $task->project->projectMembers));
+                    event(new TaskNoteEvent($task, $note->created_at, $task->project->projectMembers));
             }
 
             if ($task->project->client_id != null && $task->project->allow_client_notification == 'enable') {
@@ -79,8 +78,7 @@ class TaskNoteObserver
 
             }
 
-        }
-        else {
+        } else {
             event(new TaskNoteEvent($task, $note->created_at, $task->users));
         }
     }
@@ -103,8 +101,7 @@ class TaskNoteObserver
 
                         $newMention[] = $value;
                     }
-                }
-                else {
+                } else {
 
                     $newMention[] = $value;
                 }

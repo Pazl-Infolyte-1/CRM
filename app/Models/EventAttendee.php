@@ -41,9 +41,4 @@ class EventAttendee extends BaseModel
         return $this->belongsTo(User::class, 'user_id')->withoutGlobalScope(ActiveScope::class);
     }
 
-    public function event(): BelongsTo
-    {
-        return $this->belongsTo(Event::class, 'event_id', 'id');
-    }
-
 }

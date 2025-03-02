@@ -5,11 +5,9 @@ namespace App\Traits;
 use App\Models\Contract;
 use App\Models\ContractSign;
 use App\Models\DashboardWidget;
-use App\Models\Deal;
 use App\Models\Lead;
-use App\Models\LeadPipeline;
 use App\Models\LeadSource;
-use App\Models\PipelineStage;
+use App\Models\LeadStatus;
 use App\Models\Payment;
 use App\Models\ProjectTimeLog;
 use App\Models\Role;
@@ -30,15 +28,13 @@ trait ClientDashboard
      */
     public function clientDashboard()
     {
-        $this->viewClientDashboard = user()->permission('view_client_dashboard');
         abort_403($this->viewClientDashboard !== 'all');
+
         $this->pageTitle = 'app.clientDashboard';
         $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
         $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
         $startDate = $this->startDate->toDateString();
         $endDate = $this->endDate->toDateString();
-
-        $pipelineId = (request('pipelineId') != '') ? request('pipelineId') : null;
 
         $this->totalClient = User::withoutGlobalScope(ActiveScope::class)
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
@@ -52,18 +48,9 @@ trait ClientDashboard
         $this->totalLead = Lead::whereBetween(DB::raw('DATE(`created_at`)'), [$startDate, $endDate])
             ->count();
 
-        $this->totalDeals = Deal::whereBetween(DB::raw('DATE(`created_at`)'), [$startDate, $endDate])
+        $this->totalLeadConversions = Lead::whereBetween(DB::raw('DATE(`updated_at`)'), [$startDate, $endDate])
+            ->whereNotNull('client_id')
             ->count();
-
-        $this->totalLeadConversions = Deal::select('deals.id', 'pipeline_stages.slug')->whereBetween(DB::raw('DATE(deals.updated_at)'), [$startDate, $endDate])
-            ->leftJoin('pipeline_stages', 'pipeline_stages.id', 'deals.pipeline_stage_id')
-            ->get();
-
-        $this->convertedDeals = $this->totalLeadConversions->filter(function ($value, $key) {
-            return $value->slug == 'win';
-        })->count();
-
-        $this->convertDealPercentage = ($this->totalLeadConversions->count() > 0) ? number_format(($this->convertedDeals / $this->totalLeadConversions->count() * 100), 2) : 0;
 
         $this->totalContractsGenerated = Contract::whereBetween(DB::raw('DATE(contracts.`end_date`)'), [$startDate, $endDate])->orWhereBetween(DB::raw('DATE(contracts.`start_date`)'), [$startDate, $endDate])->count();
 
@@ -79,29 +66,17 @@ trait ClientDashboard
 
         }])->where('name', 'client')->first();
 
-        $this->latestClient = Role::with([
-            'users' => function ($query) use ($startDate, $endDate) {
-                return $query->with('clientDetails:id,user_id,company_name')
-                    ->select('users.id', 'users.name', 'users.email', 'users.created_at', 'users.image', 'users.status')
-                    ->whereBetween(DB::raw('DATE(users.`created_at`)'), [$startDate, $endDate])
-                    ->orderBy('users.id', 'desc')
-                    ->limit(10);
-            }])
-            ->where('name', 'client')
-            ->first();
+        $this->latestClient = Role::with(['users' => function ($query) use ($startDate, $endDate) {
+            return $query->select('users.id', 'users.name', 'users.email', 'users.created_at', 'users.image')
+                ->whereBetween(DB::raw('DATE(users.`created_at`)'), [$startDate, $endDate])
+                ->orderBy('users.id', 'desc')
+                ->limit(10);
+        }])->where('name', 'client')->first();
 
         $this->clientEarningChart = $this->clientEarningChart($startDate, $endDate);
         $this->clientTimelogChart = $this->clientTimelogChart($startDate, $endDate);
 
-        $this->leadPipelines = LeadPipeline::all();
-
-        $defaultPipeline = $this->leadPipelines->filter(function ($value, $key) {
-            return $value->default == '1';
-        })->first();
-
-        $defaultPipelineId = ($pipelineId) ?: $defaultPipeline->id;
-
-        $this->leadStatusChart = $this->leadStatusChart($startDate, $endDate, $defaultPipelineId);
+        $this->leadStatusChart = $this->leadStatusChart($startDate, $endDate);
         $this->leadSourceChart = $this->leadSourceChart($startDate, $endDate);
 
         $this->widgets = DashboardWidget::where('dashboard_type', 'admin-client-dashboard')->get();
@@ -118,7 +93,7 @@ trait ClientDashboard
             ->join('currencies', 'currencies.id', '=', 'payments.currency_id')
             ->leftJoin('invoices', 'invoices.id', '=', 'payments.invoice_id')
             ->leftJoin('projects', 'projects.id', '=', 'payments.project_id')
-            ->select('payments.amount', 'currencies.id as currency_id', 'payments.exchange_rate', 'projects.client_id', 'invoices.client_id as invoice_client_id', 'payments.invoice_id', 'payments.project_id')
+            ->select('payments.amount', 'currencies.id as currency_id', 'currencies.exchange_rate', 'projects.client_id', 'invoices.client_id as invoice_client_id', 'payments.invoice_id', 'payments.project_id')
             ->where('payments.status', 'complete');
         $payments = $payments->where(function ($query) {
             $query->whereNotNull('projects.client_id')
@@ -147,11 +122,11 @@ trait ClientDashboard
             if ($chart->currency->currency_code != $this->company->currency->currency_code && $chart->currency->exchange_rate != 0) {
                 if ($chart->currency->is_cryptocurrency == 'yes') {
                     $usdTotal = ($chart->amount * $chart->currency->usd_price);
-                    $chartDataClients[$chartName] = $chartDataClients[$chartName] + round(floor(floatval($usdTotal) * floatval($chart->exchange_rate)), 2);
+                    $chartDataClients[$chartName] = $chartDataClients[$chartName] + floor($usdTotal / $chart->currency->exchange_rate);
 
                 }
                 else {
-                    $chartDataClients[$chartName] = $chartDataClients[$chartName] + round((floatval($chart->amount) * floatval($chart->exchange_rate)), 2);
+                    $chartDataClients[$chartName] = $chartDataClients[$chartName] + floor($chart->amount / $chart->currency->exchange_rate);
                 }
             }
             else {
@@ -207,34 +182,23 @@ trait ClientDashboard
      * @param $endDate
      * @return array
      */
-    public function leadStatusChart($startDate, $endDate, $pipelineID = null)
+    public function leadStatusChart($startDate, $endDate)
     {
-        $leadStatus = PipelineStage::withCount(['deals' => function ($query) use ($startDate, $endDate) {
+        $leadStatus = LeadStatus::withCount(['leads' => function ($query) use ($startDate, $endDate) {
             return $query->whereBetween(DB::raw('DATE(`created_at`)'), [$startDate, $endDate]);
-        }]);
-
-        if ($pipelineID) {
-            $leadStatus->where('lead_pipeline_id', $pipelineID);
-        }
-
-        $leadStatus = $leadStatus->get();
+        }])->get();
 
         $labelVal = [];
 
-        foreach ($leadStatus->pluck('name') as $key => $value) {
+        foreach ($leadStatus->pluck('type') as $key => $value) {
             $labelVal[] = $value;
         }
 
-        $stageData = [];
+        $data['labels'] = $labelVal;
+        $data['colors'] = $leadStatus->pluck('label_color')->toArray();
+        $data['values'] = $leadStatus->pluck('leads_count')->toArray();
 
-        foreach ($leadStatus as $key => $value) {
-            $stageData['labels'][] = $value->name;
-            $stageData['colors'][] = $value->label_color;
-            $stageData['values'][] = $value->deals_count;
-        }
-
-        return $stageData;
-
+        return $data;
     }
 
     public function leadSourceChart($startDate, $endDate)
@@ -247,7 +211,7 @@ trait ClientDashboard
 
         foreach ($leadStatus->pluck('type') as $key => $value) {
             $labelName = current(explode(' ', $value));
-            $data['labels'][] = __('app.' . strtolower($labelName)) . '' . strstr($value, ' ');
+            $data['labels'][] = __('app.'.$labelName).''.strstr($value, ' ');
         }
 
         foreach ($data['labels'] as $key => $value) {

@@ -7,7 +7,7 @@ $addProductPermission = user()->permission('add_product');
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.proposalTemplateDetails')
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('modules.proposal.proposalTemplate') @lang('app.details')
         </h4>
     </div>
     <!-- HEADING END -->
@@ -340,7 +340,7 @@ $addProductPermission = user()->permission('add_product');
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14 ">
+            <table width="100%" class="text-right f-14 text-capitalize">
                 <tbody>
                     <tr>
                         <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -429,21 +429,12 @@ $addProductPermission = user()->permission('add_product');
 
         $('.toggle-product-category').click(function() {
             $('.product-category-filter').toggleClass('d-none');
-            var url = "{{route('invoices.product_category', ':id')}}";
-            url = url.replace(':id', null);
-            changeProductCategory(url);
-            $('#product_category_id').val('').trigger('change');
-            $('#product_category_id').selectpicker('refresh');
         });
 
         $('#product_category_id').on('change', function(){
             var categoryId = $(this).val();
-            var url = "{{route('invoices.product_category', ':id')}}";
-            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);
-            changeProductCategory(url);
-        });
-
-        function changeProductCategory(url) {
+            var url = "{{route('invoices.product_category', ':id')}}",
+            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);;
             $.easyAjax({
                 url : url,
                 type : "GET",
@@ -461,13 +452,13 @@ $addProductPermission = user()->permission('add_product');
                             options.push(selectData);
                         });
                         $('#add-products').html(
-                            '<option value="" class="form-control" >{{  __('app.menu.selectProduct') }}</option>' +
+                            '<option value="" class="form-control" >{{ __('app.select') . ' ' . __('app.product') }}</option>' +
                             options);
                         $('#add-products').selectpicker('refresh');
                     }
                 }
             });
-        }
+        });
 
         var file = $('.dropify').dropify({
             messages: dropifyMessages
@@ -548,14 +539,13 @@ $addProductPermission = user()->permission('add_product');
 
         function addProduct(id) {
             var currencyId = $('#currency_id').val();
-            var exchangeRate = $('#exchange_rate').val();
+
             $.easyAjax({
                 url: "{{ route('invoices.add_item') }}",
                 type: "GET",
                 data: {
                     id: id,
-                    currencyId: currencyId,
-                    exchangeRate: exchangeRate
+                    currencyId: currencyId
                 },
                 blockUI: true,
                 success: function(response) {

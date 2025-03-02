@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Discussion;
 use App\Models\EmailNotificationSetting;
+use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
 
@@ -42,17 +43,11 @@ class NewDiscussionMention extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
+            array_push($via, 'slack');
         }
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
             array_push($via, OneSignalChannel::class);
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.discussion.mentionSubject'), $this->discussion->title);
         }
 
         return $via;
@@ -70,8 +65,8 @@ class NewDiscussionMention extends BaseNotification
         $url = getDomainSpecificUrl($url, $this->company);
         $content = __('email.discussion.mentionContent') . ' ' . $this->discussion->title . '<br>' . __('app.projectName') . ':' . $this->discussion->project->project_name;
 
-        return parent::build($notifiable)
-            ->subject(__('email.discussion.mentionSubject') . ':' . $this->discussion->title . ' - ' . config('app.name') . '.')
+        return parent::build()
+            ->subject(__('email.discussion.mentionSubject') .':'. $this->discussion->title . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -102,15 +97,24 @@ class NewDiscussionMention extends BaseNotification
      * Get the Slack representation of the notification.
      *
      * @param mixed $notifiable
-     * @return \Illuminate\Notifications\Messages\SlackMessage
+     * @return SlackMessage
      */
     public function toSlack($notifiable)
     {
+        $slack = $notifiable->company->slackSetting;
 
-        return $this->slackBuild($notifiable)
-            ->content('*' . __('email.discussion.mentionSubject') . '*' . "\n" . $this->discussion->title);
+        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->to('@' . $notifiable->employee[0]->slack_username)
+                ->content('*' . __('email.discussion.mentionSubject') . '*' . "\n" . $this->discussion->title);
+        }
 
-
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image($slack->slack_logo_url)
+            ->content('*' . __('email.discussion.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

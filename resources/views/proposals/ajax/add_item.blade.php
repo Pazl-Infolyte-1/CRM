@@ -1,10 +1,5 @@
 <!-- DESKTOP DESCRIPTION TABLE START -->
 <div class="d-flex px-4 py-3 c-inv-desc item-row">
-    <div class="d-flex align-items-center">
-        <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-        <input type="hidden" name="sort_order[]"
-                value="{{ $items->id }}">
-    </div>
 
     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block ">
         <table width="100%">

@@ -46,7 +46,7 @@ $addClientPermission = user()->permission('add_client_contacts');
         data['clientID'] = clientID;
     });
     const showTable = () => {
-        window.LaravelDataTables["clients-table"].draw(true);
+        window.LaravelDataTables["clients-table"].draw(false);
     }
 
     $('#quick-action-type').change(function() {

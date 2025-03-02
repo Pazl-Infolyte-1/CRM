@@ -5,7 +5,6 @@ namespace App\Observers;
 use App\Events\DiscussionEvent;
 use App\Events\DiscussionMentionEvent;
 use App\Models\Discussion;
-use App\Models\Notification;
 use App\Models\User;
 
 class DiscussionObserver
@@ -37,11 +36,11 @@ class DiscussionObserver
 
         $project = $discussion->project;
 
-        $mentionIds = explode(',', request()->mention_user_id);
+            $mentionIds = explode(',', request()->mention_user_id);
 
-        $projectUsers = json_decode($project->projectMembers->pluck('id'));
+            $projectUsers = json_decode($project->projectMembers->pluck('id'));
 
-        $mentionUserId = array_intersect($mentionIds, $projectUsers);
+            $mentionUserId = array_intersect($mentionIds, $projectUsers);
 
         if ($mentionUserId != null && $mentionUserId != '') {
 
@@ -49,8 +48,7 @@ class DiscussionObserver
 
             event(new DiscussionMentionEvent($discussion, $mentionUserId));
 
-        }
-        else {
+        } else {
 
             $unmentionIds = array_diff($projectUsers, $mentionIds);
 
@@ -59,8 +57,7 @@ class DiscussionObserver
                 $projectMember = User::whereIn('id', $unmentionIds)->get();
                 event(new DiscussionEvent($discussion, $projectMember));
 
-            }
-            else {
+            } else {
                 if (!isRunningInConsoleOrSeeding()) {
                     event(new DiscussionEvent($discussion, null));
                 }
@@ -72,7 +69,7 @@ class DiscussionObserver
     public function deleting(Discussion $discussion)
     {
         $notifyData = ['App\Notifications\NewDiscussion', 'App\Notifications\NewDiscussionReply'];
-        Notification::deleteNotification($notifyData, $discussion->id);
+        \App\Models\Notification::deleteNotification($notifyData, $discussion->id);
 
     }
 

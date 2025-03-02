@@ -5,6 +5,14 @@
     @include('sections.datatable_css')
 @endpush
 
+@push('styles')
+    <style>
+        .action-bar{
+            float: right;
+        }
+    </style>
+@endpush
+
 @section('filter-section')
 
     <x-filters.filter-box>
@@ -83,7 +91,7 @@
                     widgetId="totalExpense" />
             </div>
             <div class="col-md-8">
-                <div class="d-lg-flex d-md-flex justify-content-end" id="reports">
+                <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar" id="reports">
                     <div class="btn-group mt-3 mt-lg-0 mt-md-0 ml-lg-3" role="group">
                         <a href="{{ route('expense-report.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
                             data-original-title="@lang('app.menu.expenseReport')"><i class="side-icon bi bi-list-ul"></i></a>
@@ -219,7 +227,7 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["expense-report-table"].draw(true);
+            window.LaravelDataTables["expense-report-table"].draw(false);
             barChart();
         }
 
@@ -244,7 +252,7 @@
 
         $('#reset-filters').click(function() {
             $('#filter-form')[0].reset();
-            // setDate()
+            setDate()
 
             $('.filter-box .select-picker').selectpicker("refresh");
             $('#reset-filters').addClass('d-none');

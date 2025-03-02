@@ -25,7 +25,6 @@ const init = function (parent = "") {
         trigger: 'hover'
     });
 
-
     //initialise popover
     $(function () {
         $('[data-toggle="popover"]').popover();

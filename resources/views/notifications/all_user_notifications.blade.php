@@ -13,15 +13,9 @@
                         @include('notifications.'.$userType.'.'.\Illuminate\Support\Str::snake(class_basename($notification->type)))
                     @endif
 
-                    @if (isWorksuiteSaas())
-                        @if(view()->exists('notifications.superadmin.'.\Illuminate\Support\Str::snake(class_basename($notification->type))))
-                            @include('notifications.superadmin.'.\Illuminate\Support\Str::snake(class_basename($notification->type)))
-                        @endif
-                    @endif
-
                     @foreach ($worksuitePlugins as $item)
-                        @if(view()->exists(strtolower($item).'::notifications.'.\Illuminate\Support\Str::snake(class_basename($notification->type))))
-                            @include(strtolower($item).'::notifications.'.\Illuminate\Support\Str::snake(class_basename($notification->type)))
+                        @if(View::exists($item.'::notifications.'.\Illuminate\Support\Str::snake(class_basename($notification->type))))
+                            @include($item.'::notifications.'.\Illuminate\Support\Str::snake(class_basename($notification->type)))
                         @endif
                     @endforeach
 
@@ -36,7 +30,7 @@
                         </div>
                     </div>
                 @endforelse
-            </x-cards.data>
+            </x-card>
         </div>
     </div>
 

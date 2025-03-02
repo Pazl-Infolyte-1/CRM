@@ -39,11 +39,15 @@ $editDocumentPermission = user()->permission('edit_documents');
             || ($viewDocumentPermission == 'owned' && ($file->user_id == user()->id && $file->added_by != user()->id))
             || ($viewDocumentPermission == 'both' && ($file->added_by == user()->id || $file->user_id == user()->id)))
                 <x-file-card :fileName="$file->name" :dateAdded="$file->created_at->diffForHumans()">
-                    <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
+                    @if ($file->icon == 'images')
+                        <img src="{{ $file->doc_url }}">
+                    @else
+                        <i class="fa {{ $file->icon }} text-lightest"></i>
+                    @endif
                     <x-slot name="action">
                         <div class="dropdown ml-auto file-action">
                             <button
-                                class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
+                                class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
                                 type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-ellipsis-h"></i>
                             </button>

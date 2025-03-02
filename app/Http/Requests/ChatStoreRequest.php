@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\CoreRequest;
+
 class ChatStoreRequest extends CoreRequest
 {
     /**
@@ -30,17 +32,11 @@ class ChatStoreRequest extends CoreRequest
 
     public function rules()
     {
-
-        $rules = [
+        return [
+            'message' => 'required',
             'user_id' => 'required_if:user_type,employee',
             'client_id' => 'required_if:user_type,client',
         ];
-
-        if($this->types == 'modal'){
-            $rules['message'] = 'required';
-        }
-
-        return $rules;
     }
 
     public function messages()

@@ -91,8 +91,6 @@ use Illuminate\Notifications\Notifiable;
  * @method static \Illuminate\Database\Eloquent\Builder|CreditNotes whereCompanyId($value)
  * @property-read \App\Models\UnitType|null $unit
  * @method static \Illuminate\Database\Eloquent\Builder|CreditNotes whereUnitId($value)
- * @property string|null $original_credit_note_number
- * @method static \Illuminate\Database\Eloquent\Builder|CreditNotes whereOriginalCreditNoteNumber($value)
  * @mixin \Eloquent
  */
 class CreditNotes extends BaseModel
@@ -144,7 +142,7 @@ class CreditNotes extends BaseModel
 
     public function payment(): HasMany
     {
-        return $this->hasMany(Payment::class, 'invoice_id', 'invoice_id')->orderByDesc('paid_on');
+        return $this->hasMany(Payment::class, 'invoice_id', 'invoice_id')->orderBy('paid_on', 'desc');
     }
 
     public function currency(): BelongsTo

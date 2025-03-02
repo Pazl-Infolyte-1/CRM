@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\GlobalSetting;
+use App\DataTables\BaseDataTable;
 use App\Models\Proposal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,16 +16,14 @@ class ProposalDataTable extends BaseDataTable
     private $addInvoicePermission;
     private $deleteProposalPermission;
     private $viewProposalPermission;
-    private $leadFilterFalse;
 
-    public function __construct($leadFilterFalse = false)
+    public function __construct()
     {
         parent::__construct();
         $this->editProposalPermission = user()->permission('edit_lead_proposals');
         $this->addInvoicePermission = user()->permission('add_invoices');
         $this->deleteProposalPermission = user()->permission('delete_lead_proposals');
         $this->viewProposalPermission = user()->permission('view_lead_proposals');
-        $this->leadFilterFalse = $leadFilterFalse;
     }
 
     /**
@@ -52,7 +50,7 @@ class ProposalDataTable extends BaseDataTable
                 $action .= '<a href="' . route('proposals.show', [$row->id]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($row->send_status) {
-                    $action .= '<a target="_blank" class="dropdown-item" href="' . url()->temporarySignedRoute('front.proposal', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '">
+                    $action .= '<a target="_blank" class="dropdown-item" href="' . route('front.proposal', $row->hash) . '">
                                     <i class="fa fa-link mr-2"></i>
                                     ' . __('modules.proposal.publicLink') . '
                                 </a>';
@@ -82,7 +80,7 @@ class ProposalDataTable extends BaseDataTable
                                     <div><i class="fa fa-check-double mr-2"></i>
                                     ' . trans('app.markSent') . '
                                     </div>
-                                    <i class="fa fa-question-circle" data-toggle="tooltip" data-original-title="' . __('messages.markSentInfo') . '"></i>
+                                    <i class="fa fa-question-circle" data-toggle="tooltip" data-original-title="'.__('messages.markSentInfo').'"></i>
                                 </a>';
                 }
 
@@ -91,7 +89,7 @@ class ProposalDataTable extends BaseDataTable
                 }
 
                 if (!$row->signature && $this->deleteProposalPermission == 'all' || ($this->deleteProposalPermission == 'added' && user()->id == $row->added_by)) {
-                    $action .= '<a class="dropdown-item delete-proposal-table-row" href="javascript:;" data-proposal-id="' . $row->id . '">
+                    $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-proposal-id="' . $row->id . '">
                                 <i class="fa fa-trash mr-2"></i>
                                 ' . trans('app.delete') . '
                             </a>';
@@ -104,13 +102,10 @@ class ProposalDataTable extends BaseDataTable
                 return $action;
             })
             ->editColumn('client_name', function ($row) {
-                return '<a href="' . route('deals.show', $row->deal_id) . '" class="text-darkest-grey">' . $row->deal_name . '</a>';
+                return '<a href="' . route('leads.show', $row->lead_id) . '" class="text-darkest-grey">' . $row->client_name . '</a>';
             })
             ->addColumn('proposal_number', function ($row) {
-                return '<a href="' . route('proposals.show', $row->id) . '" class="text-darkest-grey">' . $row->proposal_number . '</a>';
-            })
-            ->addColumn('contact', function ($row) {
-                return '<a href="' . route('lead-contact.show', $row->leadId) . '" class="text-darkest-grey">' . ucwords($row->salutation . ' ') . $row->contact_name . '</a>';
+                return '<a href="' . route('proposals.show', $row->id) . '" class="text-darkest-grey">' .__('modules.lead.proposal').'#'. $row->id . '</a>';
             })
             ->editColumn('status', function ($row) {
                 $status = '';
@@ -148,7 +143,7 @@ class ProposalDataTable extends BaseDataTable
                     return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
                 }
             )
-            ->rawColumns(['name', 'action', 'contact', 'status', 'client_name', 'proposal_number'])
+            ->rawColumns(['name', 'action', 'status', 'client_name', 'proposal_number'])
             ->removeColumn('currency_symbol');
     }
 
@@ -158,51 +153,23 @@ class ProposalDataTable extends BaseDataTable
     public function query()
     {
         $request = $this->request();
-        $model = Proposal::select([
-            'proposals.id',
-            'proposals.hash',
-            'deals.name as deal_name',
-            'proposals.send_status',
-            'leads.client_id',
-            'leads.id as leadId',
-            'deals.id as deal_id',
-            'total',
-            'valid_till',
-            'proposals.status',
-            'currencies.currency_symbol',
-            'currencies.id as currencyId',
-            'leads.company_name',
-            'proposals.added_by',
-            'proposals.created_at',
-            'leads.client_name as contact_name',
-            'leads.salutation',
-            'proposals.proposal_number',
-        ])
+        $model = Proposal::select('proposals.id', 'proposals.hash', 'leads.client_name', 'proposals.send_status', 'leads.client_id', 'leads.id as lead_id', 'total', 'valid_till', 'proposals.status', 'currencies.currency_symbol', 'currencies.id as currencyId', 'leads.company_name', 'proposals.added_by', 'proposals.created_at')
             ->with('signature')
             ->join('currencies', 'currencies.id', '=', 'proposals.currency_id')
-            ->join('deals', 'deals.id', '=', 'proposals.deal_id')
-            ->leftJoin('leads', 'leads.id', '=', 'deals.lead_id');
-
+            ->join('leads', 'leads.id', 'proposals.lead_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $model = $model->where(DB::raw('DATE(proposals.`created_at`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
             $model = $model->where(DB::raw('DATE(proposals.`created_at`)'), '<=', $endDate);
         }
 
-
-        // disable this filter when proposals are retrived from the deal tab
-        if (!$this->leadFilterFalse && $request->leadId !== null && $request->leadId != 'null' && $request->leadId != '' && $request->leadId != 'all') {
-            $model = $model->where('deals.lead_id', $request->leadId);
-        }
-
-        // use the leadid here when accessing the proposals from the deal tab
-        if ($this->leadFilterFalse && $request->leadId !== null && $request->leadId != 'null' && $request->leadId != '' && $request->leadId != 'all') {
-            $model = $model->where('proposals.deal_id', $request->leadId);
+        if ($request->leadId !== null && $request->leadId != 'null' && $request->leadId != '' && $request->leadId != 'all') {
+            $model = $model->where('proposals.lead_id', $request->leadId);
         }
 
         if ($request->status != 'all' && !is_null($request->status)) {
@@ -213,17 +180,6 @@ class ProposalDataTable extends BaseDataTable
             $model = $model->where('proposals.added_by', user()->id);
         }
 
-        if ($request->searchText != '') {
-            $model->where(function ($query) {
-                $query->where('leads.client_name', 'like', '%' . request('searchText') . '%')
-                    ->orWhere('deals.name', 'like', '%' . request('searchText') . '%')
-                    ->orWhere('proposals.id', 'like', '%' . request('searchText') . '%')
-                    ->orWhere('total', 'like', '%' . request('searchText') . '%')
-                    ->orWhere(function ($query) {
-                        $query->where('proposals.status', 'like', '%' . request('searchText') . '%');
-                    });
-            });
-        }
         return $model;
     }
 
@@ -265,8 +221,7 @@ class ProposalDataTable extends BaseDataTable
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.id') => ['data' => 'id', 'name' => 'id', 'title' => __('app.id'), 'visible' => false],
             __('modules.lead.proposal') => ['data' => 'proposal_number', 'name' => 'proposal_number', 'title' => __('modules.lead.proposal')],
-            __('app.deal') => ['data' => 'client_name', 'name' => 'client_name', 'title' => __('app.deal')],
-            __('modules.leadContact.contactName') => ['data' => 'contact', 'name' => 'contact', 'title' => __('modules.leadContact.contactName')],
+            __('app.name') => ['data' => 'client_name', 'name' => 'client_name', 'title' => __('app.name')],
             __('modules.invoices.total') => ['data' => 'total', 'name' => 'total', 'title' => __('modules.invoices.total')],
             __('app.date') => ['data' => 'created_at', 'name' => 'created_at', 'title' => __('app.date')],
             __('modules.estimates.validTill') => ['data' => 'valid_till', 'name' => 'valid_till', 'title' => __('modules.estimates.validTill')],

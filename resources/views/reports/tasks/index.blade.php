@@ -60,24 +60,22 @@
 
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
-            @if (in_array('clients', user_modules()))
-                <div class="more-filter-items">
-                    <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.client')</label>
-                    <div class="select-filter mb-4">
-                        <div class="select-others">
-                            <select class="form-control select-picker" id="clientID" data-live-search="true" data-container="body" data-size="8">
-                                <option value="all">@lang('app.all')</option>
-                                @foreach ($clients as $client)
-                                    <x-user-option :user="$client" />
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            @endif
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tasks.assignTo')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.client')</label>
+                <div class="select-filter mb-4">
+                    <div class="select-others">
+                        <select class="form-control select-picker" id="clientID" data-live-search="true" data-container="body" data-size="8">
+                            <option value="all">@lang('app.all')</option>
+                            @foreach ($clients as $client)
+                                <x-user-option :user="$client" />
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="more-filter-items">
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.assignTo')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="assignedTo" data-live-search="true" data-container="body" data-size="8">
@@ -91,7 +89,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.tasks.assignBy')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.tasks.assignBy')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="assignedBY" data-live-search="true" data-container="body" data-size="8">
@@ -105,7 +103,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.label')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.label')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="label" data-live-search="true" data-container="body" data-size="8">
@@ -121,7 +119,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 "
+                <label class="f-14 text-dark-grey mb-12 text-capitalize"
                     for="usr">@lang('modules.taskCategory.taskCategory')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -137,7 +135,7 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.billableTask')</label>
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.billableTask')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" id="billable_task" data-live-search="true" data-container="body" data-size="8">
@@ -161,7 +159,7 @@
         <!-- Add Task Export Buttons Start -->
         <div class="d-flex flex-column">
             <!-- TASK STATUS START -->
-            <x-cards.data id="task-chart-card" :title="__('app.menu.tasks')" padding="false" class="py-3">
+            <x-cards.data id="task-chart-card" :title="__('app.menu.tasks')" padding="false">
             </x-cards.data>
             <!-- TASK STATUS END -->
 
@@ -227,7 +225,7 @@
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["allTasks-table"].draw(true);
+            window.LaravelDataTables["allTasks-table"].draw(false);
             pieChart();
         }
 

@@ -2,13 +2,14 @@
 
 namespace App\DataTables;
 
-use App\Helper\Common;
 use App\Scopes\ActiveScope;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\CustomField;
 use App\Models\ClientDetails;
 use App\Models\CustomFieldGroup;
+use App\DataTables\BaseDataTable;
+use Illuminate\Database\Eloquent\Model;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,9 @@ class ClientsDataTable extends BaseDataTable
 
         $datatables = datatables()->eloquent($query);
         $datatables->addIndexColumn();
-        $datatables->addColumn('check', fn($row) => $this->checkBox($row));
+        $datatables->addColumn('check', function ($row) {
+            return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+        });
         $datatables->addColumn('action', function ($row) {
 
             $action = '<div class="task_view">
@@ -78,22 +81,45 @@ class ClientsDataTable extends BaseDataTable
 
             return $action;
         });
-        $datatables->addColumn('client_name', fn($row) => $row->name_salutation);
-        $datatables->addColumn('mobile', function ($row) {
-            if (!is_null($row->mobile) && !is_null($row->country_phonecode)) {
-                return '+' . $row->country_phonecode . ' ' . $row->mobile;
-            }
 
-            return '--';
+        $datatables->addColumn('client_name', function ($row) {
+            return ($row->salutation ? $row->salutation->label() . ' ' : '') . $row->name;
         });
-        $datatables->addColumn('added_by', fn($row) => optional($row->clientDetails)->addedBy ? $row->clientDetails->addedBy->name : '--');
-        $datatables->editColumn('name', fn($row) => view('components.client', ['user' => $row]));
-        $datatables->editColumn('id', fn($row) => $row->clientDetails?->id);
-        $datatables->editColumn('created_at', fn($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format));
-        $datatables->editColumn('status', fn($row) => $row->status == 'active' ? Common::active() : Common::inactive());
+
+        $datatables->addColumn('added_by', function ($row) {
+            return ($row->clientDetails && $row->clientDetails->addedBy) ? $row->clientDetails->addedBy->name : '--';
+        });
+        $datatables->editColumn(
+            'name',
+            function ($row) {
+                return view('components.client', [
+                    'user' => $row
+                ]);
+            }
+        );
+        $datatables->editColumn(
+            'created_at',
+            function ($row) {
+                return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
+            }
+        );
+        $datatables->editColumn(
+            'status',
+            function ($row) {
+                if ($row->status == 'active') {
+                    return ' <i class="fa fa-circle mr-1 text-light-green f-10"></i>' . __('app.active');
+                }
+                else {
+                    return '<i class="fa fa-circle mr-1 text-red f-10"></i>' . __('app.inactive');
+                }
+            }
+        );
         $datatables->addIndexColumn();
         $datatables->smart(false);
-        $datatables->setRowId(fn($row) => 'row-' . $row->id);
+        $datatables->setRowId(function ($row) {
+            return 'row-' . $row->id;
+        });
+
         // Add Custom Field to datatable
         $customFieldColumns = CustomField::customFieldData($datatables, ClientDetails::CUSTOM_FIELD_MODEL, 'clientDetails');
 
@@ -109,22 +135,20 @@ class ClientsDataTable extends BaseDataTable
     public function query(User $model)
     {
         $request = $this->request();
-        $users = $model->withoutGlobalScope(ActiveScope::class)
-            ->with('session:id', 'clientDetails.addedBy:id,name,image', 'clientDetails.company:id,logo,company_name')
+        $users = $model->withoutGlobalScope(ActiveScope::class)->with('session', 'clientDetails', 'clientDetails.addedBy')
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->leftJoin('client_details', 'users.id', '=', 'client_details.user_id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
-            ->select('users.id', 'users.salutation','users.is_client_contact', 'users.name', 'client_details.company_name', 'users.email', 'users.mobile', 'users.country_phonecode', 'users.image', 'users.created_at', 'users.status', 'client_details.added_by', 'users.admin_approval')
-            ->where('roles.name', 'client')
-            ->whereNull('users.is_client_contact');
+            ->select('users.id', 'users.salutation', 'users.name', 'client_details.company_name', 'users.email', 'users.mobile', 'users.image', 'users.created_at', 'users.status', 'client_details.added_by', 'users.admin_approval')
+            ->where('roles.name', 'client');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $users = $users->where(DB::raw('DATE(users.`created_at`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
             $users = $users->where(DB::raw('DATE(users.`created_at`)'), '<=', $endDate);
         }
 
@@ -232,7 +256,7 @@ class ClientsDataTable extends BaseDataTable
             __('app.customers') => ['data' => 'client_name', 'name' => 'users.name', 'visible' => false, 'title' => __('app.customers')],
             __('app.email') => ['data' => 'email', 'name' => 'email', 'title' => __('app.email')],
             __('app.addedBy') => ['data' => 'added_by', 'name' => 'added_by', 'visible' => false, 'title' => __('app.addedBy')],
-            __('app.mobile') => ['data' => 'mobile', 'name' => 'mobile', 'title' => __('app.mobile')],
+            __('app.mobile') => ['data' => 'mobile', 'name' => 'mobile', 'visible' => false, 'title' => __('app.mobile')],
             __('app.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.status')],
             __('app.createdAt') => ['data' => 'created_at', 'name' => 'created_at', 'title' => __('app.createdAt')]
         ];

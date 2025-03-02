@@ -5,7 +5,7 @@
             <div class="ml-3">
                 <div class="dropdown">
                     <button
-                        class="btn btn-lg bg-white border height-35 f-15 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
+                        class="btn btn-lg bg-white border height-35 f-15 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         @lang('app.action') <i class="icon-options-vertical icons"></i>
                     </button>
@@ -15,7 +15,7 @@
 
                         <a class="dropdown-item openRightModal"
                             href="{{ route('project-template.edit', $template->id) }}">@lang('app.edit')
-                            @lang('app.menu.projectTemplate')</a>
+                            @lang('app.project')</a>
                     </div>
                 </div>
             </div>

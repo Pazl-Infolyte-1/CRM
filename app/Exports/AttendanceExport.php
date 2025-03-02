@@ -9,23 +9,20 @@ use App\Models\EmployeeDetails;
 use App\Models\EmployeeShiftSchedule;
 use App\Models\Holiday;
 use App\Models\Leave;
-use App\Models\CompanyAddress;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class AttendanceExport implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
 
     /**
-     * @return Collection
+     * @return \Illuminate\Support\Collection
      */
     public static $sum;
     public $year;
@@ -81,7 +78,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
 
         $event->sheet->getDelegate()->getStyle('b:ag')
             ->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
     }
 
     public function headings(): array
@@ -145,7 +142,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
             $attendances = $attendances->orderBy('attendances.clock_in_time', 'asc')
                 ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->format('Y-m-d'))
                 ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->format('Y-m-d'))
-                ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.working_from', 'attendances.location_id', 'attendances.clock_out_time', 'attendances.late', 'attendances.half_day', 'attendances.auto_clock_out', 'attendances.half_day_type')->get();
+                ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.half_day')->get();
 
             $leavesDates = Leave::where('user_id', $userId)
                 ->where('leave_date', '>=', $startDate)
@@ -160,7 +157,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
                 ->get();
 
             $period = CarbonPeriod::create($startDate, $endDate); // Get All Dates from start to end date
-            $holidays = Holiday::getHolidayByDates($startDate, $endDate, $userId); // Getting Holiday Data
+            $holidays = Holiday::getHolidayByDates($startDate, $endDate); // Getting Holiday Data
 
             $attendances = collect($attendances)->each(function ($item) {
                 $item->status = '';
@@ -175,9 +172,6 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
                 $att->clock_out_time = null;
                 $att->late = null;
                 $att->half_day = null;
-                $att->half_day_type = null;
-                $att->working_from = null;
-                $att->location_id = null;
 
                 if ($date->lessThan(now()) && !$attendances->whereBetween('clock_in_time', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])->count()) {
 
@@ -246,8 +240,8 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
 
                 $date = Carbon::createFromFormat('Y-m-d H:i:s', $attendance->date)->timezone(company()->timezone)->format(company()->date_format);
 
-                $to = $attendance->clock_out_time ? \Carbon\Carbon::parse($attendance->clock_out_time) : null;
-                $from = $attendance->clock_in_time ? \Carbon\Carbon::parse($attendance->clock_in_time) : null;
+                $to = $attendance->clock_out_time ? \Carbon\Carbon::parse( $attendance->clock_out_time) : null;
+                $from = $attendance->clock_in_time ? \Carbon\Carbon::parse( $attendance->clock_in_time) : null;
 
                 if ($from && !$to) {
                     $to = $this->getDefaultClockOutTime($from, $employeeShifts->where('date', $attendance->date)->first());
@@ -255,10 +249,6 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
 
                 $clock_in = $attendance->clock_in_time ? Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_in_time)->timezone(company()->timezone)->format(company()->time_format) : 0;
                 $clock_out = $attendance->clock_out_time ? Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_out_time)->timezone(company()->timezone)->format(company()->time_format) : 0;
-
-                if($clock_out != 0 && $attendance->auto_clock_out == 1) {
-                    $clock_out .= ' ' . __('Modules.attendance.autoClockOut');
-                }
 
                 $diff_in_hours = ($to && $from) ? $to->diffInMinutes($from) : 0;
 
@@ -278,43 +268,20 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
                     }
                 }
                 else if ($attendance->late == 'yes' && $attendance->half_day == 'yes') {
-                    $halfDayType = '';
-
-                    if ($attendance->half_day_type == 'first_half') {
-                        $halfDayType = '('. __('modules.leaves.1stHalf') .')';
-                    } elseif ($attendance->half_day_type == 'second_half') {
-                        $halfDayType = '('. __('modules.leaves.2ndHalf') .')';
-                    }
-
-                    $status =  __('app.halfday') . $halfDayType . __('app.lateHalfday');
+                    $status = __('app.lateHalfday');
                 }
                 else if ($attendance->late == 'yes') {
                     $status = __('app.presentlate');
                 }
                 else if ($attendance->half_day == 'yes') {
-                    $halfDayType = '';
-
-                    if ($attendance->half_day_type == 'first_half') {
-                        $halfDayType = '('. __('modules.leaves.1stHalf') .')';
-                    } elseif ($attendance->half_day_type == 'second_half') {
-                        $halfDayType = '('. __('modules.leaves.2ndHalf') .')';
-                    }
-
-                    $status = __('app.halfday') . $halfDayType;
+                    $status = __('app.halfday');
                 }
                 else {
                     $status = '--';
                 }
 
-                $workFrom = $attendance->working_from ?? '--';
-                $companyAddress = CompanyAddress::where('id', $attendance->location_id)->first();
-                $location = '-';
-                if($companyAddress){
-                    $location = $companyAddress->location;
-                }
-
                 if ($employee_temp && $employee_temp[1] == $date) {
-                    $employeedata[$employee_index]['dates'][$emp_attendance - 1]['comments']['clock_in'] .= ' Clock In : ' . $clock_in . ' Clock Out : ' . $clock_out . ' Work From : ' . $workFrom . ' location : ' . $location;
+                    $employeedata[$employee_index]['dates'][$emp_attendance - 1]['comments']['clock_in'] .= ' Clock In : ' . $clock_in . ' Clock Out : ' . $clock_out;
                     $employeedata[$employee_index]['dates'][$emp_attendance - 1]['total_hours'] = $employeedata[$employee_index]['dates'][$emp_attendance - 1]['total_hours'] + $diff_in_hours;
                 }
                 else {
@@ -323,7 +290,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
                         'date' => $attendance->date,
                         'comments' => [
                             'status' => $status,
-                            'clock_in' => 'Clock In : ' . $clock_in . ' Clock Out : ' . $clock_out . ' Work From : ' . $workFrom . ' location : ' . $location,
+                            'clock_in' => 'Clock In : ' . $clock_in . ' Clock Out : ' . $clock_out,
                         ],
                     ];
                     $emp_attendance++;

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Designation;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRequest extends CoreRequest
 {

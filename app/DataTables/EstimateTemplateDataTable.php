@@ -3,21 +3,16 @@
 namespace App\DataTables;
 
 use App\Models\EstimateTemplate;
+use App\DataTables\BaseDataTable;
+use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
+use Yajra\DataTables\Html\Editor\Editor;
+use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 use Illuminate\Support\Carbon;
 
 class EstimateTemplateDataTable extends BaseDataTable
 {
-    private $editEstimatePermission;
-    private $deleteEstimatePermission;
-
-    public function __construct()
-    {
-        parent::__construct();
-        $this->editEstimatePermission = user()->permission('edit_estimates');
-        $this->deleteEstimatePermission = user()->permission('delete_estimates');
-    }
     /**
      * Build DataTable class.
      *
@@ -48,28 +43,18 @@ class EstimateTemplateDataTable extends BaseDataTable
                     </a>';
 
 
-                    if (
-                        $this->editEstimatePermission == 'all'
-                        || ($this->editEstimatePermission == 'added' && $row->added_by == user()->id)
-                        || ($this->editEstimatePermission == 'owned' && $row->added_by != user()->id) || $this->editEstimatePermission == 'both'
-                    ){
 
-                        $action .= '<a class="dropdown-item" href="' . route('estimate-template.edit', [$row->id]) . '">
+                    $action .= '<a class="dropdown-item" href="' . route('estimate-template.edit', [$row->id]) . '">
                             <i class="fa fa-edit mr-2"></i>
                             ' . trans('app.edit') . '
-                            </a>';
-                    }
+                        </a>';
 
-                    if (
-                        $this->deleteEstimatePermission == 'all'
-                        || ($this->deleteEstimatePermission == 'added' && $row->added_by == user()->id)
-                        || ($this->deleteEstimatePermission == 'owned' && $row->added_by != user()->id) || $this->deleteEstimatePermission == 'both'
-                    ) {
-                        $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-user-id="' . $row->id . '">
-                                <i class="fa fa-trash mr-2"></i>
-                                ' . trans('app.delete') . '
-                            </a>';
-                    }
+
+
+                    $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-user-id="' . $row->id . '">
+                            <i class="fa fa-trash mr-2"></i>
+                            ' . trans('app.delete') . '
+                        </a>';
 
 
                 $action .= '</div>

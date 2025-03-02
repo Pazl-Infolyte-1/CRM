@@ -2,7 +2,6 @@
 
 namespace App\View\Components;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class PieChart extends Component
@@ -11,25 +10,23 @@ class PieChart extends Component
     public $labels;
     public $values;
     public $colors;
-    public $fullscreen;
 
     /**
      * Create a new component instance.
      *
      * @return void
      */
-    public function __construct($labels, $values, $colors, $fullscreen = false)
+    public function __construct($labels, $values, $colors)
     {
         $this->labels = $labels;
         $this->values = $values;
         $this->colors = $colors;
-        $this->fullscreen = $fullscreen;
     }
 
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {

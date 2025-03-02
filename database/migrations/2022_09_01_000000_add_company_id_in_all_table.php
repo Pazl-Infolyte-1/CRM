@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\GlobalSetting;
+use App\Observers\CompanyObserver;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Company;
+use Illuminate\Support\Str;
 
 return new class extends Migration {
 
@@ -25,7 +27,7 @@ return new class extends Migration {
         $first = Company::pluck('id')->first();
         // Delete if more than one companies in database for worksuite
         // Delete all other companies except first
-        if ($count > 1 && $first === 1 && isWorksuite()) {
+        if ($count > 1 && $first === 1) {
             Company::where('id', '<>', $first)->delete();
         }
 
@@ -108,7 +110,7 @@ return new class extends Migration {
                 $table->unique(['name', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
 
         try {
@@ -117,7 +119,7 @@ return new class extends Migration {
                 $table->unique(['name', 'module_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
 
         try {
@@ -129,7 +131,7 @@ return new class extends Migration {
                 $table->unique(['slack_username', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('estimates', function (Blueprint $table) {
@@ -137,7 +139,7 @@ return new class extends Migration {
                 $table->unique(['estimate_number', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('invoices', function (Blueprint $table) {
@@ -145,7 +147,7 @@ return new class extends Migration {
                 $table->unique(['invoice_number', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('lead_sources', function (Blueprint $table) {
@@ -153,7 +155,7 @@ return new class extends Migration {
                 $table->unique(['type', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('lead_status', function (Blueprint $table) {
@@ -161,7 +163,7 @@ return new class extends Migration {
                 $table->unique(['type', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('payments', function (Blueprint $table) {
@@ -172,7 +174,7 @@ return new class extends Migration {
                 $table->unique(['transaction_id', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('push_subscriptions', function (Blueprint $table) {
@@ -180,7 +182,7 @@ return new class extends Migration {
                 $table->unique(['endpoint', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('taskboard_columns', function (Blueprint $table) {
@@ -188,7 +190,7 @@ return new class extends Migration {
                 $table->unique(['column_name', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('ticket_channels', function (Blueprint $table) {
@@ -196,7 +198,7 @@ return new class extends Migration {
                 $table->unique(['channel_name', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('ticket_types', function (Blueprint $table) {
@@ -204,7 +206,7 @@ return new class extends Migration {
                 $table->unique(['type', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
         try {
             Schema::table('users', function (Blueprint $table) {
@@ -212,7 +214,7 @@ return new class extends Migration {
                 $table->unique(['email', 'company_id']);
             });
         } catch (\Exception $e) {
-
+            echo $e->getMessage();
         }
     }
 

@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Http\Controllers\PaymentController;
 use App\Models\EmailNotificationSetting;
 use App\Models\Payment;
 
@@ -41,12 +40,6 @@ class NewPayment extends BaseNotification
             array_push($via, 'mail');
         }
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.payment.subject'), $this->payment->currency->currency_symbol . $this->payment->amount);
-        }
-
         return $via;
     }
 
@@ -58,44 +51,38 @@ class NewPayment extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
 
         if (($this->payment->project_id && $this->payment->project->client_id != null) || ($this->payment->invoice_id && $this->payment->invoice->client_id != null)) {
             $url = route('payments.show', $this->payment->id);
             $url = getDomainSpecificUrl($url, $this->company);
-            $payment_gateway = !is_null($this->payment->gateway) ? $this->payment->gateway . (($this->payment->offlineMethods) ? ' (' . $this->payment->offlineMethods->name . ')' : '') : '--';
+            $payment_gateway = !is_null($this->payment->gateway) ? $this->payment->gateway . (($this->payment->offlineMethods) ? ' ('. $this->payment->offlineMethods->name .')' : '') : '--';
             $payment_invoice = $this->payment->invoice->custom_invoice_number ?? '--';
             $projectName = $this->payment->project->project_name ?? '--';
             $clientName = $this->payment->invoice->client->name ?? '--';
             $clientEmail = $this->payment->invoice->client->email ?? '--';
-            $subject = __('email.payment.clientsubject') . ' (' . $this->payment->invoice->invoice_number . ') - ' . config('app.name') . '.';
+            $subject = __('email.payment.clientsubject') . ' - ' . config('app.name') . '.';
 
-            if ($notifiable->hasRole('admin')) {
-                $subject = __('email.payment.subject') . ' (' . $this->payment->invoice->invoice_number  . ') - ' . config('app.name') . '.';
-                $content = __('email.payment.text') .
-                    '<br>' . __('email.payment.amount') . '   :   ' . $this->payment->currency->currency_symbol . $this->payment->amount .
-                    '<br>' . __('email.payment.method') . '   :   ' . $payment_gateway .
-                    '<br>' . __('email.payment.invoiceNumber') . '   :   ' . $payment_invoice .
-                    '<br>' . __('email.payment.Project') . '   :   ' . $projectName .
-                    '<br>' . __('email.payment.clientName') . '   :   ' . $clientName .
-                    '<br>' . __('email.payment.clientEmail') . '   :   ' . $clientEmail;
+            if ($notifiable->hasRole('admin'))
+            {
+                    $subject = __('email.payment.subject') . ' - ' . config('app.name') . '.';
+                    $content = __('email.payment.text').
+                    '<br>'. __('email.payment.amount') . '   :   '. $this->payment->currency->currency_symbol .  $this->payment->amount .
+                    '<br>'.__('email.payment.method') . '   :   '.  $payment_gateway.
+                    '<br>'. __('email.payment.invoiceNumber'). '   :   '.  $payment_invoice.
+                    '<br>'. __('email.payment.Project'). '   :   '.  $projectName.
+                    '<br>'. __('email.payment.clientName'). '   :   '.  $clientName.
+                    '<br>'. __('email.payment.clientEmail'). '   :   '.  $clientEmail;
             }
-            else {
-                $content = __('email.payment.text') .
-                    '<br>' . __('email.payment.amount') . '   :   ' . $this->payment->currency->currency_symbol . $this->payment->amount .
-                    '<br>' . __('email.payment.method') . '   :   ' . $payment_gateway .
-                    '<br>' . __('email.payment.invoiceNumber') . '   :   ' . $payment_invoice;
+            else
+            {
+                $content = __('email.payment.text').
+                    '<br>'. __('email.payment.amount') . '   :   '. $this->payment->currency->currency_symbol .  $this->payment->amount .
+                    '<br>'.__('email.payment.method') . '   :   '.  $payment_gateway.
+                    '<br>'. __('email.payment.invoiceNumber'). '   :   '.  $payment_invoice;
             }
 
-            $paymentController = new PaymentController();
-
-            $pdfOption = $paymentController->domPdfObjectForDownload($this->payment->id);
-
-            $pdf = $pdfOption['pdf'];
-            $filename = $pdfOption['fileName'];
-            $build->attachData($pdf->output(), $filename . '.pdf');
-
-            $build
+            return $build
                 ->subject($subject)
                 ->markdown('mail.email', [
                     'url' => $url,
@@ -104,10 +91,6 @@ class NewPayment extends BaseNotification
                     'actionText' => __('email.payment.action'),
                     'notifiableName' => $notifiable->name,
                 ]);
-
-            parent::resetLocale();
-
-            return $build;
         }
     }
 

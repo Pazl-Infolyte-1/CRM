@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\Module;
 use App\Models\Permission;
 use App\Models\PermissionRole;
+use App\Models\PermissionType;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserPermission;
@@ -34,14 +35,13 @@ return new class extends Migration {
         if (!is_null($module)) {
             $permissionName = 'view_miroboard';
 
-            $permission = Permission::updateOrCreate(
-                ['module_id' => $module->id, 'name' => $permissionName],
-                [
-                    'display_name' => ucwords(str_replace('_', ' ', $permissionName)),
-                    'is_custom' => 1,
-                    'allowed_permissions' => Permission::ALL_ADDED_NONE
-                ]
-            );
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'display_name' => ucwords(str_replace('_', ' ', $permissionName)),
+                'is_custom' => 1,
+                'module_id' => $module->id,
+                'allowed_permissions' => Permission::ALL_NONE
+            ]);
 
             $companies = Company::select('id')->get();
 

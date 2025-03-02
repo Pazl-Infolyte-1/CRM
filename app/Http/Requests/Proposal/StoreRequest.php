@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Proposal;
 
 use App\Http\Requests\CoreRequest;
+use Carbon\Carbon;
 
 class StoreRequest extends CoreRequest
 {
@@ -28,10 +29,10 @@ class StoreRequest extends CoreRequest
         $today = now()->format($setting->date_format);
 
         return [
-            'valid_till' => 'required|date_format:"' . $setting->date_format . '"|after_or_equal:' . $today,
+            'valid_till' => 'required|after_or_equal:' . $today,
             'sub_total' => 'required',
             'total' => 'required',
-            'deal_id' => 'required'
+            'lead_id' => 'required'
         ];
     }
 

@@ -145,8 +145,7 @@ use Illuminate\Notifications\Notifiable;
  * @method static \Illuminate\Database\Eloquent\Builder|Invoice whereOfflineMethodId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Invoice wherePaymentStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Invoice whereTransactionId($value)
- * @property string|null $original_invoice_number
- * @method static \Illuminate\Database\Eloquent\Builder|Invoice whereOriginalInvoiceNumber($value)
+
  * @mixin \Eloquent
  */
 class Invoice extends BaseModel
@@ -162,7 +161,7 @@ class Invoice extends BaseModel
         'last_viewed' => 'datetime',
     ];
     protected $appends = ['total_amount', 'issue_on'];
-    protected $with = ['currency'];
+    protected $with = ['currency', 'address'];
 
     const CUSTOM_FIELD_MODEL = 'App\Models\Invoice';
 
@@ -198,7 +197,7 @@ class Invoice extends BaseModel
 
     public function payment(): HasMany
     {
-        return $this->hasMany(Payment::class, 'invoice_id')->orderByDesc('paid_on');
+        return $this->hasMany(Payment::class, 'invoice_id')->orderBy('paid_on', 'desc');
     }
 
     public function currency(): BelongsTo
@@ -226,11 +225,6 @@ class Invoice extends BaseModel
         return $this->belongsTo(BankAccount::class, 'bank_account_id');
     }
 
-    public function invoicePaymentDetail()
-    {
-        return $this->belongsTo(InvoicePaymentDetail::class, 'invoice_payment_id');
-    }
-
     public function scopePending($query)
     {
         return $query->where(function ($q) {
@@ -249,7 +243,7 @@ class Invoice extends BaseModel
 
     public static function lastInvoiceNumber()
     {
-        return (int)Invoice::orderBy('id', 'desc')->first()?->original_invoice_number ?? 0;
+        return (int)Invoice::latest()->first()?->original_invoice_number ?? 0;
     }
 
     public function appliedCredits()
@@ -261,7 +255,7 @@ class Invoice extends BaseModel
     {
         $due = $this->total - ($this->amountPaid());
 
-        return max($due, 0);
+        return $due < 0 ? 0 : $due;
     }
 
     public function amountPaid()
@@ -307,7 +301,7 @@ class Invoice extends BaseModel
 
     public function files(): HasMany
     {
-        return $this->hasMany(InvoiceFiles::class, 'invoice_id')->orderByDesc('id');
+        return $this->hasMany(InvoiceFiles::class, 'invoice_id')->orderBy('id', 'desc');
     }
 
 }

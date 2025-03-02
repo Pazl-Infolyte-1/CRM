@@ -2,7 +2,10 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\EmployeeShiftChangeRequest;
+use Carbon\Carbon;
+use DataTables;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Button;
@@ -19,7 +22,9 @@ class ShiftChangeRequestDataTable extends BaseDataTable
     {
         return (new EloquentDataTable($query))
             ->addIndexColumn()
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->addColumn('action', function ($row) {
                 $action = '<div class="task_view">
 
@@ -61,7 +66,9 @@ class ShiftChangeRequestDataTable extends BaseDataTable
                 return $row->status;
             })
             ->addIndexColumn()
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['action', 'name', 'check', 'shift']);
     }
 
@@ -82,7 +89,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
         $model = $model->join('employee_shifts', 'employee_shifts.id', '=', 'employee_shift_schedules.employee_shift_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
 
             if (!is_null($startDate)) {
                 $model->where(DB::raw('DATE(employee_shift_change_requests.`created_at`)'), '>=', $startDate);
@@ -90,7 +97,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
 
             if (!is_null($endDate)) {
                 $model->where(function ($query) use ($endDate) {

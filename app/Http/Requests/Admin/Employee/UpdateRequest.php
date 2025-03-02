@@ -35,9 +35,8 @@ class UpdateRequest extends CoreRequest
             'hourly_rate' => 'nullable|numeric',
             'department' => 'required',
             'designation' => 'required',
-            'company_address' => 'required',
             'joining_date' => 'required',
-            'last_date' => 'nullable|required_if:status,deactive|date_format:"' . $setting->date_format . '"|after_or_equal:joining_date',
+            'last_date' => 'nullable|date_format:"' . $setting->date_format . '"|after_or_equal:joining_date',
             'date_of_birth' => 'nullable|date_format:"' . $setting->date_format . '"|before_or_equal:'.now($setting->timezone)->toDateString(),
             'probation_end_date' => 'nullable|date_format:"' . $setting->date_format . '"|after_or_equal:joining_date',
             'notice_period_start_date' => 'nullable|required_with:notice_period_end_date|date_format:"' . $setting->date_format . '"',
@@ -47,7 +46,7 @@ class UpdateRequest extends CoreRequest
         ];
 
         if (isWorksuite()) {
-            $rules['email'] = 'required|max:100|email:rfc,strict|unique:users,email,'.$this->route('employee').',id,company_id,' . company()->id;
+            $rules['email'] = 'required|max:100|unique:users,email,'.$this->route('employee').',id,company_id,' . company()->id;
         }
 
         if ($detailID) {

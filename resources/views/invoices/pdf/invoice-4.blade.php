@@ -536,7 +536,6 @@
 
         .word-break {
             word-wrap: break-word;
-            word-break: break-all;
         }
 
         .left-stripes {
@@ -661,7 +660,7 @@
                             <div class="description">@lang('modules.invoices.billedTo'):</div>
                             @if ($invoice->project->client->name && $invoiceSetting->show_client_name == 'yes')
                                 <div class="client-name">
-                                    <strong>{{ $invoice->project->client->name_salutation }}</strong>
+                                    <strong>{{ $invoice->project->client->name }}</strong>
                                 </div>
                             @endif
 
@@ -673,7 +672,7 @@
 
                             @if ($invoice->project->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                                 <div>
-                                    <span class="">{{ $invoice->project->client->mobile_with_phonecode }}</span>
+                                    <span class="">{{ $invoice->project->client->mobile }}</span>
                                 </div>
                             @endif
                             @if ($invoice->project->client->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
@@ -702,11 +701,8 @@
                             </div>
                             @if ($invoiceSetting->show_gst == 'yes' && !is_null($invoice->project->client->clientDetails) && !is_null($invoice->project->client->clientDetails->gst_number))
                                 <div>
-                                    @if ($invoice->project->client->clientDetails->tax_name)
-                                        <span> {{$invoice->project->client->clientDetails->tax_name}}: {{ $invoice->project->client->clientDetails->gst_number }}</span>
-                                    @else
-                                        <span> @lang('app.gstIn'): {{ $invoice->project->client->clientDetails->gst_number }}</span>
-                                    @endif
+                                    <span> @lang('app.gstIn'): {{ $invoice->project->client->clientDetails->gst_number }}
+                                    </span>
                                 </div>
                             @endif
                         </section>
@@ -714,7 +710,7 @@
                         <section id="client-info" class="description">
                             <span class="description">@lang('modules.invoices.billedTo'): </span>
                             <div class="client-name">
-                                {{ $invoice->client->name_salutation }}
+                                {{ $invoice->client->name }}
                             </div>
 
                             @if ($invoice->clientDetails)
@@ -742,11 +738,7 @@
                             </div>
                             @if ($invoiceSetting->show_gst == 'yes' && !is_null($invoice->clientDetails) && !is_null($invoice->clientDetails->gst_number))
                                 <div>
-                                    @if ($invoice->clientDetails->tax_name)
-                                        <span> {{$invoice->clientDetails->tax_name}}: {{ $invoice->clientDetails->gst_number }}</span>
-                                    @else
-                                        <span> @lang('app.gstIn'): {{ $invoice->clientDetails->gst_number }}</span>
-                                    @endif
+                                    <span> @lang('app.gstIn'): {{ $invoice->clientDetails->gst_number }} </span>
                                 </div>
                             @endif
                         </section>
@@ -758,7 +750,7 @@
                         <section id="client-info">
                             <span>@lang('modules.invoices.billedTo'):</span>
                             <div class="client-name">
-                                <strong>{{ $invoice->estimate->client->name_salutation }}</strong>
+                                <strong>{{ $invoice->estimate->client->name }}</strong>
                             </div>
 
                             <div>
@@ -783,11 +775,8 @@
                             </div>
                             @if ($invoiceSetting->show_gst == 'yes' && !is_null($invoice->estimate->client->clientDetails->gst_number))
                                 <div>
-                                    @if ($invoice->estimate->client->clientDetails->tax_name)
-                                        <span> {{$invoice->estimate->client->clientDetails->tax_name}}: {{ $invoice->estimate->client->clientDetails->gst_number }}</span>
-                                    @else
-                                        <span> @lang('app.gstIn'): {{ $invoice->estimate->client->clientDetails->gst_number }}</span>
-                                    @endif
+                                    <span> @lang('app.gstIn'): {{ $invoice->estimate->client->clientDetails->gst_number }}
+                                    </span>
                                 </div>
                             @endif
                         </section>
@@ -860,44 +849,30 @@
                     </tr>
 
                     <?php $count = 0; ?>
-                    @foreach ($invoice->items->sortBy('field_order') as $item)
+                    @foreach ($invoice->items as $item)
                         @if ($item->type == 'item')
                             <tr data-iterate="item">
                                 <td>{{ ++$count }}</td>
                                 <!-- Don't remove this column as it's needed for the row commands -->
-                                <td class="word-break">
+                                <td>
                                     {{ $item->item_name }}
-                                    {{-- @if (!is_null($item->item_summary))
-                                        <p class="item-summary mb-3 word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                    @if (!is_null($item->item_summary))
+                                        <p class="item-summary mb-3">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                     @endif
                                     @if ($item->invoiceItemImage)
                                         <p>
                                             <img src="{{ $item->invoiceItemImage->file_url }}" width="80" height="80"
                                                 class="img-thumbnail">
                                         </p>
-                                    @endif --}}
+                                    @endif
                                 </td>
                                 @if ($invoiceSetting->hsn_sac_code_show)
                                     <td>{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                                 @endif
-                                <td align="right" width="10%" class="border-bottom-0">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
+                                <td style="text-align: right;">{{ $item->quantity }} <br><span class="item-summary">{{ $item->unit->unit_type }}</td>
                                 <td>{{ currency_format($item->unit_price, $invoice->currency_id, false) }}</td>
                                 <td>{{ $item->tax_list }}</td>
                                 <td>{{ currency_format($item->amount, $invoice->currency_id, false) }}</td>
-                            </tr>
-                            <tr>
-                                @if (!is_null($item->item_summary))
-                                    </table>
-                                        <div style="padding: 10px 0px 0px 20px">
-                                        {!! nl2br(pdfStripTags($item->item_summary)) !!}</div>
-                                    <table cellpadding="0" cellspacing="0">
-                                @endif
-                                @if ($item->invoiceItemImage)
-                                    <p class="mt-2">
-                                        <img src="{{ $item->invoiceItemImage->file_url }}" width="60" height="60"
-                                            class="img-thumbnail">
-                                    </p>
-                                @endif
                             </tr>
                         @endif
                     @endforeach
@@ -915,13 +890,7 @@
                     </tr>
                     @if ($discount != 0 && $discount != '')
                         <tr data-iterate="tax">
-                            <th>@lang('modules.invoices.discount'):
-                                @if($invoice->discount_type == 'percent')
-                                {{$invoice->discount}}%
-                            @else
-                                {{ currency_format($invoice->discount, $invoice->currency_id) }}
-                            @endif
-                            </th>
+                            <th>@lang('modules.invoices.discount'):</th>
                             <td>{{ currency_format($discount, $invoice->currency_id, false) }}</td>
                         </tr>
                     @endif
@@ -945,28 +914,26 @@
                         </tr>
                     @endif
                     <tr>
-                        <th>@lang('app.totalPaid') :</th>
+                        <th>@lang('modules.invoices.total') @lang('modules.invoices.paid'):</th>
                         <td> {{ currency_format($invoice->getPaidAmount(), $invoice->currency_id, false) }}</td>
                     </tr>
                     @if ($invoice->amountDue())
                     <tr>
-                        <th>@lang('app.totalDue'):</th>
+                        <th>@lang('modules.invoices.total') @lang('modules.invoices.due'):</th>
                         <td> {{ currency_format($invoice->amountDue(), $invoice->currency_id, false) }}</td>
                     </tr>
                     @endif
                     @if ($invoiceSetting->authorised_signatory && $invoiceSetting->authorised_signatory_signature && $invoice->status == 'paid')
                     <tr>
                         <td id="signatory" colspan="2" style="font-size:15px" align="right">
-                            <img src="{{ $invoiceSetting->authorised_signatory_signature_url }}" alt="{{ $company->company_name }}"/><br><br>
-                            <p style="margin-top: 35px;">@lang('modules.invoiceSettings.authorisedSignatory')</p>
+                            <img src="{{ $invoiceSetting->authorised_signatory_signature_url }}" alt="{{ $company->company_name }}"/><br>
+                            @lang('modules.invoiceSettings.authorisedSignatory')
                         </td>
                     </tr>
                     @endif
                 </table>
 
             </section>
-
-            @includeIf('invoices.payment_details')
 
 
             <div class="clearfix"></div>
@@ -978,9 +945,6 @@
                         <b>@lang('app.note')</b> <br>{!! nl2br($invoice->note) !!}<br>
                     @endif
                     <br><br><b>@lang('modules.invoiceSettings.invoiceTerms')</b><br>{!! nl2br($invoiceSetting->invoice_terms) !!}
-                    @if (isset($invoiceSetting->other_info))
-                        <br><br>{!! nl2br($invoiceSetting->other_info) !!}
-                    @endif
                 </div>
 
             </section>

@@ -36,7 +36,6 @@ use App\Http\Requests\Orders\PlaceOrder;
 use App\Http\Requests\Orders\UpdateOrder;
 use App\Models\PaymentGatewayCredentials;
 use App\Http\Requests\Stripe\StoreStripeDetail;
-use App\Models\BankAccount;
 
 class OrderController extends AccountBaseController
 {
@@ -57,20 +56,7 @@ class OrderController extends AccountBaseController
     public function index(OrdersDataTable $dataTable)
     {
         $viewPermission = user()->permission('view_order');
-        $this->viewBankAccountPermission = user()->permission('view_bankaccount');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
-
-        $this->bankDetails = null;
-
-        if ($this->viewBankAccountPermission != 'none') {
-            $bankAccounts = BankAccount::where('status', 1)->where('currency_id', company()->currency_id);
-
-            if ($this->viewBankAccountPermission == 'added') {
-                $bankAccounts = $bankAccounts->where('added_by', user()->id);
-            }
-
-            $this->bankDetails = $bankAccounts->get();
-        }
 
         if (!request()->ajax()) {
             $this->projects = Project::allProjects();
@@ -89,7 +75,8 @@ class OrderController extends AccountBaseController
     public function create()
     {
         $this->addPermission = user()->permission('add_order');
-        abort_403(!in_array('clients', user_modules()) || in_array('client', user_roles()) || !in_array($this->addPermission, ['all', 'added', 'both']));
+
+        abort_403(in_array('client', user_roles()) || !in_array($this->addPermission, ['all', 'added', 'both']));
 
         $this->pageTitle = __('modules.orders.createOrder');
         $this->clients = User::allClients();
@@ -97,7 +84,7 @@ class OrderController extends AccountBaseController
         $this->categories = ProductCategory::all();
         $this->unit_types = UnitType::all();
         $this->companyAddresses = CompanyAddress::all();
-        $this->projects = Project::allProjects();
+
         $this->lastOrder = Order::lastOrderNumber() + 1;
         $this->orderSetting = invoice_setting();
         $this->zero = '';
@@ -109,33 +96,6 @@ class OrderController extends AccountBaseController
                 $this->zero = '0' . $this->zero;
             }
         }
-
-        // this data is sent from project and client invoices
-        $this->project = request('project_id') ? Project::findOrFail(request('project_id')) : null;
-
-        if (request('client_id')) {
-            $this->client = User::withoutGlobalScope(ActiveScope::class)->findOrFail(request('client_id'));
-        }
-
-        $this->linkInvoicePermission = user()->permission('link_invoice_bank_account');
-        $this->viewBankAccountPermission = user()->permission('view_bankaccount');
-        $this->paymentGateway = PaymentGatewayCredentials::first();
-
-        $bankAccounts = BankAccount::where('status', 1)->where('currency_id', company()->currency_id);
-
-        if ($this->viewBankAccountPermission == 'added') {
-            $bankAccounts = $bankAccounts->where('added_by', user()->id);
-        }
-
-        $order = new Order();
-        $getCustomFieldGroupsWithFields = $order->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
-        }
-
-        $bankAccounts = $bankAccounts->get();
-        $this->bankDetails = $bankAccounts;
 
         if (request()->ajax()) {
             $html = view('orders.ajax.admin_create', $this->data)->render();
@@ -168,8 +128,8 @@ class OrderController extends AccountBaseController
 
         if ($order->show_shipping_address == 'yes') {
             /**
-             * @phpstan-ignore-next-line
-             */
+     @phpstan-ignore-next-line
+*/
             $client = $order->clientdetails;
             $client->shipping_address = $request->shipping_address;
             $client->saveQuietly();
@@ -203,8 +163,7 @@ class OrderController extends AccountBaseController
                     return Reply::error(__('messages.itemBlank'));
                 }
             }
-        }
-        else {
+        } else {
             return Reply::error(__('messages.addItem'));
         }
 
@@ -228,7 +187,6 @@ class OrderController extends AccountBaseController
 
         $order = new Order();
         $order->client_id = $request->client_id ?: user()->id;
-        $order->project_id = $request->project_id;
         $order->order_date = now()->format('Y-m-d');
         $order->sub_total = round($request->sub_total, 2);
         $order->total = round($request->total, 2);
@@ -241,11 +199,6 @@ class OrderController extends AccountBaseController
         $order->company_address_id = $request->company_address_id ?: null;
         $order->order_number = $request->order_number;
         $order->save();
-
-        // To add custom fields data
-        if ($request->custom_fields_data) {
-            $order->updateCustomFieldData($request->custom_fields_data);
-        }
 
         if ($order->show_shipping_address == 'yes') {
             /** @phpstan-ignore-next-line */
@@ -264,15 +217,15 @@ class OrderController extends AccountBaseController
                 event(new NewOrderEvent($order, $notifyUser));
             }
 
-            $invoice = $this->makeOrderInvoice($order, $request);
+            $invoice = $this->makeOrderInvoice($order);
             $this->makePayment($order->total, $invoice, 'complete');
         }
 
 
-        // Log search
-        $this->logSearchEntry($order->id, $order->id, 'orders.show', 'order');
+         // Log search
+         $this->logSearchEntry($order->id, $order->id, 'orders.show', 'order');
 
-        return response(Reply::redirect(route('orders.show', $order->id), __('messages.recordSaved')))->withCookie(Cookie::forget('productDetails'));
+         return response(Reply::redirect(route('orders.show', $order->id), __('messages.recordSaved')))->withCookie(Cookie::forget('productDetails'));
 
     }
 
@@ -283,25 +236,17 @@ class OrderController extends AccountBaseController
         $this->invoiceSetting = $this->company->invoiceSetting;
         $exchangeRate = ($request->currencyId) ? Currency::findOrFail($request->currencyId) : Currency::findOrFail($companyCurrencyID);
 
-        if($exchangeRate->exchange_rate == $request->exchangeRate){
-            $exRate = $exchangeRate->exchange_rate;
-        }else{
-            $exRate = floatval($request->exchangeRate ?: 1);
-        }
-
         if (!is_null($exchangeRate) && !is_null($exchangeRate->exchange_rate)) {
 
             if ($this->item->total_amount != '') {
 
-                $this->item->price = floor($this->item->total_amount / $exRate);
+                $this->item->price = floor($this->item->total_amount * $exchangeRate->exchange_rate);
 
-            }
-            else {
+            } else {
                 /** @phpstan-ignore-next-line */
-                $this->item->price = $this->item->price / $exRate;
+                $this->item->price = $this->item->price * $exchangeRate->exchange_rate;
             }
-        }
-        else {
+        } else {
             if ($this->item->total_amount != '') {
                 $this->item->price = $this->item->total_amount;
             }
@@ -316,7 +261,7 @@ class OrderController extends AccountBaseController
 
     public function edit($id)
     {
-        $this->order = Order::with('client', 'unit')->findOrFail($id)->withCustomFields();
+        $this->order = Order::with('client', 'unit')->findOrFail($id);
 
         $this->editPermission = user()->permission('edit_order');
 
@@ -334,12 +279,6 @@ class OrderController extends AccountBaseController
         $this->clients = User::allClients();
         $this->companyAddresses = CompanyAddress::all();
 
-        $getCustomFieldGroupsWithFields = $this->order->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
-        }
-
         if (request()->ajax()) {
             $html = view('orders.ajax.edit', $this->data)->render();
 
@@ -356,7 +295,6 @@ class OrderController extends AccountBaseController
         $items = $request->item_name;
         $itemsSummary = $request->item_summary;
         $hsn_sac_code = $request->hsn_sac_code;
-        $sku = $request->sku;
         $cost_per_item = $request->cost_per_item;
         $quantity = $request->quantity;
         $amount = $request->amount;
@@ -408,11 +346,6 @@ class OrderController extends AccountBaseController
         $order->company_address_id = $request->company_address_id ?: null;
         $order->save();
 
-        // To add custom fields data
-        if ($request->custom_fields_data) {
-            $order->updateCustomFieldData($request->custom_fields_data);
-        }
-
         // delete old data
         if (isset($item_ids) && !empty($item_ids)) {
             OrderItems::whereNotIn('id', $item_ids)->where('order_id', $order->id)->delete();
@@ -433,12 +366,10 @@ class OrderController extends AccountBaseController
             $orderItem->item_summary = $itemsSummary[$key];
             $orderItem->type = $item;
             $orderItem->hsn_sac_code = (isset($hsn_sac_code[$key]) ? $hsn_sac_code[$key] : null);
-            $orderItem->sku = (isset($sku[$key]) ? $sku[$key] : null);
             $orderItem->quantity = $quantity[$key];
             $orderItem->unit_price = round($cost_per_item[$key], 2);
             $orderItem->amount = round($amount[$key], 2);
             $orderItem->taxes = $tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null;
-            $orderItem->field_order = $key + 1;
             $orderItem->save();
 
             // Save order image url
@@ -466,7 +397,7 @@ class OrderController extends AccountBaseController
         }
 
         if ($request->has('status') && $request->status == 'completed' && !$order->invoice) {
-            $invoice = $this->makeOrderInvoice($order, $request);
+            $invoice = $this->makeOrderInvoice($order);
             $this->makePayment($order->total, $invoice, 'complete');
         }
 
@@ -475,7 +406,7 @@ class OrderController extends AccountBaseController
 
     public function show($id)
     {
-        $this->order = Order::with('client', 'unit')->findOrFail($id)->withCustomFields();
+        $this->order = Order::with('client', 'unit')->findOrFail($id);
 
         $this->viewPermission = user()->permission('view_order');
         abort_403(!($this->viewPermission == 'all' || ($this->viewPermission == 'both' && ($this->order->added_by == user()->id || $this->order->client_id == user()->id)) || ($this->viewPermission == 'owned' && $this->order->client_id == user()->id) || ($this->viewPermission == 'added' && $this->order->added_by == user()->id)));
@@ -483,12 +414,6 @@ class OrderController extends AccountBaseController
         $this->pageTitle = $this->order->order_number;
 
         $this->discount = 0;
-
-        $getCustomFieldGroupsWithFields = $this->order->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
-        }
 
         /** @phpstan-ignore-next-line */
         if ($this->order->discount > 0) {
@@ -529,23 +454,9 @@ class OrderController extends AccountBaseController
         $this->taxes = $taxList;
         $this->settings = company();
         $this->creditNote = 0;
-        $this->offlinePayemntDone = ($this->order->invoice) ? 'yes' : 'no';
+
         $this->credentials = PaymentGatewayCredentials::first();
         $this->methods = OfflinePaymentMethod::activeMethod();
-        $this->payment = Payment::where('order_id',$id)->first();
-
-        $this->viewBankAccountPermission = user()->permission('view_bankaccount');
-        $this->bankDetails = null;
-
-        if ($this->viewBankAccountPermission != 'none') {
-            $bankAccounts = BankAccount::where('status', 1)->where('currency_id', company()->currency_id);
-
-            if ($this->viewBankAccountPermission == 'added') {
-                $bankAccounts = $bankAccounts->where('added_by', user()->id);
-            }
-
-            $this->bankDetails = $bankAccounts->get();
-        }
 
         return view('orders.show', $this->data);
     }
@@ -594,7 +505,6 @@ class OrderController extends AccountBaseController
         }
 
         if (($this->credentials->test_stripe_secret || $this->credentials->live_stripe_secret) && !is_null($client)) {
-            // Company Specific
             Stripe::setApiKey($this->credentials->stripe_mode == 'test' ? $this->credentials->test_stripe_secret : $this->credentials->live_stripe_secret);
 
             $total = $this->order->total;
@@ -602,27 +512,27 @@ class OrderController extends AccountBaseController
 
             $customer = \Stripe\Customer::create(
                 [
-                    'email' => $client->email,
-                    'name' => $request->clientName,
-                    'address' => [
-                        'line1' => $request->clientName,
-                        'city' => $request->city,
-                        'state' => $request->state,
-                        'country' => $request->country,
-                    ],
+                'email' => $client->email,
+                'name' => $request->clientName,
+                'address' => [
+                    'line1' => $request->clientName,
+                    'city' => $request->city,
+                    'state' => $request->state,
+                    'country' => $request->country,
+                ],
                 ]
             );
 
             $intent = \Stripe\PaymentIntent::create(
                 [
-                    'amount' => $totalAmount * 100,
-                    /** @phpstan-ignore-next-line */
-                    'currency' => $this->order->currency->currency_code,
-                    'customer' => $customer->id,
-                    'setup_future_usage' => 'off_session',
-                    'payment_method_types' => ['card'],
-                    'description' => $this->order->id . ' Payment',
-                    'metadata' => ['integration_check' => 'accept_a_payment', 'order_id' => $id]
+                'amount' => $totalAmount * 100,
+                /** @phpstan-ignore-next-line */
+                'currency' => $this->order->currency->currency_code,
+                'customer' => $customer->id,
+                'setup_future_usage' => 'off_session',
+                'payment_method_types' => ['card'],
+                'description' => $this->order->id . ' Payment',
+                'metadata' => ['integration_check' => 'accept_a_payment', 'order_id' => $id]
                 ]
             );
 
@@ -753,9 +663,8 @@ class OrderController extends AccountBaseController
         $order = Order::findOrFail($request->orderId);
 
         if ($request->status == 'completed') {
-            $invoice = $this->makeOrderInvoice($order, $request);
+            $invoice = $this->makeOrderInvoice($order);
             $this->makePayment($order->total, $invoice, 'complete');
-            Invoice::where('order_id', $request->orderId)->update(['status' => 'paid']);
         }
 
         /** @phpstan-ignore-next-line */
@@ -769,7 +678,7 @@ class OrderController extends AccountBaseController
         return Reply::success(__('messages.orderStatusChanged'));
     }
 
-    public function makeOrderInvoice($order, $request)
+    public function makeOrderInvoice($order)
     {
         if ($order->invoice) {
             /** @phpstan-ignore-next-line */
@@ -782,7 +691,6 @@ class OrderController extends AccountBaseController
         $invoice = new Invoice();
         $invoice->order_id = $order->id;
         $invoice->client_id = $order->client_id;
-        $invoice->project_id = $order->project_id;
         $invoice->sub_total = $order->sub_total;
         $invoice->discount = $order->discount;
         $invoice->discount_type = $order->discount_type;
@@ -796,14 +704,7 @@ class OrderController extends AccountBaseController
         $invoice->due_amount = 0;
         $invoice->hash = md5(microtime());
         $invoice->added_by = user() ? user()->id : null;
-        $invoice->bank_account_id = $request->bank_account_id;
         $invoice->save();
-
-        if (request()->item_name) {
-            return $invoice;
-        }
-
-        // BELOW DATA to invoiceItems is stored from observer
 
         /* Make invoice items */
         $orderItems = OrderItems::where('order_id', $order->id)->get();
@@ -853,7 +754,6 @@ class OrderController extends AccountBaseController
         $payment->amount = $amount;
         $payment->paid_on = now();
         $payment->status = $status;
-        $payment->bank_account_id = $invoice->bank_account_id;
         $payment->save();
 
         return $payment;
@@ -929,16 +829,15 @@ class OrderController extends AccountBaseController
             if (!is_null($item)) {
                 $creditNoteItem = CreditNoteItem::create(
                     [
-                        'credit_note_id' => $creditNote->id,
-                        'item_name' => $item->item_name,
-                        'type' => 'item',
-                        'item_summary' => $item->item_summary,
-                        'hsn_sac_code' => $item->hsn_sac_code,
-                        'sku' => $item->sku,
-                        'quantity' => $item->quantity,
-                        'unit_price' => round($item->unit_price, 2),
-                        'amount' => round($item->amount, 2),
-                        'taxes' => $item->taxes,
+                    'credit_note_id' => $creditNote->id,
+                    'item_name' => $item->item_name,
+                    'type' => 'item',
+                    'item_summary' => $item->item_summary,
+                    'hsn_sac_code' => $item->hsn_sac_code,
+                    'quantity' => $item->quantity,
+                    'unit_price' => round($item->unit_price, 2),
+                    'amount' => round($item->amount, 2),
+                    'taxes' => $item->taxes,
                     ]
                 );
             }
@@ -970,8 +869,8 @@ class OrderController extends AccountBaseController
         $this->viewPermission = user()->permission('view_order');
         abort_403(!($this->viewPermission == 'all' || ($this->viewPermission == 'both' && ($this->order->added_by == user()->id || $this->order->client_id == user()->id)) || ($this->viewPermission == 'owned' && $this->order->client_id == user()->id) || ($this->viewPermission == 'added' && $this->order->added_by == user()->id)));
 
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         $pdfOption = $this->domPdfObjectForDownload($id);
         $pdf = $pdfOption['pdf'];
@@ -984,8 +883,8 @@ class OrderController extends AccountBaseController
     {
         $this->invoiceSetting = invoice_setting();
         $this->order = Order::with('client', 'unit')->findOrFail($id);
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         $this->paidAmount = $this->order->total;
 
@@ -1026,12 +925,7 @@ class OrderController extends AccountBaseController
         $this->invoiceSetting = invoice_setting();
 
         $pdf = app('dompdf.wrapper');
-        // $pdf->loadView('orders.pdf.' . $this->invoiceSetting->template, $this->data);
-        $customCss = '<style>
-                * { text-transform: none !important; }
-            </style>';
-
-        $pdf->loadHTML($customCss . view('orders.pdf.' . $this->invoiceSetting->template, $this->data)->render());
+        $pdf->loadView('orders.pdf.' . $this->invoiceSetting->template, $this->data);
         $filename = $this->order->order_number;
 
         return [
@@ -1044,7 +938,6 @@ class OrderController extends AccountBaseController
     {
         $client_data = Product::where('unit_id', $id)->get();
         $unitId = UnitType::where('id', $id)->first();
-
         return Reply::dataOnly(['status' => 'success', 'data' => $client_data, 'type' => $unitId]);
     }
 

@@ -59,8 +59,7 @@ class ProjectNoteObserver
 
             }
 
-        }
-        else {
+        } else {
 
             event(new ProjectNoteEvent($project, $projectNote->created_at, $projectNote->project->projectMembers));
 
@@ -76,7 +75,7 @@ class ProjectNoteObserver
         $requestMentionIds = explode(',', (request()->mention_user_id));
         $project = $projectNote->project;
         $newMention = [];
-
+        
         if (request()->mention_user_id != null) {
             $projectNote->mentionUser()->sync($requestMentionIds);
 
@@ -88,8 +87,7 @@ class ProjectNoteObserver
 
                         $newMention[] = $value;
                     }
-                }
-                else {
+                } else {
                     $newMention[] = $value;
                 }
 

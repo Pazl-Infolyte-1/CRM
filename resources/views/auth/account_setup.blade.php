@@ -5,7 +5,7 @@
         {{ csrf_field() }}
         <input type="hidden" name="sendMail" value="no">
 
-        <h3 class=" mb-3 f-w-500">@lang('app.accountSetup')</h3>
+        <h3 class="text-capitalize mb-3 f-w-500">@lang('app.accountSetup')</h3>
         <h6 class="mb-4 heading-h6 text-lightest">@lang('modules.accountSettings.accountSetupInfo')
         </h6>
 
@@ -48,7 +48,6 @@
                 class="btn-primary f-w-500 rounded w-100 height-50 f-18">
             @lang('app.saveLogin') <i class="fa fa-arrow-right pl-1"></i>
         </button>
-        <input type="hidden" name="locale" value="{{ session()->has('locale') ? session('locale') : global_setting()->locale }}">
     </form>
 
     <x-slot name="scripts">
@@ -67,7 +66,8 @@
                     data: $('#login-form').serialize(),
                     success: function(response) {
                         if (response.status == 'success') {
-                            window.location.href = "{{ route('checklist') }}";
+                            var redirectUrl = "{{ route('checklist') }}";
+                            window.location.href = redirectUrl;
                         }
                     }
                 })

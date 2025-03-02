@@ -12,7 +12,7 @@
     <div class="col-sm-12">
         <x-form id="save-lead-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('modules.leaves.assignLeave')</h4>
                 <div class="row p-20">
 
@@ -44,19 +44,21 @@
                                 <option value="">--</option>
                                 @if (isset($leaveTypes))
                                     @foreach ($leaveTypes as $leaveType)
-                                        @if($leaveType->deleted_at == null)
-                                            <option value="{{ $leaveType->id }}">{{ $leaveType->type_name }} ({{ $leaveType->no_of_leaves }})
-                                            </option>
-                                        @endif
+                                        <option value="{{ $leaveType->id }}">{{ $leaveType->type_name }}
+                                        </option>
                                     @endforeach
                                 @endif
 
                                 @if (isset($leaveQuotas))
-                                    @foreach ($leaveQuotas as $leaveQuota)
-                                        @if($leaveQuota->leaveType && $leaveQuota->leaveType->leaveTypeCondition($leaveQuota->leaveType, $defaultAssign)
-                                            && $leaveQuota->leaveType->deleted_at == null
-                                        )
-                                            <option value="{{ $leaveQuota->leaveType->id }}">{{ $leaveQuota->leaveType->type_name }} ({{ $leaveQuota->leaves_remaining }})</option>
+                                    @foreach ($leaveQuotas as $leave)
+                                        @php
+                                            $leaveType = new \App\Models\LeaveType();
+                                        @endphp
+
+                                        @if ($leave->employeeLeave > 0)
+                                            @if($leaveType->leaveTypeCodition($leave, $userRole))
+                                                    <option value="{{ $leave->id }}">{{ $leave->type_name }}</option>
+                                            @endif
                                         @endif
                                     @endforeach
                                 @endif
@@ -123,7 +125,7 @@
 
                     <div class="col-lg-12">
                         <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.menu.addFile')" fieldName="file" :popover="__('messages.leaveFileMessage')" fieldId="leave-file-upload-dropzone" />
-                        <input type="hidden" name="leaveIds[]" id="leaveID">
+                        <input type="hidden" name="leaveID" id="leaveID">
                     </div>
 
                 </div>
@@ -170,13 +172,8 @@
             }
         });
         myDropzone.on('sending', function(file, xhr, formData) {
-            var leaveIds = $('#leaveID').val();
-
-            if (leaveIds) {
-                leaveIds.split(',').forEach(function(leaveId) {
-                    formData.append('leave_ids[]', leaveId);
-                });
-            }
+            var ids = $('#leaveID').val();
+            formData.append('leave_id', ids);
         });
         myDropzone.on('uploadprogress', function() {
             $.easyBlockUI();
@@ -220,27 +217,20 @@
             position: 'bl',
             ...datepickerConfig
         });
-        const currentDate = new Date(); // current date
-
-        var dateFormat = "{{ $dateformat }}";
 
         const dp2 = $('#multi_date').daterangepicker({
             linkedCalendars: false,
             multidate: true,
             todayHighlight: true,
-            locale: {
-                format: dateFormat,
-                separator: ' To ', // This changes the separator between the start and end dates
-            },
-            startDate: currentDate,
-            minDate: (minDate !== null) ? minDate : null,
+            format: 'yyyy-mm-d'
+
         });
 
         $('#multi_date').change(function() {
             var dates = $(this).val();
-            var startDate = moment(dates.split(' To ')[0], dateFormat);
-            var endDate = moment(dates.split(' To ')[1], dateFormat);
 
+            var startDate = moment(new Date(dates.split(' - ')[0]));
+            var endDate = moment(new Date(dates.split(' - ')[1]));
             var totalDays = endDate.diff(startDate, 'days')+1;
 
             $('.date-range-days').html(totalDays +' Days Selected');
@@ -253,12 +243,7 @@
                     linkedCalendars: false,
                     multidate: true,
                     todayHighlight: true,
-                    locale: {
-                        format: dateFormat,
-                        separator: ' To ',
-                    },
-                    startDate: currentDate,
-                    minDate: (minDate !== null) ? minDate : null,
+                    format: 'yyyy-mm-d'
 
                 });
             }
@@ -273,91 +258,47 @@
             setMinDate(e.target.value);
         });
 
-        var minDate;
-
         function setMinDate(employeeID) {
             var employees = @json($employees);
             var employee = employees.filter(function(item) {
                 return item.id == employeeID;
             });
 
-            if(employees.length > 0 && employee[0] !== undefined && employee[0].employee_detail)
+            if(employees.length > 0 && employee[0] !== undefined)
             {
-                minDate = new Date(employee[0].employee_detail.joining_date);
+                var minDate = new Date(employee[0].employee_detail.joining_date);
                 dp1.setMin(minDate);
-
-                const dp2 = $('#multi_date').daterangepicker({
-                    linkedCalendars: false,
-                    multidate: true,
-                    todayHighlight: true,
-                    format: 'yyyy-mm-d',
-                    startDate: currentDate,
-                    minDate: minDate
-                });
+                $('#multi_date').daterangepicker('setStartDate', minDate);
             }
         }
 
         $('#save-leave-form').click(function() {
-            let markleave = 'no';
             var dateRange = $('#multi_date').data('daterangepicker');
-            startDate = dateRange.startDate.format('YYYY-MM-DD');
-            endDate = dateRange.endDate.format('YYYY-MM-DD');
+            startDate = dateRange.startDate.format('{{ company()->moment_date_format }}');
+            endDate = dateRange.endDate.format('{{ company()->moment_date_format }}');
 
             var multiDate = [];
             multiDate = [startDate, endDate];
-            $('#startDate').val(startDate);
-            $('#endDate').val(endDate);
             $('#multi_date').val(multiDate);
 
             const url = "{{ route('leaves.store') }}";
-            function sendAjaxRequest(){
-                $.easyAjax({
-                    url: url,
-                    container: '#save-lead-data-form',
-                    type: "POST",
-                    disableButton: true,
-                    blockUI: true,
-                    buttonSelector: "#save-leave-form",
-                    data: $('#save-lead-data-form').serialize()+'&multiStartDate='+startDate + '&multiEndDate='+endDate + '&markLeave='+markleave,
-                    success: function(response) {
-                        if (response.status == 'success') {
-                            $('#leaveID').val(response.leaveIds);
-                            myDropzone.processQueue();
-                            window.location.href = response.redirectUrl;
-                        }
 
-                        if (response.status == 'attendanceMarked') {
-
-                            Swal.fire({
-                                title: "@lang('messages.sweetAlertTitle')",
-                                text: "@lang('messages.attendanceIsMarked')",
-                                icon: 'warning',
-                                showCancelButton: true,
-                                focusConfirm: false,
-                                confirmButtonText: "@lang('app.apply')",
-                                cancelButtonText: "@lang('app.cancel')",
-                                customClass: {
-                                    confirmButton: 'btn btn-primary mr-3',
-                                    cancelButton: 'btn btn-secondary'
-                                },
-                                showClass: {
-                                    popup: 'swal2-noanimation',
-                                    backdrop: 'swal2-noanimation'
-                                },
-                                buttonsStyling: false
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    markleave = 'yes';
-                                    sendAjaxRequest();
-                                }
-                            });
-                        }
-
+            $.easyAjax({
+                url: url,
+                container: '#save-lead-data-form',
+                type: "POST",
+                disableButton: true,
+                blockUI: true,
+                buttonSelector: "#save-leave-form",
+                data: $('#save-lead-data-form').serialize()+'&multiStartDate='+startDate + '&multiEndDate='+endDate,
+                success: function(response) {
+                    if (response.status == 'success') {
+                        $('#leaveID').val(response.leaveID);
+                        myDropzone.processQueue();
+                        window.location.href = response.redirectUrl;
                     }
-                });
-            }
-
-            sendAjaxRequest();
+                }
+            });
         });
 
         $('body').on('click', '.add-lead-type2', function() {

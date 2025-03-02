@@ -4,21 +4,17 @@ namespace App\Observers;
 
 use App\Helper\Files;
 use App\Models\Proposal;
+use Illuminate\Support\Str;
 use App\Models\Notification;
 use App\Models\ProposalItem;
 use App\Events\NewProposalEvent;
 use App\Models\ProposalItemImage;
 use App\Traits\UnitTypeSaveTrait;
 use App\Models\ProposalTemplateItemImage;
-use App\Traits\DealHistoryTrait;
-use App\Traits\EmployeeActivityTrait;
 
 class ProposalObserver
 {
-    use EmployeeActivityTrait;
-
-
-    use UnitTypeSaveTrait, DealHistoryTrait;
+    use UnitTypeSaveTrait;
 
     public function saving(Proposal $proposal)
     {
@@ -62,13 +58,6 @@ class ProposalObserver
 
         if (!isRunningInConsoleOrSeeding()) {
 
-            self::createDealHistory($proposal->deal_id, 'proposal-created', proposalId: $proposal->id);
-
-            if (user()) {
-                self::createEmployeeActivity(user()->id, 'proposal-created', $proposal->id, 'proposal');
-            }
-
-
             if (!empty(request()->item_name)) {
                 $itemsSummary = request()->item_summary;
                 $cost_per_item = request()->cost_per_item;
@@ -97,8 +86,7 @@ class ProposalObserver
                                 'quantity' => $quantity[$key],
                                 'unit_price' => round($cost_per_item[$key], 2),
                                 'amount' => round($amount[$key], 2),
-                                'taxes' => ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null),
-                                'field_order' => $key + 1
+                                'taxes' => ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null)
                             ]
                         );
                     }
@@ -125,11 +113,13 @@ class ProposalObserver
 
                     $image = true;
 
-                    if (isset($invoice_item_image_delete[$key])) {
+                    if(isset($invoice_item_image_delete[$key]))
+                    {
                         $image = false;
                     }
 
-                    if ($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != '')) {
+                    if($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != ''))
+                    {
                         $estimateOldImg = ProposalTemplateItemImage::where('id', request()->image_id[$key])->first();
 
                         if (isset($proposalItem)) {
@@ -144,13 +134,11 @@ class ProposalObserver
                 $type = 'new';
                 event(new NewProposalEvent($proposal, $type));
             }
-
-
         }
     }
 
     /**
-     * @throws RelatedResourceNotFoundException
+     * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
      */
     public function updating(Proposal $proposal)
     {
@@ -164,10 +152,6 @@ class ProposalObserver
     public function updated(Proposal $proposal)
     {
         if (!isRunningInConsoleOrSeeding()) {
-
-            if (user()) {
-                self::createEmployeeActivity(user()->id, 'proposal-updated', $proposal->id, 'proposal');
-            }
 
             if ($proposal->isDirty('status')) {
                 $type = 'signed';
@@ -222,7 +206,6 @@ class ProposalObserver
                     $proposalItem->unit_price = round($cost_per_item[$key], 2);
                     $proposalItem->amount = round($amount[$key], 2);
                     $proposalItem->taxes = ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null);
-                    $proposalItem->field_order = $key + 1;
                     $proposalItem->save();
 
 
@@ -265,28 +248,17 @@ class ProposalObserver
 
     }
 
-    public function deleted(Proposal $proposal)
-    {
-        if (user()) {
-            self::createDealHistory($proposal->deal_id, 'proposal-deleted');
-            self::createEmployeeActivity(user()->id, 'proposal-deleted');
-
-        }
-
-
-    }
-
     public function deleting(Proposal $proposal)
     {
         $notifyData = ['App\Notifications\NewProposal', 'App\Notifications\ProposalSigned'];
 
-        Notification::deleteNotification($notifyData, $proposal->id);
+        \App\Models\Notification::deleteNotification($notifyData, $proposal->id);
 
     }
 
     public function duplicateImageStore($estimateOldImg, $proposalItem)
     {
-        if (!is_null($estimateOldImg)) {
+        if(!is_null($estimateOldImg)) {
 
             $file = new ProposalItemImage();
 

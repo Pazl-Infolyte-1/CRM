@@ -1,22 +1,7 @@
 <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-colorpicker.css') }}" />
 
-@if ($employeeShift->shift_type == 'strict')
-<style>
-    .flexible-timing-field {
-        display: none
-    }
-</style>
-@else
-<style>
-    .strict-timing-field {
-        display: none
-    }
-</style>
-@endif
-
-
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.updateShift')</h5>
+    <h5 class="modal-title">@lang('app.update') @lang('modules.attendance.shift')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 
@@ -26,9 +11,6 @@
             <div class="form-group">
                 <div class="row">
                     <div class="col-lg-12">
-                        <h4 class="heading-h4">@lang('modules.attendance.shiftType'): {{ ($employeeShift->shift_type == 'strict') ? __('modules.attendance.strictTiming') : __('modules.attendance.flexibleTiming') }}</h4>
-                        <input type="hidden" value="{{ $employeeShift->shift_type }}" name="shift_type">
-
                         <div class="bootstrap-timepicker">
                             <x-forms.text :fieldLabel="__('modules.attendance.shiftName')" :fieldPlaceholder="__('placeholders.shiftName')" fieldName="shift_name"
                                 fieldId="shift_name" fieldRequired="true" :fieldValue="$employeeShift->shift_name" />
@@ -56,7 +38,7 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-4 strict-timing-field">
+                    <div class="col-lg-4">
                         <div class="bootstrap-timepicker">
                             <x-forms.text :fieldLabel="__('modules.attendance.officeStartTime')" :fieldPlaceholder="__('placeholders.hours')" fieldName="office_start_time"
                                 fieldId="office_start_time" fieldRequired="true" :fieldValue="\Carbon\Carbon::createFromFormat(
@@ -66,7 +48,7 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-4 strict-timing-field">
+                    <div class="col-lg-4">
                         <div class="bootstrap-timepicker">
                             <x-forms.text :fieldLabel="__('modules.attendance.officeEndTime')" :fieldPlaceholder="__('placeholders.hours')" fieldName="office_end_time"
                                 fieldId="office_end_time" fieldRequired="true" :fieldValue="\Carbon\Carbon::createFromFormat('H:i:s', $employeeShift->office_end_time)->format(
@@ -75,29 +57,7 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-4 flexible-timing-field">
-                        <x-forms.number :fieldLabel="__('modules.attendance.totalShiftHours')"  fieldName="total_shift_hours"
-                                          fieldId="total_shift_hours" fieldRequired="true" minValue="1" maxValue="23" :fieldValue="$employeeShift->flexible_total_hours" :popover="__('messages.totalShiftHours')" />
-                    </div>
-
-                    <div class="col-lg-4 flexible-timing-field">
-                        <x-forms.number :fieldLabel="__('modules.attendance.halfdayShiftHours')"  fieldName="halfday_shift_hours"
-                                          fieldId="halfday_shift_hours" fieldRequired="true" minValue="1" maxValue="23" :fieldValue="$employeeShift->flexible_half_day_hours" :popover="__('messages.halfdayShiftHours')" />
-                    </div>
-
-                    <div class="col-lg-4 flexible-timing-field">
-                        <x-forms.number :fieldLabel="__('modules.attendance.autoClockOutTIme')" fieldName="auto_clockout"
-                                          fieldId="auto_clock_out_time" fieldRequired="true" minValue="0" :fieldValue="$employeeShift->flexible_auto_clockout" :popover="__('messages.flexibleAutoClockOut')" />
-                    </div>
-
-                    <div class="col-lg-4 strict-timing-field">
-                        <div class="bootstrap-timepicker">
-                            <x-forms.number :fieldLabel="__('modules.attendance.autoClockOutTIme')" :fieldPlaceholder="__('placeholders.hours')" fieldName="auto_clock_out_time"
-                                          fieldId="auto_clock_out_time" fieldRequired="true" :fieldValue="$employeeShift->auto_clock_out_time"  minValue="1" maxValue="12" :popover="__('messages.autoClockOut')" />
-                        </div>
-                    </div>
-
-                    <div class="col-lg-3 strict-timing-field">
+                    <div class="col-lg-4">
                         <div class="bootstrap-timepicker">
                             <x-forms.text :fieldLabel="__('modules.attendance.halfDayMarkTime')" :fieldPlaceholder="__('placeholders.hours')" fieldName="halfday_mark_time"
                                 fieldId="halfday_mark_time" fieldRequired="true" :fieldValue="!is_null($employeeShift->halfday_mark_time) ? \Carbon\Carbon::createFromFormat(
@@ -107,17 +67,17 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-3 strict-timing-field">
+                    <div class="col-lg-4">
                         <x-forms.number fieldName="early_clock_in" fieldId="early_clock_in"
                         :fieldLabel="__('modules.attendance.earlyClockIn')" :fieldValue="$employeeShift->early_clock_in"/>
                     </div>
 
-                    <div class="col-lg-3 strict-timing-field">
+                    <div class="col-lg-4">
                         <x-forms.number class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.attendance.lateMark')" fieldName="late_mark_duration"
                             fieldId="late_mark_duration" fieldRequired="true" :fieldValue="$employeeShift->late_mark_duration" />
                     </div>
 
-                    <div class="col-lg-3 strict-timing-field">
+                    <div class="col-lg-4">
                         <x-forms.number class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.attendance.checkininday')" fieldName="clockin_in_day"
                             fieldId="clockin_in_day" fieldRequired="true" :fieldValue="$employeeShift->clockin_in_day" />
                     </div>
@@ -142,6 +102,7 @@
     <x-forms.button-primary id="save-employee-shift" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
 
+<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 <script>
     $('#colorpicker').colorpicker({
         "color": "{{ $employeeShift->color }}"
@@ -171,8 +132,4 @@
             }
         })
     });
-
-    setTimeout(function(){
-        $('[data-toggle="popover"]').popover();
-    }, 300);
 </script>

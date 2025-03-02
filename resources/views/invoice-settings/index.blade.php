@@ -44,13 +44,6 @@
                                 </a>
                             @endif
 
-                            @if (in_array('invoices', user_modules()))
-                                <a class="nav-item nav-link f-15 payment"
-                                    href="{{ route('invoice-settings.index') }}?tab=payment" role="tab"
-                                    aria-controls="nav-ticketTypes" aria-selected="true">@lang('app.menu.invoicePaymentDetails')
-                                </a>
-                            @endif
-
                         </div>
                     </nav>
                 </div>
@@ -65,14 +58,6 @@
                         <x-alert type="info" icon="info-circle" class="actionBtn quickbooks-btn">
                             @lang('modules.invoiceSettings.syncInfo')
                         </x-alert>
-
-                        <x-alert type="info" icon="info-circle" class="actionBtn payment-btn">
-                            @lang('modules.invoiceSettings.invoiceInfo')
-                        </x-alert>
-
-                        <x-forms.button-primary id="add-payment-details" icon="plus" class="addUnit btn btn-primary mb-2 actionBtn payment-btn"
-                        type="button" data-toggle="tooltip"> @lang('modules.invoices.addPaymentDetails')</x-forms.button-primary>
-
                     </div>
                 </div>
             </x-slot>
@@ -127,12 +112,6 @@
 
     $('#addUnitType').click(function() {
         const url = "{{ route('unit-type.create') }}";
-        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-        $.ajaxModal(MODAL_LG, url);
-    });
-
-    $('body').on('click', '#add-payment-details', function() {
-        var url = "{{ route('invoices-payment-details.create') }}";
         $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
         $.ajaxModal(MODAL_LG, url);
     });

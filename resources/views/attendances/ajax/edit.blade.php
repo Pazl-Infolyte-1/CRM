@@ -5,9 +5,9 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">
         @if ($type == 'edit')
-            @lang('app.attendanceDetails')
+        @lang('app.menu.attendance') @lang('app.details')
         @else
-        @lang('modules.attendance.markAttendance')
+        @lang('app.mark')  @lang('app.menu.attendance')
         @endif
     </h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
@@ -98,21 +98,6 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                         @endif
 
                     </div>
-                    <div class="row">
-                        <div class="col-lg-4 col-md-6 col-xl-4" id="half_day_section" style="display: none;">
-                            <div class="form-group my-3">
-                                <x-forms.label fieldId="duration" :fieldLabel="__('modules.leaves.selectDuration')">
-                                </x-forms.label>
-                                <div class="d-flex">
-                                    <x-forms.radio fieldId="first_half_day_yes" :fieldLabel="__('modules.leaves.firstHalf')" fieldName="half_day_duration"
-                                        fieldValue="first_half" :checked="$row->half_day_type == 'first_half'"  checked="true">
-                                    </x-forms.radio>
-                                    <x-forms.radio fieldId="first_half_day_no" :fieldLabel="__('modules.leaves.secondHalf')" fieldValue="second_half"
-                                        fieldName="half_day_duration" :checked="$row->half_day_type == 'second_half'"></x-forms.radio>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="row">
 
@@ -162,20 +147,6 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
     $(document).ready(function() {
 
-        if ($('#halfday').is(':checked')) {
-            $('#half_day_section').show();
-        } else {
-            $('#half_day_section').hide();
-        }
-
-        $('#halfday').change(function() {
-            if ($(this).is(':checked')) {
-                $('#half_day_section').show();
-            } else {
-                $('#half_day_section').hide();
-            }
-        });
-
         $('#clock-in-time').timepicker({
             @if(company()->time_format == 'H:i')
             showMeridian: false,
@@ -194,7 +165,12 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
             ($(this).val() == 'other') ? $('#otherPlace').show() : $('#otherPlace').hide();
         });
 
-        const saveAttendanceForm = (url) => {
+        $('#save-attendance').click(function () {
+            @if($type == 'edit')
+                var url = "{{route('attendances.update', $row->id)}}";
+            @else
+                var url = "{{route('attendances.store')}}";
+            @endif
             $.easyAjax({
                 url: url,
                 type: "POST",
@@ -212,77 +188,6 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                     }
                 }
             })
-        }
-
-        $('#save-attendance').click(function () {
-            @if($type == 'edit')
-                var url = "{{route('attendances.update', $row->id)}}";
-                saveAttendanceForm(url);
-            @else
-                var url = "{{ route('attendances.check_half_day') }}";
-                $.easyAjax({
-                    url: url,
-                    type: "POST",
-                    container: '#attendance-container',
-                    blockUI: true,
-                    disableButton: true,
-                    buttonSelector: "#save-attendance",
-                    data: $('#attendance-container').serialize(),
-                    success: function (response) {
-                        url = "{{route('attendances.store')}}";
-                        if (response.halfDayExist == true && response.requestedHalfDay == 'no' && response.halfDayDurEnd == 'no') {
-                            Swal.fire({
-                                title: "@lang('messages.sweetAlertTitle')",
-                                text: "@lang('messages.halfDayAlreadyApplied')",
-                                icon: 'warning',
-                                showCancelButton: true,
-                                focusConfirm: false,
-                                confirmButtonText: "@lang('messages.rejectIt')",
-                                cancelButtonText: "@lang('app.cancel')",
-                                customClass: {
-                                    confirmButton: 'btn btn-primary mr-3',
-                                    cancelButton: 'btn btn-secondary'
-                                },
-                                showClass: {
-                                    popup: 'swal2-noanimation',
-                                    backdrop: 'swal2-noanimation'
-                                },
-                                buttonsStyling: false
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    saveAttendanceForm(url);
-                                }
-                            });
-
-                        } else if (response.fullDayExist == true && response.requestedFullDay == 'no') {
-                            Swal.fire({
-                                title: "@lang('messages.sweetAlertTitle')",
-                                text: "@lang('messages.fullDayAlreadyApplied')",
-                                icon: 'warning',
-                                showCancelButton: true,
-                                focusConfirm: false,
-                                confirmButtonText: "@lang('messages.rejectIt')",
-                                cancelButtonText: "@lang('app.cancel')",
-                                customClass: {
-                                    confirmButton: 'btn btn-primary mr-3',
-                                    cancelButton: 'btn btn-secondary'
-                                },
-                                showClass: {
-                                    popup: 'swal2-noanimation',
-                                    backdrop: 'swal2-noanimation'
-                                },
-                                buttonsStyling: false
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    saveAttendanceForm();
-                                }
-                            });
-                        }else {
-                            saveAttendanceForm(url);
-                        }
-                    }
-                });
-            @endif
         });
     });
 

@@ -3,6 +3,8 @@
 namespace App\DataTables;
 
 use App\Models\CreditNotes;
+use App\DataTables\BaseDataTable;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -161,12 +163,12 @@ class CreditNotesDataTable extends BaseDataTable
             );
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $model = $model->where(DB::raw('DATE(credit_notes.`issue_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
             $model = $model->where(DB::raw('DATE(credit_notes.`issue_date`)'), '<=', $endDate);
         }
 

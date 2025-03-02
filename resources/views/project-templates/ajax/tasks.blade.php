@@ -6,7 +6,8 @@
             @if(in_array($manageProjectTemplatePermission, ['added', 'all']))
                 <x-forms.link-primary :link="route('project-template-task.create').'?project_id='.$template->id"
                     class="mr-3 openRightModal" icon="plus">
-                    @lang('app.addTask')
+                    @lang('app.add')
+                    @lang('app.task')
                 </x-forms.link-primary>
             @endif
 
@@ -64,7 +65,7 @@
         data['searchText'] = searchText;
     });
     const showTable = () => {
-        window.LaravelDataTables["allTasks-table"].draw(true);
+        window.LaravelDataTables["allTasks-table"].draw(false);
     }
 
     $('#status, #search-text-field')

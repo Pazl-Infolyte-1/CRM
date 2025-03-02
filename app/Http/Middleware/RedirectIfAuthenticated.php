@@ -24,13 +24,7 @@ class RedirectIfAuthenticated
         $guards = empty($guards) ? [null] : $guards;
 
         foreach ($guards as $guard) {
-
             if (Auth::guard($guard)->check()) {
-                // ISSUPERADMIN
-                if (auth() && auth()->user()->user && auth()->user()->user->is_superadmin) {
-                    return redirect(RouteServiceProvider::SUPER_ADMIN_HOME);
-                }
-
                 return redirect(RouteServiceProvider::HOME);
             }
         }

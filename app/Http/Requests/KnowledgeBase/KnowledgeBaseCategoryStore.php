@@ -3,6 +3,7 @@
 namespace App\Http\Requests\KnowledgeBase;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class KnowledgeBaseCategoryStore extends CoreRequest
 {

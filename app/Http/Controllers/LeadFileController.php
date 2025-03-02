@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Helper\Reply;
-use App\Models\Deal;
-use App\Models\DealFile;
+use App\Models\Lead;
+use App\Models\LeadFiles;
 use App\Traits\IconTrait;
 use Illuminate\Http\Request;
 use App\Helper\Files;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 
 class LeadFileController extends AccountBaseController
@@ -53,10 +54,10 @@ class LeadFileController extends AccountBaseController
 
         if ($request->hasFile('file')) {
             foreach ($request->file as $fileData) {
-                $file = new DealFile();
+                $file = new LeadFiles();
 
-                $file->deal_id = $request->lead_id;
-                $filename = Files::uploadLocalOrS3($fileData, DealFile::FILE_PATH . '/' . $request->lead_id);
+                $file->lead_id = $request->lead_id;
+                $filename = Files::uploadLocalOrS3($fileData, LeadFiles::FILE_PATH . '/' . $request->lead_id);
 
                 $file->user_id = $this->user->id;
                 $file->filename = $fileData->getClientOriginalName();
@@ -67,7 +68,7 @@ class LeadFileController extends AccountBaseController
             }
         }
 
-        $this->lead = Deal::findOrFail($request->lead_id);
+        $this->lead = Lead::findOrFail($request->lead_id);
 
         return Reply::success(__('messages.fileUploaded'));
     }
@@ -81,10 +82,10 @@ class LeadFileController extends AccountBaseController
     public function destroy(Request $request, $id)
     {
         $deletePermission = user()->permission('delete_lead_files');
-        $file = DealFile::findOrFail($id);
+        $file = LeadFiles::findOrFail($id);
         abort_403(!($deletePermission == 'all' || ($deletePermission == 'added' && $file->added_by == user()->id)));
 
-        DealFile::destroy($id);
+        LeadFiles::destroy($id);
 
         return Reply::success(__('messages.deleteSuccess'));
 
@@ -97,10 +98,10 @@ class LeadFileController extends AccountBaseController
     public function download($id)
     {
         $viewPermission = user()->permission('view_lead_files');
-        $file = DealFile::findOrFail($id);
+        $file = LeadFiles::findOrFail($id);
         abort_403(!($viewPermission == 'all' || ($viewPermission == 'added' && $file->added_by == user()->id)));
 
-        return download_local_s3($file, DealFile::FILE_PATH . '/' . $file->deal_id . '/' . $file->hashname);
+        return download_local_s3($file, LeadFiles::FILE_PATH . '/' . $file->lead_id . '/' . $file->hashname);
     }
 
     /**
@@ -112,7 +113,7 @@ class LeadFileController extends AccountBaseController
         $viewPermission = user()->permission('view_lead_files');
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
-        $this->deal = Deal::with('files')->findOrFail($request->id);
+        $this->lead = Lead::with('files')->findOrFail($request->id);
 
         $layout = $request->layout == 'listview' ? 'leads.lead-files.ajax-list' : 'leads.lead-files.thumbnail-list';
 

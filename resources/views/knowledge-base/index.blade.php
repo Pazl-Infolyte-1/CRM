@@ -36,6 +36,7 @@
                                      :text="__('app.all')"/>
 
                 @foreach ($categories as $item)
+
                     <x-setting-menu-item
                         :id="'category-'.$item->id"
                         :active="$activeMenu" :menu="str_replace(' ', '_', $item->name)"
@@ -95,7 +96,7 @@
 
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
-                    <h2 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                         @lang($pageTitle)</h2>
                 </div>
             </x-slot>

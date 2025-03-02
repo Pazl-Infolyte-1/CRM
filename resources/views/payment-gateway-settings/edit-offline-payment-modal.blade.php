@@ -1,6 +1,6 @@
 <x-form id="updateMethods" method="PUT" class="ajax-form">
     <div class="modal-header">
-        <h5 class="modal-title">@lang('app.updateofflinePaymentMethod')</h5>
+        <h5 class="modal-title">@lang('app.update') @lang('app.menu.offlinePaymentMethod')</h5>
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
     </div>
     <div class="modal-body">
@@ -18,12 +18,6 @@
                         fieldId="description" :fieldPlaceholder="__('placeholders.offlinePayment.description')" :fieldValue="$method->description" fieldRequired="true">
                         </x-forms.textarea>
                     </div>
-
-{{--                    <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"--}}
-{{--                                  :fieldLabel="__('app.qrCode')"--}}
-{{--                                  :fieldValue="($method->image ? $method->masked_image_url : $method->image_url)" fieldName="image"--}}
-{{--                                  fieldId="image" >--}}
-{{--                    </x-forms.file>--}}
 
                     <div class="form-group">
                         <x-forms.select fieldId="offline_payment_status" :fieldLabel="__('app.status')" fieldName="status" search="true">
@@ -43,10 +37,6 @@
 </x-form>
 <script>
 
-    // $("#image").dropify({
-    //     messages: dropifyMessages
-    // });
-
     // initialize select picker
     $('#offline_payment_status').selectpicker();
 
@@ -60,7 +50,6 @@
             disableButton: true,
             buttonSelector: "#save-method",
             blockUI: true,
-            file:true,
             data: $('#updateMethods').serialize(),
             success: function (response) {
                 window.location.reload();

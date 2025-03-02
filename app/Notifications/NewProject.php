@@ -46,14 +46,14 @@ class NewProject extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
 
         $url = route('projects.show', $this->project->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.newProject.text') . ' - ' . ($this->project->project_name) . '<br><br>' . __('email.newProject.loginNow');
 
-        $build
+        return $build
             ->subject(__('email.newProject.subject') . ' - ' . config('app.name') . '.')
             ->greeting(__('email.hello') . ' ' . $notifiable->name . ',')
             ->markdown('mail.project.created', [
@@ -62,10 +62,6 @@ class NewProject extends BaseNotification
                 'themeColor' => $this->company->header_color,
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

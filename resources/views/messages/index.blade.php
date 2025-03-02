@@ -51,6 +51,7 @@
             <div class="msg-content-left border-top-0 border-bottom-0">
                 <div class="msg-header d-flex align-items-center">
                     <div class="msg-header-left d-flex justify-content-between">
+
                         <div class="flex-lg-grow-1">
                             <form class="mb-0">
                                 <div class="input-group rounded py-1">
@@ -120,12 +121,9 @@
                     <input type="hidden" name="user_id" id="current_user_id">
                     <div class="row">
                         <div class="w-100 col-md-12">
-                            <div class="form-group">
                              <br>
-                             <input type="hidden" name="types" value="chat"/>
-                             <div id="submitTexts" class="form-control rounded-0 f-14 p-3 border-left-0 border-right-0 border-bottom-0" data-text="@lang('messages.enterText')"></div>
-                            <textarea name="message" id="message-text" class="d-none" ></textarea>
-                            </div>
+                             <div id="submitTexts" class="form-control rounded-0 f-14 p-3 border-left-0 border-right-0 border-bottom-0" contentEditable=true data-text="@lang('messages.enterText')"></div>
+                            <textarea name="message" id="message-text" class="d-none"></textarea>
                         </div>
                        <input type = "hidden" name = "mention_user_id" id = "mentionUserId" class ="mention_user_ids">
                        <div class="col-md-12">
@@ -278,25 +276,20 @@
                 buttonSelector: "#sendMessage",
                 data: $('#sendMessageForm').serialize(),
                 success: function (response) {
-                    if (response.status === 'fail') {
-                            $('#message-text').html(`<div class="alert alert-danger">${response.message}</div>`);
-                        }
-                    if(response.status != 'fail')
-                    {
-                        $('#user_list').val(response.user_list);
-                        $('#message_list').val(response.message_list);
-                        $('#receiver_id').val(response.receiver_id);
 
-                        // Reload left user-list
-                        fetchUserList();
+                    $('#user_list').val(response.user_list);
+                    $('#message_list').val(response.message_list);
+                    $('#receiver_id').val(response.receiver_id);
 
-                        if (taskDropzone.getQueuedFiles().length > 0) {
-                            messageId = response.message_id;
-                            $('#messageId').val(response.message_id);
-                            taskDropzone.processQueue();
-                        } else {
-                            showContent();
-                        }
+                    // Reload left user-list
+                    fetchUserList();
+
+                    if (taskDropzone.getQueuedFiles().length > 0) {
+                        messageId = response.message_id;
+                        $('#messageId').val(response.message_id);
+                        taskDropzone.processQueue();
+                    } else {
+                        showContent();
                     }
                 }
             });
@@ -383,6 +376,7 @@
                         $('#chatBox').attr("data-chat-for-user", id);
 
                         $('#sendMessageForm').removeClass('d-none');
+                        scrollChat();
                         $('#msgContentRight').addClass('d-block');
 
                         if (totalUnreadMessagesCount > 0 && isUnreadMessage && response.unreadMessages == 0) {
@@ -395,8 +389,6 @@
 
                             totalUnreadMessagesCount = remainingUnreadMessages;
                         }
-
-                        scrollChat();
                     }
                 }
             });
@@ -501,7 +493,7 @@
             });
         }
 
-        function fetchUserMessages(scrollChatBox = true) {
+        function fetchUserMessages() {
             var currentUserId = $('#current_user_id').val();
 
             if (currentUserId === '') {
@@ -521,10 +513,7 @@
                 },
                 success: function (response) {
                     $('#chatBox').html(response.message_list);
-                    fetchUserList();
-                    if(scrollChatBox){
-                        scrollChat();
-                    }
+                    scrollChat();
                     $('#msgContentRight').addClass('d-block');
                 }
             });
@@ -586,7 +575,7 @@
             });
         } else {
             window.setInterval(function () {
-                fetchUserMessages(false)
+                fetchUserMessages()
             }, 10000); // Fetch messages every 10 seconds
         }
 

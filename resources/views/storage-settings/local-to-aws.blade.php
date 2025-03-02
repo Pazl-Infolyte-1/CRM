@@ -49,11 +49,16 @@
                                 @foreach($files as $file)
                                     <tr>
                                         <td scope="row">
-                                            @if ($file->icon == 'images')
-                                                <a class="img-lightbox cursor-pointer d-block text-dark-grey f-13 pt-3 px-3" data-image-url="{{ $file->file_url }}" href="javascript:;">@lang('app.view')</a>
-                                            @else
-                                                <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank" href="{{ $file->file_url }}">@lang('app.view')</a>
-                                            @endif
+                                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 "
+                                               target="_blank"
+                                               href="{{ $file->file_url }}">
+                                                @if ($file->icon == 'images')
+                                                    <img src="{{ $file->file_url }}" height="20px">
+
+                                                @else
+                                                    <i class="fa {{ $file->icon }} text-lightest"></i>
+                                                @endif
+                                            </a>
                                         </td>
                                         <td>{{$file->size_format}}</td>
                                         <td>{{$file->storage_location}}</td>

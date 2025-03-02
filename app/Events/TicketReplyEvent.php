@@ -14,13 +14,11 @@ class TicketReplyEvent
 
     public $ticketReply;
     public $notifyUser;
-    public $ticketReplyUsers;
 
-    public function __construct(TicketReply $ticketReply, $notifyUser, $ticketReplyUsers)
+    public function __construct(TicketReply $ticketReply, $notifyUser)
     {
         $this->ticketReply = $ticketReply;
         $this->notifyUser = $notifyUser;
-        $this->ticketReplyUsers = $ticketReplyUsers;
     }
 
 }

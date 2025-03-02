@@ -3,7 +3,7 @@
 
     <div class="d-flex flex-wrap p-20">
         @forelse ($task->history as $activ)
-            <div class="card file-card w-100 rounded-0 border-0 comment p-2">
+            <div class="card file-card w-100 rounded-0 border-0 comment">
                 <div class="card-horizontal">
                     <div class="card-img my-1 ml-0">
                         <img src="{{ $activ->user->image_url }}" alt="{{ $activ->user->name }}">

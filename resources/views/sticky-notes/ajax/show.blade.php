@@ -19,15 +19,15 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-10">
-                            <h3 class="heading-h1 mb-3">@lang('app.noteDetails')</h3>
+                            <h3 class="heading-h1 mb-3">@lang('app.note') @lang('app.details')</h3>
                         </div>
                         <div class="col-2 text-right">
                             <div class="dropdown">
                                 <button
-                                    class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
+                                    class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
                                     type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <i class="fa fa-ellipsis-h"></i>
                                 </button>

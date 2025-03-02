@@ -16,8 +16,6 @@ class Files
     const UPLOAD_FOLDER = 'user-uploads';
     const IMPORT_FOLDER = 'import-files';
 
-    const REQUIRED_FILE_UPLOAD_SIZE = 20;
-
     /**
      * @param mixed $image
      * @param string $dir
@@ -66,9 +64,6 @@ class Files
         return $newName;
     }
 
-    /**
-     * @throws ApiException
-     */
     public static function validateUploadedFile($uploadedFile)
     {
         if (!$uploadedFile->isValid()) {
@@ -94,36 +89,6 @@ class Files
         if ($uploadedFile->getSize() <= 10) {
             throw new ApiException('You are not allowed to upload a file with filesize less than 10 bytes', null, 422, 422, 2023);
         }
-
-        // WORKSUITESAAS
-        if (company() && company()->package->max_storage_size > 0) {
-            // Check if company has exceeded the storage limit
-            $companyFilesSize = FileStorage::where('company_id', company()->id)->sum('size');
-            $companyPackageMaxStorageSize = company()->package->max_storage_size;
-            $companyPackageStorageUnit = company()->package->storage_unit;
-            $maxStorageInBytes = $companyPackageMaxStorageSize * self::storageUnitToBytes($companyPackageStorageUnit);
-            $companyAllowedStorageSize = $maxStorageInBytes - $companyFilesSize;
-
-            if ($uploadedFile->getSize() > $companyAllowedStorageSize) {
-                throw new ApiException('You are not allowed to upload a file with filesize greater than ' . $companyAllowedStorageSize . ' bytes', null, 422, 422);
-            }
-        }
-
-    }
-
-    public static function storageUnitToBytes($unit, $size = 1)
-    {
-        $unit = strtolower($unit);
-        $bytes = match ($unit) {
-            'kb' => 1024,
-            'mb' => 1024 * 1024,
-            'gb' => 1024 * 1024 * 1024,
-            'tb' => 1024 * 1024 * 1024 * 1024,
-            'pb' => 1024 * 1024 * 1024 * 1024 * 1024,
-            default => 1,
-        };
-
-        return $bytes * $size;
     }
 
     public static function generateNewFileName($currentFileName)
@@ -137,7 +102,7 @@ class Files
     /**
      * @throws \Exception
      */
-    public static function uploadLocalOrS3($uploadedFile, $dir, $width = null, int $height = 400)
+    public static function uploadLocalOrS3($uploadedFile, $dir, $width = null, int $height = 800)
     {
         self::validateUploadedFile($uploadedFile);
 
@@ -161,23 +126,20 @@ class Files
 
             // Upload files to aws s3 or digitalocean or wasabi or minio
             Storage::disk(config('filesystems.default'))->missing($dir . '/' . $newName);
-
             return $newName;
         } catch (\Exception $e) {
-            throw new \Exception(__('app.fileNotUploaded') . ' ' . $e->getMessage() . ' on ' . config('filesystems.default'));
+            throw new \Exception(__('app.fileNotUploaded') . ' ' . $e->getMessage() . config('filesystems.default'));
         }
     }
 
     public static function fileStore($file, $folder, $generateNewName = '')
     {
-        // Generate a new name if $generateNewName is empty
-        $newName = $generateNewName ?: self::generateNewFileName($file->getClientOriginalName());
 
-        // Retrieve enabled storage setting
-        $setting = StorageSetting::where('status', 'enabled')->firstOrFail();
+        // Keep $generateNewName empty if you do not want to generate new name
+        $newName = ($generateNewName == '') ? self::generateNewFileName($file->getClientOriginalName()) : $generateNewName;
+        $setting = StorageSetting::where('status', 'enabled')->first();
         $storageLocation = $setting->filesystem;
 
-        // Store file information in the database
         $fileStorage = new FileStorage();
         $fileStorage->filename = $newName;
         $fileStorage->size = $file->getSize();
@@ -187,58 +149,50 @@ class Files
         $fileStorage->save();
 
         return $newName;
+
     }
 
     public static function deleteFile($filename, $folder)
     {
         $dir = trim($folder, '/');
 
-        // Check and delete file record from database
-        if ($fileExist = FileStorage::where('filename', $filename)->first()) {
-            $fileExist->delete();
-        }
 
-        $filePath = $dir . '/' . $filename;
-        $disk = Storage::disk(config('filesystems.default'));
+        $fileExist = FileStorage::where('filename', $filename)->first();
+
+        $fileExist?->delete();
 
         // Delete from Cloud
+
         if (in_array(config('filesystems.default'), StorageSetting::S3_COMPATIBLE_STORAGE)) {
-            try {
-                if ($disk->exists($filePath)) {
-                    $disk->delete($filePath);
-                }
-            } catch (\Exception $e) {
-                return true;
+
+            if (Storage::disk(config('filesystems.default'))->exists($dir . '/' . $filename)) {
+                Storage::disk(config('filesystems.default'))->delete($dir . '/' . $filename);
             }
 
             return true;
         }
 
         // Delete from Local
-        $path = public_path(Files::UPLOAD_FOLDER . '/' . $filePath);
-        if (!File::exists($path)) {
+        $path = Files::UPLOAD_FOLDER . '/' . $dir . '/' . $filename;
+
+        if (!File::exists(public_path($path))) {
             return true;
         }
 
-        try {
-            File::delete($path);
-        } catch (\Throwable) {
-            return true;
+        if (File::exists(public_path($path))) {
+            try {
+                File::delete(public_path($path));
+            } catch (\Throwable) {
+                return true;
+            }
         }
 
-        return true;
     }
-
 
     public static function deleteDirectory($folder)
     {
         $dir = trim($folder);
-        try {
-            Storage::deleteDirectory($dir);
-        } catch (\Exception $e) {
-            return true;
-        }
-
+        Storage::deleteDirectory($dir);
 
         return true;
     }
@@ -250,10 +204,9 @@ class Files
 
     public static function createDirectoryIfNotExist($folder)
     {
-        $directoryPath = public_path(self::UPLOAD_FOLDER . '/' . $folder);
-
-        if (!File::exists($directoryPath)) {
-            File::makeDirectory($directoryPath, 0775, true);
+        /** Check if folder exits or not. If not then create the folder */
+        if (!File::exists(public_path(self::UPLOAD_FOLDER . '/' . $folder))) {
+            File::makeDirectory(public_path(self::UPLOAD_FOLDER . '/' . $folder), 0775, true);
         }
     }
 
@@ -273,7 +226,6 @@ class Files
         // Resizing image if width and height is provided
         $svgNot = File::extension($uploadedFile->getClientOriginalName()) !== 'svg';
         $webPNot = File::extension($uploadedFile->getClientOriginalName()) !== 'webp';
-
         if ($width && $height && $svgNot && $webPNot) {
             Image::make($tempPath)
                 ->resize($width, $height, function ($constraint) {
@@ -294,7 +246,7 @@ class Files
 
     public static function uploadLocalFile($fileName, $path, $companyId = null): void
     {
-        if (!File::exists(public_path(Files::UPLOAD_FOLDER . '/' . $path . '/' . $fileName))) {
+        if (!File::exists(public_path(Files::UPLOAD_FOLDER . '/' . $path . '/' .  $fileName))) {
             return;
         }
 
@@ -304,7 +256,7 @@ class Files
 
     public static function saveFileInfo($fileName, $path, $companyId = null)
     {
-        $filePath = public_path(Files::UPLOAD_FOLDER . '/' . $path . '/' . $fileName);
+        $filePath = public_path(Files::UPLOAD_FOLDER . '/' . $path . '/' .  $fileName);
 
         $fileStorage = FileStorage::where('filename', $fileName)->first() ?: new FileStorage();
         $fileStorage->company_id = $companyId;
@@ -319,10 +271,10 @@ class Files
     public static function storeLocalFileOnCloud($fileName, $path)
     {
         if (config('filesystems.default') != 'local') {
-            $filePath = public_path(Files::UPLOAD_FOLDER . '/' . $path . '/' . $fileName);
+            $filePath = public_path(Files::UPLOAD_FOLDER . '/' . $path . '/' .  $fileName);
             try {
                 $contents = File::get($filePath);
-                Storage::disk(config('filesystems.default'))->put($path . '/' . $fileName, $contents);
+                Storage::disk(config('filesystems.default'))->put($path . '/' .  $fileName, $contents);
                 // TODO: Delete local file in Next release
                 // File::delete($filePath);
                 return true;
@@ -348,8 +300,8 @@ class Files
      *    ]
      * ];
      *
-     * @param mixed $model
-     * @param array $columns
+     * @param  mixed $model
+     * @param  array $columns
      * @return void
      */
     public static function fixLocalUploadFiles($model, array $columns)
@@ -366,7 +318,7 @@ class Files
                 /** @phpstan-ignore-next-line */
                 $companyId = ($model == Company::class) ? $item->id : $item->company_id;
 
-                $filePath = public_path(self::UPLOAD_FOLDER . '/' . $path . '/' . $fileName);
+                $filePath = public_path(self::UPLOAD_FOLDER . '/' . $path . '/' .  $fileName);
 
                 if (!File::exists($filePath)) {
                     continue;
@@ -378,77 +330,4 @@ class Files
         }
     }
 
-    public static function getFormattedSizeAndStatus($maxSizeKey)
-    {
-        try {
-            // Retrieve the raw value from php.ini
-            $maxSize = ini_get($maxSizeKey);
-
-            // Convert the size to bytes
-            $sizeInBytes = self::returnBytes($maxSize);
-
-            // Format the size in either MB or GB
-            if ($sizeInBytes >= 1 << 30) {
-                return [
-                    'size' => round($sizeInBytes / (1 << 30), 2) . ' GB',
-                    'greater' => true
-                ];
-            }
-
-            $mb = $sizeInBytes / 1048576;
-
-            if ($sizeInBytes >= 1 << 20) {
-                return [
-                    'size' => round($sizeInBytes / (1 << 20), 2) . ' MB',
-                    'greater' => $mb >= self::REQUIRED_FILE_UPLOAD_SIZE
-                ];
-            }
-
-            if ($sizeInBytes >= 1 << 10) {
-                return [
-                    'size' => round($sizeInBytes / (1 << 10), 2) . ' KB',
-                    'greater' => false
-                ];
-            }
-
-            return [
-                'size' => $sizeInBytes . ' Bytes',
-                'greater' => false
-            ];
-        } catch (\Exception $e) {
-            return [
-                'size' => '0 Bytes',
-                'greater' => true
-            ];
-        }
-    }
-
-    public static function getUploadMaxFilesize()
-    {
-        return self::getFormattedSizeAndStatus('upload_max_filesize');
-    }
-
-    public static function getPostMaxSize()
-    {
-        return self::getFormattedSizeAndStatus('post_max_size');
-    }
-
-    // Helper function to convert human-readable size to bytes
-    public static function returnBytes($val)
-    {
-        $val = trim($val);
-        $valNew = substr($val, 0, -1);
-        $last = strtolower($val[strlen($val) - 1]);
-
-        switch ($last) {
-            case 'g':
-                $valNew *= 1024;
-            case 'm':
-                $valNew *= 1024;
-            case 'k':
-                $valNew *= 1024;
-        }
-
-        return $valNew;
-    }
 }

@@ -30,45 +30,45 @@
                                 name="payment_date[]"
                                 class="payment_date px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15 w-100"
                                 placeholder="@lang('placeholders.date')"
-                                value="{{ now(company()->timezone)->format(company()->date_format) }}">
+                                value="{{ Carbon\Carbon::now(company()->timezone)->format(company()->date_format) }}">
                         </div>
                     </td>
                     <td class="border-bottom-0 btrr-mbl btlr">
                         <div class="input-group">
                             <select name="gateway[]" data-id={{ $key }}
                                 id="payment_gateway_id{{ $key }}"
-                                    class="form-control select-picker payment_gateway_id" data-live-search="true"
-                                    search="true">
-                                <option value="all" @selected($paymentID == 'all')>--</option>
-                                <option value="Offline" id="offline_method" @selected ($paymentID == 'Offline')>
+                                class="form-control select-picker payment_gateway_id" data-live-search="true"
+                                search="true">
+                                <option value="all" @if ($paymentID == 'all') selected @endif>--</option>
+                                <option value="Offline" id="offline_method" @if ($paymentID == 'Offline') selected @endif>
                                     {{ __('modules.offlinePayment.offlinePayment') }}</option>
                                 @if ($paymentGateway->paypal_status == 'active')
-                                    <option value="paypal" @selected($paymentID == 'paypal') >{{ __('app.paypal') }}</option>
+                                    <option value="paypal" @if ($paymentID == 'paypal') selected @endif>{{ __('app.paypal') }}</option>
                                 @endif
                                 @if ($paymentGateway->stripe_status == 'active')
-                                    <option value="stripe" @selected($paymentID == 'stripe') >{{ __('app.stripe') }}</option>
+                                    <option value="stripe" @if ($paymentID == 'stripe') selected @endif>{{ __('app.stripe') }}</option>
                                 @endif
                                 @if ($paymentGateway->razorpay_status == 'active')
-                                    <option value="razorpay"  @selected($paymentID == 'razorpay')>{{ __('app.razorpay') }}</option>
+                                    <option value="razorpay" @if ($paymentID == 'razorpay') selected @endif>{{ __('app.razorpay') }}</option>
                                 @endif
                                 @if ($paymentGateway->paystack_status == 'active')
-                                    <option value="paystack" @selected($paymentID == 'paystack')>{{ __('app.paystack') }}</option>
+                                    <option value="paystack" @if ($paymentID == 'paystack') selected @endif>{{ __('app.paystack') }}</option>
                                 @endif
                                 @if ($paymentGateway->mollie_status == 'active')
-                                    <option value="mollie" @selected($paymentID == 'mollie')>{{ __('app.mollie') }}</option>
+                                    <option value="mollie" @if ($paymentID == 'mollie') selected @endif>{{ __('app.mollie') }}</option>
                                 @endif
                                 @if ($paymentGateway->payfast_status == 'active')
-                                    <option value="payfast" @selected($paymentID == 'payfast')>{{ __('app.payfast') }}</option>
+                                    <option value="payfast" @if ($paymentID == 'payfast') selected @endif>{{ __('app.payfast') }}</option>
                                 @endif
                                 @if ($paymentGateway->authorize_status == 'active')
-                                    <option value="authorize" @selected($paymentID == 'authorize')>{{ __('app.authorize') }}
+                                    <option value="authorize" @if ($paymentID == 'authorize') selected @endif>{{ __('app.authorize') }}
                                     </option>
                                 @endif
                                 @if ($paymentGateway->square_status == 'active')
-                                    <option value="square" @selected($paymentID == 'square')>{{ __('app.square') }}</option>
+                                    <option value="square" @if ($paymentID == 'square') selected @endif>{{ __('app.square') }}</option>
                                 @endif
                                 @if ($paymentGateway->flutterwave_status == 'active')
-                                    <option value="flutterwave" @selected($paymentID == 'flutterwave')>{{ __('app.flutterwave') }}
+                                    <option value="flutterwave" @if ($paymentID == 'flutterwave') selected @endif>{{ __('app.flutterwave') }}
                                     </option>
                                 @endif
                             </select>

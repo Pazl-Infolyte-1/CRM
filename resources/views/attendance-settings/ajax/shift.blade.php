@@ -22,35 +22,22 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
                         {{ $shift->shift_name }}</span>
                 </td>
                 <td>
-                    @if ($shift->shift_type == 'strict')
-                        <div class="f-11">@lang('modules.employees.startTime'):
-                            {{ \Carbon\Carbon::createFromFormat('H:i:s', $shift->office_start_time)->translatedFormat(company()->time_format) }}
-                        </div>
-                        <div class="f-11">
-                            @lang('modules.attendance.halfDay'):
-                            {{ $shift->halfday_mark_time? \Carbon\Carbon::createFromFormat('H:i:s', $shift->halfday_mark_time)->translatedFormat(company()->time_format): '' }}
-                        </div>
-                        <div class="f-11">
-                            @lang('modules.employees.endTime'):
-                            {{ \Carbon\Carbon::createFromFormat('H:i:s', $shift->office_end_time)->translatedFormat(company()->time_format) }}
-                        </div>                        
-                    @else
-                        <div class="f-11">@lang('modules.attendance.totalShiftHours'):
-                            {{ $shift->flexible_total_hours }} @lang('app.hrs')
-                        </div>
-                        <div class="f-11">
-                            @lang('modules.attendance.halfdayShiftHours'):
-                            {{ $shift->flexible_half_day_hours }} @lang('app.hrs')
-                        </div>
-                    @endif
+                    <div class="f-11">@lang('modules.employees.startTime'):
+                        {{ \Carbon\Carbon::createFromFormat('H:i:s', $shift->office_start_time)->translatedFormat(company()->time_format) }}
+                    </div>
+                    <div class="f-11">
+                        @lang('modules.attendance.halfDay'):
+                        {{ $shift->halfday_mark_time? \Carbon\Carbon::createFromFormat('H:i:s', $shift->halfday_mark_time)->translatedFormat(company()->time_format): '' }}
+                    </div>
+                    <div class="f-11">
+                        @lang('modules.employees.endTime'):
+                        {{ \Carbon\Carbon::createFromFormat('H:i:s', $shift->office_end_time)->translatedFormat(company()->time_format) }}
+                    </div>
                 </td>
                 <td>
-                    @if ($shift->shift_type == 'strict')
                     <div class="f-11">
                         @lang('modules.attendance.lateMark'): {{ $shift->late_mark_duration }}
                     </div>
-                    @endif
-                    
                     <div class="f-11">
                         @lang('modules.attendance.checkininday'): {{ $shift->clockin_in_day }}
                     </div>

@@ -26,7 +26,6 @@ class UpdateContractSetting extends FormRequest
     {
         return [
             'contract_prefix' => 'required',
-            'contract_digit' => 'nullable|integer|min:0|max:10',
         ];
 
     }

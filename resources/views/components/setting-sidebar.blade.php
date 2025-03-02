@@ -152,7 +152,6 @@
                 <x-setting-menu-item :active="$activeMenu" menu="social_auth_settings"
                                      :href="route('social-auth-settings.index')" :text="__('app.menu.socialLogin')"/>
             @endif
-        @endif
 
             @if (user()->permission('manage_google_calendar_setting') == 'all')
                 <x-setting-menu-item :active="$activeMenu" menu="google_calendar_settings"
@@ -166,8 +165,7 @@
                                     :text="__('app.menu.customLinkSetting')"/>
             @endif
 
-        @if(isWorksuite())
-            @if (user()->permission('manage_gdpr_setting') == 'all')
+            @if (user()->permission('manage_gdpr_setting') == 'all' && in_array('client', user_modules()))
                 <x-setting-menu-item :active="$activeMenu" menu="gdpr_settings" :href="route('gdpr-settings.index')"
                                      :text="__('app.menu.gdprSettings')"/>
             @endif
@@ -183,11 +181,10 @@
                                     :text="__('app.menu.signUpSetting')"/>
             @endif
         @endif
-        @if (checkCompanyPackageIsValid(user()->company_id))
-            @foreach (worksuite_plugins() as $item)
-                @includeIf(strtolower($item).'::sections.setting-sidebar')
-            @endforeach
-        @endif
+
+        @foreach (worksuite_plugins() as $item)
+            @includeIf(strtolower($item).'::sections.setting-sidebar')
+        @endforeach
 
         @if(isWorksuite())
             @if (in_array('admin', user_roles()) && global_setting()->system_update)
@@ -196,11 +193,6 @@
             @endif
         @endif
 
-            @if (in_array('admin', user_roles()))
-                {{-- SAAS --}}
-                <x-setting-menu-item :active="$activeMenu" menu="billing" :href="route('billing.index')"
-                                     :text="__('superadmin.menu.billing')"/>
-            @endif
 
     </ul>
     <!-- SETTINGS MENU END -->

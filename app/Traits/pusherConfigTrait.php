@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Pusher\Pusher;
+use Pusher\PusherException;
 
 trait pusherConfigTrait
 {

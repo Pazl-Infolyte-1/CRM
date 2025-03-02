@@ -5,7 +5,6 @@ namespace App\Http\Requests\Tasks;
 use Carbon\Carbon;
 use App\Models\Task;
 use App\Models\Project;
-use App\Models\TaskboardColumn;
 use App\Models\ProjectMilestone;
 use App\Http\Requests\CoreRequest;
 use App\Traits\CustomFieldsRequestTrait;
@@ -55,16 +54,6 @@ class StoreTask extends CoreRequest
             'priority' => 'required'
         ];
 
-        $waitingApproval = TaskboardColumn::waitingForApprovalColumn();
-        if($project == null){
-            $rules['board_column_id'] = 'not_in:' . $waitingApproval->id;
-        }else{
-            if($project->need_approval_by_admin == 0) {
-                $rules['board_column_id'] = 'not_in:' . $waitingApproval->id;
-            }
-        }
-
-
         if(in_array('client', user_roles()))
         {
             $rules['project_id'] = 'required';
@@ -84,6 +73,7 @@ class StoreTask extends CoreRequest
 
 
         if (request()->has('project_id') && request()->project_id != 'all' && request()->project_id != '') {
+            $project = Project::findOrFail(request()->project_id);
             $startDate = $project->start_date->format($setting->date_format);
             $rules['start_date'] = 'required|date_format:"' . $setting->date_format . '"|after_or_equal:' . $startDate;
         }
@@ -106,7 +96,6 @@ class StoreTask extends CoreRequest
 
         if ($this->has('repeat')) {
             $rules['repeat_cycles'] = 'required|numeric';
-            $rules['repeat_count'] = 'required|numeric';
         }
 
         if ($this->has('set_time_estimate')) {
@@ -121,13 +110,10 @@ class StoreTask extends CoreRequest
 
     public function messages()
     {
-        $project = request('project_id') ? Project::findOrFail(request('project_id')) : null;
-
         return [
             'project_id.required' => __('messages.chooseProject'),
             'due_date.after_or_equal' => __('messages.taskAfterDateValidation'),
-            'due_date.before_or_equal' => __('messages.taskBeforeDateValidation'),
-            'board_column_id.not_in' => $project == null ? __('messages.selectAnotherStatus') : __('messages.selectStatus'),
+            'due_date.before_or_equal' => __('messages.taskBeforeDateValidation')
         ];
     }
 
@@ -135,8 +121,7 @@ class StoreTask extends CoreRequest
     {
         $attributes = [
             'user_id.0' => __('modules.tasks.assignTo'),
-            'dependent_task_id' => __('modules.tasks.dependentTask'),
-            'board_column_id' => __('modules.tasks.status'),
+            'dependent_task_id' => __('modules.tasks.dependentTask')
         ];
 
         $attributes = $this->customFieldsAttributes($attributes);

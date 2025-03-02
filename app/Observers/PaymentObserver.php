@@ -2,24 +2,21 @@
 
 namespace App\Observers;
 
-use App\Models\Notification;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Events\NewPaymentEvent;
 use App\Scopes\ActiveScope;
-use Exception;
 use Illuminate\Support\Facades\Log;
 use App\Events\InvoicePaymentReceivedEvent;
 use App\Http\Controllers\QuickbookController;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
-use App\Traits\EmployeeActivityTrait;
+use Carbon\Carbon;
 
 class PaymentObserver
 {
-    use EmployeeActivityTrait;
 
     public function saving(Payment $payment)
     {
@@ -34,29 +31,27 @@ class PaymentObserver
             $payment->added_by = user() ? user()->id : null;
         }
 
-        $payment->company_id = $payment->currency?->company_id;
+        $payment->company_id = $payment->currency->company_id;
 
     }
 
     public function saved(Payment $payment)
     {
-        if (isRunningInConsoleOrSeeding()) {
-            return;
-        }
+        if (!isRunningInConsoleOrSeeding()) {
+            if (($payment->project_id && $payment->project->client_id != null) || ($payment->invoice_id && $payment->invoice->client_id != null) && $payment->gateway != 'Offline') {
+                // Notify client
+                $clientId = ($payment->project_id && $payment->project->client_id != null) ? $payment->project->client_id : $payment->invoice->client_id;
 
-        if (($payment->project_id && $payment->project->client_id != null) || ($payment->invoice_id && $payment->invoice->client_id != null) && $payment->gateway != 'Offline') {
-            // Notify client
-            $clientId = ($payment->project_id && $payment->project->client_id != null) ? $payment->project->client_id : $payment->invoice->client_id;
+                $admins = User::allAdmins($payment->company->id);
 
-            $admins = User::allAdmins($payment->company->id);
+                $client_details = User::withoutGlobalScope(ActiveScope::class)->where('id', $clientId)->get();
+                $notifyUser = $client_details;
 
-            $client_details = User::withoutGlobalScope(ActiveScope::class)->where('id', $clientId)->get();
-            $notifyUser = $client_details;
+                $notifyUsers = $notifyUser->merge($admins);
 
-            $notifyUsers = $notifyUser->merge($admins);
-
-            if ($notifyUser && $payment->status === 'complete') {
-                event(new NewPaymentEvent($payment, $notifyUsers));
+                if ($notifyUser && $payment->status === 'complete') {
+                    event(new NewPaymentEvent($payment, $notifyUsers));
+                }
             }
         }
     }
@@ -83,19 +78,12 @@ class PaymentObserver
 
             $dueAmount = $due - $payment->amount;
 
-            if($dueAmount > 0){
-                $payment->invoice->status = 'partial';
-            }else{
-                $payment->invoice->status = 'paid';
-            }
-
             if (isset($invoice)) {
                 $invoice->due_amount = $dueAmount;
+                $invoice->saveQuietly();
             }
 
-            $invoice->save();
-
-
+            // Notify all admins
             try {
                 if (!isRunningInConsoleOrSeeding()) {
 
@@ -111,13 +99,13 @@ class PaymentObserver
                         $payment->saveQuietly();
                     }
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 Log::info($e);
             }
 
         }
 
-        if (!is_null($payment->bank_account_id) && $payment->status == 'complete') {
+        if(!is_null($payment->bank_account_id) && $payment->status == 'complete'){
 
             $bankAccount = BankAccount::find($payment->bank_account_id);
             $bankBalance = $bankAccount->bank_balance;
@@ -142,182 +130,177 @@ class PaymentObserver
 
     public function updating(Payment $payment)
     {
-        if (isRunningInConsoleOrSeeding()) {
-            return true;
-        }
+        if (!isRunningInConsoleOrSeeding()) {
+            if(!is_null($payment->bank_account_id) && $payment->status == 'complete')
+            {
 
-        if (!is_null($payment->bank_account_id) && $payment->status == 'complete') {
+                if($payment->isDirty('bank_account_id'))
+                {
+                    $originalAccount = $payment->getOriginal('bank_account_id');
+                    $oldAmount = $payment->getOriginal('amount');
+                    $newAmount = $payment->amount;
 
-            if ($payment->isDirty('bank_account_id')) {
-                $originalAccount = $payment->getOriginal('bank_account_id');
-                $oldAmount = $payment->getOriginal('amount');
-                $newAmount = $payment->amount;
+                    $bankAccount = BankAccount::find($originalAccount);
 
-                $bankAccount = BankAccount::find($originalAccount);
+                    if($bankAccount && $payment->getOriginal('status') == 'complete'){
+                        $bankBalance = $bankAccount->bank_balance;
+                        $bankBalance -= $oldAmount;
 
-                if ($bankAccount && $payment->getOriginal('status') == 'complete') {
+                        $transaction = new BankTransaction();
+                        $transaction->payment_id = $payment->id;
+                        $transaction->invoice_id = $payment->invoice_id;
+                        $transaction->type = 'Dr';
+                        $transaction->bank_account_id = $originalAccount;
+                        $transaction->amount = round($oldAmount, 2);
+                        $transaction->transaction_date = $payment->paid_on;
+                        $transaction->bank_balance = round($bankBalance, 2);
+                        $transaction->transaction_relation = 'payment';
+                        $transaction->transaction_related_to = $payment->id;
+                        $transaction->title = 'payment-debited';
+                        $transaction->save();
+
+                        $bankAccount->bank_balance = round($bankBalance, 2);
+                        $bankAccount->save();
+                    }
+
+                    $newBankAccount = BankAccount::find($payment->bank_account_id);
+
+                    if($newBankAccount){
+                        $newBankBalance = $newBankAccount->bank_balance;
+                        $newBankBalance += $newAmount;
+
+                        $transaction = new BankTransaction();
+                        $transaction->payment_id = $payment->id;
+                        $transaction->invoice_id = $payment->invoice_id;
+                        $transaction->type = 'Cr';
+                        $transaction->bank_account_id = $payment->bank_account_id;
+                        $transaction->amount = round($newAmount, 2);
+                        $transaction->transaction_date = $payment->paid_on;
+                        $transaction->bank_balance = round($newBankBalance, 2);
+                        $transaction->transaction_relation = 'payment';
+                        $transaction->transaction_related_to = $payment->id;
+                        $transaction->title = 'payment-credited';
+                        $transaction->save();
+
+                        $newBankAccount->bank_balance = round($newBankBalance, 2);
+                        $newBankAccount->save();
+                    }
+
+                }
+                elseif(!$payment->isDirty('bank_account_id') && $payment->isDirty('amount'))
+                {
+                    $bankAccount = BankAccount::find($payment->bank_account_id);
                     $bankBalance = $bankAccount->bank_balance;
-                    $bankBalance -= $oldAmount;
 
-                    $transaction = new BankTransaction();
-                    $transaction->payment_id = $payment->id;
-                    $transaction->invoice_id = $payment->invoice_id;
-                    $transaction->type = 'Dr';
-                    $transaction->bank_account_id = $originalAccount;
-                    $transaction->amount = round($oldAmount, 2);
-                    $transaction->transaction_date = $payment->paid_on;
-                    $transaction->bank_balance = round($bankBalance, 2);
-                    $transaction->transaction_relation = 'payment';
-                    $transaction->transaction_related_to = $payment->id;
-                    $transaction->title = 'payment-debited';
-                    $transaction->save();
+                    $account = $payment->getOriginal('bank_account_id');
+                    $oldAmount = $payment->getOriginal('amount');
+                    $newAmount = $payment->amount;
+
+                    if($payment->getOriginal('amount') > $payment->amount){
+                        $newBalance = $oldAmount - $newAmount;
+                        $bankBalance -= $newBalance;
+
+                        $transaction = new BankTransaction();
+                        $transaction->payment_id = $payment->id;
+                        $transaction->invoice_id = $payment->invoice_id;
+                        $transaction->type = 'Dr';
+                        $transaction->bank_account_id = $account;
+                        $transaction->amount = round($newBalance, 2);
+                        $transaction->transaction_date = $payment->paid_on;
+                        $transaction->bank_balance = round($bankBalance, 2);
+                        $transaction->transaction_relation = 'payment';
+                        $transaction->transaction_related_to = $payment->id;
+                        $transaction->title = 'payment-updated';
+                        $transaction->save();
+                    }
+
+                    if($payment->getOriginal('amount') < $payment->amount){
+                        $newBalance = $newAmount - $oldAmount;
+                        $bankBalance += $newBalance;
+
+                        $transaction = new BankTransaction();
+                        $transaction->payment_id = $payment->id;
+                        $transaction->invoice_id = $payment->invoice_id;
+                        $transaction->type = 'Cr';
+                        $transaction->bank_account_id = $account;
+                        $transaction->amount = round($newBalance, 2);
+                        $transaction->transaction_date = $payment->paid_on;
+                        $transaction->bank_balance = round($bankBalance, 2);
+                        $transaction->transaction_relation = 'payment';
+                        $transaction->transaction_related_to = $payment->id;
+                        $transaction->title = 'payment-updated';
+                        $transaction->save();
+                    }
 
                     $bankAccount->bank_balance = round($bankBalance, 2);
                     $bankAccount->save();
+
                 }
+                elseif($payment->isDirty('status'))
+                {
+                    $bankAccount = BankAccount::find($payment->bank_account_id);
+                    $bankBalance = $bankAccount->bank_balance;
 
-                $newBankAccount = BankAccount::find($payment->bank_account_id);
-
-                if ($newBankAccount) {
-                    $newBankBalance = $newBankAccount->bank_balance;
-                    $newBankBalance += $newAmount;
+                    $newBalance = $bankBalance + $payment->amount;
 
                     $transaction = new BankTransaction();
                     $transaction->payment_id = $payment->id;
-                    $transaction->invoice_id = $payment->invoice_id;
                     $transaction->type = 'Cr';
                     $transaction->bank_account_id = $payment->bank_account_id;
-                    $transaction->amount = round($newAmount, 2);
+                    $transaction->amount = round($payment->amount, 2);
                     $transaction->transaction_date = $payment->paid_on;
-                    $transaction->bank_balance = round($newBankBalance, 2);
+                    $transaction->bank_balance = round($newBalance, 2);
                     $transaction->transaction_relation = 'payment';
                     $transaction->transaction_related_to = $payment->id;
                     $transaction->title = 'payment-credited';
                     $transaction->save();
 
-                    $newBankAccount->bank_balance = round($newBankBalance, 2);
-                    $newBankAccount->save();
+                    $bankAccount->bank_balance = round($newBalance, 2);
+                    $bankAccount->save();
                 }
 
             }
-            elseif (!$payment->isDirty('bank_account_id') && $payment->isDirty('amount')) {
+
+            if($payment->isDirty('status') && $payment->status != 'complete')
+            {
                 $bankAccount = BankAccount::find($payment->bank_account_id);
-                $bankBalance = $bankAccount->bank_balance;
 
-                $account = $payment->getOriginal('bank_account_id');
-                $oldAmount = $payment->getOriginal('amount');
-                $newAmount = $payment->amount;
+                if(!is_null($bankAccount)){
+                    $bankBalance = $bankAccount->bank_balance;
 
-                if ($payment->getOriginal('amount') > $payment->amount) {
-                    $newBalance = $oldAmount - $newAmount;
-                    $bankBalance -= $newBalance;
+                    $newBalance = $bankBalance - $payment->amount;
 
                     $transaction = new BankTransaction();
                     $transaction->payment_id = $payment->id;
-                    $transaction->invoice_id = $payment->invoice_id;
                     $transaction->type = 'Dr';
-                    $transaction->bank_account_id = $account;
-                    $transaction->amount = round($newBalance, 2);
+                    $transaction->bank_account_id = $payment->bank_account_id;
+                    $transaction->amount = round($payment->amount, 2);
                     $transaction->transaction_date = $payment->paid_on;
-                    $transaction->bank_balance = round($bankBalance, 2);
+                    $transaction->bank_balance = round($newBalance, 2);
                     $transaction->transaction_relation = 'payment';
                     $transaction->transaction_related_to = $payment->id;
-                    $transaction->title = 'payment-updated';
+                    $transaction->title = 'payment-debited';
                     $transaction->save();
+
+                    $bankAccount->bank_balance = round($newBalance, 2);
+                    $bankAccount->save();
                 }
-
-                if ($payment->getOriginal('amount') < $payment->amount) {
-                    $newBalance = $newAmount - $oldAmount;
-                    $bankBalance += $newBalance;
-
-                    $transaction = new BankTransaction();
-                    $transaction->payment_id = $payment->id;
-                    $transaction->invoice_id = $payment->invoice_id;
-                    $transaction->type = 'Cr';
-                    $transaction->bank_account_id = $account;
-                    $transaction->amount = round($newBalance, 2);
-                    $transaction->transaction_date = $payment->paid_on;
-                    $transaction->bank_balance = round($bankBalance, 2);
-                    $transaction->transaction_relation = 'payment';
-                    $transaction->transaction_related_to = $payment->id;
-                    $transaction->title = 'payment-updated';
-                    $transaction->save();
-                }
-
-                $bankAccount->bank_balance = round($bankBalance, 2);
-                $bankAccount->save();
-
-            }
-            elseif ($payment->isDirty('status')) {
-                $bankAccount = BankAccount::find($payment->bank_account_id);
-                $bankBalance = $bankAccount->bank_balance;
-
-                $newBalance = $bankBalance + $payment->amount;
-
-                $transaction = new BankTransaction();
-                $transaction->payment_id = $payment->id;
-                $transaction->type = 'Cr';
-                $transaction->bank_account_id = $payment->bank_account_id;
-                $transaction->amount = round($payment->amount, 2);
-                $transaction->transaction_date = $payment->paid_on;
-                $transaction->bank_balance = round($newBalance, 2);
-                $transaction->transaction_relation = 'payment';
-                $transaction->transaction_related_to = $payment->id;
-                $transaction->title = 'payment-credited';
-                $transaction->save();
-
-                $bankAccount->bank_balance = round($newBalance, 2);
-                $bankAccount->save();
             }
 
         }
 
-        if ($payment->isDirty('status') && $payment->status != 'complete') {
-            $bankAccount = BankAccount::find($payment->bank_account_id);
-
-            if (!is_null($bankAccount)) {
-                $bankBalance = $bankAccount->bank_balance;
-
-                $newBalance = $bankBalance - $payment->amount;
-
-                $transaction = new BankTransaction();
-                $transaction->payment_id = $payment->id;
-                $transaction->type = 'Dr';
-                $transaction->bank_account_id = $payment->bank_account_id;
-                $transaction->amount = round($payment->amount, 2);
-                $transaction->transaction_date = $payment->paid_on;
-                $transaction->bank_balance = round($newBalance, 2);
-                $transaction->transaction_relation = 'payment';
-                $transaction->transaction_related_to = $payment->id;
-                $transaction->title = 'payment-debited';
-                $transaction->save();
-
-                $bankAccount->bank_balance = round($newBalance, 2);
-                $bankAccount->save();
-            }
-        }
-
-
-    }
-
-    public function updated(Payment $payment)
-    {
-        if (!isRunningInConsoleOrSeeding() && user()) {
-            self::createEmployeeActivity(user()->id, 'payment-updated', $payment->id, 'payment');
-
-        }
     }
 
     public function deleting(Payment $payment)
     {
-        if (!is_null($payment->bank_account_id) && $payment->status == 'complete') {
+        if(!is_null($payment->bank_account_id) && $payment->status == 'complete'){
 
             $account = $payment->bank_account_id;
             $amount = $payment->amount;
 
             $bankAccount = BankAccount::find($account);
 
-            if ($bankAccount) {
+            if($bankAccount){
                 $bankBalance = $bankAccount->bank_balance;
                 $bankBalance -= $amount;
 
@@ -372,17 +355,8 @@ class PaymentObserver
         }
 
         $notifyData = ['App\Notifications\NewPayment', 'App\Notifications\PaymentReminder'];
-        Notification::deleteNotification($notifyData, $payment->id);
+        \App\Models\Notification::deleteNotification($notifyData, $payment->id);
 
-    }
-
-    public function deleted(Payment $payment)
-    {
-        if (user()) {
-            self::createEmployeeActivity(user()->id, 'payment-deleted');
-
-        }
     }
 
 }
-

@@ -8,14 +8,13 @@ use Laravel\Fortify\Contracts\UpdatesUserPasswords;
 
 class UpdateUserPassword implements UpdatesUserPasswords
 {
-
     use PasswordValidationRules;
 
     /**
      * Validate and update the user's password.
      *
-     * @param mixed $user
-     * @param array $input
+     * @param  mixed  $user
+     * @param  array  $input
      * @return void
      */
     public function update($user, array $input)
@@ -24,7 +23,7 @@ class UpdateUserPassword implements UpdatesUserPasswords
             'current_password' => ['required', 'string'],
             'password' => $this->passwordRules(),
         ])->after(function ($validator) use ($user, $input) {
-            if (!Hash::check($input['current_password'], $user->password)) {
+            if (! Hash::check($input['current_password'], $user->password)) {
                 $validator->errors()->add('current_password', __('passwords.notMatch'));
             }
         })->validateWithBag('updatePassword');

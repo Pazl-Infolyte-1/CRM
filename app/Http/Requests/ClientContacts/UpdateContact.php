@@ -3,6 +3,7 @@
 namespace App\Http\Requests\ClientContacts;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateContact extends CoreRequest
 {

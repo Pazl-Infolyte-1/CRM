@@ -35,6 +35,7 @@ class ModuleSetting extends BaseModel
     use HasCompany;
 
     const CLIENT_MODULES = [
+            'clients',
             'projects',
             'tickets',
             'invoices',
@@ -51,7 +52,6 @@ class ModuleSetting extends BaseModel
         ];
 
     const OTHER_MODULES = [
-            'clients',
             'employees',
             'attendance',
             'expenses',
@@ -105,9 +105,6 @@ class ModuleSetting extends BaseModel
     {
         self::addCompanyIdToNullModule($company, $module);
 
-        // WORKSUITESAAS
-        $moduleInPackage = collect(json_decode($company->package->module_in_package));
-
         foreach ($roles as $role) {
             $data = ModuleSetting::withoutGlobalScope(CompanyScope::class)
                 ->where('module_name', $module)
@@ -120,11 +117,8 @@ class ModuleSetting extends BaseModel
                     'module_name' => $module,
                     'type' => $role,
                     'company_id' => $company->id,
-                    'status' => 'active',
-                    'is_allowed' => $moduleInPackage->contains($module) ? 1 : 0,
                 ]);
             }
-
         }
 
         PermissionRole::insertModuleRolePermission($module, $company->id);

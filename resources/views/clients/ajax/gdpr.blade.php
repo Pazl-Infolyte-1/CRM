@@ -22,7 +22,7 @@
         <ul class="list-group">
             @forelse($consents as $consent)
                 <li class="list-group-item border-grey">
-                    <a class="d-block f-15 text-dark-grey  consent-details"
+                    <a class="d-block f-15 text-dark-grey text-capitalize consent-details"
                         href="javascript:;" data-consent-id="{{ $consent->id }}">{{ $consent->name }}</a>
                 </li>
             @empty
@@ -47,7 +47,7 @@
     });
 
     const showTable = () => {
-        window.LaravelDataTables["client-gdpr-table"].draw(true);
+        window.LaravelDataTables["client-gdpr-table"].draw(false);
     }
 
     $(document).on('click', '.consent-details', function() {

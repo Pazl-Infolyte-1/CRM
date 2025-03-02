@@ -2,8 +2,8 @@
     <div class="col-sm-12">
         <x-form id="import-lead-data-form">
             <div class="add-lead bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
-                    @lang('app.importLead')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                    @lang('app.importExcel') @lang('app.menu.lead')</h4>
                 <div class="col-sm-12 pt-2">
                     <div class="alert alert-warning" role="alert">
                         @lang('app.importLeadExcelInfo')
@@ -11,8 +11,6 @@
                 </div>
                 <div class="row py-20">
                     <div class="col-md-12">
-                        <x-forms.link-secondary :link="asset('sample-import/lead-contact-sample.xlsx')" icon="download">@lang('app.downloadSampleImport')</x-forms.link-secondary>
-
                         <x-forms.file :fieldLabel="__('modules.import.file')" fieldName="import_file" fieldId="lead_import" />
                     </div>
                     <div class="col-md-12">
@@ -25,7 +23,7 @@
                 <x-form-actions>
                     <x-forms.button-primary id="import-lead-form" class="mr-3" icon="arrow-right">@lang('app.uploadNext')
                     </x-forms.button-primary>
-                    <x-forms.button-cancel :link="route('lead-contact.index')" class="border-0">@lang('app.back')
+                    <x-forms.button-cancel :link="route('leads.index')" class="border-0">@lang('app.back')
                     </x-forms.button-cancel>
 
                 </x-form-actions>
@@ -44,7 +42,7 @@
         });
 
         $('body').on('click', '#import-lead-form', function() {
-            const url = "{{ route('lead-contact.import.store') }}";
+            const url = "{{ route('leads.import.store') }}";
 
             $.easyAjax({
                 url: url,

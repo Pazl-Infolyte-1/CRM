@@ -66,39 +66,12 @@ class Holiday extends BaseModel
         'date' => 'datetime',
     ];
 
-    public static function getHolidayByDates($startDate, $endDate, $userId = null)
+    public static function getHolidayByDates($startDate, $endDate)
     {
-
-        $holiday = Holiday::select(DB::raw('DATE_FORMAT(date, "%Y-%m-%d") as holiday_date'), 'occassion')
+        return Holiday::select(DB::raw('DATE_FORMAT(date, "%Y-%m-%d") as holiday_date'), 'occassion')
             ->where('date', '>=', $startDate)
-            ->where('date', '<=', $endDate);
-
-        if (is_null($userId)) {
-            return $holiday->get();
-        }
-
-        $user = User::find($userId);
-
-        if ($user) {
-            $holiday = $holiday->where(function ($query) use ($user) {
-                $query->where(function ($subquery) use ($user) {
-                    $subquery->where(function ($q) use ($user) {
-                        $q->where('department_id_json', 'like', '%"' . $user->employeeDetail->department_id . '"%')
-                            ->orWhereNull('department_id_json');
-                    });
-                    $subquery->where(function ($q) use ($user) {
-                        $q->where('designation_id_json', 'like', '%"' . $user->employeeDetail->designation_id . '"%')
-                            ->orWhereNull('designation_id_json');
-                    });
-                    $subquery->where(function ($q) use ($user) {
-                        $q->where('employment_type_json', 'like', '%"' . $user->employeeDetail->employment_type . '"%')
-                            ->orWhereNull('employment_type_json');
-                    });
-                });
-            });
-        }
-
-        return $holiday->get();
+            ->where('date', '<=', $endDate)
+            ->get();
     }
 
     public static function checkHolidayByDate($date)
@@ -111,7 +84,7 @@ class Holiday extends BaseModel
         return $this->belongsTo(User::class, 'added_by')->withoutGlobalScope(ActiveScope::class);
     }
 
-    public static function weekMap($format = 'l')
+    public static function weekMap($format='l')
     {
         return [
             Holiday::MONDAY => now()->startOfWeek(1)->translatedFormat($format),
@@ -122,38 +95,6 @@ class Holiday extends BaseModel
             Holiday::SATURDAY => now()->startOfWeek(6)->translatedFormat($format),
             Holiday::SUNDAY => now()->startOfWeek(7)->translatedFormat($format),
         ];
-    }
-
-    public static function designation($ids)
-    {
-        $designation = null;
-
-        if ($ids != null) {
-            $designation = Designation::whereIn('id', $ids)->pluck('name')->toArray();
-        }
-
-        return $designation;
-    }
-
-    public static function department($ids)
-    {
-        $department = null;
-
-        if ($ids != null) {
-            $department = Team::whereIn('id', $ids)->pluck('team_name')->toArray();
-        }
-
-        return $department;
-    }
-
-    public function employee()
-    {
-        return $this->hasMany(EmployeeDetails::class, 'user_id');
-    }
-
-    public function employeeDetails()
-    {
-        return $this->hasOne(EmployeeDetails::class, 'user_id');
     }
 
 }

@@ -1,4 +1,4 @@
-<div class="d-grid d-lg-flex d-md-flex action-bar justify-content-end">
+<div class="d-grid d-lg-flex d-md-flex action-bar">
 
     <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-3" role="group" aria-label="Basic example">
         <a href="{{ route('leaves.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
@@ -55,7 +55,7 @@
             </x-cards.user>
         </div>
         <div class="col-lg-4">
-            <x-cards.widget icon="sign-out-alt" :title="__('modules.leaves.remainingLeaves')" :value="$allowedLeaves" />
+            <x-cards.widget icon="sign-out-alt" :title="__('modules.leaves.remainingLeaves')" :value="($allowedLeaves - $leavesTakenByUser)" />
         </div>
     </div>
 

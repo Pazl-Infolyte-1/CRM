@@ -18,15 +18,15 @@ class StickyNoteController extends AccountBaseController
 
     public function index()
     {
-        $this->stickyNotes = StickyNote::where('user_id', user()->id)->orderByDesc('updated_at')->get();
-
-        $this->pageTitle = __('app.menu.stickyNotes');
-
-        $this->view = 'sticky-notes.ajax.notes';
+        $this->stickyNotes = StickyNote::where('user_id', user()->id)->orderBy('updated_at', 'desc')->get();
 
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $this->pageTitle = __('app.menu.stickyNotes');
+            $html = view('sticky-notes.ajax.notes', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'sticky-notes.ajax.notes';
 
         return view('sticky-notes.index', $this->data);
     }
@@ -38,15 +38,16 @@ class StickyNoteController extends AccountBaseController
      */
     public function create()
     {
-        $this->stickyNotes = StickyNote::where('user_id', user()->id)->orderByDesc('updated_at')->get();
-
+        $this->stickyNotes = StickyNote::where('user_id', user()->id)->orderBy('updated_at', 'desc')->get();
         $this->pageTitle = __('modules.sticky.addNote');
 
-        $this->view = 'sticky-notes.ajax.create';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $this->pageTitle = __('modules.sticky.addNote');
+            $html = view('sticky-notes.ajax.create', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'sticky-notes.ajax.create';
 
         return view('sticky-notes.index', $this->data);
     }
@@ -67,11 +68,12 @@ class StickyNoteController extends AccountBaseController
         $this->stickyNotes = StickyNote::where('user_id', user()->id)->where('id', $id)->firstOrFail();
         $this->pageTitle = __('app.note') . ' ' . __('app.details');
 
-        $this->view = 'sticky-notes.ajax.show';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('sticky-notes.ajax.show', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'sticky-notes.ajax.show';
 
         return view('sticky-notes.index', $this->data);
     }
@@ -81,11 +83,12 @@ class StickyNoteController extends AccountBaseController
         $this->stickyNote = StickyNote::where('user_id', user()->id)->where('id', $id)->firstOrFail();
         $this->pageTitle = __('app.editNote');
 
-        $this->view = 'sticky-notes.ajax.edit';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('sticky-notes.ajax.edit', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'sticky-notes.ajax.edit';
 
         return view('sticky-notes.index', $this->data);
     }

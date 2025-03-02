@@ -2,12 +2,10 @@
 
 namespace App\View\Components\Cards;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Widget extends Component
 {
-
     public $title;
     public $value;
     public $icon;
@@ -31,7 +29,7 @@ class Widget extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {

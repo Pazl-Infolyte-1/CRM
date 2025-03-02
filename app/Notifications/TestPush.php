@@ -8,12 +8,6 @@ use NotificationChannels\OneSignal\OneSignalMessage;
 class TestPush extends BaseNotification
 {
 
-    private $pushNotificationSetting;
-    public function __construct()
-    {
-
-       $this->pushNotificationSetting = \App\Models\PushNotificationSetting::first();
-    }
 
     /**
      * Get the notification's delivery channels.
@@ -24,17 +18,7 @@ class TestPush extends BaseNotification
     // phpcs:ignore
     public function via($notifiable)
     {
-        if ($this->pushNotificationSetting->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, 'This is a test notification.', 'Notification content goes here.', 'https://www.google.com');
-        }
-
-        if ($this->pushNotificationSetting->status == 'active') {
-            return [OneSignalChannel::class];
-        }
-
-        return [];
+        return [OneSignalChannel::class];
     }
 
     /**
@@ -46,21 +30,17 @@ class TestPush extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = getDomainSpecificUrl(route('login'));
         $content = __('email.notificationIntro');
 
-        $build
+        return $build
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.notificationAction')
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

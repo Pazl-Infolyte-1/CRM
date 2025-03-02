@@ -2,12 +2,10 @@
 
 namespace App\View\Components;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class FileCard extends Component
 {
-
     public $fileName;
     public $dateAdded;
 
@@ -25,7 +23,7 @@ class FileCard extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {

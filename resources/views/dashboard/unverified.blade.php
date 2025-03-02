@@ -6,7 +6,7 @@
     <div class="content-wrapper">
         <div class="row">
             <div class="col-md-12 mt-4">
-                <h4 class="f-21  font-weight-bold">@lang('app.welcome')
+                <h4 class="f-21 text-capitalize font-weight-bold">@lang('app.welcome')
                     {{ $user->name }}</h4>
 
             </div>

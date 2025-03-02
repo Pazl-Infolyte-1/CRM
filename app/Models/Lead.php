@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Enums\Salutation;
-use App\Scopes\ActiveScope;
 use App\Traits\CustomFieldsTrait;
 use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Notifications\Notifiable;
 
 /**
@@ -45,11 +46,11 @@ use Illuminate\Notifications\Notifiable;
  * @property int|null $last_updated_by
  * @property-read \App\Models\User|null $client
  * @property-read \App\Models\Currency|null $currency
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\DealFile[] $files
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\LeadFiles[] $files
  * @property-read int|null $files_count
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\DealFollowUp[] $follow
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\LeadFollowUp[] $follow
  * @property-read int|null $follow_count
- * @property-read \App\Models\DealFollowUp|null $followup
+ * @property-read \App\Models\LeadFollowUp|null $followup
  * @property-read mixed $extras
  * @property-read mixed $icon
  * @property-read mixed $image_url
@@ -109,9 +110,11 @@ class Lead extends BaseModel
     use CustomFieldsTrait;
     use HasCompany;
 
+    protected $table = 'leads';
+
     const CUSTOM_FIELD_MODEL = 'App\Models\Lead';
 
-    protected $appends = ['image_url', 'client_name_salutation'];
+    protected $appends = ['image_url'];
 
     protected $casts = [
         'salutation' => Salutation::class,
@@ -119,16 +122,9 @@ class Lead extends BaseModel
 
     public function getImageUrlAttribute()
     {
-        $gravatarHash = !is_null($this->email) ? md5(strtolower(trim($this->email))) : '';
+        $gravatarHash = md5(strtolower(trim($this->client_email)));
 
         return 'https://www.gravatar.com/avatar/' . $gravatarHash . '.png?s=200&d=mp';
-    }
-
-    public function clientNameSalutation(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => ($this->salutation ? $this->salutation->label() . ' ' : '') . $this->client_name
-        );
     }
 
     /**
@@ -140,7 +136,17 @@ class Lead extends BaseModel
     // phpcs:ignore
     public function routeNotificationForMail($notification)
     {
-        return $this->email;
+        return $this->client_email;
+    }
+
+    public function leadAgent(): BelongsTo
+    {
+        return $this->belongsTo(LeadAgent::class, 'agent_id');
+    }
+
+    public function note(): BelongsTo
+    {
+        return $this->belongsTo(LeadNote::class, 'lead_id');
     }
 
     public function leadSource(): BelongsTo
@@ -153,9 +159,9 @@ class Lead extends BaseModel
         return $this->belongsTo(LeadCategory::class, 'category_id');
     }
 
-    public function note(): BelongsTo
+    public function leadStatus(): BelongsTo
     {
-        return $this->belongsTo(LeadNote::class, 'lead_id');
+        return $this->belongsTo(LeadStatus::class, 'status_id');
     }
 
     public function client(): BelongsTo
@@ -163,51 +169,69 @@ class Lead extends BaseModel
         return $this->belongsTo(User::class, 'client_id');
     }
 
-    public function addedBy(): BelongsTo
+    public function currency(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'added_by')->withoutGlobalScope(ActiveScope::class);
+        return $this->belongsTo(Currency::class, 'currency_id');
     }
 
-    public function leadOwner(): BelongsTo
+    public function products(): BelongsToMany
     {
-        return $this->belongsTo(User::class, 'lead_owner')->withoutGlobalScope(ActiveScope::class);
+        return $this->belongsToMany(Product::class, 'lead_products')->using(LeadProduct::class);
     }
 
-    public static function allLeads($contactId = null)
+    public function follow()
     {
-        // Retrieve user's lead view permission
+        if (user()) {
+            $viewLeadFollowUpPermission = user()->permission('view_lead_follow_up');
+
+            if ($viewLeadFollowUpPermission == 'all') {
+                return $this->hasMany(LeadFollowUp::class);
+
+            }
+            elseif ($viewLeadFollowUpPermission == 'added') {
+                return $this->hasMany(LeadFollowUp::class)->where('added_by', user()->id);
+
+            }
+            else {
+                return null;
+            }
+        }
+
+        return $this->hasMany(LeadFollowUp::class);
+    }
+
+    public function followup(): HasOne
+    {
+        return $this->hasOne(LeadFollowUp::class, 'lead_id')->orderBy('created_at', 'desc');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(LeadFiles::class)->orderBy('created_at', 'desc');
+    }
+
+    public static function allLeads()
+    {
         $viewLeadPermission = user()->permission('view_lead');
 
-        // If the user has no permission to view leads
-        if ($viewLeadPermission === 'none') {
-            return collect();
+        $leads = Lead::select('*')
+            ->orderBy('client_name', 'asc');
+
+        if (!isRunningInConsoleOrSeeding()) {
+
+            if ($viewLeadPermission == 'added') {
+                $leads->where('added_by', user()->id);
+            }
         }
 
-        // Initialize lead query
-        $leadsQuery = Lead::select('*')->orderBy('client_name');
+        return $leads->get();
+    }
 
-        if ($viewLeadPermission == 'owned') {
-            $leadsQuery = $leadsQuery->where('lead_owner', user()->id);
-        }
+    public function addedBy()
+    {
+        $addedBy = User::findOrFail($this->added_by);
 
-        if ($viewLeadPermission == 'added') {
-            $leadsQuery = $leadsQuery->where('added_by', user()->id);
-        }
-
-        if ($viewLeadPermission == 'both') {
-            $leadsQuery = $leadsQuery->where(function ($query) {
-                $query->where('lead_owner', user()->id)
-                      ->orWhere('added_by', user()->id);
-            });
-        }
-
-        // Apply contact ID filter if provided
-        if ($contactId) {
-            $leadsQuery->where('id', $contactId);
-        }
-
-        // Retrieve leads
-        return $leadsQuery->get();
+        return $addedBy ?: null;
     }
 
 }

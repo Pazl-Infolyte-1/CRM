@@ -1,6 +1,6 @@
 @php
 if ($notification->data['estimate_number'] == '') {
-    $estimate = \App\Models\Estimate::find($notification->data['id']);
+    $estimate = \App\Estimate::find($notification->data['id']);
     $estimateNumber = $estimate->estimate_number;
 } else {
     $estimateNumber = $notification->data['estimate_number'];

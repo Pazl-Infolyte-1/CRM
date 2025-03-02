@@ -27,17 +27,10 @@ class StorePublicLead extends CoreRequest
      */
     public function rules()
     {
-        \Illuminate\Support\Facades\Validator::extend('check_superadmin', function ($attribute, $value, $parameters, $validator) {
-            return !\App\Models\User::withoutGlobalScopes([\App\Scopes\ActiveScope::class, \App\Scopes\CompanyScope::class])
-                ->where('email', $value)
-                ->where('is_superadmin', 1)
-                ->exists();
-        });
-
         $company = Company::findOrFail($this->request->get('company_id'));
         $rules = array();
         $rules['name'] = 'required';
-        $rules['email'] = 'nullable|email:rfc,strict|check_superadmin|unique:leads,client_email,null,id,company_id,' . $company->id.'|unique:users,email,null,id,company_id,' . $company->id;
+        $rules['email'] = 'nullable|email:rfc|unique:leads,client_email,null,id,company_id,' . $company->id.'|unique:users,email,null,id,company_id,' . $company->id;
 
         $rules = $this->customFieldRules($rules);
 
@@ -55,13 +48,6 @@ class StorePublicLead extends CoreRequest
         $attributes = $this->customFieldsAttributes($attributes);
 
         return $attributes;
-    }
-
-    public function messages()
-    {
-        return [
-            'email.check_superadmin' => __('superadmin.emailCantUse'),
-        ];
     }
 
 }

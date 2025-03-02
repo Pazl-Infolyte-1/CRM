@@ -3,9 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
-use App\Models\GlobalSetting;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Support\Facades\App;
+use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Support\HtmlString;
 
 class BirthdayReminder extends BaseNotification
@@ -60,7 +59,7 @@ class BirthdayReminder extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
 
         $list = '<ol>';
 
@@ -75,7 +74,7 @@ class BirthdayReminder extends BaseNotification
 
         $content = __('email.BirthdayReminder.text') . '<br>' . new HtmlString($list);
 
-        $build
+        return $build
             ->subject($this->count . ' ' . __('email.BirthdayReminder.subject'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -83,10 +82,6 @@ class BirthdayReminder extends BaseNotification
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.BirthdayReminder.action')
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     public function toArray()
@@ -96,19 +91,21 @@ class BirthdayReminder extends BaseNotification
 
     public function toSlack($notifiable) // phpcs:ignore
     {
+        $new = new SlackMessage;
+
+        $slack = $notifiable->company->slackSetting;
+
         $name = '';
 
         foreach ($this->birthDays->upcomingBirthdays as $key => $birthDay) {
-            $name .= '>' . ($key + 1) . '. ' . $birthDay['name'] . "\n";
+            $name .= '>' .($key + 1) . '. ' . $birthDay['name'] . "\n";
         }
 
-        if ($notifiable->employeeDetail->slack_username) {
-            return $this->slackBuild($notifiable)
-                ->content('>*' . __('email.BirthdayReminder.text') . ' :birthday: *' . "\n" . $name . ' ');
-        }
-
-
-        return $this->slackRedirectMessage('email.BirthdayReminder.text', $notifiable);
+        return $new
+            ->from(config('app.name'))
+            ->to('@' . $notifiable->employeeDetail->slack_username)
+            ->image($slack->slack_logo_url)
+            ->content('>*' . __('email.BirthdayReminder.text') . ' :birthday: *' . "\n" . $name . ' ');
 
     }
 

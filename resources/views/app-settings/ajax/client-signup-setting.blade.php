@@ -17,17 +17,6 @@
                               fieldId="admin_client_signup_approval"/>
         </div>
 
-        {{-- SAAS --}}
-        <div class="col-lg-12 mt-3" id="client-signup-url">
-            <x-forms.label fieldId="" for="mail_from_name" :fieldLabel="__('superadmin.clientSignupUrl')">
-            </x-forms.label>
-            <p class="text-bold"><span id="webhook-link-text">{{ route('front.client-signup', company()->hash) }}</span>
-                <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
-                    data-clipboard-target="#webhook-link-text">
-                    <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
-            </p>
-            <p class="text-primary">(@lang('superadmin.clientSignupUrlNote'))</p>
-        </div>
     </div>
 </div>
 
@@ -38,7 +27,7 @@
 
     </x-setting-form-actions>
 </div>
-<script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
+
 <script>
     $('body').on('change', '#allow_client_signup', function () {
         $(this).is(':checked') ? $('#admin-approval').removeClass('d-none') : $('#admin-approval').addClass('d-none');
@@ -54,28 +43,6 @@
             disableButton: true,
             buttonSelector: "#save-client-signup-setting-form",
             data: $('#editSettings').serialize(),
-        })
-    });
-
-
-    var clipboard = new ClipboardJS('.btn-copy');
-
-    clipboard.on('success', function(e) {
-        Swal.fire({
-            icon: 'success',
-            text: '@lang("app.webhookUrlCopied")',
-            toast: true,
-            position: 'top-end',
-            timer: 3000,
-            timerProgressBar: true,
-            showConfirmButton: false,
-            customClass: {
-                confirmButton: 'btn btn-primary',
-            },
-            showClass: {
-                popup: 'swal2-noanimation',
-                backdrop: 'swal2-noanimation'
-            },
         })
     });
 </script>

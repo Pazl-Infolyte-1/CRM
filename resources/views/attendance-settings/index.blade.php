@@ -7,8 +7,6 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
     <!-- SETTINGS START -->
     <div class="w-100 d-flex ">
 
-
-
         <x-setting-sidebar :activeMenu="$activeSettingMenu" />
 
         <x-setting-card>
@@ -26,45 +24,23 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
                                     href="{{ route('attendance-settings.index') }}?tab=shift" role="tab"
                                     aria-controls="nav-ticketTypes" aria-selected="true">@lang('app.menu.employeeShifts')
                                 </a>
-                                <a class="nav-item nav-link f-15 shift-rotation"
-                                    href="{{ route('attendance-settings.index') }}?tab=shift-rotation" role="tab"
-                                    aria-controls="nav-ticketTypes" aria-selected="true" ajax="false">@lang('app.menu.shiftRotation')
-                                </a>
                             @endif
-
-                            <a class="nav-item nav-link f-15 qrcode"
-                            href="{{ route('attendance-settings.index') }}?tab=qrcode"  role="tab"
-                            aria-controls="nav-ticketTy" aria-selected="true">@lang('app.qrCode')
-                        </a>
                         </div>
                     </nav>
                 </div>
             </x-slot>
 
-                <x-slot name="buttons">
-                    <div class="row">
+            <x-slot name="buttons">
+                <div class="row">
 
-                        <div class="col-md-12 mb-2">
-                            <x-forms.button-primary icon="plus" id="addEmployeeShift" class="shift-btn mb-2 d-none actionBtn">
-                                @lang('app.addNewShift')
-                            </x-forms.button-primary>
-
-                            <x-forms.link-primary :link="route('shift-rotations.create')" class="mr-3 openRightModal float-left shift-rotation-btn mb-2 d-none actionBtn" icon="plus">
-                                @lang('app.addNewShiftRotation')
-                            </x-forms.link-primary>
-
-                            <x-forms.link-primary :link="route('shift-rotations.automate_shift')" class="mr-3 openRightModal float-left shift-rotation-btn mb-2 d-none actionBtn" icon="plus">
-                                @lang('modules.attendance.automateShifts')
-                            </x-forms.link-primary>
-
-                            <x-forms.button-primary icon="sync-alt" id="runShiftRotation" class="shift-rotation-btn mb-2 d-none actionBtn">
-                                @lang('modules.attendance.runRotation')
-                            </x-forms.button-primary>
-
-                        </div>
-
+                    <div class="col-md-12 mb-2">
+                        <x-forms.button-primary icon="plus" id="addEmployeeShift" class="shift-btn mb-2 d-none actionBtn">
+                            @lang('app.addNew') @lang('modules.attendance.shift')
+                        </x-forms.button-primary>
                     </div>
-                </x-slot>
+
+                </div>
+            </x-slot>
 
 
             @include($view)
@@ -89,11 +65,6 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
             $('.' + activeTab + '-btn').removeClass('d-none');
         }
 
-        $("body").on("click", ".shift-rotation", function (event) {
-            var url = "{{ route('attendance-settings.index') }}?tab=shift-rotation";
-            window.location.href = url;
-        });
-
         $("body").on("click", "#editSettings .nav a", function(event) {
             event.preventDefault();
 
@@ -116,12 +87,6 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
                     }
                 }
             });
-        });
-
-        $('body').on('click', '#runShiftRotation', function(event) {
-            var url = "{{ route('shift-rotations.run_rotation_get') }}";
-            $(MODAL_XL + ' ' + MODAL_HEADING).html('...');
-            $.ajaxModal(MODAL_XL, url);
         });
     </script>
 @endpush

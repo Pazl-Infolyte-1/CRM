@@ -35,20 +35,7 @@ class UserPermission extends BaseModel
 
     use HasFactory;
 
-    //    // Set primary key column
-    //    protected $primaryKey = null;
-    //
-    //    // Disable auto-incrementing
-    //    public $incrementing = false;
-    //
-    //    // Disable timestamps if they are not used
-    //    public $timestamps = false;
-    //
-    //    // If you don't have a primary key at all
-    //    protected $keyType = 'string';
-
-
-    protected $fillable = ['user_id', 'permission_id', 'permission_type_id'];
+    protected $guarded = ['id'];
 
     public function type(): BelongsTo
     {

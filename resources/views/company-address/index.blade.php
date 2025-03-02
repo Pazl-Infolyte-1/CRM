@@ -18,7 +18,7 @@
                 <div class="row">
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="addNewLeaveType" class="addNewLeaveType mb-2">
-                            @lang('app.addNewAddress')
+                            @lang('app.addNew') @lang('app.address')
                         </x-forms.button-primary>
                     </div>
                 </div>
@@ -26,7 +26,7 @@
 
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
-                    <h2 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                         @lang($pageTitle)</h2>
                 </div>
             </x-slot>

@@ -96,7 +96,6 @@ class UpdateTask extends CoreRequest
 
         if ($this->has('repeat')) {
             $rules['repeat_cycles'] = 'required|numeric';
-            $rules['repeat_count'] = 'required|numeric';
         }
 
         if ($this->has('set_time_estimate')) {

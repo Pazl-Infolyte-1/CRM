@@ -3,13 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Helper\Reply;
+use App\Models\LeadAgent;
 use App\Models\LeadCategory;
-use App\Models\LeadPipeline;
 use App\Models\LeadSource;
-use App\Models\PipelineStage;
+use App\Models\LeadStatus;
 use App\Models\User;
-use Illuminate\Http\Request;
-use App\Models\LeadSetting;
 
 class LeadSettingController extends AccountBaseController
 {
@@ -17,7 +15,7 @@ class LeadSettingController extends AccountBaseController
     public function __construct()
     {
         parent::__construct();
-        $this->pageTitle = 'modules.deal.leadSetting';
+        $this->pageTitle = 'app.menu.leadSource';
         $this->activeSettingMenu = 'lead_settings';
         $this->middleware(function ($request, $next) {
             abort_403(!(user()->permission('manage_lead_setting') == 'all' && in_array('leads', user_modules())));
@@ -32,13 +30,10 @@ class LeadSettingController extends AccountBaseController
      */
     public function index()
     {
-        $this->pipelines = LeadPipeline::with('stages')->get();
         $this->leadSources = LeadSource::all();
-        $this->leadStages = PipelineStage::all();
-        $this->leadAgents = User::whereHas('leadAgent')->with('leadAgent', 'employeeDetail.designation:id,name')->get();
+        $this->leadStatus = LeadStatus::all();
+        $this->leadAgents = LeadAgent::with('user')->get();
         $this->leadCategories = LeadCategory::all();
-        $this->leadSettings = LeadSetting::select('status')->first();
-
         $this->employees = User::doesntHave('leadAgent')
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
@@ -49,10 +44,9 @@ class LeadSettingController extends AccountBaseController
         $tab = request('tab');
 
         $this->view = match ($tab) {
-            'pipeline' => 'lead-settings.ajax.pipeline',
+            'status' => 'lead-settings.ajax.status',
             'agent' => 'lead-settings.ajax.agent',
             'category' => 'lead-settings.ajax.category',
-            'method' => 'lead-settings.ajax.method',
             default => 'lead-settings.ajax.source',
         };
 
@@ -65,29 +59,6 @@ class LeadSettingController extends AccountBaseController
 
         return view('lead-settings.index', $this->data);
 
-    }
-
-    /**
-     * Update the lead setting.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function updateLeadSettingStatus($id, Request $request)
-    {
-        $leadSetting = LeadSetting::where('company_id', $id)->first();
-
-        if(!$leadSetting){
-            $leadSetting = new LeadSetting;
-            $leadSetting->company_id = $id;
-            $leadSetting->user_id = $request->userId;
-        }
-
-        $leadSetting->status = $request->lead_setting_status;
-
-        $leadSetting->save();
-
-        return reply::success(__('messages.updateSuccess'));
     }
 
 }

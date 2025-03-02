@@ -2,7 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\BaseModel;
 use App\Traits\HasCompany;
+use App\Models\EstimateItem;
+use App\Models\InvoiceItems;
+use App\Models\ProposalItem;
+use App\Models\ProposalTemplate;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\UnitType

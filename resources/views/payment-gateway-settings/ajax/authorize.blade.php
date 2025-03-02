@@ -45,19 +45,6 @@
                 </x-slot>
             </x-forms.input-group>
         </div>
-        @if (isWorksuiteSaas() && user()->is_superadmin)
-            <div class="col-lg-12">
-                <x-forms.label fieldId="" :fieldLabel="__('app.webhook')">
-                </x-forms.label>
-                <p class="text-bold"><span id="webhook-link-text">{{ $webhookRoute }}</span>
-                    <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
-                    data-clipboard-target="#webhook-link-text">
-                        <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
-                </p>
-                <p class="text-primary">(@lang('messages.addRazorpayWebhookUrl'))</p>
-            </div>
-        @endif
-
     </div>
 </div>
 <!-- Buttons Start -->

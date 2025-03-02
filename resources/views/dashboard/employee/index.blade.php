@@ -88,13 +88,13 @@
             </div>
         @endif
 
-        @if(session('impersonate'))
-            <div class="row pt-2">
-                <div class="col-md-12">
-                    <x-alert type="success" icon="info-circle">
-                        {{__('superadmin.impersonate')}} <b>{{ company()->company_name }}</b>
-                    </x-alert>
-                </div>
+
+        @if(in_array('admin', user_roles()))
+            <div class="row">
+                @include('dashboard.update-message-dashboard')
+                {{-- Remove for versions above 5.2.4 --}}
+                @include('dashboard.update-gateway-credentials')
+                <x-cron-message :modal="true"></x-cron-message>
             </div>
         @endif
 
@@ -108,14 +108,13 @@
 
             <!-- CLOCK IN CLOCK OUT START -->
             <div
-                class="ml-auto d-flex clock-in-out mb-3 mb-lg-0 mb-md-0 m mt-4 mt-lg-0 mt-md-0 justify-content-end">
+                class="ml-auto d-flex clock-in-out mb-3 mb-lg-0 mb-md-0 m mt-4 mt-lg-0 mt-md-0 justify-content-between">
                 <p
                     class="mb-0 text-lg-right text-md-right f-18 font-weight-bold text-dark-grey d-grid align-items-center">
                     <input type="hidden" id="current-latitude" name="current_latitude">
                     <input type="hidden" id="current-longitude" name="current_longitude">
 
-                    <span id="dashboard-clock">
-                        {!! now()->timezone(company()->timezone)->translatedFormat(company()->time_format) . '</span><span class="f-10 font-weight-normal">' . now()->timezone(company()->timezone)->translatedFormat('l') . '</span>' !!}
+                    <span id="dashboard-clock">{!! now()->timezone(company()->timezone)->translatedFormat(company()->time_format) . '</span><span class="f-10 font-weight-normal">' . now()->timezone(company()->timezone)->translatedFormat('l') . '</span>' !!}
 
                     @if (!is_null($currentClockIn))
                         <span class="f-11 font-weight-normal text-lightest">
@@ -125,74 +124,14 @@
                     @endif
                 </p>
 
-                @php
-                    $currentDateTime = now()->timezone(company()->timezone);
-                    $msg = null;
-                    $start_time = \Carbon\Carbon::createFromFormat('H:i:s', $attendanceSettings->office_start_time, company()->timezone);
-                    $mid_time = \Carbon\Carbon::createFromFormat('H:i:s', $attendanceSettings->halfday_mark_time, company()->timezone);
-                    $end_time = \Carbon\Carbon::createFromFormat('H:i:s', $attendanceSettings->office_end_time, company()->timezone);
-
-                    if ($start_time->gt($end_time)) { // check if shift end time is less then current time then shift not ended yet
-                        if(
-                            now(company()->timezone)->lessThan($end_time)
-                            || (now(company()->timezone)->greaterThan($end_time) && now(company()->timezone)->lessThan($start_time))
-                        ){
-                            $start_time->subDay();
-                            $mid_time->subDay();
-                        }else{
-                            $mid_time->addDay();
-                            $end_time->addDay();
-                        }
-                    }
-
-                    $current_user_id = user()->id;
-                    $leaveApplied = $leave->where('user_id', $current_user_id)->where('status', 'approved')->first();
-                    $shiftAssigned = \App\Models\EmployeeShiftSchedule::where('user_id', $current_user_id)->where('date', $currentDateTime->format('Y-m-d'))->first();
-
-                    $defaultShiftID = attendance_Setting()->default_employee_shift;
-                    $defaultShift = \App\Models\EmployeeShift::findOrFail($defaultShiftID);
-                    $currentDayOfWeek = $currentDateTime->format('N');
-                    $isDefaultShiftAssignedToday = in_array($currentDayOfWeek, json_decode($defaultShift->office_open_days, true));
-
-                    if($leaveApplied != null && ($leaveApplied->duration === 'single' || $leaveApplied->duration === 'multiple') && $currentDateTime->between($start_time, $end_time)){
-                        $msg = __('messages.leaveApplied');
-                    }elseif ($leaveApplied != null  && $leaveApplied->duration === 'half day' && $leaveApplied->half_day_type === 'first_half' && $currentDateTime->lt($mid_time) && $currentDateTime->between($start_time, $mid_time)){
-                        $msg = __('messages.leaveForFirstHalf');
-                    }elseif ($leaveApplied != null  && $leaveApplied->duration === 'half day' && $leaveApplied->half_day_type === 'second_half' && $currentDateTime->gt($mid_time) && $currentDateTime->between($mid_time, $end_time)){
-                        $msg = __('messages.leaveForSecondHalf');
-                    }else if(!is_null($checkTodayHoliday) && $checkTodayHoliday->exists && !$shiftAssigned?->exists){
-                        $msg = __('messages.todayHoliday');
-                    }else if(!is_null($checkTodayHoliday) && $checkTodayHoliday->exists && $shiftAssigned?->exists && $cannotLogin == true){
-                        $msg = __('messages.todayHoliday');
-                    }else if($shiftAssigned == null && !$isDefaultShiftAssignedToday){
-                        $msg = __('messages.shiftNotAssigned');
-                    }else if($cannotLogin == true){
-                        $msg = __('messages.notInOfficeHours');
-                    }
-                    /*
-                        true means shift is near to cross with auto clock time adding clock out show
-                        false means show clock in
-                    */
-                    $flagbtn = now()->timezone(company()->timezone)->addHours($attendanceSettings->auto_clock_out_time)->gt($shiftEndDateTime);
-
-
-
-                @endphp
-
-
-                @if (in_array('attendance', user_modules()))
-                    @if (is_null($currentClockIn) && $checkJoiningDate == true || (is_null($currentClockIn) && $flagbtn == false))
-                        <button type="button" class="btn-primary rounded f-15 ml-4" id="clock-in"
-                            @if (($cannotLogin || !is_null($msg)) && ($user->isAdmin($user->id) || $user->isEmployee($user->id)))
-                                disabled
-                                data-toggle="tooltip" data-placement="top" title="{{__($msg)}}"
-                            @endif
-                        ><i
+                @if (in_array('attendance', user_modules()) && $cannotLogin == false)
+                    @if (is_null($currentClockIn) && is_null($checkTodayLeave) && is_null($checkTodayHoliday) && $checkJoiningDate == true)
+                        <button type="button" class="btn-primary rounded f-15 ml-4" id="clock-in"><i
                         class="icons icon-login mr-2"></i>@lang('modules.attendance.clock_in')</button>
                     @endif
                 @endif
 
-                @if (!is_null($currentClockIn) && is_null($currentClockIn->clock_out_time) || (!is_null($currentClockIn) && $flagbtn == true))
+                @if (!is_null($currentClockIn) && is_null($currentClockIn->clock_out_time))
                     <button type="button" class="btn-danger rounded f-15 ml-4" id="clock-out"><i
                             class="icons icon-login mr-2"></i>@lang('modules.attendance.clock_out')</button>
                 @endif
@@ -258,11 +197,11 @@
                                             <img class="" src=" {{ $user->image_url }}" alt="Card image">
                                         </div>
                                         <div class="card-body border-0 pl-0">
-                                            <h4 class="card-title text-dark f-16 f-w-500 mb-0">{{ $user->name }}</h4>
-                                            <p class="f-13 font-weight-normal text-dark-grey mb-2">
-                                                {{ $user->employeeDetail->designation->name ?? '--' }}</p>
+                                            <h4 class="card-title text-dark f-18 f-w-500 mb-0">{{ $user->name }}</h4>
+                                            <p class="f-14 font-weight-normal text-dark-grey mb-2">
+                                                {{ $user->employeeDetails->designation->name ?? '--' }}</p>
                                             <p class="card-text f-12 text-lightest"> @lang('app.employeeId') :
-                                                {{ $user->employeeDetail->employee_id }}</p>
+                                                {{ $user->employeeDetails->employee_id }}</p>
                                         </div>
                                     </div>
                                 </a>
@@ -271,8 +210,8 @@
                                     <div class="d-flex flex-wrap justify-content-between">
                                         @if(in_array('tasks', user_modules()))
                                             <span>
-                                                <label class="f-12 text-dark-grey mb-12 " for="usr">
-                                                    @lang('app.openTasks') </label>
+                                                <label class="f-12 text-dark-grey mb-12 text-capitalize" for="usr">
+                                                    @lang('app.open') @lang('app.menu.tasks') </label>
                                                 <p class="mb-0 f-18 f-w-500">
                                                     <a href="{{ route('tasks.index') . '?assignee=me' }}"
                                                         class="text-dark">
@@ -283,7 +222,7 @@
                                         @endif
                                         @if(in_array('projects', user_modules()))
                                             <span>
-                                                <label class="f-12 text-dark-grey mb-12 " for="usr">
+                                                <label class="f-12 text-dark-grey mb-12 text-capitalize" for="usr">
                                                     @lang('app.menu.projects') </label>
                                                 <p class="mb-0 f-18 f-w-500">
                                                     <a href="{{ route('projects.index') . '?assignee=me&status=all' }}"
@@ -293,7 +232,7 @@
                                         @endif
                                         @if (isset($totalOpenTickets) && in_array('tickets', user_modules()))
                                             <span>
-                                                <label class="f-12 text-dark-grey mb-12 " for="usr">
+                                                <label class="f-12 text-dark-grey mb-12 text-capitalize" for="usr">
                                                     @lang('modules.dashboard.totalOpenTickets') </label>
                                                 <p class="mb-0 f-18 f-w-500">
                                                     <a href="{{ route('tickets.index') . '?agent=me&status=open' }}"
@@ -405,7 +344,7 @@
                         <div class="col-md-6 mb-3">
                             <div
                                 class="bg-white p-20 rounded b-shadow-4 d-flex justify-content-between align-items-center mb-4 mb-md-0 mb-lg-0">
-                                <div class="d-block ">
+                                <div class="d-block text-capitalize">
                                     <h5 class="f-15 f-w-500 mb-20 text-darkest-grey">@lang('app.menu.tasks')</h5>
                                     <div class="d-flex">
                                         <a href="{{ route('tasks.index') . '?assignee=me' }}">
@@ -429,7 +368,6 @@
                     @endif
 
                     @include('dashboard.employee.widgets.projects')
-                    @include('dashboard.employee.widgets.follow_ups')
                     @include('dashboard.employee.widgets.lead')
                     @include('dashboard.employee.widgets.week_timelog')
                 </div>
@@ -457,82 +395,6 @@
         )
         <script src="{{ asset('vendor/full-calendar/main.min.js') }}"  defer="defer"></script>
         <script src="{{ asset('vendor/full-calendar/locales-all.min.js') }}"  defer="defer"></script>
-        <script>
-
-            var clockInButton = document.getElementById('clock-in');
-
-            if (clockInButton) {
-
-                var cannotLogin = "{{ $cannotLogin }}";
-                var checkTodayHoliday = "{{ $checkTodayHoliday?->exists }}";
-                var leaveApplied = "{{ $leave->where('user_id', auth()->user()->id)->where('status', 'approved')->first()?->exists }}";
-                var shiftAssigned = "{{ $shiftAssigned?->exists}}";
-                var allowOutsideShift = "{{ attendance_setting()->show_clock_in_button }}";
-                var isDefaultShiftAssignedToday = "{{ $isDefaultShiftAssignedToday }}";
-
-                var currentDateTime = "{{ $currentDateTime }}";
-                var startTime = "{{ $start_time }}";
-                var midTime = "{{ $mid_time }}";
-                var endTime = "{{ $end_time }}";
-
-                if (
-                    cannotLogin === 'false' ||
-                    (cannotLogin === '' && (checkTodayHoliday == false && leaveApplied == false))
-                ) {
-
-                    if(!shiftAssigned && !isDefaultShiftAssignedToday){
-                        clockInButton.disabled = true;
-                        $(clockInButton).tooltip('dispose');
-                    }else{
-                        clockInButton.disabled = false;
-                        $(clockInButton).tooltip();
-                    }
-                } else if(leaveApplied == true){
-
-                    var leaveDuration = "{{ $leaveApplied?->duration }}";
-                    var halfDayType = "{{ $leaveApplied?->half_day_type }}";
-
-                    if(
-                        ((leaveDuration === 'single' || leaveDuration === 'multiple') && currentDateTime >= startTime && currentDateTime <= endTime) ||
-                        (leaveDuration === 'half day' && halfDayType === 'first_half' && currentDateTime < midTime && currentDateTime >= startTime && currentDateTime <= midTime) ||
-                        (leaveDuration === 'half day' && halfDayType === 'second_half' && currentDateTime > midTime && currentDateTime >= midTime && currentDateTime <= endTime)
-                    ){
-
-                        clockInButton.disabled = true;
-                        $(clockInButton).tooltip('dispose');
-                    }
-                }else if(checkTodayHoliday == true && currentDateTime >= startTime && currentDateTime <= endTime){
-
-                    if(shiftAssigned == true){
-                        clockInButton.disabled = false;
-                        $(clockInButton).tooltip();
-                    }else{
-                        clockInButton.disabled = true;
-                        $(clockInButton).tooltip('dispose');
-                    }
-
-                }else if(checkTodayHoliday == true && (currentDateTime <= startTime || currentDateTime >= endTime)){
-
-                    if(shiftAssigned == true){
-
-                        if(allowOutsideShift == 'yes'){
-
-                            clockInButton.disabled = false;
-                            $(clockInButton).tooltip();
-                        }
-                    }else{
-
-                        clockInButton.disabled = true;
-                        $(clockInButton).tooltip('dispose');
-                    }
-
-                }else {
-
-                    clockInButton.disabled = true;
-                    $(clockInButton).tooltip('dispose');
-                }
-            }
-        </script>
         <script>
 
             $(document).ready(function () {
@@ -761,15 +623,6 @@
 
         @if (!is_null($currentClockIn))
             $('#clock-out').click(function() {
-                var url = "{{ route('attendances.show_clocked_hours') }}?aid={{ $currentClockIn->id }}";
-
-                $(MODAL_DEFAULT + ' ' + MODAL_HEADING).html('...');
-                $.ajaxModal(MODAL_LG, url);
-
-            });
-
-            function clockOut()
-            {
 
                 var token = "{{ csrf_token() }}";
                 var currentLatitude = document.getElementById("current-latitude").value;
@@ -790,7 +643,7 @@
                         }
                     }
                 });
-            }
+            });
         @endif
 
         $('.keep-open .dropdown-menu').on({
@@ -818,47 +671,6 @@
             })
         });
 
-
-        @if (session('success'))
-            Swal.fire({
-                icon: 'success',
-                text: '{{ session('success') }}',
-
-                toast: true,
-                position: "top-end",
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-
-                customClass: {
-                    confirmButton: "btn btn-primary",
-                },
-                showClass: {
-                    popup: "swal2-noanimation",
-                    backdrop: "swal2-noanimation",
-                },
-            });
-        @endif
-        @if (session('error'))
-            Swal.fire({
-                icon: 'error',
-                text: '{{ session('error') }}',
-
-                toast: true,
-                position: "top-end",
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-
-                customClass: {
-                    confirmButton: "btn btn-primary",
-                },
-                showClass: {
-                    popup: "swal2-noanimation",
-                    backdrop: "swal2-noanimation",
-                },
-            });
-        @endif
     </script>
 
     @if (attendance_setting()->radius_check == 'yes' || attendance_setting()->save_current_location)

@@ -50,13 +50,13 @@ class TaskUpdatedClient extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('tasks.show', $this->task->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = $this->task->heading . ' ' . __('email.taskUpdate.subject') . '.';
 
-        $build
+        return $build
             ->subject(__('email.taskUpdate.subject') . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
@@ -65,10 +65,6 @@ class TaskUpdatedClient extends BaseNotification
                 'actionText' => __('email.taskUpdate.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

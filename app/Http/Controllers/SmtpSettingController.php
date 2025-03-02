@@ -19,7 +19,7 @@ class SmtpSettingController extends AccountBaseController
         $this->pageTitle = 'app.menu.notificationSettings';
         $this->activeSettingMenu = 'notification_settings';
         $this->middleware(function ($request, $next) {
-            abort_403(user()->permission('manage_notification_setting') !== 'all' && (!user()->is_superadmin));
+            abort_403(user()->permission('manage_notification_setting') !== 'all');
 
             return $next($request);
         });
@@ -28,19 +28,13 @@ class SmtpSettingController extends AccountBaseController
     /**
      * XXXXXXXXXXX
      *
-     * @return array
+     * @return \Illuminate\Http\Response
      */
     // phpcs:ignore
     public function update(UpdateSmtpSetting $request, $id)
     {
         // save all email notification settings
-        if (!user()->is_superadmin) {
-            $this->saveEmailNotificationSettings($request);
-        }
-
-        if (!user()->is_superadmin){
-            return Reply::success(__('messages.updateSuccess'));
-        }
+        $this->saveEmailNotificationSettings($request);
 
         $smtp = SmtpSetting::first();
 
@@ -51,11 +45,9 @@ class SmtpSettingController extends AccountBaseController
         }
 
         $smtp->update($data);
+        $response = $smtp->verifySmtp();
         session(['smtp_setting' => $smtp]);
         session()->forget('email_notification_setting');
-
-
-        $response = $smtp->verifySmtp();
 
         if ($smtp->mail_driver == 'mail') {
             return Reply::success(__('messages.updateSuccess'));
@@ -87,8 +79,6 @@ class SmtpSettingController extends AccountBaseController
         if ($request->send_email) {
             EmailNotificationSetting::whereIn('id', $request->send_email)->update(['send_email' => 'yes']);
         }
-
-        session()->forget('email_notification_setting');
     }
 
     public function showTestEmailModal()
@@ -99,7 +89,7 @@ class SmtpSettingController extends AccountBaseController
     public function sendTestEmail(Request $request)
     {
         $request->validate([
-            'test_email' => 'required|email:rfc,strict',
+            'test_email' => 'required|email:rfc',
         ]);
 
         $smtp = SmtpSetting::first();

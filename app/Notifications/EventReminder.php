@@ -45,13 +45,13 @@ class EventReminder extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('events.show', $this->event->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.eventReminder.text') . '<br>' . __('app.name') . ': ' . $this->event->event_name . '<br>' . __('app.venue') . ': ' . $this->event->where . '<br>' . __('app.time') . ': ' . $this->event->start_date_time->toDayDateTimeString();
 
-        $build
+        return $build
             ->subject(__('email.eventReminder.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -60,10 +60,6 @@ class EventReminder extends BaseNotification
                 'actionText' => __('email.eventReminder.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

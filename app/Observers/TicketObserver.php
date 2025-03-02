@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\Order;
 use App\Models\Ticket;
 use App\Events\TicketEvent;
 use App\Models\Notification;
@@ -10,12 +11,9 @@ use App\Models\TicketAgentGroups;
 use App\Events\TicketRequesterEvent;
 use App\Models\TicketActivity;
 use App\Models\User;
-use App\Traits\EmployeeActivityTrait;
-use App\Models\LeadSetting;
 
 class TicketObserver
 {
-    use EmployeeActivityTrait;
 
     public function saving(Ticket $ticket)
     {
@@ -42,45 +40,39 @@ class TicketObserver
 
             $group_id = request()->assign_group ?: request()->group_id;
 
-            // start Round Robin
-            $ticketSettings = LeadSetting::select('ticket_round_robin_status')->first();
+            $agentGroupData = TicketAgentGroups::where('company_id', $model->company_id)
+                ->where('status', 'enabled')
+                ->where('group_id', $group_id)
+                ->pluck('agent_id')
+                ->toArray();
 
-            if ($ticketSettings && $ticketSettings->ticket_round_robin_status == 1) {
-                $agentGroupData = TicketAgentGroups::where('company_id', $model->company_id)
-                    ->where('status', 'enabled')
-                    ->where('group_id', $group_id)
-                    ->pluck('agent_id')
-                    ->toArray();
+            $ticketData = $model->where('company_id', $model->company_id)
+                ->where('group_id', $group_id)
+                ->whereIn('agent_id', $agentGroupData)
+                ->whereIn('status', ['open', 'pending'])
+                ->whereNotNull('agent_id')
+                ->pluck('agent_id')
+                ->toArray();
 
-                $ticketData = $model->where('company_id', $model->company_id)
-                    ->where('group_id', $group_id)
-                    ->whereIn('agent_id', $agentGroupData)
-                    ->whereIn('status', ['open', 'pending'])
-                    ->whereNotNull('agent_id')
-                    ->pluck('agent_id')
-                    ->toArray();
+            $diffAgent = array_diff($agentGroupData, $ticketData);
 
-                $diffAgent = array_diff($agentGroupData, $ticketData);
-
-                if (is_null(request()->agent_id)) {
-                    if (!empty($diffAgent)) {
-                        $model->agent_id = current($diffAgent);
-                    }
-                    else {
-                        $agentDuplicateCount = array_count_values($ticketData);
-
-                        if (!empty($agentDuplicateCount)) {
-                            $minVal = min($agentDuplicateCount);
-                            $agent_id = array_search($minVal, $agentDuplicateCount);
-                            $model->agent_id = $agent_id;
-                        }
-                    }
+            if(is_null(request()->agent_id)) {
+                if(!empty($diffAgent)){
+                    $model->agent_id = current($diffAgent);
                 }
                 else {
-                    $model->agent_id = request()->agent_id;
+                    $agentDuplicateCount = array_count_values($ticketData);
+
+                    if(!empty($agentDuplicateCount)) {
+                        $minVal = min($agentDuplicateCount);
+                        $agent_id = array_search($minVal, $agentDuplicateCount);
+                        $model->agent_id = $agent_id;
+                    }
                 }
             }
-            // Round Robin End
+            else {
+                $model->agent_id = request()->agent_id;
+            }
         }
 
         $model->ticket_number = (int)Ticket::max('ticket_number') + 1;
@@ -92,12 +84,8 @@ class TicketObserver
         $this->createActivity($model, 'create');
 
         if (!isRunningInConsoleOrSeeding()) {
-            if (user()) {
-                self::createEmployeeActivity(user()->id, 'ticket-created', $model->id, 'ticket');
-            }
-
             // Send admin notification
-            if (request()->mention_user_ids != '' || request()->mention_user_ids != null) {
+            if (request()->mention_user_ids != '' || request()->mention_user_ids != null){
                 $model->mentionUser()->sync(request()->mention_user_ids);
                 $mentionArray = explode(',', request()->mention_user_ids);
                 $mentionUserIds = array_intersect($mentionArray, array(request()->agent_id));
@@ -112,8 +100,7 @@ class TicketObserver
 
                 }
 
-            }
-            else {
+            } else {
                 event(new TicketEvent($model, null, 'NewTicket'));
             }
 
@@ -138,10 +125,6 @@ class TicketObserver
     public function updated(Ticket $ticket)
     {
         if (!isRunningInConsoleOrSeeding()) {
-            if (user()) {
-                self::createEmployeeActivity(user()->id, 'ticket-updated', $ticket->id, 'ticket');
-            }
-
             if ($ticket->isDirty('agent_id') && $ticket->agent_id != '') {
                 event(new TicketEvent($ticket, null, 'TicketAgent'));
             }
@@ -185,21 +168,8 @@ class TicketObserver
 
         $notifyData = ['App\Notifications\NewTicket', 'App\Notifications\NewTicketReply', 'App\Notifications\NewTicketRequester', 'App\Notifications\TicketAgent'];
 
-        Notification::deleteNotification($notifyData, $ticket->id);
+        \App\Models\Notification::deleteNotification($notifyData, $ticket->id);
 
-        $ticket->reply()->each(function ($reply) {
-            $reply->delete();
-        });
-
-    }
-
-    public function deleted(Ticket $ticket)
-    {
-
-        if (user()) {
-            self::createEmployeeActivity(user()->id, 'ticket-deleted');
-
-        }
     }
 
     public function createActivity($ticket, $type = 'create')

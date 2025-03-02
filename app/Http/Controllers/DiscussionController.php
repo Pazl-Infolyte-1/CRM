@@ -103,11 +103,10 @@ class DiscussionController extends AccountBaseController
         }
 
         $this->userData = $userData;
-        $this->userRoles = user()->roles->pluck('name')->toArray();
-        $this->view = 'discussions.replies.show';
 
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('discussions.replies.show', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
         return redirect(route('projects.show', $this->discussion->project_id) . '?tab=discussion');
@@ -134,22 +133,8 @@ class DiscussionController extends AccountBaseController
         Discussion::where('id', $reply->discussion_id)
             ->update(['best_answer_id' => $replyId]);
         $this->discussion = Discussion::with('category', 'replies', 'replies.user', 'replies.files')->findOrFail($reply->discussion_id);
-
-
-        $userData = [];
-        $usersData = $reply->discussion->project->projectMembers;
-
-        foreach ($usersData as $user) {
-
-            $url = route('employees.show', [$user->id]);
-
-            $userData[] = ['id' => $user->id, 'value' => $user->name, 'image' => $user->image_url, 'link' => $url];
-        }
-
-        $this->userData = $userData;
-        $this->userRoles = user()->roles->pluck('name')->toArray();
-        return $this->returnAjax('discussions.replies.show');
-
+        $html = view('discussions.replies.show', $this->data)->render();
+        return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
     }
 
 }

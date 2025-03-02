@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use App\Models\UserChat;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

@@ -11,7 +11,7 @@
             @include('sections.password-autocomplete-hide')
 
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('app.menu.addProducts')</h4>
                 <div class="row p-20">
                     <div class="col-lg-12">
@@ -38,7 +38,7 @@
                                 </x-forms.label>
                                 <x-forms.input-group>
                                     <select class="form-control select-picker" name="category_id"
-                                            id="product_category_ids" data-live-search="true">
+                                            id="product_category_id" data-live-search="true">
                                         <option value="">--</option>
                                         @foreach ($categories as $category)
                                             <option value="{{ $category->id }}">
@@ -129,13 +129,6 @@
                                 <x-forms.checkbox class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.downloadable')"
                                                   fieldName="downloadable" fieldId="downloadable" fieldValue="true"
                                                   fieldRequired="true" :popover="__('messages.downloadable')"/>
-                            </div>
-
-                            <div class="col-lg-4 col-md-6">
-                                <x-forms.text fieldId="sku" :fieldLabel="__('app.sku')"
-                                              fieldName="sku"
-                                              :fieldPlaceholder="__('placeholders.sku')">
-                                </x-forms.text>
                             </div>
 
                             <div class="col-lg-12 col-xl-12  mt-2 downloadable d-none">
@@ -263,7 +256,7 @@
             file.previewTemplate.appendChild(div);
         });
 
-        $('#product_category_ids').change(function (e) {
+        $('#product_category_id').change(function (e) {
             let categoryId = $(this).val();
 
             let url = "{{ route('get_product_sub_categories', ':id') }}";
@@ -387,7 +380,7 @@
         })
 
         $('#add-sub-category').click(function () {
-            let catID = $('#product_category_ids').val();
+            let catID = $('#product_category_id').val();
             const url = "{{ route('productSubCategory.create') }}?catID=" + catID;
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);

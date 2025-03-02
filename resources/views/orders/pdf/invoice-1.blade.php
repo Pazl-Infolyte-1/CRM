@@ -252,7 +252,6 @@
 
         .word-break {
             word-wrap:break-word;
-            word-break: break-all;
         }
 
         #invoice-table td {
@@ -292,16 +291,9 @@
                         @if($order->client && $order->clientDetails)
                             @if(($order->client->name || $order->client->email || $order->client->mobile || $order->clientDetails->company_name || $order->clientDetails->address )
                             && ($invoiceSetting->show_client_name == 'yes' || $invoiceSetting->show_client_email == 'yes' || $invoiceSetting->show_client_phone == 'yes' || $invoiceSetting->show_client_company_name == 'yes' || $invoiceSetting->show_client_company_address == 'yes'))
-                                @if ($order->project)
-                                <small>@lang('modules.invoices.project'):</small>
-                                <div>
-                                    {{$order->project->project_name}}
-                                </div>
-                                @endif
-
                                 <small>@lang("modules.invoices.billedTo"):</small>
                                 @if ($order->client->name && $invoiceSetting->show_client_name == 'yes')
-                                    <div>{{ $order->client->name_salutation }}</div>
+                                    <div>{{ $order->client->name }}</div>
                                 @endif
 
                                 @if ($order->client->email && $invoiceSetting->show_client_email == 'yes')
@@ -309,7 +301,7 @@
                                 @endif
 
                                 @if ($order->client->mobile && $invoiceSetting->show_client_phone == 'yes')
-                                    <div>{{ $order->client->mobile_with_phonecode }}</div>
+                                    <div>{{ $order->client->mobile }}</div>
                                 @endif
 
                                 @if ($order->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
@@ -385,7 +377,6 @@
                     <th class="qty"> </th>
                     @endif
                     {{-- <th class="qty">{{ $order->unit->unit_type ?? $product->unit->unit_type }}</th> --}}
-                    <th class="description">@lang("app.sku")</th>
                     <th class="qty">@lang("modules.invoices.unitPrice")</th>
                     <th class="qty">@lang("modules.invoices.tax")</th>
                     <th class="unit">@lang("modules.invoices.price") ({!! htmlentities($order->currency->currency_code) !!})</th>
@@ -393,12 +384,12 @@
             </thead>
             <tbody>
                 <?php $count = 0; ?>
-                @foreach ($order->items->sortBy('field_order') as $item)
+                @foreach ($order->items as $item)
                     @if ($item->type == 'item')
                         <tr style="page-break-inside: avoid;">
                             <td class="no">{{ ++$count }}</td>
                             <td class="desc">
-                                <h3 class="word-break">{{ $item->item_name }}</h3>
+                                <h3>{{ $item->item_name }}</h3>
                                 @if (!is_null($item->item_summary))
                                 <table>
                                     <tr>
@@ -420,7 +411,6 @@
                             <td class="qty">
                                 <h3>{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</span></h3>
                             </td>
-                            <td>{{ $item->sku }}</td>
                             <td class="qty">
                                 <h3>{{ currency_format($item->unit_price, $order->currency_id, false) }}</h3>
                             </td>
@@ -431,7 +421,6 @@
                 @endforeach
                 <tr style="page-break-inside: avoid;" class="subtotal">
                     <td class="no">&nbsp;</td>
-                    <td class="qty">&nbsp;</td>
                     <td class="qty">&nbsp;</td>
                     <td class="qty">&nbsp;</td>
                     <td class="qty">&nbsp;</td>
@@ -470,7 +459,7 @@
             </tbody>
             <tfoot>
                 <tr dontbreak="true">
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '7' : '6' }}">
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">
                         @lang("modules.invoices.total")</td>
                     <td style="text-align: center">{{ currency_format($order->total, $order->currency_id, false) }}</td>
                 </tr>
@@ -480,9 +469,6 @@
         <p id="notes" class="word-break">
             @if (!is_null($order->note))
                 {!! nl2br($order->note) !!}<br>
-            @endif
-            @if (!is_null($invoiceSetting->other_info))
-                <br>{!! nl2br($invoiceSetting->other_info) !!}
             @endif
         </p>
 

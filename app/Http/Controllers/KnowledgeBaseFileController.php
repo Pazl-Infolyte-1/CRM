@@ -8,6 +8,7 @@ use App\Traits\IconTrait;
 use Illuminate\Http\Request;
 use App\Models\KnowledgeBase;
 use App\Models\KnowledgeBaseFile;
+use App\Http\Controllers\AccountBaseController;
 use App\Models\KnowledgeBaseCategory;
 
 class KnowledgeBaseFileController extends AccountBaseController
@@ -66,7 +67,7 @@ class KnowledgeBaseFileController extends AccountBaseController
 
         KnowledgeBaseFile::destroy($id);
 
-        $this->files = KnowledgeBaseFile::where('knowledge_base_id', $file->knowledge_base_id)->orderByDesc('id')->get();
+        $this->files = KnowledgeBaseFile::where('knowledge_base_id', $file->knowledge_base_id)->orderBy('id', 'desc')->get();
 
         $view = view('knowledge-base.files.show', $this->data)->render();
 

@@ -3,6 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Company;
+use App\Models\GlobalSetting;
 
 return new class extends Migration {
 
@@ -42,6 +44,7 @@ return new class extends Migration {
                 $table->index(['user_id', 'stripe_status']);
             });
 
+
             Schema::create('subscription_items', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('subscription_id');
@@ -58,7 +61,6 @@ return new class extends Migration {
         if (!Schema::hasColumn('subscriptions', 'company_id')) {
 
             Schema::table('subscriptions', function (Blueprint $table) {
-                $table->string('stripe_price')->after('stripe_id');
                 $table->integer('company_id')->unsigned()->nullable()->after('id');
                 $table->foreign('company_id')
                     ->references('id')
@@ -68,18 +70,6 @@ return new class extends Migration {
             });
         }
 
-        if (!Schema::hasColumn('subscription_items', 'stripe_price')) {
-            Schema::table('subscription_items', function (Blueprint $table) {
-                $table->string('stripe_price');
-                $table->renameColumn('stripe_plan', 'stripe_product');
-            });
-        }
-
-        if (!Schema::hasColumn('subscriptions', 'stripe_price')) {
-            Schema::table('subscriptions', function (Blueprint $table) {
-                $table->string('stripe_price')->after('stripe_id');
-            });
-        }
 
 
     }

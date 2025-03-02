@@ -30,12 +30,6 @@
     padding: 0;
     overflow: hidden;
     }
-
-    .ql-editor {
-        text-align: left;
-        /* white-space: unset; */
-    }
-
     </style>
 <!-- TAB CONTENT START -->
 
@@ -48,55 +42,43 @@
         <div class="row p-20">
             <div class="col-md-12">
                 <a class="f-15 f-w-500" href="javascript:;" id="add-comment"><i
-                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('modules.contracts.addComment')
-                </a>
+                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
+                    @lang('modules.tasks.comment')</a>
             </div>
         </div>
-
-        @php
-            $userRoles = user_roles();
-            $isAdmin = in_array('admin', $userRoles);
-            $isEmployee = in_array('employee', $userRoles);
-        @endphp
-
-        @if ($task->approval_send == 1 && $task->project->need_approval_by_admin == 1 && $isEmployee && !$isAdmin && $status->slug == 'waiting_approval')
-            <!-- Popup for Send Approval -->
-            @include('tasks.ajax.sent-approval-modal')
-        @else
-            <x-form id="save-comment-data-form" class="d-none">
-                <div class="col-md-12 p-20 ">
-                    <div class="media">
-                        <img src="{{ user()->image_url }}" class="align-self-start mr-3 taskEmployeeImg rounded"
-                            alt="{{ user()->name }}">
-                        <div class="media-body bg-white">
-                            <div class="form-group">
-                                <div id="task-comment"></div>
-                                <textarea name="comment" class="form-control invisible d-none"
-                                    id="task-comment-text"></textarea>
-                            </div>
+        <x-form id="save-comment-data-form" class="d-none">
+            <div class="col-md-12 p-20 ">
+                <div class="media">
+                    <img src="{{ user()->image_url }}" class="align-self-start mr-3 taskEmployeeImg rounded"
+                        alt="{{ user()->name }}">
+                    <div class="media-body bg-white">
+                        <div class="form-group">
+                            <div id="task-comment"></div>
+                            <textarea name="comment" class="form-control invisible d-none"
+                                id="task-comment-text"></textarea>
                         </div>
                     </div>
-                    <div class="w-100 justify-content-end d-flex mt-2">
-                        <x-forms.button-cancel id="cancel-comment" class="border-0 mr-3">@lang('app.cancel')
-                        </x-forms.button-cancel>
-                        <x-forms.button-primary id="submit-comment" icon="location-arrow">@lang('app.submit')
-                            </x-forms.button-primary>
-                    </div>
-
-
-
                 </div>
-            </x-form>
-        @endif
+                <div class="w-100 justify-content-end d-flex mt-2">
+                    <x-forms.button-cancel id="cancel-comment" class="border-0 mr-3">@lang('app.cancel')
+                    </x-forms.button-cancel>
+                    <x-forms.button-primary id="submit-comment" icon="location-arrow">@lang('app.submit')
+                        </x-forms.button-primary>
+                </div>
+
+
+
+            </div>
+        </x-form>
     @endif
     <div class="d-flex flex-wrap justify-content-between p-20" id="comment-list">
         @forelse ($task->comments as $comment)
             <div class="card w-100 rounded-1 border-2 mb-3 p-2 comment">
-                <div class="card-horizontal flex-row flex-wrap">
-                    <div class="card-img m-1 ml-0 mr-3">
+                <div class="card-horizontal">
+                    <div class="card-img my-1 ml-0 mx-1">
                         <img src="{{ $comment->user->image_url }}" alt="{{ $comment->user->name }}">
                     </div>
-                    <div class="card-body border-0 pl-0 py-1">
+                    <div class="card-body border-0 pl-0 py-1 ml-3">
                         <div class="row">
                             <div class="col-md-6 d-inline-flex">
                                 <h4 class="card-title f-15 f-w-500 text-dark mr-3">{{ $comment->user->name }}</h4>
@@ -145,7 +127,7 @@
                             }
                         @endphp
                         <div class="card-text f-14 text-dark-grey ">
-                            <div class="card-text f-14 text-dark-grey text-justify px-0">
+                            <div class="card-text f-14 text-dark-grey text-justify ql-editor">
                                 {!! $comment->comment !!}
 
                             </div>
@@ -178,20 +160,9 @@
     var add_task_comments = "{{ $addTaskCommentPermission }}";
     $(document).ready(function() {
 
-        var send_approval = "{{ $task->approval_send }}";
-        var admin = "{{ in_array('admin', user_roles()) }}";
-        var employee = "{{ in_array('employee', user_roles()) }}";
-        var needApproval = "{{ $task?->project?->need_approval_by_admin }}";
-        var status = "{{ $status->slug }}";
-
         $('#add-comment').click(function() {
-            if (send_approval == 1 && employee == 1 && admin != 1 && needApproval == 1 && status == 'waiting_approval') {
-                $('#send-approval-modal').modal('show');
-                $('.modal-backdrop').css('display', 'none');
-            }else{
-                $(this).closest('.row').addClass('d-none');
-                $('#save-comment-data-form').removeClass('d-none');
-            }
+            $(this).closest('.row').addClass('d-none');
+            $('#save-comment-data-form').removeClass('d-none');
         });
 
     });
@@ -203,12 +174,12 @@
     });
         //quill mention
 
-    var userValues = @json($taskuserData);
+        var userValues = @json($taskuserData);
 
-    $(document).ready(function() {
-        if (add_task_comments == "all" || add_task_comments == "added") {
-            quillMention(userValues, '#task-comment');
-        }
+        $(document).ready(function() {
+            if (add_task_comments == "all" || add_task_comments == "added") {
+                quillMention(userValues, '#task-comment');
+            }
         });
 
 

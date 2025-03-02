@@ -51,7 +51,8 @@ $addTaskPermission = user()->permission('add_tasks');
                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
                     <x-forms.link-primary :link="route('tasks.create').'?default_assign='.$employee->id"
                         class="mr-3 openRightModal float-left" data-redirect-url="{{ url()->full() }}" icon="plus">
-                        @lang('app.addTask')
+                        @lang('app.add')
+                        @lang('app.task')
                     </x-forms.link-primary>
                 @endif
             </div>
@@ -99,7 +100,7 @@ $addTaskPermission = user()->permission('add_tasks');
         data['searchText'] = searchText;
     });
     const showTable = () => {
-        window.LaravelDataTables["allTasks-table"].draw(true);
+        window.LaravelDataTables["allTasks-table"].draw(false);
     }
 
     $('#status').on('change keyup',
@@ -259,7 +260,7 @@ $addTaskPermission = user()->permission('add_tasks');
                     sortBy: 'id'
                 },
                 success: function(data) {
-                    window.LaravelDataTables["allTasks-table"].draw(true);
+                    window.LaravelDataTables["allTasks-table"].draw(false);
                 }
             });
 
@@ -294,7 +295,7 @@ $addTaskPermission = user()->permission('add_tasks');
 
                     $('#timer-clock').html(response.clockHtml);
                     if ($('#allTasks-table').length) {
-                        window.LaravelDataTables["allTasks-table"].draw(true);
+                        window.LaravelDataTables["allTasks-table"].draw(false);
                     }
                 }
             }
@@ -324,7 +325,7 @@ $addTaskPermission = user()->permission('add_tasks');
 
                 $('#timer-clock').html('');
                 if ($('#allTasks-table').length) {
-                    window.LaravelDataTables["allTasks-table"].draw(true);
+                    window.LaravelDataTables["allTasks-table"].draw(false);
                 }
             }
         })
@@ -353,7 +354,7 @@ $addTaskPermission = user()->permission('add_tasks');
 
                     $('#timer-clock').html(response.clockHtml);
                     if ($('#allTasks-table').length) {
-                        window.LaravelDataTables["allTasks-table"].draw(true);
+                        window.LaravelDataTables["allTasks-table"].draw(false);
                     }
                 }
             }
@@ -385,7 +386,7 @@ $addTaskPermission = user()->permission('add_tasks');
 
                     $('#timer-clock').html(response.clockHtml);
                     if ($('#allTasks-table').length) {
-                        window.LaravelDataTables["allTasks-table"].draw(true);
+                        window.LaravelDataTables["allTasks-table"].draw(false);
                     }
                 }
             }

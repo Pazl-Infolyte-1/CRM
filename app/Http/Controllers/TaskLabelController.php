@@ -6,9 +6,7 @@ use App\Helper\Reply;
 use App\Http\Requests\Admin\TaskLabel\StoreRequest;
 use App\Models\Project;
 use App\Models\Task;
-use App\Models\TaskLabel;
 use App\Models\TaskLabelList;
-use App\Models\ProjectTemplateTask;
 use Illuminate\Http\Request;
 
 class TaskLabelController extends AccountBaseController
@@ -25,7 +23,6 @@ class TaskLabelController extends AccountBaseController
         $this->taskLabels = TaskLabelList::all();
         $this->projects = Project::all();
         $this->taskId = request()->task_id;
-        $this->projectTemplateTaskId = request()->project_template_task_id;
         $this->projectId = request()->project_id;
         return view('tasks.create_label', $this->data);
     }
@@ -40,19 +37,17 @@ class TaskLabelController extends AccountBaseController
             $allTaskLabels = TaskLabelList::whereNull('project_id')->orWhere('project_id', $request->parent_project_id)->get();
 
         } else  {
-            $allTaskLabels = TaskLabelList::whereNull('project_id')->get();
+            $allTaskLabels = TaskLabelList::all();
         }
 
         if($request->task_id){
             $task = Task::with('label')->findOrFail($request->task_id);
             $currentTaskLable = $task->label;
-        }elseif($request->project_template_task_id){
-            $task = ProjectTemplateTask::findOrFail($request->project_template_task_id);
-            $currentTaskLable = explode(',', $task->task_labels);
         }
         else {
             $currentTaskLable = collect([]);
         }
+
 
         $labels = '';
 
@@ -61,9 +56,7 @@ class TaskLabelController extends AccountBaseController
             $selected = '';
 
             foreach ($currentTaskLable as $item){
-                if (is_object($item) && $item->label_id == $value->id) {
-                    $selected = 'selected';
-                } elseif (is_string($item) && $item == $value->id) {
+                if ($item->label_id == $value->id){
                     $selected = 'selected';
                 }
             }
@@ -86,7 +79,7 @@ class TaskLabelController extends AccountBaseController
             $allTaskLabels = TaskLabelList::whereNull('project_id')->orWhere('project_id', $request->parent_project_id)->get();
 
         } else  {
-            $allTaskLabels = TaskLabelList::whereNull('project_id')->get();
+            $allTaskLabels = TaskLabelList::all();
         }
 
         $labels = '';
@@ -117,33 +110,16 @@ class TaskLabelController extends AccountBaseController
     private function storeUpdate($request, $taskLabel)
     {
 
-        if($request->label_name != null){
+        if($request->label_name != null && $request->description != null)
+        {
             $taskLabel->label_name = trim($request->label_name);
-        }
-
-        if($request->description != null){
             $taskLabel->description = trim_editor($request->description);
         }
 
-        $oldProjectId = $taskLabel->project_id;
-        $newProjectId = $request->project_id;
-
-        if ($request->has('project_id')) {
-            $taskLabel->project_id = $newProjectId;
-        }
+        $taskLabel->project_id = $request->project_id;
 
         if ($request->has('color')) {
             $taskLabel->color = $request->color;
-        }
-
-        if ($oldProjectId != $newProjectId) {
-
-            $tasksWithOldProject = TaskLabel::where('label_id', $taskLabel->id)
-                ->get();
-
-            foreach ($tasksWithOldProject as $task) {
-                $task->delete();
-            }
         }
 
         $taskLabel->save();
@@ -163,9 +139,6 @@ class TaskLabelController extends AccountBaseController
             $task = Task::with('label')->findOrFail(request()->taskId);
             $currentTaskLable = $task->label;
 
-        } elseif(request()->projectTemplateTaskId){
-            $task = ProjectTemplateTask::findOrFail(request()->projectTemplateTaskId);
-            $currentTaskLable = explode(',', $task->task_labels);
         } else {
 
             $currentTaskLable = collect([]);
@@ -178,9 +151,7 @@ class TaskLabelController extends AccountBaseController
             $selected = '';
 
             foreach ($currentTaskLable as $item){
-                if (is_object($item) && $item->label_id == $value->id) {
-                    $selected = 'selected';
-                } elseif (is_string($item) && $item == $value->id) {
+                if ($item->label_id == $value->id){
                     $selected = 'selected';
                 }
             }

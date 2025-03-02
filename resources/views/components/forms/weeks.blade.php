@@ -11,7 +11,7 @@
 
     @foreach(range(0,\Carbon\Carbon::DAYS_PER_WEEK-1) as $day)
         @php $index = ($day + attendance_setting()?->week_start_from)%7; @endphp
-        <div {{ $attributes->merge(['class' => '']) }} >
+        <div {{ $attributes->merge(['class' => 'mr-3 mb-2']) }} >
             <x-forms.checkbox :fieldLabel="now()->startOfWeek($index)->translatedFormat('l')"
                               :fieldName="$fieldName"
                               :checked="in_array($index, $checkedDays)"

@@ -3,7 +3,6 @@
 namespace App\DataTables;
 
 use App\Models\ProjectTemplateTask;
-use App\Models\TaskLabelList;
 use Yajra\DataTables\Html\Column;
 
 class ProjectTemplateTasksDataTable extends BaseDataTable
@@ -31,7 +30,9 @@ class ProjectTemplateTasksDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->addColumn('action', function ($row) {
                 $action = '<div class="task_view">
 
@@ -45,7 +46,7 @@ class ProjectTemplateTasksDataTable extends BaseDataTable
                 $action .= ' <a href="' . route('project-template-task.show', [$row->id]) . '" class="dropdown-item openRightModal"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->editTaskPermission == 'all' || ($this->editTaskPermission == 'added' && user()->id == $row->added_by) || ($this->editTaskPermission == 'both' && user()->id == $row->added_by)) {
-                    $action .= '<a class="dropdown-item openRightModal" href="' . route('project-template-task.edit', [$row->id]) . '?project_id='. $row->project_template_id . '">
+                    $action .= '<a class="dropdown-item openRightModal" href="' . route('project-template-task.edit', [$row->id]) . '">
                                 <i class="fa fa-edit mr-2"></i>
                                 ' . trans('app.edit') . '
                             </a>';
@@ -66,26 +67,15 @@ class ProjectTemplateTasksDataTable extends BaseDataTable
             })
             ->editColumn('heading', function ($row) {
 
-                $taskLabelList = TaskLabelList::whereNull('project_id')->get();
-                $taskLabelIds = explode(',', $row->task_labels);
-                $labels = '';
-
-                // Use foreach instead of forelse
-                foreach ($taskLabelList->filter(function ($label) use ($taskLabelIds) {
-                    return in_array($label->id, $taskLabelIds);
-                }) as $key => $label) {
-                    $labels .= '<span class="badge badge-secondary mr-1" style="background-color: ' . $label->label_color. '">'
-                            . $label->label_name . '</span>';
-                }
-
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('project-template-task.show', [$row->id]) . '" class="openRightModal">' . $row->heading . '<br/>' . '</a></h5>
-                    <p class="mb-0">' . $labels . '</p>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('project-template-task.show', [$row->id]) . '" class="openRightModal">' . $row->heading . '</a></h5>
                     </div>
                   </div>';
             })
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['action', 'heading', 'check']);
     }
 

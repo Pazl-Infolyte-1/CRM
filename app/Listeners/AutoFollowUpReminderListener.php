@@ -28,7 +28,7 @@ class AutoFollowUpReminderListener
         $notifyUser = (is_null($event->followup->lead->leadAgent)) ? User::whereIn('id', $adminUserIds)->get() : $event->followup->lead->leadAgent->user;
 
         if ($notifyUser) {
-            Notification::send($notifyUser, new AutoFollowUpReminder($event->followup,$event->subject));
+            Notification::send($notifyUser, new AutoFollowUpReminder($event->followup));
         }
 
     }

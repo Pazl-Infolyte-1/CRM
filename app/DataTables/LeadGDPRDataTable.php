@@ -2,7 +2,9 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\PurposeConsentLead;
+use App\Models\User;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;

@@ -18,6 +18,7 @@ class SmtpSettingsSeeder extends Seeder
         $smtp->mail_host = 'smtp.gmail.com';
         $smtp->mail_port = '465';
         $smtp->mail_username = 'myemail@gmail.com';
+        $smtp->mail_password = 'mypassword';
         $smtp->mail_from_name = 'Worksuite';
         $smtp->mail_encryption = 'ssl';
         $smtp->save();

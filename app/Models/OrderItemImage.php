@@ -22,7 +22,6 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|OrderItemImage whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|OrderItemImage whereOrderItemId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|OrderItemImage whereUpdatedAt($value)
- * @property-read mixed $file
  * @mixin \Eloquent
  */
 class OrderItemImage extends BaseModel

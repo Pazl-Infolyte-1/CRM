@@ -1,16 +1,16 @@
 @component('mail::message')
 # @lang('email.hello')@if(!empty($notifiableName)){{ ' '.$notifiableName }}@endif!
 
-@lang('email.newTask.text')
+@lang('email.newTask.subject')
 
-# @lang('app.taskDetails')
+# @lang('app.task') @lang('app.details')
 
 @component('mail::text', ['text' => $content])
 
 @endcomponent
 
 @component('mail::button', ['url' => $url, 'themeColor' => $themeColor])
-@lang('app.viewTask')
+@lang('app.view') @lang('app.task')
 @endcomponent
 
 @lang('email.regards'),<br>

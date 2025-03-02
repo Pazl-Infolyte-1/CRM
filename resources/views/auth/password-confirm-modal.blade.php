@@ -21,7 +21,6 @@
                 </x-forms.input-group>
             </div>
         </div>
-        <input type="hidden" name="locale" value="{{ session()->has('locale') ? session('locale') : global_setting()->locale }}">
     </x-form>
 </div>
 <div class="modal-footer">

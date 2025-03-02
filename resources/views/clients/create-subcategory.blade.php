@@ -51,7 +51,6 @@
                     fieldName="category_name" fieldRequired="true" :fieldPlaceholder="__('placeholders.categoryName')">
                 </x-forms.text>
             </div>
-            <input type="hidden" name="selected_category" id="selected_category" value="">
 
         </div>
     </x-form>
@@ -68,8 +67,7 @@
         var id = $(this).data('cat-id');
         var url = "{{ route('clientSubCategory.destroy', ':id') }}";
         url = url.replace(':id', id);
-        let selectedCategory = $('#category_id').val();
-        let selectedSubCategory = $('#sub_category_id').val();
+
         var token = "{{ csrf_token() }}";
 
         Swal.fire({
@@ -96,8 +94,7 @@
                     url: url,
                     data: {
                         '_token': token,
-                        '_method': 'DELETE',
-                        'selectedCategory': selectedCategory
+                        '_method': 'DELETE'
                     },
                     success: function(response) {
                         if (response.status == "success") {
@@ -107,14 +104,12 @@
                             rData = response.data;
                             $.each(rData, function(index, value) {
                                 var selectData = '';
-                                var isSelected = (value.id == selectedSubCategory) ? 'selected' : '';
-                                selectData = '<option value="' + value.id + '" ' + isSelected + '>' +
+                                selectData = '<option value="' + value.id + '">' +
                                     value
                                     .category_name + '</option>';
                                 options.push(selectData);
                             });
 
-                            $('#category_id').val(selectedCategory);
                             $('#sub_category_id').html('<option value="">--</option>' +
                                 options);
                             $('#sub_category_id').selectpicker('refresh');
@@ -128,9 +123,6 @@
 
     $('#save-category').click(function() {
         var url = "{{ route('clientSubCategory.store') }}";
-        let selectedCategory = $('#category_id').val();
-        let selectedSubCategory = $('#sub_category_id').val();
-        $('#selected_category').val(selectedCategory);
         $.easyAjax({
             url: url,
             container: '#createProjectCategory',
@@ -143,15 +135,15 @@
                     rData = response.data;
                     $.each(rData, function(index, value) {
                         var selectData = '';
-                        var isSelected = (value.id == selectedSubCategory) ? 'selected' : '';
-                        selectData = '<option value="' + value.id + '" ' + isSelected + '>' + value
+                        selectData = '<option value="' + value.id + '">' + value
                             .category_name + '</option>';
                         options.push(selectData);
                     });
 
-                    $('#category_id').val(selectedCategory);
+                    $('#category_id').html('<option value="">--</option>' + options);
+                    $('#category_id').selectpicker('refresh');
 
-                    $('#sub_category_id').html('<option value="">--</option>' + options);
+                    $('#sub_category_id').html('<option value="">--</option>');
                     $('#sub_category_id').selectpicker('refresh');
                     $(MODAL_LG).modal('hide');
                 }
@@ -170,8 +162,7 @@
 
             var url = "{{ route('clientSubCategory.update', ':id') }}";
             url = url.replace(':id', id);
-            let selectedCategory = $('#category_id').val();
-            let selectedSubCategory = $('#sub_category_id').val();
+
             var token = "{{ csrf_token() }}";
 
             $.easyAjax({
@@ -181,8 +172,7 @@
                 data: {
                     'category_name': value,
                     '_token': token,
-                    '_method': 'PUT',
-                    'selectedCategory': selectedCategory
+                    '_method': 'PUT'
                 },
                 blockUI: true,
                 success: function(response) {
@@ -192,13 +182,11 @@
                         rData = response.data;
                         $.each(rData, function(index, value) {
                             var selectData = '';
-                            var isSelected = (value.id == selectedSubCategory) ? 'selected' : '';
-                            selectData = '<option value="' + value.id + '" ' + isSelected + '>' + value
+                            selectData = '<option value="' + value.id + '">' + value
                                 .category_name + '</option>';
                             options.push(selectData);
                         });
 
-                        $('#category_id').val(selectedCategory);
                         $('#sub_category_id').html('<option value="">--</option>' + options);
                         $('#sub_category_id').selectpicker('refresh');
                     }

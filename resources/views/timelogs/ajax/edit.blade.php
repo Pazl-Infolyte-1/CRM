@@ -3,8 +3,8 @@
         <x-form id="save-timelog-data-form">
             @method('PUT')
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
-                    @lang('app.timeLogDetails')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                    @lang('app.timeLog') @lang('app.details')</h4>
                 <div class="row p-20">
                     <div class="col-md-12">
                         <div class="row">
@@ -81,7 +81,7 @@
                             <div class="col-md-3 col-lg-3">
                                 <x-forms.datepicker fieldId="end_date" fieldRequired="true"
                                     :fieldLabel="__('modules.timeLogs.endDate')" fieldName="end_date"
-                                    :fieldValue="now(company()->timezone)->format(company()->date_format)"
+                                    :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
                                     :fieldPlaceholder="__('placeholders.date')"
                                     :fieldValue="$timeLog->end_time->timezone(company()->timezone)->format(company()->date_format)" />
                             </div>
@@ -154,7 +154,7 @@
 
         const dp2 = datepicker('#end_date', {
             position: 'bl',
-            dateSelected: new Date("{{ str_replace('-', '/', $timeLog->end_time->timezone(company()->timezone)) }}"),
+            dateSelected: new Date("{{ str_replace('-', '/', $timeLog->end_time) }}"),
             onSelect: (instance, date) => {
                 dp1.setMax(date);
                 calculateTime();
@@ -230,7 +230,7 @@
                         if ($(RIGHT_MODAL).hasClass('in')) {
                             document.getElementById('close-task-detail').click();
                             if ($('#timelogs-table').length) {
-                                window.LaravelDataTables["timelogs-table"].draw(true);
+                                window.LaravelDataTables["timelogs-table"].draw(false);
                             } else {
                                 showTable();
                             }
@@ -250,44 +250,35 @@
             var startTime = $("#start_time").val();
             var endTime = $("#end_time").val();
 
-            $.ajax({
-                url: "{{ route('calculateTime') }}",
-                type: 'POST',
-                data: {
-                    start_date: startDate,
-                    end_date: endDate,
-                    start_time: startTime,
-                    end_time: endTime,
-                    format: format,
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function(response) {
-                    if (response.status === 'error') {
-                        Swal.fire({
-                            icon: 'warning',
-                            text: response.message,
-                            customClass: {
-                                confirmButton: 'btn btn-primary',
-                            },
-                            showClass: {
-                                popup: 'swal2-noanimation',
-                                backdrop: 'swal2-noanimation'
-                            },
-                            buttonsStyling: false
-                        });
+            startDate = moment(startDate + " " + startTime, format + " " + 'hh:mm A');
+            endDate = moment(endDate + " " + endTime, format + " " + 'hh:mm A');
 
-                        $('#end_time').val(startTime);
-                    } else {
-                        console.log(response);
-                        var hours = response.hours;
-                        var minutes = response.minutes;
-                        $('#total_time').html(hours + " Hrs " + minutes + " Mins");
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX Error:', error);
-                }
-            });
+            var diff = endDate.diff(startDate, 'minutes');
+
+            var minutes = diff % 60;
+            var hours = (diff - minutes) / 60;
+
+            if (hours < 0 || minutes < 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    text: "@lang('messages.totalTimeZero')",
+
+                    customClass: {
+                        confirmButton: 'btn btn-primary',
+                    },
+                    showClass: {
+                        popup: 'swal2-noanimation',
+                        backdrop: 'swal2-noanimation'
+                    },
+                    buttonsStyling: false
+                });
+
+                $('#end_time').val(startTime);
+
+                calculateTime();
+            } else {
+                $('#total_time').html(hours + "Hrs " + minutes + "Mins");
+            }
 
         }
 

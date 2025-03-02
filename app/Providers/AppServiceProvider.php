@@ -5,12 +5,11 @@ namespace App\Providers;
 use App\Models\Company;
 use Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider;
 use Carbon\CarbonInterval;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
 use Laravel\Sanctum\Sanctum;
+use function config;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
         Cashier::useCustomerModel(Company::class);
 
         if (config('app.redirect_https')) {
-            URL::forceScheme('https');
+            \URL::forceScheme('https');
         }
 
         Schema::defaultStringLength(191);
@@ -48,15 +47,11 @@ class AppServiceProvider extends ServiceProvider
         CarbonInterval::macro('formatHuman', function ($totalMinutes, $seconds = false): string {
 
             if ($seconds) {
-                return static::seconds($totalMinutes)->cascade()->forHumans(['short' => true, 'options' => 0]);
-                /** @phpstan-ignore-line */
+                return static::seconds($totalMinutes)->cascade()->forHumans(['short' => true, 'options' => 0]); /** @phpstan-ignore-line */
             }
 
-            return static::minutes($totalMinutes)->cascade()->forHumans(['short' => true, 'options' => 0]);
-            /** @phpstan-ignore-line */
+            return static::minutes($totalMinutes)->cascade()->forHumans(['short' => true, 'options' => 0]); /** @phpstan-ignore-line */
         });
-
-            //    Model::preventLazyLoading(app()->environment('development'));
 
     }
 

@@ -3,8 +3,10 @@
 namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
+use App\Models\SlackSetting;
 use App\Models\UserChat;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\OneSignal\OneSignalChannel;
 use NotificationChannels\OneSignal\OneSignalMessage;
 
@@ -47,14 +49,8 @@ class NewChat extends BaseNotification
             array_push($via, 'slack');
         }
 
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->status == 'active') {
+        if ($this->emailSetting->send_push == 'yes') {
             array_push($via, OneSignalChannel::class);
-        }
-
-        if ($this->emailSetting->send_push == 'yes' && push_setting()->beams_push_status == 'active') {
-            $pushNotification = new \App\Http\Controllers\DashboardController();
-            $pushUsersIds = [[$notifiable->id]];
-            $pushNotification->sendPushNotifications($pushUsersIds, __('email.newChat.subject'), strip_tags($this->userChat->message));
         }
 
         return $via;
@@ -69,24 +65,18 @@ class NewChat extends BaseNotification
     // phpcs:ignore
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $content = $this->userChat->message;
-        $url = route('messages.index');
-        $url = getDomainSpecificUrl($url, $this->company);
 
-        $build
-            ->subject(__('email.newChat.subject') . ' ' . __('app.from') . ' ' . $this->userChat->fromUser->name)
+        return $build
+            ->subject(__('email.newChat.subject'). ' ' . __('app.from') . ' ' . $this->userChat->fromUser->name)
             ->markdown('mail.email', [
-                'url' => $url,
+                'url' => route('messages.index'),
                 'content' => $content,
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.newChat.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -107,13 +97,20 @@ class NewChat extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        $url = route('messages.index');
-        $url = getDomainSpecificUrl($url, $this->company);
+        $slack = SlackSetting::setting();
 
-        return $this->slackBuild($notifiable)
-            ->content('<' . $url . '|' . __('email.newChat.subject') . ' ' . __('app.from') . ' ' . $this->userChat->fromUser->name . '>');
+        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
+            return (new SlackMessage())
+                ->from(config('app.name'))
+                ->image($slack->slack_logo_url)
+                ->to('@' . $notifiable->employee[0]->slack_username)
+                ->content('<' . route('messages.index') . '|' .  __('email.newChat.subject') . ' ' . __('app.from') . ' ' . $this->userChat->fromUser->name . '>');
+        }
 
-
+        return (new SlackMessage())
+            ->from(config('app.name'))
+            ->image($slack->slack_logo_url)
+            ->content('*' . __('email.newChat.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     public function toOneSignal()

@@ -46,36 +46,28 @@ class RemovalRequestApprovedRejectLead extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
 
         if ($this->type == 'approved') {
 
             $content = __('email.removalRequestApprovedLead.text');
 
-            $build
+            return $build
                 ->subject(__('email.removalRequestApprovedLead.subject') . ' ' . config('app.name') . '.')
                 ->markdown('mail.email', [
                     'content' => $content,
                     'notifiableName' => $notifiable->client_name
                 ]);
-
-            parent::resetLocale();
-
-            return $build;
         }
 
         $content = __('email.removalRequestRejectedLead.text');
 
-        $build
+        return $build
             ->subject(__('email.removalRequestRejectedLead.subject') . ' ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'content' => $content,
                 'notifiableName' => $notifiable->client_name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

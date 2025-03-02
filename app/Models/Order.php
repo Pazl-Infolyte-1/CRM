@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Http\Requests\UnitTypeRequest;
 use App\Scopes\ActiveScope;
-use App\Traits\CustomFieldsTrait;
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * App\Models\Order
@@ -71,16 +73,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $unit_id
  * @property string|null $custom_order_number
  * @method static \Illuminate\Database\Eloquent\Builder|Order whereCustomOrderNumber($value)
- * @property string|null $original_order_number
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereOriginalOrderNumber($value)
  * @mixin \Eloquent
  */
 class Order extends BaseModel
 {
 
-    use HasCompany,CustomFieldsTrait;
-
-    const CUSTOM_FIELD_MODEL = 'App\Models\Order';
+    use HasCompany;
 
     public function client(): BelongsTo
     {
@@ -99,7 +97,7 @@ class Order extends BaseModel
 
     public function payment(): HasMany
     {
-        return $this->hasMany(Payment::class, 'invoice_id')->orderByDesc('paid_on');
+        return $this->hasMany(Payment::class, 'invoice_id')->orderBy('paid_on', 'desc');
     }
 
     public function invoice(): HasOne
@@ -138,11 +136,6 @@ class Order extends BaseModel
     {
         $orderSettings = (company()) ? company()->invoiceSetting : $this->company->invoiceSetting;
         return \App\Helper\NumberFormat::order($this->order_number, $orderSettings);
-    }
-
-    public function project(): BelongsTo
-    {
-        return $this->belongsTo(Project::class, 'project_id')->withTrashed();
     }
 
 }

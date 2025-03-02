@@ -50,13 +50,13 @@ class ShiftChangeRequest extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('shifts-change.index');
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.shiftChange.text') . '<br>' . __('app.employee') . ': ' . $this->employeeShiftSchedule->shiftSchedule->user->name . '<br>'. __('app.date') . ': ' . $this->employeeShiftSchedule->shiftSchedule->date->toFormattedDateString() . '<br>'. __('app.previous') . ' ' . __('modules.attendance.shiftName') . ': ' . $this->employeeShiftSchedule->shiftSchedule->shift->shift_name . '<br>' . __('app.new') . ' ' . __('modules.attendance.shiftName') . ': ' . $this->employeeShiftSchedule->shift->shift_name;
 
-        $build
+        return $build
             ->subject(__('email.shiftChange.subject') . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
@@ -65,10 +65,6 @@ class ShiftChangeRequest extends BaseNotification
                 'actionText' => __('email.shiftChange.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     public function toArray()

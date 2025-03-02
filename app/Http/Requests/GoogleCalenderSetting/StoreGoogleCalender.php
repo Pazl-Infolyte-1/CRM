@@ -26,8 +26,8 @@ class StoreGoogleCalender extends FormRequest
     {
         $rules = [];
 
-        // WORKSUITESAAS
-        if (user()->is_superadmin && $this->status) {
+
+        if ($this->status) {
             $rules['google_client_id'] = 'required';
             $rules['google_client_secret'] = 'required';
         }

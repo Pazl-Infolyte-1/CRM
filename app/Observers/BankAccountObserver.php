@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use Carbon\Carbon;
 
 class BankAccountObserver
 {
@@ -21,7 +22,7 @@ class BankAccountObserver
             $bankAccount->added_by = user()->id;
         }
 
-        if (company()) {
+        if(company()) {
             $bankAccount->company_id = company()->id;
         }
     }
@@ -31,7 +32,7 @@ class BankAccountObserver
         $transaction = new BankTransaction();
         $transaction->company_id = $bankAccount->company_id;
         $transaction->bank_account_id = $bankAccount->id;
-        $transaction->transaction_date = now()->format('Y-m-d');
+        $transaction->transaction_date = Carbon::now()->format('Y-m-d');
         $transaction->amount = round($bankAccount->opening_balance, 2);
         $transaction->bank_balance = round($bankAccount->opening_balance, 2);
         $transaction->transaction_relation = 'bank';
@@ -41,7 +42,8 @@ class BankAccountObserver
 
     public function updating(BankAccount $bankAccount)
     {
-        if ($bankAccount->isDirty('opening_balance')) {
+        if($bankAccount->isDirty('opening_balance'))
+        {
             $originalBalance = $bankAccount->getOriginal('opening_balance');
             $getCurrentBalance = $bankAccount->opening_balance;
             $newBalance = 0;
@@ -51,20 +53,20 @@ class BankAccountObserver
 
             $transaction = new BankTransaction();
 
-            if ($bankAccount->getOriginal('opening_balance') > $bankAccount->opening_balance) {
+            if($bankAccount->getOriginal('opening_balance') > $bankAccount->opening_balance){
                 $newBalance = $originalBalance - $getCurrentBalance;
                 $transaction->type = 'Dr';
                 $currentBankBalance = $bankBalance - $newBalance;
             }
 
-            if ($bankAccount->getOriginal('opening_balance') < $bankAccount->opening_balance) {
+            if($bankAccount->getOriginal('opening_balance') < $bankAccount->opening_balance){
                 $newBalance = $getCurrentBalance - $originalBalance;
                 $currentBankBalance = $bankBalance + $newBalance;
             }
 
             $transaction->bank_account_id = $bankAccount->id;
             $transaction->amount = round($newBalance, 2);
-            $transaction->transaction_date = now()->format('Y-m-d');
+            $transaction->transaction_date = Carbon::now()->format('Y-m-d');
             $transaction->bank_balance = round($currentBankBalance, 2);
             $transaction->transaction_relation = 'bank';
             $transaction->title = 'bank-account-updated';

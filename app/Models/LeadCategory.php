@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * App\Models\LeadCategory
@@ -35,10 +34,5 @@ class LeadCategory extends BaseModel
 
     protected $table = 'lead_category';
     protected $default = ['id', 'category_name'];
-
-    public function enabledAgents(): HasMany
-    {
-        return $this->hasMany(LeadAgent::class, 'lead_category_id')->where('status', '=', 'enabled');
-    }
 
 }

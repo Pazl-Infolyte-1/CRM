@@ -51,7 +51,7 @@ class MultipleLeaveApplication extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('leaves.show', $this->leave->unique_id);
         $url = getDomainSpecificUrl($url, $this->company);
         $dates = str_replace(',', ' to ', $this->multiDates);;
@@ -61,7 +61,7 @@ class MultipleLeaveApplication extends BaseNotification
         $emailDate .= $dates .' ( '. __('app.status') . ': ' . $this->leave->status.' )'.'<br>';
         $emailDate .= __('modules.leaves.reason') . ': ' . $this->leave->reason . '<br>';
 
-        $build
+        return $build
             ->subject(__('email.leave.applied') . ' - ' . config('app.name'))
             ->greeting(__('email.hello') . ' ' . $notifiable->name . ',')
             ->markdown('mail.leaves.multiple', [
@@ -70,10 +70,6 @@ class MultipleLeaveApplication extends BaseNotification
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.leaves.action'),
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

@@ -5,13 +5,12 @@
     </div>
 
     <div class="row">
-        @if(user()->is_superadmin)
-            <div class="col-lg-12">
-                <x-forms.checkbox :fieldLabel="__('app.status')" fieldName="status" fieldId="pusher_status"
-                    fieldValue="active" fieldRequired="true" :checked="$pusherSettings->status == 1" />
-            </div>
+        <div class="col-lg-12">
+            <x-forms.checkbox :fieldLabel="__('app.status')" fieldName="status" fieldId="pusher_status"
+                fieldValue="active" fieldRequired="true" :checked="$pusherSettings->status == 1" />
+        </div>
 
-            <div class="col-lg-12 pusher_details @if ($pusherSettings->status == 0) d-none @endif">
+        <div class="col-lg-12 pusher_details @if ($pusherSettings->status == 0) d-none @endif">
             <div class="row mt-3">
 
                 <div class="col-lg-6 col-md-6">
@@ -65,23 +64,20 @@
 
             </div>
         </div>
-        @endif
+
     </div>
 </div>
-{{-- SAAS --}}
-@if (user()->is_superadmin)
-    <div class="col-xl-4 col-lg-12 col-md-12 ntfcn-tab-content-right border-left-grey p-4">
-        <h4 class="f-16  f-w-500 text-dark-grey">@lang("modules.pusher.notificationTitle")</h4>
-        <div class="mb-3 d-flex">
-            <x-forms.checkbox :checked="$pusherSettings->taskboard" :fieldLabel="__('modules.tasks.taskBoard')"
-                fieldName="taskboard" fieldId="taskboard_broadcast" fieldValue="1" />
-        </div>
-        <div class="mb-3 d-flex">
-            <x-forms.checkbox :checked="$pusherSettings->messages" :fieldLabel="__('app.menu.messages')"
-                fieldName="messages" fieldId="messages_broadcast" fieldValue="1" />
-        </div>
+<div class="col-xl-4 col-lg-12 col-md-12 ntfcn-tab-content-right border-left-grey p-4">
+    <h4 class="f-16 text-capitalize f-w-500 text-dark-grey">@lang("modules.pusher.notificationTitle")</h4>
+    <div class="mb-3 d-flex">
+        <x-forms.checkbox :checked="$pusherSettings->taskboard" :fieldLabel="__('modules.tasks.taskBoard')"
+            fieldName="taskboard" fieldId="taskboard_broadcast" fieldValue="1" />
     </div>
-@endif
+    <div class="mb-3 d-flex">
+        <x-forms.checkbox :checked="$pusherSettings->messages" :fieldLabel="__('app.menu.messages')"
+            fieldName="messages" fieldId="messages_broadcast" fieldValue="1" />
+    </div>
+</div>
 
 <!-- Buttons Start -->
 <div class="w-100 border-top-grey set-btns">

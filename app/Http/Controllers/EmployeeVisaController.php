@@ -8,7 +8,7 @@ use App\Models\VisaDetail;
 use Doctrine\DBAL\Schema\View;
 use App\Http\Requests\StoreVisaRequest;
 use App\Http\Requests\UpdateVisaRequest;
-use Carbon\Carbon;
+use App\Http\Controllers\AccountBaseController;
 
 class EmployeeVisaController extends AccountBaseController
 {
@@ -52,8 +52,8 @@ class EmployeeVisaController extends AccountBaseController
         $visa->visa_number = $request->visa_number;
         $visa->user_id = $userId;
         $visa->company_id = company()->id;
-        $visa->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date);
-        $visa->expiry_date = Carbon::createFromFormat($this->company->date_format, $request->expiry_date);
+        $visa->issue_date = $request->issue_date;
+        $visa->expiry_date = $request->expiry_date;
         $visa->added_by = user()->id;
         $visa->country_id = $request->country;
 
@@ -76,12 +76,14 @@ class EmployeeVisaController extends AccountBaseController
     public function show($id)
     {
         $this->visa = VisaDetail::findOrFail($id);
-        $this->view = 'employees.ajax.visa';
 
-        if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+        if (request()->ajax())
+        {
+            $html = view('employees.ajax.visa', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'employees.ajax.visa';
         return view('employees.create', $this->data);
     }
 
@@ -102,8 +104,8 @@ class EmployeeVisaController extends AccountBaseController
     {
         $visa = VisaDetail::findOrFail($id);
         $visa->visa_number = $request->visa_number;
-        $visa->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date);
-        $visa->expiry_date = Carbon::createFromFormat($this->company->date_format, $request->expiry_date);
+        $visa->issue_date = $request->issue_date;
+        $visa->expiry_date = $request->expiry_date;
         $visa->country_id = $request->country;
 
         if($request->file_delete == 'yes')

@@ -1,6 +1,5 @@
 <div class="col-xl-8 col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4 ">
 
-    @if(user()->is_superadmin)
     <div class="row">
         <div class="col-sm-12" id="alert">
             @if ($smtpSetting->mail_driver == 'smtp')
@@ -19,23 +18,13 @@
                     <x-alert type="danger" icon="info-circle">
                         @lang('messages.smtpError')
                     </x-alert>
-
-                    <x-alert type="secondary" icon="info-circle">
-                        <strong>@lang('messages.smtpRecommendation')</strong>
-                        <ul>
-                            <li class="py-2">1. <a href="https://get.smtp2go.com/froiden" target="_blank">SMTP2GO.COM</a></li>
-                            <li>2. <a href="https://pstk.smtp.com/froiden" target="_blank">SMTP.COM</a></li>
-                        </ul>
-                    </x-alert>
                 @endif
 
             @endif
         </div>
     </div>
 
-
     <div class="row">
-
         @include('sections.password-autocomplete-hide')
 
         <div class="col-lg-6 col-md-6 ">
@@ -129,36 +118,12 @@
                 </x-slot>
             </x-forms.input-group>
         </div>
-        @if (isWorksuiteSaas())
-            <div class="col-lg-6 col-md-6 smtp_div">
-                <x-forms.select fieldId="email_verified" :fieldLabel="__('modules.emailSettings.emailVerified')"
-                                fieldName="email_verified" fieldRequired="true" :popover="__('modules.emailSettings.emailVerifiedInfo')">
-                    <option @if ($smtpSetting->email_verified) selected @endif value="1">
-                        @lang('app.yes')
-                    </option>
-                    <option @if (!$smtpSetting->email_verified) selected @endif value="0">
-                        @lang('app.no')
-                    </option>
-                </x-forms.select>
-            </div>
-        @endif
+
     </div>
-    @else
-        <div class="col-lg-12 py-5">
-            <div class="w-100 h-100 d-flex align-items-center justify-content-center">
-                <div>
-                    @lang('superadmin.emailConfigure')
-                </div>
-            </div>
-        </div>
-    @endif
 </div>
 
-
-{{-- SAAS --}}
-@if (!user()->is_superadmin)
 <div class="col-xl-4 col-lg-12 col-md-12 ntfcn-tab-content-right border-left-grey p-4">
-    <h4 class="f-16  f-w-500 text-dark-grey">@lang("modules.emailSettings.notificationTitle")</h4>
+    <h4 class="f-16 text-capitalize f-w-500 text-dark-grey">@lang("modules.emailSettings.notificationTitle")</h4>
     <div class="mb-3 d-flex">
 
         <x-forms.checkbox  :checked="$checkedAll==true"
@@ -175,24 +140,15 @@
         </div>
     @endforeach
 </div>
-@else
-    <div class="col-xl-4 col-lg-12 col-md-12  border-left-grey p-4">
-        <div class="w-100 h-100 d-flex align-items-center justify-content-center">
-            <div>
-                @lang('superadmin.smtpConfigure')
-            </div>
-        </div>
-    </div>
-@endif
+
 <!-- Buttons Start -->
 <div class="w-100 border-top-grey set-btns">
     <x-setting-form-actions>
         <x-forms.button-primary id="save-email-form" class="mr-3" icon="check">@lang('app.save')
         </x-forms.button-primary>
-        @if (user()->is_superadmin)
-            <x-forms.button-secondary id="send-test-email" icon="location-arrow">
-                @lang('modules.emailSettings.sendTestEmail')</x-forms.button-secondary>
-        @endif
+
+        <x-forms.button-secondary id="send-test-email" icon="location-arrow">
+            @lang('modules.emailSettings.sendTestEmail')</x-forms.button-secondary>
     </x-setting-form-actions>
 </div>
 <!-- Buttons End -->
@@ -229,9 +185,7 @@
             type: "POST",
             container: '#editSettings',
             blockUI: true,
-            @if(user()->is_superadmin)
             messagePosition: "inline",
-            @endif
             data: $('#editSettings').serialize(),
             success: function (response) {
                 if (response.status === 'error') {

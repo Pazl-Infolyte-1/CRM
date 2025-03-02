@@ -2,7 +2,7 @@
     <div class="col-sm-12">
         <x-form id="save-bank-transaction-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @if($type == 'account')
                         @lang('modules.bankaccount.bankTransfer')
                     @elseif ($type == 'deposit')
@@ -28,7 +28,7 @@
                             @if($type == 'withdraw' || $type == 'account')
                                 <div class="col-md-4">
                                     <input type="hidden" name="from_bank_account" value="{{ $currentAccount->id }}">
-                                    <x-forms.text fieldReadOnly="true" fieldId="from_bank_account" :fieldLabel="__('modules.bankaccount.fromBankAccount')"
+                                    <x-forms.text fieldReadOnly="true" fieldId="to_bank_account" :fieldLabel="__('modules.bankaccount.fromBankAccount')"
                                     fieldName="from_bank_account1"
                                     :fieldValue="(($currentAccount->type == 'bank') ? $currentAccount->bank_name .' | '.$currentAccount->account_name : $currentAccount->account_name)" />
                                 </div>
@@ -41,18 +41,11 @@
                                         search="true">
                                         <option value="">--</option>
                                         @foreach ($bankAccounts as $bankAccount)
-                                            <option value="{{ $bankAccount->id }}" data-currency-code="{{ $bankAccount->currency->currency_code }}" data-currency-name="{{ $bankAccount->currency->currency_name }}" data-currency-id="{{ $bankAccount->currency->id }}" data-currency-exchange-rate="{{ $bankAccount->currency->exchange_rate }}">@if($bankAccount->type == 'bank')
+                                            <option value="{{ $bankAccount->id }}">@if($bankAccount->type == 'bank')
                                                 {{ $bankAccount->bank_name }} | @endif {{ $bankAccount->account_name }}
                                             </option>
                                         @endforeach
                                     </x-forms.select>
-                                </div>
-                            @endif
-
-                            @if($type == 'account')
-                                <div class="col-md-6 col-lg-3">
-                                    <x-forms.number fieldId="exchange_rate" :fieldLabel="__('modules.currencySettings.exchangeRate')"
-                                    fieldName="exchange_rate" :fieldHelp="' '"/>
                                 </div>
                             @endif
 
@@ -89,57 +82,6 @@
 
 <script>
     $(document).ready(function() {
-
-        $('body').on("change", '#to_bank_account', function() {
-
-            var bankCurrencyId = '{{ $currentAccount->currency->id }}';
-            var selectedBankId = $('#to_bank_account option:selected').attr('data-currency-id');
-
-            var selectedBankExchangeRate = $('#to_bank_account option:selected').attr('data-currency-exchange-rate');
-            var currentBankExchangeRate = '{{ $currentAccount->currency->exchange_rate }}';
-
-            var bankCurrencyName = $('#to_bank_account option:selected').attr('data-currency-name');
-            var currentCurrencyName = '{{ $currentAccount->currency->currency_name }}';
-
-            if(bankCurrencyId == selectedBankId){
-                $('#exchange_rate').val(1).prop('readonly', true);
-            } else{
-                if(bankCurrencyName != null && currentCurrencyName != null){
-                    var exchangeRate = currentBankExchangeRate * selectedBankExchangeRate;
-                    $('#exchange_rate').val(exchangeRate);
-                    let currencyExchange = (bankCurrencyName != currentCurrencyName) ? '( '+currentCurrencyName+' @lang('app.to') '+bankCurrencyName+' )' : '';
-                    $('#exchange_rateHelp').html(currencyExchange).prop('readonly', false);
-                }else{
-                    $('#exchange_rate').val('');
-                    $('#exchange_rateHelp').html('').prop('readonly', true);
-                }
-            }
-            updateAmountHelp();
-        });
-
-        $('#amount').on("input", function() {
-            updateAmountHelp(); // Update amount help when the amount changes
-        });
-
-        // Add an event listener for changes to the exchange rate
-        $('#exchange_rate').on("input", function() {
-            updateAmountHelp(); // Update amount help when the exchange rate changes
-        });
-
-        function updateAmountHelp() {
-            var amount = parseFloat($('#amount').val());
-            var exchangeRate = parseFloat($('#exchange_rate').val());
-            var convertedAmount = amount * exchangeRate;
-            var currencyCode = '{{ $currentAccount->currency->currency_code }}';
-            var selectedcurrencyCode = $('#to_bank_account option:selected').attr('data-currency-code');
-            var convertedAmountText = "{{ __('modules.bankaccount.convertedAmountHelp') }}";
-            var currencyHelp = "{{ __('modules.bankaccount.currencyHelp') }}";
-            if (!isNaN(convertedAmount)) {
-                $('#amountHelp').html(`${currencyHelp} ${currencyCode} (${convertedAmountText} ${selectedcurrencyCode} - ${convertedAmount.toFixed(2)})`);
-            } else {
-                $('#amountHelp').html(`${currencyHelp} ${currencyCode}`);
-            }
-        }
 
         $('#save-transaction').click(function() {
             const url = "{{ route('bankaccounts.store_transaction') }}";

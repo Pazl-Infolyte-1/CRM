@@ -33,7 +33,7 @@ class DashboardWidget extends BaseModel
 
     use HasCompany;
 
-    protected $fillable = ['widget_name', 'status', 'dashboard_type', 'company_id','active'];
+    protected $fillable = ['widget_name', 'status', 'dashboard_type', 'company_id'];
 
     const WIDGETS = [
         ['dashboard_type' => 'admin-dashboard', 'widget_name' => 'total_clients',  'status' => 1],
@@ -64,7 +64,6 @@ class DashboardWidget extends BaseModel
         ['dashboard_type' => 'admin-client-dashboard', 'widget_name' => 'lead_vs_source',  'status' => 1],
         ['dashboard_type' => 'admin-client-dashboard', 'widget_name' => 'latest_client',  'status' => 1],
         ['dashboard_type' => 'admin-client-dashboard', 'widget_name' => 'recent_login_activities',  'status' => 1],
-        ['dashboard_type' => 'admin-client-dashboard', 'widget_name' => 'total_deals',  'status' => 1],
 
         ['dashboard_type' => 'admin-finance-dashboard', 'widget_name' => 'total_paid_invoices',  'status' => 1],
         ['dashboard_type' => 'admin-finance-dashboard', 'widget_name' => 'total_expenses',  'status' => 1],
@@ -124,20 +123,6 @@ class DashboardWidget extends BaseModel
         ['dashboard_type' => 'private-dashboard', 'widget_name' => 'probation_date',  'status' => 1],
         ['dashboard_type' => 'private-dashboard', 'widget_name' => 'contract_date',  'status' => 1],
         ['dashboard_type' => 'private-dashboard', 'widget_name' => 'internship_date',  'status' => 1],
-        ['dashboard_type' => 'private-dashboard', 'widget_name' => 'follow_ups', 'status' => 1],
     ];
-
-
-    const MODULE = [
-        ['tickets' => 'ticket'],
-        ['leads' => 'lead'],
-        ['notices' => 'notices'],
-        ['tasks' => ['tasks', 'my_task']],
-        ['projects' => 'projects'],
-        ['timelogs' => 'week_timelog'],
-        ['leaves' => 'leave'],
-        ['contracts' => 'contract_date'],
-    ];
-
 
 }

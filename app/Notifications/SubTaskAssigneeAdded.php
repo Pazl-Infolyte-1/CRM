@@ -45,13 +45,13 @@ class SubTaskAssigneeAdded extends BaseNotification
 
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('tasks.show', [$this->subTask->task->id, 'view' => 'sub_task']);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = $this->subTask->title . ' ' . __('email.subTaskAssigneeAdded.subject') . '.' . '<br>' . ((!is_null($this->subTask->task->project)) ? __('app.project') . ' - ' . $this->subTask->task->project->project_name : '') . '<br>';
 
-        $build
+        return $build
             ->subject(__('email.subTaskAssigneeAdded.subject') . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
@@ -59,10 +59,6 @@ class SubTaskAssigneeAdded extends BaseNotification
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.subTaskAssigneeAdded.action'), 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

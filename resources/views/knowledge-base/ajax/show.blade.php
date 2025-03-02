@@ -6,7 +6,7 @@ $deletePermission = user()->permission('delete_knowledgebase');
     <div class="row">
         <div class="col-sm-12">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-10">
                             <h3 class="heading-h1 mb-3">@lang('modules.knowledgeBase.knowledgeDetails')</h3>
@@ -15,7 +15,7 @@ $deletePermission = user()->permission('delete_knowledgebase');
 
                                 <div class="dropdown">
                                     <button
-                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>
                                     </button>
@@ -51,23 +51,24 @@ $deletePermission = user()->permission('delete_knowledgebase');
                         @forelse($knowledge->files as $file)
 
                             <x-file-card :fileName="$file->filename" :dateAdded="$file->created_at->diffForHumans()">
-                                <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
-
+                                @if ($file->icon == 'images')
+                                    <img src="{{ $file->file_url }}">
+                                @else
+                                    <i class="fa {{ $file->icon }} text-lightest"></i>
+                                @endif
                                 <x-slot name="action">
                                     <div class="dropdown ml-auto file-action">
                                         <button
-                                            class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
+                                            class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
                                             type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                             <i class="fa fa-ellipsis-h"></i>
                                         </button>
 
                                         <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                             aria-labelledby="dropdownMenuLink" tabindex="0">
-                                            @if ($file->icon == 'images')
-                                                <a class="img-lightbox cursor-pointer d-block text-dark-grey f-13 pt-3 px-3" data-image-url="{{ $file->file_url }}" href="javascript:;">@lang('app.view')</a>
-                                            @else
-                                                <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank" href="{{ $file->file_url }}">@lang('app.view')</a>
-                                            @endif
+                                                <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 "
+                                                        target="_blank"
+                                                        href="{{ $file->file_url }}">@lang('app.view')</a>
 
                                                <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "
                                                     href="{{ route('knowledgebase-files.download', md5($file->id)) }}">@lang('app.download')</a>

@@ -7,10 +7,10 @@
 
     <x-filters.filter-box>
         <!-- DESIGNATION START -->
-        <div class="select-box d-flex px-0 border-right-grey border-right-grey-sm-0 align-items-center">
+        <div class="select-box d-flex px-0 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.status')</p>
             <div class="select-filter-status">
-                <select class="form-control select-picker" name="filter_status" id="filter_status" data-container="body">
+                <select class="form-control select-picker mt-2" name="filter_status" id="filter_status" data-container="body">
                     <option selected value="all">@lang('app.all')</option>
                     <option value="active">@lang('app.active')</option>
                     <option value="inactive">@lang('app.inactive')</option>
@@ -70,7 +70,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                     <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                         <option value="">@lang('app.selectAction')</option>
                         @if ($manageAppreciationTypePermission == 'all')
-                            <option value="change-leave-status">@lang('app.changeStatus')</option>
+                            <option value="change-leave-status">@lang('app.change') @lang('app.status')</option>
                         @endif
                         <option value="delete">@lang('app.delete')</option>
                     </select>
@@ -114,7 +114,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
     <script>
         $('#filter_status').selectpicker();
         const showTable = () => {
-            window.LaravelDataTables["appreciation-type-table"].draw(true);
+            window.LaravelDataTables["appreciation-type-table"].draw(false);
         }
 
         $('#appreciation-type-table').on('preXhr.dt', function(e, settings, data) {

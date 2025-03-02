@@ -28,7 +28,7 @@
         }
 
         h2 {
-            font-weight: normal;
+            font-weight:normal;
         }
 
         header {
@@ -140,20 +140,21 @@
 
         table td.unit,
         table td.qty,
-        table td.total {
+        table td.total
+        {
             font-size: 1.2em;
             text-align: center;
         }
 
-        table td.unit {
+        table td.unit{
             width: 35%;
         }
 
-        table td.desc {
+        table td.desc{
             width: 45%;
         }
 
-        table td.qty {
+        table td.qty{
             width: 5%;
         }
 
@@ -171,15 +172,12 @@
         .status.unpaid {
             background-color: #E7505A;
         }
-
         .status.paid {
             background-color: #26C281;
         }
-
         .status.cancelled {
             background-color: #95A5A6;
         }
-
         .status.error {
             background-color: #F4D03F;
         }
@@ -188,17 +186,14 @@
             text-align: right;
             color: #1BA39C;
         }
-
         table tr.discount .desc {
             text-align: right;
             color: #E43A45;
         }
-
         table tr.subtotal .desc {
             text-align: right;
             color: #1d0707;
         }
-
         table tbody tr:last-child td {
             border: none;
         }
@@ -253,30 +248,24 @@
             text-align: left;
         }
 
-        #notes {
+        #notes{
             color: #767676;
             font-size: 11px;
         }
 
-        .item-summary {
+        .item-summary{
             font-size: 12px
         }
 
-        .mb-3 {
+        .mb-3{
             margin-bottom: 1rem;
         }
 
         .logo {
             text-align: right;
         }
-
         .logo img {
             max-width: 150px !important;
-        }
-
-        .word-break {
-            word-wrap: break-word;
-            word-break: break-all;
         }
     </style>
 </head>
@@ -288,18 +277,18 @@
             <td>
                 <div id="invoiced_to">
                     @if(!is_null($invoice->project) && !is_null($invoice->project->client) && !is_null($invoice->project->client->clientDetails))
-                        <small>@lang("modules.invoices.billedTo"):</small>
-                        <h3 class="name">{{ $invoice->project->client->clientDetails->company_name }}</h3>
-                        <div class="mb-3">
-                            <b>@lang('app.address') :</b>
-                            <div>{!! nl2br($invoice->project->clientDetails->address) !!}</div>
+                    <small>@lang("modules.invoices.billedTo"):</small>
+                    <h3 class="name">{{ $invoice->project->client->clientDetails->company_name }}</h3>
+                    <div class="mb-3">
+                        <b>@lang('app.address') :</b>
+                        <div>{!! nl2br($invoice->project->clientDetails->address) !!}</div>
+                    </div>
+                    @if ($invoice->show_shipping_address === 'yes')
+                        <div>
+                            <b>@lang('app.shippingAddress') :</b>
+                            <div>{!! nl2br($invoice->project->clientDetails->shipping_address) !!}</div>
                         </div>
-                        @if ($invoice->show_shipping_address === 'yes')
-                            <div>
-                                <b>@lang('app.shippingAddress') :</b>
-                                <div>{!! nl2br($invoice->project->clientDetails->shipping_address) !!}</div>
-                            </div>
-                        @endif
+                    @endif
                         @if($invoiceSetting->show_gst == 'yes' && !is_null($invoice->project->client->clientDetails->gst_number))
                             <div> @lang('app.gstIn'): {{ $invoice->project->client->clientDetails->gst_number }} </div>
                         @endif
@@ -322,28 +311,28 @@
                     @endif
 
                     @if(is_null($invoice->project) && !is_null($invoice->estimate) && !is_null($invoice->estimate->client->clientDetails))
-                        <small>@lang("modules.invoices.billedTo"):</small>
-                        <h3 class="name">{{ $invoice->estimate->client->clientDetails->company_name }}</h3>
-                        <div class="mb-3">
-                            <b>@lang('app.address') :</b>
-                            <div>{!! nl2br($invoice->estimate->client->clientDetails->address) !!}</div>
+                    <small>@lang("modules.invoices.billedTo"):</small>
+                    <h3 class="name">{{ $invoice->estimate->client->clientDetails->company_name }}</h3>
+                    <div class="mb-3">
+                        <b>@lang('app.address') :</b>
+                        <div>{!! nl2br($invoice->estimate->client->clientDetails->address) !!}</div>
+                    </div>
+                    @if ($invoice->show_shipping_address === 'yes')
+                        <div>
+                            <b>@lang('app.shippingAddress') :</b>
+                            <div>{!! nl2br($invoice->estimate->client->clientDetails->shipping_address) !!}</div>
                         </div>
-                        @if ($invoice->show_shipping_address === 'yes')
-                            <div>
-                                <b>@lang('app.shippingAddress') :</b>
-                                <div>{!! nl2br($invoice->estimate->client->clientDetails->shipping_address) !!}</div>
-                            </div>
-                        @endif
-                        @if($invoiceSetting->show_gst == 'yes' && !is_null($invoice->estimate->client->clientDetails->gst_number))
-                            <div> @lang('app.gstIn'): {{ $invoice->estimate->client->clientDetails->gst_number }} </div>
-                        @endif
+                    @endif
+                    @if($invoiceSetting->show_gst == 'yes' && !is_null($invoice->estimate->client->clientDetails->gst_number))
+                        <div> @lang('app.gstIn'): {{ $invoice->estimate->client->clientDetails->gst_number }} </div>
+                    @endif
                     @endif
                 </div>
             </td>
             <td>
                 <div id="company">
                     <div class="logo">
-                        <img src="{{ $invoiceSetting->logo_url }}" alt="home" class="dark-logo"/>
+                        <img src="{{ $invoiceSetting->logo_url }}" alt="home" class="dark-logo" />
                     </div>
                     <small>@lang("modules.invoices.generatedBy"):</small>
                     <h3 class="name">{{ $company->company_name }}</h3>
@@ -367,11 +356,9 @@
             @if($creditNote)
                 <div class="">@lang('app.credit-note'): {{ $creditNote->cn_number }}</div>
             @endif
-            <div class="date">@lang('app.issuesDate')
-                : {{ $invoice->issue_date->translatedFormat($company->date_format) }}</div>
+            <div class="date">@lang('app.menu.issues') @lang('app.date'): {{ $invoice->issue_date->translatedFormat($company->date_format) }}</div>
             @if($invoice->status === 'unpaid')
-                <div class="date">@lang('app.dueDate')
-                    : {{ $invoice->due_date->translatedFormat($company->date_format) }}</div>
+                <div class="date">@lang('app.dueDate'): {{ $invoice->due_date->translatedFormat($company->date_format) }}</div>
             @endif
             <div class="">@lang('app.status'): {{ $invoice->status }}</div>
         </div>
@@ -383,30 +370,25 @@
             <th class="no">#</th>
             <th class="desc">@lang("modules.invoices.item")</th>
             <th class="qty">@lang("modules.invoices.qty")</th>
-            <th class="qty">@lang("modules.invoices.unitPrice")
-                ({!! htmlentities($invoice->currency->currency_code)  !!})
-            </th>
-            <th class="unit">@lang("modules.invoices.price") ({!! htmlentities($invoice->currency->currency_code)  !!}
-                )
-            </th>
+            <th class="qty">@lang("modules.invoices.unitPrice") ({!! htmlentities($invoice->currency->currency_code)  !!})</th>
+            <th class="unit">@lang("modules.invoices.price") ({!! htmlentities($invoice->currency->currency_code)  !!})</th>
         </tr>
         </thead>
         <tbody>
         <?php $count = 0; ?>
         @foreach($invoice->items as $item)
             @if($item->type == 'item')
-                <tr style="page-break-inside: avoid;">
-                    <td class="no">{{ ++$count }}</td>
-                    <td class="desc">
-                        <h3 class="word-break">{{ $item->item_name }}</h3>
-                        @if(!is_null($item->item_summary))
-                            <p class="item-summary word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
-                        @endif
-                    </td>
-                    <td class="qty"><h3>{{ $item->quantity }}</h3></td>
-                    <td class="qty"><h3>{{ number_format((float)$item->unit_price, 2, '.', '') }}</h3></td>
-                    <td class="unit">{{ number_format((float)$item->amount, 2, '.', '') }}</td>
-                </tr>
+            <tr style="page-break-inside: avoid;">
+                <td class="no">{{ ++$count }}</td>
+                <td class="desc"><h3>{{ $item->item_name }}</h3>
+                    @if(!is_null($item->item_summary))
+                        <p class="item-summary">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                    @endif
+                </td>
+                <td class="qty"><h3>{{ $item->quantity }}</h3></td>
+                <td class="qty"><h3>{{ number_format((float)$item->unit_price, 2, '.', '') }}</h3></td>
+                <td class="unit">{{ number_format((float)$item->amount, 2, '.', '') }}</td>
+            </tr>
             @endif
         @endforeach
         <tr style="page-break-inside: avoid;" class="subtotal">
@@ -417,20 +399,13 @@
             <td class="unit">{{ number_format((float)$invoice->sub_total, 2, '.', '') }}</td>
         </tr>
         @if($discount != 0 && $discount != '')
-            <tr style="page-break-inside: avoid;" class="discount">
-                <td class="no">&nbsp;</td>
-                <td class="qty">&nbsp;</td>
-                <td class="qty">&nbsp;</td>
-                <td class="desc">@lang("modules.invoices.discount"):
-                    @if($proposal->discount_type == 'percent')
-                        {{$proposal->discount}}%
-                    @else
-                        {{ currency_format($proposal->discount, $proposal->currency_id) }}
-                    @endif
-
-                </td>
-                <td class="unit">{{ number_format((float)$discount, 2, '.', '') }}</td>
-            </tr>
+        <tr style="page-break-inside: avoid;" class="discount">
+            <td class="no">&nbsp;</td>
+            <td class="qty">&nbsp;</td>
+            <td class="qty">&nbsp;</td>
+            <td class="desc">@lang("modules.invoices.discount")</td>
+            <td class="unit">{{ number_format((float)$discount, 2, '.', '') }}</td>
+        </tr>
         @endif
         @foreach($taxes as $key=>$tax)
             <tr style="page-break-inside: avoid;" class="tax">
@@ -443,38 +418,36 @@
         @endforeach
         </tbody>
         <tfoot>
-        <tr dontbreak="true">
-            <td colspan="4">@lang("modules.invoices.total")</td>
-            <td style="text-align: center">{{ number_format((float)$invoice->total, 2, '.', '') }}</td>
-        </tr>
-        @if ($invoice->creditNotes()->count() > 0)
             <tr dontbreak="true">
-                <td colspan="4">@lang('modules.invoices.appliedCredits')</td>
-                <td style="text-align: center">{{ number_format((float)$invoice->appliedCredits(), 2, '.', '') }}</td>
+                <td colspan="4">@lang("modules.invoices.total")</td>
+                <td style="text-align: center">{{ number_format((float)$invoice->total, 2, '.', '') }}</td>
             </tr>
-        @endif
-        <tr dontbreak="true">
-            <td colspan="4">@lang("app.totalPaid")</td>
-            <td style="text-align: center">{{ number_format((float)$invoice->getPaidAmount(), 2, '.', '') }}</td>
-        </tr>
-        <tr dontbreak="true">
-            <td colspan="4"> @lang("app.totalDue")</td>
-            <td style="text-align: center">{{ number_format((float)$invoice->amountDue(), 2, '.', '') }}</td>
-        </tr>
+            @if ($invoice->creditNotes()->count() > 0)
+                <tr dontbreak="true">
+                    <td colspan="4">@lang('modules.invoices.appliedCredits')</td>
+                    <td style="text-align: center">{{ number_format((float)$invoice->appliedCredits(), 2, '.', '') }}</td>
+                </tr>
+            @endif
+            <tr dontbreak="true">
+                <td colspan="4">@lang("modules.invoices.total") @lang("modules.invoices.paid")</td>
+                <td style="text-align: center">{{ number_format((float)$invoice->getPaidAmount(), 2, '.', '') }}</td>
+            </tr>
+            <tr dontbreak="true">
+                <td colspan="4">@lang("modules.invoices.total") @lang("modules.invoices.due")</td>
+                <td style="text-align: center">{{ number_format((float)$invoice->amountDue(), 2, '.', '') }}</td>
+            </tr>
         </tfoot>
     </table>
     <p>&nbsp;</p>
     <hr>
     <p id="notes">
         @if(!is_null($invoice->note))
-            @lang('app.note') <br>{!! nl2br($invoice->note) !!}<br>
+        @lang('app.note') <br>{!! nl2br($invoice->note) !!}<br>
         @endif
         @if($invoice->status == 'unpaid')
-            @lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}
+        @lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}
         @endif
-        @if (isset($invoiceSetting->other_info))
-            <br>{!! nl2br($invoiceSetting->other_info) !!}
-        @endif
+
     </p>
 
 </main>

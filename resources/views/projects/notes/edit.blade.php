@@ -2,12 +2,12 @@
     <div class="col-sm-12">
         <x-form id="save-project-note-data-form" method="PUT">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
-                    @lang('app.projectNoteDetails')</h4>
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
+                    @lang('app.project') @lang('app.note') @lang('app.details')</h4>
 
                 <input type="hidden" name="project_id" value="{{ $projectId }}">
 
-                <div class="row py-20">
+                <div class="row p-20">
 
                     <div class="col-md-6">
                         <x-forms.text fieldId="title" :fieldLabel="__('modules.client.noteTitle')" fieldName="title"
@@ -31,7 +31,7 @@
 
                 </div>
 
-                <div class="row py-20 @if ($note->type == 0) d-none @endif" id="private-note-details">
+                <div class="row p-20 @if ($note->type == 0) d-none @endif" id="private-note-details">
 
                     <div class="col-md-12">
                         <div class="form-group my-3">
@@ -62,7 +62,7 @@
 
                 </div>
 
-                <div class="row py-20">
+                <div class="row p-20">
                     <div class="col-md-12 col-lg-12">
                         <div class="form-group my-3">
                             <x-forms.label class="my-3" fieldId="notes" :fieldLabel="__('modules.client.noteDetail')">

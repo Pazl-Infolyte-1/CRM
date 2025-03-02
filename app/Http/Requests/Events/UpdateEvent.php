@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Events;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateEvent extends CoreRequest
 {
@@ -25,24 +26,18 @@ class UpdateEvent extends CoreRequest
     public function rules()
     {
         $setting = company();
-        $rules = [
+        return [
             'event_name' => 'required',
             'start_date' => 'required',
             'end_date' => 'required|date_format:"' . $setting->date_format . '"|after_or_equal:start_date',
             'start_time' => 'required',
-            'end_time' => 'required',
+            'end_time' => 'required|after_or_equal:start_time',
             'all_employees' => 'sometimes',
             'where' => 'required',
             'user_id.0' => 'required_unless:all_employees,true',
             'description' => 'required',
             'event_link' => 'nullable|url'
         ];
-
-        if ($this->start_date == $this->end_date) {
-            $rules['end_time'] = 'required|after_or_equal:start_time';
-        }
-
-        return $rules;
     }
 
     public function messages()

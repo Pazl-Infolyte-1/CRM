@@ -8,7 +8,7 @@
         </p>
     </span>
     <span>
-        <p class="mb-0 ">
+        <p class="mb-0 text-capitalize">
             @if ($discussion->category)
                 <x-status :style="'color:'.$discussion->category->color" :value="$discussion->category->name" />
             @endif
@@ -38,7 +38,7 @@
                         {{ $message->created_at->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}
                     </p>
                     <div class="dropdown ml-auto">
-                        <button class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
+                        <button class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
                             type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fa fa-ellipsis-h"></i>
                         </button>
@@ -58,8 +58,6 @@
                                 <a class="dropdown-item edit-reply" data-row-id="{{ $message->id }}"
                                     data-discussion-id="{{ $discussion->id }}"
                                     href="javascript:;">@lang('app.edit')</a>
-                            @endif
-                            @if ($replyUser->id == user()->id || in_array('admin', $userRoles))
                                 @if ($key != 0)
                                     <a class="dropdown-item delete-message" data-row-id="{{ $message->id }}"
                                         href="javascript:;">@lang('app.delete')</a>
@@ -84,12 +82,16 @@
                     @foreach ($message->files as $file)
                         <x-file-card :fileName="$file->filename"
                             :dateAdded="$file->created_at->diffForHumans()">
-                            <x-file-view-thumbnail :file="$file"></x-file-view-thumbnail>
+                            @if ($file->icon == 'images')
+                                <img src="{{ $file->file_url }}">
+                            @else
+                                <i class="fa {{ $file->icon }} text-lightest"></i>
+                            @endif
 
                             <x-slot name="action">
                                 <div class="dropdown ml-auto file-action">
                                     <button
-                                        class="btn btn-lg f-14 p-0 text-lightest  rounded  dropdown-toggle"
+                                        class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"
                                         type="button" data-toggle="dropdown" aria-haspopup="true"
                                         aria-expanded="false">
                                         <i class="fa fa-ellipsis-h"></i>
@@ -98,11 +100,9 @@
                                     <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                         aria-labelledby="dropdownMenuLink" tabindex="0">
 
-                                        @if ($file->icon == 'images')
-                                            <a class="img-lightbox cursor-pointer d-block text-dark-grey f-13 pt-3 px-3" data-image-url="{{ $file->file_url }}" href="javascript:;">@lang('app.view')</a>
-                                        @else
-                                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank" href="{{ $file->file_url }}">@lang('app.view')</a>
-                                        @endif
+                                            <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 "
+                                                target="_blank"
+                                                href="{{ $file->file_url }}">@lang('app.view')</a>
 
 
                                         <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "

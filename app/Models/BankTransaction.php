@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\BankAccount;
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -49,8 +50,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|BankTransaction whereTransactionRelation($value)
  * @method static \Illuminate\Database\Eloquent\Builder|BankTransaction whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder|BankTransaction whereUpdatedAt($value)
- * @property int|null $purchase_payment_id
- * @method static \Illuminate\Database\Eloquent\Builder|BankTransaction wherePurchasePaymentId($value)
  * @mixin \Eloquent
  */
 class BankTransaction extends BaseModel

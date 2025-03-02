@@ -14,8 +14,6 @@ $viewDiscussionPermission = user()->permission('view_project_discussions');
 $viewNotePermission = user()->permission('view_project_note');
 $viewFilesPermission = user()->permission('view_project_files');
 $viewRatingPermission = user()->permission('view_project_rating');
-$viewOrderPermission = user()->permission('view_project_orders');
-
 $projectArchived = $project->trashed();
 @endphp
 
@@ -74,7 +72,7 @@ $projectArchived = $project->trashed();
 
                             @if ($viewGanttPermission == 'all' || ($viewGanttPermission == 'added' && user()->id == $project->added_by) || ($viewGanttPermission == 'owned' && user()->id == $project->client_id))
                                 <li>
-                                    <x-tab :href="route('projects.show', $project->id).'?tab=gantt'" ajax="false" :text="__('modules.projects.viewGanttChart')" class="gantt" />
+                                    <x-tab :href="route('projects.show', $project->id).'?tab=gantt'" :text="__('modules.projects.viewGanttChart')" class="gantt" />
                                 </li>
                             @endif
                         @endif
@@ -83,12 +81,6 @@ $projectArchived = $project->trashed();
                     @if (in_array('invoices', user_modules()) && !is_null($project->client_id) && ($viewInvoicePermission == 'all' || ($viewInvoicePermission == 'added' && user()->id == $project->added_by) || ($viewInvoicePermission == 'owned' && user()->id == $project->client_id)))
                         <li>
                             <x-tab :href="route('projects.show', $project->id).'?tab=invoices'" :text="__('app.menu.invoices')" class="invoices" ajax="false" />
-                        </li>
-                    @endif
-
-                    @if (in_array('orders', user_modules()) && !is_null($project->client_id) && ($viewOrderPermission == 'all' || ($viewOrderPermission == 'added' && user()->id == $project->added_by) || ($viewOrderPermission == 'owned' && user()->id == $project->client_id)))
-                        <li>
-                            <x-tab :href="route('projects.show', $project->id).'?tab=orders'" :text="__('app.menu.orders')" class="orders" ajax="false" />
                         </li>
                     @endif
 
@@ -144,12 +136,10 @@ $projectArchived = $project->trashed();
                         </li>
                     @endif
 
-                    @if (!in_array('client', user_roles()))
-                        <li>
-                            <x-tab :href="route('projects.show', $project->id).'?tab=activity'"
-                                :text="__('modules.employees.activity')" class="activity" />
-                        </li>
-                    @endif
+                    <li>
+                        <x-tab :href="route('projects.show', $project->id).'?tab=activity'"
+                            :text="__('modules.employees.activity')" class="activity" />
+                    </li>
 
                     @if ($viewNotePermission != 'none' )
                         <li>

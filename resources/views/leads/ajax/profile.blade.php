@@ -1,155 +1,99 @@
 <!-- ROW START -->
 <div class="row">
     <!--  USER CARDS START -->
-    <div class="col-sm-9 mb-4 mb-xl-0 mb-lg-4 mb-md-0">
+    <div class="col-xl-12 col-lg-12 col-md-12 mb-4 mb-xl-0 mb-lg-4 mb-md-0">
 
-        <x-cards.data :title="__('modules.deal.dealInfo')">
+        <x-cards.data :title="__('modules.client.profileInfo')">
 
             <x-slot name="action">
                 <div class="dropdown">
                     <button class="btn f-14 px-0 py-0 text-dark-grey dropdown-toggle" type="button"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fa fa-ellipsis-h"></i>
                     </button>
 
                     <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
-                         aria-labelledby="dropdownMenuLink" tabindex="0">
+                        aria-labelledby="dropdownMenuLink" tabindex="0">
                         <a class="dropdown-item openRightModal"
-                           href="{{ route('deals.edit', $deal->id).'?tab=overview' }}">@lang('app.edit')</a>
+                            href="{{ route('leads.edit', $lead->id) }}">@lang('app.edit')</a>
                         @if (
                             $deleteLeadPermission == 'all'
-                            || ($deleteLeadPermission == 'added' && user()->id == $deal->added_by)
-                            || ($deleteLeadPermission == 'owned' && ((!is_null($deal->agent_id) && user()->id == $deal->leadAgent->user->id) || (!is_null($deal->deal_watcher) && user()->id == $deal->deal_watcher)))
-                            || ($deleteLeadPermission == 'both' &&  (((!is_null($deal->agent_id) && user()->id == $deal->leadAgent->user->id) || (!is_null($deal->deal_watcher) && user()->id == $deal->deal_watcher)) || user()->id == $deal->added_by))
+                            || ($deleteLeadPermission == 'added' && user()->id == $lead->added_by)
+                            || ($deleteLeadPermission == 'owned' && !is_null($lead->agent_id) && user()->id == $lead->leadAgent->user->id)
+                            || ($deleteLeadPermission == 'both' && ((!is_null($lead->agent_id) && user()->id == $lead->leadAgent->user->id)
+                                    || user()->id == $lead->added_by))
                         )
-                            <a class="dropdown-item delete-table-row" href="javascript:;" data-id="{{ $deal->id }}">
-                                @lang('app.delete')
+                            <a class="dropdown-item delete-table-row" href="javascript:;" data-id="{{ $lead->id }}">
+                                    @lang('app.delete')
+                                </a>
+                        @endif
+                        @if ($lead->client_id == null || $lead->client_id == '')
+                            <a class="dropdown-item" href="{{route('clients.create') . '?lead=' . $lead->id }}">
+                                @lang('modules.lead.changeToClient')
                             </a>
                         @endif
-
                     </div>
                 </div>
             </x-slot>
+            <x-cards.data-row :label="__('modules.lead.clientName')" :value="$lead->client_name ?? '--'" />
 
-            <p class="f-w-500">
-                <x-status style="color: {{ $deal->pipeline->label_color }}" color="yellow"
-                          :value="$deal->pipeline->name"/>
-                <i class="bi bi-arrow-right mx-"></i>
-                <x-status style="color: {{ $deal->leadStage->label_color }}" color="yellow"
-                          :value="$deal->leadStage->name"/>
-            </p>
-            <x-cards.data-row :label="__('modules.deal.dealName')" :value="$deal->name ?? '--'"/>
+            <x-cards.data-row :label="__('modules.lead.clientEmail')" :value="$lead->client_email ?? '--'" />
 
+            <x-cards.data-row :label="__('modules.lead.companyName')" :value="!empty($lead->company_name) ? $lead->company_name : '--'" />
 
+            <x-cards.data-row :label="__('modules.lead.website')" :value="$lead->website ?? '--'" />
 
-            <x-cards.data-row :label="__('modules.leadContact.leadContact')"
-                              :value="$deal->contact->client_name_salutation ?? '--'"/>
+            <x-cards.data-row :label="__('modules.lead.mobile')" :value="$lead->mobile ?? '--'" />
 
-            <x-cards.data-row :label="__('app.email')" :value="$deal->contact->client_email ?? '--'"/>
+            <x-cards.data-row :label="__('modules.client.officePhoneNumber')" :value="$lead->office ?? '--'" />
+            <x-cards.data-row :label="__('app.country')" :value="$lead->country ?? '--'" />
 
-            <x-cards.data-row :label="__('modules.lead.companyName')"
-                              :value="!empty($deal->contact->company_name) ? $deal->contact->company_name : '--'"/>
+            <x-cards.data-row :label="__('modules.stripeCustomerAddress.state')" :value="$lead->state ?? '--'" />
+
+            <x-cards.data-row :label="__('modules.stripeCustomerAddress.city')" :value="$lead->city ?? '--'" />
+
+            <x-cards.data-row :label="__('modules.stripeCustomerAddress.postalCode')" :value="$lead->postal_code ?? '--'" />
+
+            <x-cards.data-row :label="__('modules.lead.address')" :value="$lead->address ?? '--'" />
 
             <div class="col-12 px-0 pb-3 d-flex">
-                <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                    @lang('modules.deal.dealAgent')</p>
+                <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                    @lang('modules.lead.leadAgent')</p>
                 <p class="mb-0 text-dark-grey f-14">
-                    @if (!is_null($deal->leadAgent))
-                        <x-employee :user="$deal->leadAgent->user"/>
+                    @if (!is_null($lead->leadAgent))
+                        <x-employee :user="$lead->leadAgent->user" />
                     @else
                         --
                     @endif
                 </p>
             </div>
 
-            <div class="col-12 px-0 pb-3 d-flex">
-                <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">{{ __('app.dealWatcher') }}</p>
-                <p class="mb-0 text-dark-grey f-14">
-                    @if (!is_null($deal->dealWatcher))
-                        <x-employee :user="$deal->dealWatcher"/>
-                    @else
-                        --
-                    @endif
-                </p>
-            </div>
+            <x-cards.data-row :label="__('modules.lead.source')" :value="$lead->leadSource ? $lead->leadSource->type : '--'" />
 
-            @if ($deal->leadStatus)
+            @if ($lead->leadStatus)
                 <div class="col-12 px-0 pb-3 d-flex">
-                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">@lang('app.status')</p>
+                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">@lang('app.status')</p>
                     <p class="mb-0 text-dark-grey f-14">
-                        <x-status :value="$deal->leadStatus->type"
-                                  :style="'color:'.$deal->leadStatus->label_color"/>
+                        <x-status :value="$lead->leadStatus->type"
+                            :style="'color:'.$lead->leadStatus->label_color" />
                     </p>
 
                 </div>
             @endif
 
-            <x-cards.data-row :label="__('modules.deal.closeDate')"
-                              :value="($deal->close_date) ? $deal->close_date->translatedFormat(company()->date_format) : '--'"/>
-            <x-cards.data-row :label="__('modules.deal.dealValue')"
-                              :value="($deal->value) ? currency_format($deal->value, $deal->currency_id) : '--'"/>
+            <x-cards.data-row :label="__('modules.lead.leadCategory')" :value="$lead->category->category_name ?? '--'" />
 
-            <x-cards.data-row :label="__('modules.lead.products')"
-                              :value="($productNames) ? implode(', ' , $productNames) : '--'"/>
+            <x-cards.data-row :label="__('app.lead') . ' ' .__('app.value')" :value="($lead->value) ? currency_format($lead->value, $lead->currency_id) : '--'" />
+
+            <x-cards.data-row :label="__('modules.lead.products')" :value="implode(', ' , $productNames) ?? '--'" />
+
+            {{-- <x-cards.data-row :label="__('app.note')" :value="!empty($lead->note) ? $lead->note : '--'" html="true" /> --}}
 
             {{-- Custom fields data --}}
-            <x-forms.custom-field-show :fields="$fields" :model="$deal"></x-forms.custom-field-show>
+            <x-forms.custom-field-show :fields="$fields" :model="$lead"></x-forms.custom-field-show>
 
         </x-cards.data>
     </div>
     <!--  USER CARDS END -->
-
-    <div class="col-sm-3">
-
-
-        <x-cards.data :title="__('modules.leadContact.leadDetails')">
-
-            <x-cards.data-row :label="__('modules.leadContact.leadContact')"
-                              value="<a href='{{ route('lead-contact.show', $deal->contact->id) }}' class='text-darkest-grey'> {{ $deal->contact->client_name_salutation }}</a>"/>
-
-            <x-cards.data-row :label="__('app.email')" :value="$deal->contact->client_email ?? '--'"/>
-            <x-cards.data-row :label="__('modules.lead.mobile')" :value="$deal->contact->mobile ?? '--'"/>
-
-            <x-cards.data-row :label="__('modules.lead.companyName')"
-                              :value="!empty($deal->contact->company_name) ? $deal->contact->company_name : '--'"/>
-
-            <div class="d-flex">
-                @if ($deal->contact->client_email)
-                    <x-forms.link-secondary class="mr-3" link='mailto:{{ $deal->contact->client_email }}'
-                                            icon="envelope">@lang('app.email')</x-forms.link-secondary>
-                @endif
-
-                @if ($deal->contact->mobile )
-                    <x-forms.button-secondary class="btn-copy" data-clipboard-text="{{ $deal->contact->mobile }}"
-                                              icon="phone">@lang('app.mobile')</x-forms.button-secondary>
-                @endif
-            </div>
-
-        </x-cards.data>
-    </div>
 </div>
 <!-- ROW END -->
-<script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
-
-<script>
-    var clipboard = new ClipboardJS('.btn-copy');
-
-    clipboard.on('success', function (e) {
-        Swal.fire({
-            icon: 'success',
-            text: '@lang("app.phoneCopied")',
-        toast: true,
-        position: 'top-end',
-        timer: 3000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        customClass: {
-            confirmButton: 'btn btn-primary',
-        },
-        showClass: {
-            popup: 'swal2-noanimation',
-            backdrop: 'swal2-noanimation'
-        },
-    })
-});
-</script>

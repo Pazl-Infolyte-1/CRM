@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Payment;
 
 use App\Models\Company;
 use App\Traits\MakePaymentTrait;
+use Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException;
+use Illuminate\Http\JsonResponse;
 use Stripe\Stripe;
 use Stripe\Webhook;
 use App\Models\Order;
@@ -21,13 +23,13 @@ class StripeWebhookController extends Controller
 
     /**
      * @param $companyHash
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function getWebhook($companyHash = null)
     {
         if (!$companyHash) {
             return response()->json([
-                'message' => 'The route has been moved to another route. Please check the Stripe settings again.'
+                'message' => 'The route has been moved to other route. Please check the stripe settings again'
             ]);
         }
 
@@ -35,16 +37,17 @@ class StripeWebhookController extends Controller
 
         if (!$company) {
             return response()->json([
-                'message' => 'The webhook URL provided is incorrect.'
+                'message' => 'The webhook url provided is wrong'
             ]);
         }
 
         return response()->json([
-            'message' => 'This URL should not be opened directly (GET Request). Only POST requests are accepted. Add this URL to your Stripe webhook.'
+            'message' => 'This url should not be opened directly(GET Request). Only POST request is accepted. Add this url to your stripe webhook'
         ]);
     }
 
     /**
+     * @throws RelatedResourceNotFoundException
      */
     public function verifyStripeWebhook(Request $request, $companyHash)
     {
@@ -62,13 +65,6 @@ class StripeWebhookController extends Controller
 
         $stripeSecret = $stripeCredentials->stripe_mode == 'test' ? $stripeCredentials->test_stripe_secret : $stripeCredentials->live_stripe_secret;
         $webhookSecret = $stripeCredentials->stripe_mode == 'test' ? $stripeCredentials->test_stripe_webhook_secret : $stripeCredentials->live_stripe_webhook_secret;
-
-        if (is_null($webhookSecret)) {
-            return response()->json([
-                'error' => true,
-                'message' => 'Webhook secret is not entered',
-            ], 400); // 400 Bad Request
-        }
 
         Stripe::setApiKey($stripeSecret);
 
@@ -94,7 +90,6 @@ class StripeWebhookController extends Controller
 
         if ($payload['data']['object']['status'] != 'succeeded') {
             $this->paymentFailed($payload);
-
             return response(__('messages.paymentFailed'), 400);
         }
 

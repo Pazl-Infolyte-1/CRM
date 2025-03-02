@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -38,7 +39,7 @@ class SyncUserPermissions extends Command
         if ($unsyncedUsers->isEmpty()) {
             $output->writeln('<info>All user permissions are synced</info>');
 
-            return Command::SUCCESS;
+            return true;
         }
 
         $total = $unsyncedUsers->count();
@@ -51,8 +52,6 @@ class SyncUserPermissions extends Command
             $user->permission_sync = 1;
             $user->saveQuietly();
         });
-
-        return Command::SUCCESS;
     }
 
     private function assignPermissions($user, $remaining)
@@ -61,18 +60,19 @@ class SyncUserPermissions extends Command
         //phpcs:ignore
         $output->writeln('<info>Remaining: ' . $remaining . ' Syncing permission started for ' . $user->name . '</info>');
         $rolesCount = $user->roles->count();
+        $role = null;
 
         if ($rolesCount > 1) {
             $role = $user->roles->where('name', '!=', 'employee')->first();
         }
-        else {
+        else
+        {
             $role = $user->roles->first();
         }
 
         if (!$role) {
             //phpcs:ignore
             $output->writeln('<error>Role not found for ' . $user->name . '</error>');
-
             return false;
         }
 

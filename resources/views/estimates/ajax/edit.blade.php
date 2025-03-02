@@ -8,14 +8,11 @@ $addProductPermission = user()->permission('add_product');
     </x-alert>
 @else
 
-<!-- for sortable content -->
-<link rel="stylesheet" href="{{ asset('vendor/css/jquery-ui.css') }}">
-
 <!-- CREATE INVOICE START -->
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.estimateDetails')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.estimate') @lang('app.details')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -27,7 +24,7 @@ $addProductPermission = user()->permission('add_product');
             <!-- INVOICE NUMBER START -->
             <div class="col-md-6 col-lg-4">
                 <div class="form-group mb-lg-0 mb-md-0 mb-4">
-                    <label class="f-14 text-dark-grey mb-12 "
+                    <label class="f-14 text-dark-grey mb-12 text-capitalize"
                         for="usr">@lang('modules.estimates.estimatesNumber')</label>
                     <x-forms.input-group>
                         <input type="text" name="estimate_number" id="estimate_number"
@@ -91,26 +88,6 @@ $addProductPermission = user()->permission('add_product');
                 </div>
             </div>
             <!-- CLIENT END -->
-            <!-- PROJECT START -->
-            <div class="col-md-4">
-                <x-forms.label fieldId="project_id" :fieldLabel="__('app.project')">
-                </x-forms.label>
-                <div class="form-group c-inv-select mb-4">
-                    <div class="select-others height-35 rounded">
-                        <select class="form-control select-picker" data-live-search="true" data-size="8"
-                                name="project_id" id="project_id">
-                            <option value="">--</option>
-                            @if($estimate?->client?->projects)
-                                @foreach ($estimate->client->projects as $item)
-                                    <option @if ($estimate->project_id == $item->id) selected @endif value="{{ $item->id }}">
-                                        {{ $item->project_name }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <!-- PROJECT END -->
 
             <div class="col-md-4">
                 <div class="form-group c-inv-select mb-4">
@@ -197,7 +174,7 @@ $addProductPermission = user()->permission('add_product');
                             <x-slot name="append">
                                 <a href="{{ route('products.create') }}" data-redirect-url="no"
                                     class="btn btn-outline-secondary border-grey openRightModal"
-                                    data-toggle="tooltip" data-original-title="{{ __('modules.dashboard.addNewProduct') }}">@lang('app.add')</a>
+                                    data-toggle="tooltip" data-original-title="{{ __('modules.dashboard.addNewproduct') }}">@lang('app.add')</a>
                             </x-slot>
                         @endif
                     </x-forms.input-group>
@@ -207,14 +184,9 @@ $addProductPermission = user()->permission('add_product');
         </div>
 
         <div id="sortable">
-            @foreach ($estimate->items->sortBy('field_order') as $key => $item)
+            @foreach ($estimate->items as $key => $item)
                 <!-- DESKTOP DESCRIPTION TABLE START -->
                 <div class="d-flex px-4 py-3 c-inv-desc item-row">
-                    <div class="d-flex align-items-center">
-                        <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-                        <input type="hidden" name="sort_order[]"
-                                value="1">
-                    </div>
 
                     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                         <table width="100%">
@@ -256,7 +228,7 @@ $addProductPermission = user()->permission('add_product');
                                         </td>
                                     @endif
                                     <td class="border-bottom-0">
-                                        <input type="number" min="1" class="f-14 border-0 w-100 text-right quantity form-control mt-3"
+                                        <input type="number" min="1" class="f-14 border-0 w-100 text-right quantity form-control"
                                             value="{{ $item->quantity }}" name="quantity[]">
                                         @if (!is_null($item->product_id) && $item->product_id != 0)
                                             <span class="text-dark-grey float-right border-0 f-12">{{ $item->unit->unit_type }}</span>
@@ -346,7 +318,7 @@ $addProductPermission = user()->permission('add_product');
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14 ">
+            <table width="100%" class="text-right f-14 text-capitalize">
                 <tbody>
                     <tr>
                         <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -424,7 +396,7 @@ $addProductPermission = user()->permission('add_product');
         <!-- NOTE AND TERMS AND CONDITIONS START -->
         <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
             <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                <label class="f-14 text-dark-grey mb-12  w-100"
+                <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
                     for="usr">@lang('modules.invoices.note')</label>
                 <textarea class="form-control" name="note" id="note" rows="4"
                     placeholder="@lang('placeholders.invoices.note')">{{ $estimate->note }}</textarea>
@@ -456,56 +428,17 @@ $addProductPermission = user()->permission('add_product');
 </div>
 <!-- CREATE INVOICE END -->
 
-<!-- for sortable content -->
-<script src="{{ asset('vendor/jquery/jquery-ui.min.js') }}"></script>
-
 <script>
-    $(function () {
-        $("#sortable").sortable();
-    });
-
     $(document).ready(function() {
 
         $('.toggle-product-category').click(function() {
             $('.product-category-filter').toggleClass('d-none');
-            var url = "{{route('invoices.product_category', ':id')}}";
-            url = url.replace(':id', null);
-            changeProductCategory(url);
-            $('#product_category_id').val('').trigger('change');
-            $('#product_category_id').selectpicker('refresh');
         });
 
         $('#product_category_id').on('change', function(){
             var categoryId = $(this).val();
-            var url = "{{route('invoices.product_category', ':id')}}";
-            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);
-            changeProductCategory(url);
-        });
-
-        $('#client_id').change(function() {
-            var id = $(this).val();
-            var url = "{{ route('clients.project_list', ':id') }}";
-            url = url.replace(':id', id);
-            var token = "{{ csrf_token() }}";
-
-            $.easyAjax({
-                url: url,
-                container: '#saveInvoiceForm',
-                type: "POST",
-                blockUI: true,
-                data: {
-                    _token: token
-                },
-                success: function(response) {
-                    if (response.status == 'success') {
-                        $('#project_id').html(response.data);
-                        $('#project_id').selectpicker('refresh');
-                    }
-                }
-            });
-        });
-
-        function changeProductCategory(url) {
+            var url = "{{route('invoices.product_category', ':id')}}",
+            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);;
             $.easyAjax({
                 url : url,
                 type : "GET",
@@ -529,7 +462,7 @@ $addProductPermission = user()->permission('add_product');
                     }
                 }
             });
-        }
+        });
 
         const hsn_status = {{ $invoiceSetting->hsn_sac_code_show }};
 
@@ -614,14 +547,13 @@ $addProductPermission = user()->permission('add_product');
 
         function addProduct(id) {
             const currencyId = $('#currency_id').val();
-            var exchangeRate = $('#exchange_rate').val();
+
             $.easyAjax({
                 url: "{{ route('invoices.add_item') }}",
                 type: "GET",
                 data: {
                     id: id,
-                    currencyId: currencyId,
-                    exchangeRate: exchangeRate
+                    currencyId: currencyId
                 },
                 blockUI: true,
                 success: function(response) {
@@ -646,11 +578,6 @@ $addProductPermission = user()->permission('add_product');
 
             const i = $(document).find('.item_name').length;
             let item = ' <div class="d-flex px-4 py-3 c-inv-desc item-row">' +
-                `<div class="d-flex align-items-center">
-                    <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-                    <input type="hidden" name="sort_order[]"
-                            value="${i+1}">
-                </div>` +
                 '<div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">' +
                 '<table width="100%">' +
                 '<tbody>' +
@@ -847,6 +774,13 @@ $addProductPermission = user()->permission('add_product');
             return str;
         }
 
+    function checkboxChange(parentClass, id){
+        let checkedData = '';
+        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function () {
+            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
+        });
+        $('#' + id).val(checkedData);
+    }
 </script>
 
 @endif

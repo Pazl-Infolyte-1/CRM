@@ -146,7 +146,7 @@ $addTimelogPermission = user()->permission('add_timelogs');
             data['status'] = approved;
         });
         const showTable = () => {
-            window.LaravelDataTables["shift-table"].draw(true);
+            window.LaravelDataTables["shift-table"].draw(false);
         }
 
         $('#employee, #status, #shift_id').on('change keyup',

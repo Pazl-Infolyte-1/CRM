@@ -7,7 +7,6 @@
         <x-table class="table-bordered">
             <x-slot name="thead">
                 <th>@lang('modules.leaves.leaveType')</th>
-                <th>@lang('modules.leaves.leaveAllotmentType')</th>
                 <th>@lang('modules.leaves.noOfLeaves')</th>
                 <th>@lang('modules.leaves.monthLimit')</th>
                 <th>@lang('modules.leaves.leavePaidStatus')</th>
@@ -23,7 +22,6 @@
                                 style="color: {{ $leaveType->color }}"></i>{{ $leaveType->type_name }}
                         </p>
                     </td>
-                    <td> {{ ucfirst($leaveType->leavetype) }} </td>
                     <td> {{ $leaveType->no_of_leaves }}</td>
                     <td> {{ ($leaveType->monthly_limit > 0) ? $leaveType->monthly_limit : '--' }}</td>
                     <td>
@@ -58,27 +56,17 @@
                                 <i class="fa fa-edit icons mr-2"></i> @lang('app.edit')
                             </a>
                         </div>
-                        @if($leaveType->leaves_count > 0)
-                        <div class="task_view">
-                            <a href="javascript:;" data-leave-id="{{ $leaveType->id }}" data-leave-status="archive"
-                                data-toggle="tooltip" data-placement="top" title="@lang('messages.whyArchive')"
-                                class="archive-leave task_view_more d-flex align-items-center justify-content-center">
-                                <i class="fa fa-archive icons mr-2"></i> @lang('app.archive')
-                            </a>
-                        </div>
-                        @else
                         <div class="task_view mt-1 mt-lg-0 mt-md-0">
-                            <a href="javascript:;" data-leave-id="{{ $leaveType->id }}" data-leave-status="force_delete"
+                            <a href="javascript:;" data-leave-id="{{ $leaveType->id }}"
                                 class="delete-category task_view_more d-flex align-items-center justify-content-center">
                                 <i class="fa fa-trash icons mr-2"></i> @lang('app.delete')
                             </a>
                         </div>
-                        @endif
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8">
+                    <td colspan="4">
                         <x-cards.no-record icon="list" :message="__('messages.noLeaveTypeAdded')" />
                     </td>
                 </tr>
@@ -93,7 +81,6 @@
     $('body').on('click', '.delete-category', function() {
 
     var id = $(this).data('leave-id');
-    var force_delete = $(this).data('leave-status');
 
     Swal.fire({
         title: "@lang('messages.sweetAlertTitle')",
@@ -126,8 +113,7 @@
                 blockUI: true,
                 data: {
                     '_token': token,
-                    '_method': 'DELETE',
-                    'force_delete': force_delete,
+                    '_method': 'DELETE'
                 },
                 success: function(response) {
                     if (response.status == "success") {
@@ -138,58 +124,6 @@
         }
     });
     });
-
-    // ---
-
-    $('body').on('click', '.archive-leave', function() {
-
-        var id = $(this).data('leave-id');
-        var archive = $(this).data('leave-status');
-
-        Swal.fire({
-            title: "@lang('messages.sweetAlertTitle')",
-            text: "@lang('messages.archiveMessageLeave')",
-            icon: 'warning',
-            showCancelButton: true,
-            focusConfirm: false,
-            confirmButtonText: "@lang('messages.confirmArchive')",
-            cancelButtonText: "@lang('app.cancel')",
-            customClass: {
-                confirmButton: 'btn btn-primary mr-3',
-                cancelButton: 'btn btn-secondary'
-            },
-            showClass: {
-                popup: 'swal2-noanimation',
-                backdrop: 'swal2-noanimation'
-            },
-            buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-
-                var url = "{{ route('leaveType.destroy', ':id') }}";
-                url = url.replace(':id', id);
-
-                var token = "{{ csrf_token() }}";
-
-                $.easyAjax({
-                    type: 'POST',
-                    url: url,
-                    blockUI: true,
-                    data: {
-                        '_token': token,
-                        '_method': 'DELETE',
-                        'archive' : archive,
-                    },
-                    success: function(response) {
-                        if (response.status == "success") {
-                            $('#type-' + id).fadeOut();
-                        }
-                    }
-                });
-            }
-        });
-    });
-
 
     // add new leave type
     $('#addNewLeaveType').click(function() {

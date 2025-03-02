@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helper\Files;
 use App\Helper\Reply;
+use App\Models\Invoice;
 use App\Traits\IconTrait;
 use Illuminate\Http\Request;
 use App\Models\InvoiceFiles;
@@ -38,7 +39,16 @@ class InvoiceFilesController extends AccountBaseController
                 $file->hashname = $filename;
                 $file->size = $fileData->getSize();
                 $file->save();
+
+                if ($fileData->getClientOriginalName() == $request->default_image) {
+                    $defaultImage = $filename;
+                }
+
             }
+
+            $invoice = Invoice::findOrFail($request->invoice_id);
+            $invoice->default_image = $defaultImage;
+            $invoice->save();
 
         }
 
@@ -58,7 +68,7 @@ class InvoiceFilesController extends AccountBaseController
 
         InvoiceFiles::destroy($id);
 
-        $this->files = InvoiceFiles::where('invoice_id', $file->invoice_id)->orderByDesc('id')->get();
+        $this->files = InvoiceFiles::where('invoice_id', $file->invoice_id)->orderBy('id', 'desc')->get();
         $view = view('invoices.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.deleteSuccess'), ['view' => $view]);

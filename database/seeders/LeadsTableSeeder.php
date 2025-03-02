@@ -1,19 +1,17 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\Deal;
-use App\Models\LeadAgent;
 use App\Models\Lead;
-use App\Models\LeadPipeline;
-use App\Models\PipelineStage;
+use App\Models\LeadAgent;
+use App\Models\LeadSource;
 use App\Models\LeadStatus;
+use App\Models\UniversalSearch;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use App\Traits\UniversalSearchTrait;
 
 class LeadsTableSeeder extends Seeder
 {
-
     use UniversalSearchTrait;
 
     /**
@@ -26,25 +24,18 @@ class LeadsTableSeeder extends Seeder
         $count = config('app.seed_record_count');
         $faker = \Faker\Factory::create();
         $leadAgents = $this->getLeadAgent($companyId);
-        $getPipeline = $this->getPipeline($companyId);
-        $getLeadStage = $this->getLeadStage($companyId);
-        $getLeadContact = $this->getContact($companyId);
+        $leadSources = $this->getLeadSource($companyId);
+        $leadStatuses = $this->getLeadStatus($companyId);
 
-
-        Deal::factory()
+        Lead::factory()
             ->count((int)$count)
             ->make()
-            ->each(function (Deal $deal) use ($companyId, $faker, $leadAgents, $getPipeline, $getLeadStage, $getLeadContact) {
-                $deal->company_id = $companyId;
-
-                $deal->agent_id = $faker->randomElement($leadAgents);
-                $deal->lead_pipeline_id = $faker->randomElement($getPipeline);
-                $deal->pipeline_stage_id = $faker->randomElement($getLeadStage);
-                $deal->lead_id = $faker->randomElement($getLeadContact);
-                $deal->save();
-
-                $deal->name = $deal->contact->client_name . '-' . $deal->id;
-                $deal->save();
+            ->each(function (Lead $lead) use($companyId, $faker, $leadAgents, $leadSources, $leadStatuses) {
+                $lead->company_id = $companyId;
+                $lead->agent_id = $faker->randomElement($leadAgents); /* @phpstan-ignore-line */
+                $lead->source_id = $faker->randomElement($leadSources); /* @phpstan-ignore-line */
+                $lead->status_id = $faker->randomElement($leadStatuses); /* @phpstan-ignore-line */
+                $lead->save();
             });
     }
 
@@ -58,21 +49,9 @@ class LeadsTableSeeder extends Seeder
         return LeadStatus::where('company_id', $companyId)->pluck('id')->toArray();
     }
 
-    private function getPipeline($companyId)
+    private function getLeadSource($companyId)
     {
-        return LeadPipeline::where('company_id', $companyId)->pluck('id')->toArray();
-    }
-
-    private function getLeadStage($companyId)
-    {
-        $leadPipeline = LeadPipeline::where('company_id', $companyId)->first();
-
-        return PipelineStage::where('company_id', $companyId)->where('lead_pipeline_id', $leadPipeline->id)->pluck('id')->toArray();
-    }
-
-    private function getContact($companyId)
-    {
-        return Lead::where('company_id', $companyId)->pluck('id')->toArray();
+        return LeadSource::where('company_id', $companyId)->pluck('id')->toArray();
     }
 
 }

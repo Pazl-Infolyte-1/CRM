@@ -4,8 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\Company;
 use App\Models\Contract;
+use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class ContractTableSeeder extends Seeder
 {

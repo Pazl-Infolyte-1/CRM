@@ -3,7 +3,7 @@
 namespace App\DataTables;
 
 use App\Models\Expense;
-use App\Models\Company;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 
@@ -21,7 +21,9 @@ class ExpenseReportDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->editColumn('price', function ($row) {
                 return $row->total_amount;
             })
@@ -40,19 +42,10 @@ class ExpenseReportDataTable extends BaseDataTable
                 return $row->item_name;
             })
             ->addColumn('employee_name', function ($row) {
-                return $row->user?->name;
+                return $row->user->name;
             })
             ->addColumn('bank_account', function ($row) {
-                return $row->bank_account_id;
-            })
-            // Load the bank name
-            ->addColumn('bank_name', function ($row) {
-                $bankAccount = $row->bankAccount;
-                if ($bankAccount) {
-                    return $bankAccount->bank_name . ' | ' . $bankAccount->account_name;
-                } else {
-                    return '--'; // or any default value you prefer
-                }
+                return !is_null($row->bank_name) ? $row->bank_name : '--';
             })
             ->editColumn('user_id', function ($row) {
                 return view('components.employee', [
@@ -84,9 +77,11 @@ class ExpenseReportDataTable extends BaseDataTable
                 }
             )
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->addIndexColumn()
-            ->rawColumns(['action', 'status', 'user_id', 'item_name', 'check', 'bank_account'])
+            ->rawColumns(['action', 'status', 'user_id', 'item_name', 'check'])
             ->removeColumn('currency_id')
             ->removeColumn('name')
             ->removeColumn('currency_symbol')
@@ -105,12 +100,12 @@ class ExpenseReportDataTable extends BaseDataTable
         $request = $this->request();
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $model = $model->where(DB::raw('DATE(`purchase_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
             $model = $model->where(DB::raw('DATE(`purchase_date`)'), '<=', $endDate);
         }
 
@@ -166,18 +161,16 @@ class ExpenseReportDataTable extends BaseDataTable
      */
     protected function getColumns()
     {
-        $defaultCurrency = Company::with('currency')->find(company()->id);
         return [
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('modules.expenses.itemName') => ['data' => 'item_name', 'name' => 'item_name', 'exportable' => false, 'title' => __('modules.expenses.itemName')],
             __('app.menu.itemName') => ['data' => 'export_item_name', 'name' => 'export_item_name', 'visible' => false, 'title' => __('modules.expenses.itemName')],
             __('app.price') => ['data' => 'price', 'name' => 'price', 'title' => __('app.price')],
-            __('app.price') . $defaultCurrency->currency->currency_code => ['data' => 'default_currency_price', 'name' => 'default_currency_price',  'orderable' => false, 'title' => __('app.price') . ' ( ' . $defaultCurrency->currency->currency_code . ' )'],
+            __('app.price') . company()->currency->currency_code => ['data' => 'default_currency_price', 'name' => 'default_currency_price',  'orderable' => false, 'title' => __('app.price') . ' ( ' . company()->currency->currency_code . ' )'],
             __('app.menu.employees') => ['data' => 'user_id', 'name' => 'user_id', 'exportable' => false, 'title' => __('app.menu.employees')],
             __('app.employee') => ['data' => 'employee_name', 'name' => 'user_id', 'visible' => false, 'title' => __('app.employee')],
             __('modules.expenses.purchaseFrom') => ['data' => 'purchase_from', 'name' => 'purchase_from', 'title' => __('modules.expenses.purchaseFrom')],
-            __('app.menu.bankaccount') => ['data' => 'bank_account', 'name' => 'bank_account', 'visible' => false, 'exportable' => false, 'title' => __('app.menu.bankaccount')],
-            __('app.menu.bankaccount') => ['data' => 'bank_name', 'name' => 'bank_account.bank_name', 'title' => __('app.menu.bankaccount')],
+            __('app.bankaccount') => ['data' => 'bank_account', 'name' => 'bank_account', 'title' => __('app.bankaccount')],
             __('modules.expenses.purchaseDate') => ['data' => 'purchase_date', 'name' => 'purchase_date', 'title' => __('modules.expenses.purchaseDate')],
             __('modules.expenses.expenseBill') => ['data' => 'export_bill', 'name' => 'export_bill', 'visible' => false, 'title' => __('modules.expenses.expenseBill')],
             __('app.bill') => ['data' => 'bill', 'name' => 'bill', 'exportable' => false, 'title' => __('app.bill')],

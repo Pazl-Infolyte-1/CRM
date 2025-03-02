@@ -4,9 +4,6 @@ return array(
     'newEvent' => array(
         'subject' => 'New Event Created',
         'text' => 'We are excited to announce a new event that has been created and we would like to invite you to join us. To make it easier for you to save the date, we have attached an ICS file to this email that you can download and add to your calendar.',
-        'hostText' => 'I am writing to confirm that you have been selected as the host for :eventName. Your enthusiasm and dedication to our :companyName make you an ideal candidate for this role, and we are confident that you will represent us admirably.',
-        'statusSubject' => 'Event Status Update',
-        'eventCancelNote' => 'We are very sorry to announce that due to some reason event has been cancelled. ',
         'action' => 'View Event',
         'mentionSubject' => 'You have been mentioned in a event',
     ),
@@ -43,9 +40,8 @@ return array(
         'action' => 'View Notice',
     ),
     'newProjectMember' => array(
-        'subject' => 'Project Update: You have been assigned a new project',
-        'text' => 'Exciting news! You\'ve been assigned a new project.',
-        'text2' => 'To get started, log in to your account and check out the project details.',
+        'subject' => 'Project Update: You Have Been Assigned a New Project',
+        'text' => 'You have been added as a member to the project',
         'action' => 'View Project',
         'mentionProject' => 'You Have Been Mention On New Project',
         'mentionText' => 'You have been mentioned on project',
@@ -53,7 +49,7 @@ return array(
         'mentionNoteText' => 'You have been mentioned on project Note',
     ),
     'projectNote' => array(
-            'mentionSubject' => 'You have Been Mention On New Project Note',
+            'mentionSubject' =>'You have Been Mention On New Project Note',
             'mentionText' => 'You have been mentioned on New Project Note',
             'text' => 'New note added for',
             'action' => 'View Note',
@@ -74,9 +70,8 @@ return array(
 
     'newTask' => array(
         'subject' => 'Task Assignment: A New Task has been Assigned to You',
-        'text' => 'We hope you\'re having a great day! You have been assigned a new task.',
-        'mentionSubject' => 'You\'ve Been Mentioned in a Task!',
-        'mentionTask' => 'Heads up! You\'ve been mentioned in a task.',
+        'mentionSubject' => 'Mention On New Task',
+        'mentionTask' => 'You have been mentioned in a task',
 
     ),
     'dueOn' => 'Due On',
@@ -88,8 +83,6 @@ return array(
     'newUser' => array(
         'subject' => 'Welcome to',
         'text' => 'Congratulations! Your account has been created successfully. You can login now and start using our service.',
-        'message' => 'Congratulations! Your account has been created successfully.',
-        'clientSignupMessage' => 'Congratulations! Your account has been approved successfully.',
         'action' => 'Login to Dashboard',
     ),
     'newUserViaLink' => array(
@@ -109,19 +102,8 @@ return array(
         'completedBy' => 'Task completed by',
     ),
     'taskUpdate' => array(
-        'subject' => 'Your Task Has Been Updated!',
-        'text' => 'Just a quick heads-up! A task assigned to you has been updated.',
-        'text2' => 'To check out the changes and keep things moving, log in to your account and head over to the Task section.',
+        'subject' => 'Task updated',
         'action' => 'View Task',
-        'updatedBy' => 'Task Status Updated By',
-        'statusUpdated' => 'Your Task Status Has Been Updated!',
-        'slackStatusUpdated' => 'The following task has been updated, Assigned Employees please check the task for updates!'
-    ),
-    'taskApproval' => array(
-        'subject' => 'Task sent for the approval.',
-        'text' => 'Task sent for the approval.',
-        'action' => 'View Task',
-        'updatedBy' => 'Updated By',
     ),
     'leave' => array(
         'approve' => 'Leave application approved.',
@@ -164,7 +146,7 @@ return array(
     ),
     'invoice' => array(
         'subject' => 'New Invoice Received',
-        'text' => 'We\'re excited to inform you that a new invoice has been received. To review the details of the invoice, please click on the link provided below:<br>',
+        'text' => 'A new invoice has been received. Please click on the link below to view an invoice.',
         'action' => 'View Invoice',
         'updateSubject' => 'Invoice Updated',
         'updateText' => 'Invoice has been updated. Please click on the link below to view invoice.',
@@ -257,28 +239,10 @@ return array(
         'text' => 'You have been added as assignee on Task ',
         'action' => 'View Sub Tasks',
     ),
-
     'leadAgent' => array(
-        'subject' => 'New Deal Notification',
-        'action' => 'View Deal',
-        'viewMore' => 'View More',
-    ),
-
-    'lead' => array(
         'subject' => 'New lead received.',
         'action' => 'View Lead',
     ),
-
-    'leads' => array(
-        'subject' => 'New leads received.',
-        'action' => 'View Lead',
-    ),
-
-    'dealStatus' => array(
-        'subject' => 'Deal stage updated.',
-        'action' => 'View Deal',
-    ),
-
     'subTaskCreated' => 'Sub task created.',
     'discussionReply' => array(
         'subject' => ' replied to ',
@@ -292,13 +256,11 @@ return array(
         'mentionContent' => 'You have been mentioned on new Project Discussion',
     ),
     'ticketReply' => array(
-        'receivedNote' => 'added a note and wants you to have a look.',
         'subject' => 'New ticket reply received',
         'receivedText' => 'You have received a reply on ticket ',
         'repliedText' => 'You have replied on ticket ',
         'action' => 'View Ticket',
         'text' => 'You have received a reply on ticket ',
-        'noteAdded' => 'Note Added',
     ),
     'contractSign' => array(
         'subject' => 'Contract Signed',
@@ -399,7 +361,6 @@ return array(
     'test' => array(
         'subject' => 'Confirm Receipt: Test Email',
         'text' => 'This is a test email to verify that the SMTP settings are configured correctly and the email system is functioning properly. If you receive this message, it means that the SMTP configuration is working fine.',
-        'slack'=>'This is a test notification',
         'thankyouNote' => 'Thank you for using our application!',
     ),
     'AttendanceReminder' => array(
@@ -431,11 +392,10 @@ return array(
     ),
     'followUpReminder' => array(
         'subject' => 'Urgent: Follow-up Reminder',
-        'newFollowUpSubject' => 'New Follow-up Created ',
         'nextFollowUpDate' => 'Next follow up date',
         'action' => 'View Follow Up Details',
         'nextFollowUpTime' => 'Next follow up time',
-        'followUpLead' => 'Followup Deal Name',
+        'followUpLead' => 'Followup Lead Name',
         'followUpLeadText' => 'You have new follow up',
     ),
     'shiftScheduled' => array(
@@ -467,8 +427,6 @@ return array(
     ),
     'holidays' => array(
         'subject' => 'New Holiday Created',
-        'text' => 'Created a new holiday.',
-        'action' => 'View Holiday',
     ),
     'dailyTimelogReport' => array(
         'subject' => 'Timelog Report for the date',
@@ -484,73 +442,5 @@ return array(
         'actionButton' => 'Reset Password',
         'expire' => 'This password reset link will expire in 60 minutes.',
         'contentPassword' => 'If you did not request a password reset, no further action is required.',
-     ),
-     'projectRating' => [
-        'subject' => 'New project rating',
-        'action' => 'Show Rating',
-        'text' => 'New project rating received for the project '
-     ],
-     'dailyScheduleReminder' => [
-        'subject' => 'Your Daily Focus List for :date',
-        'content' => "Here's your daily focus list for today. We've curated these tasks to help you stay organized and productive throughout the day:",
-        'taskText' => 'Total Tasks',
-        'eventText' => 'Total Events',
-        'holidayText' => 'Total Holiday',
-        'leavesText' => 'Total Leaves',
-        'interviewText' => 'Total Interview'
-     ],
-    'estimateRequestRejected' => array(
-        'subject' => 'Estimate Request Rejected',
-        'text' => 'A estimate request has been Rejected. Please click on the link below to check the estimate request.',
-        'action' => 'View Estimate Request',
-    ),
-    'estimate_request_invite' => array(
-        'subject' => 'Estimate Request Invite',
-        'text' => 'You have been invited to create the estimate request. Please click on the link below to create the estimate request.',
-        'action' => 'Create Estimate Request',
-        'content' => 'You have been invited to create the estimate request. Please click on the link below to create the estimate request.',
-    ),
-    'estimateRequestAccepted' => array(
-        'subject' => 'Estimate Request Accepted',
-        'text' => 'A estimate request has been Accepted. Please click on the link below to check the estimate request.',
-    ),
-    'newEstimateRequest' => array(
-        'subject' => 'New Estimate Request',
-        'text' => 'A new estimate request has been created. Please click on the link below to view the estimate request.',
-    ),
-    'incrementPromotion' => array(
-        'in' => 'in',
-        'same' => 'same',
-        'subject' => 'Cheers to Your New Role',
-        'text' => 'I\'m excited to announce your well-deserved promotion to',
-        'text1' => 'Your exceptional contributions and commitment have not gone unnoticed. We can\'t wait to see the great things you\'ll accomplish in this new role.',
-        'text2' => 'If you need any support during your transition, just let us know. Congratulations again!',
-        'text3' => 'You have promoted to position',
-        'updateText' => 'I am excited to announce changes to your recent promotion',
-    ),
-    'newTimesheetApproval' => array(
-        'subject' => 'New Timesheet Submitted by :employeeName',
-        'greeting' => 'New Timesheet Submitted',
-        'text' => 'A new timesheet has been submitted for approval.',
-        'text1' => 'Timesheet for the week of :startDate to :endDate by :employeeName',
-        'action' => 'View Timesheet',
-        'thankYou' => 'Thank you for using our application!',
-    ),
-    'weeklyTimesheetApproved' => array(
-        'subject' => 'Weekly Timesheet Approved',
-        'greeting' => 'Weekly Timesheet Approved',
-        'text' => 'A weekly timesheet has been approved.',
-        'text1' => 'Timesheet for the week of :startDate to :endDate by :employeeName',
-        'action' => 'View Timesheet',
-        'thankYou' => 'Thank you for using our application!',
-    ),
-    'weeklyTimesheetRejected' => array(
-        'subject' => 'Weekly Timesheet Rejected',
-        'greeting' => 'Weekly Timesheet Rejected',
-        'text' => 'A weekly timesheet has been rejected.',
-        'text1' => 'Timesheet for the week of :startDate to :endDate',
-        'text2' => 'Reason: :reason',
-        'action' => 'View Timesheet',
-        'thankYou' => 'Thank you for using our application!',
-    ),
+      )
 );

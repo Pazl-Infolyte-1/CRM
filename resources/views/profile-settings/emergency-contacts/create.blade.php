@@ -6,7 +6,7 @@
     <div class="modal-body">
         <div class="portlet-body">
 
-                <div class="bg-white rounded">
+                <div class="add-client bg-white rounded">
                     <div class="row">
                         <div class="col-xl-12 col-lg-12 col-sm-12">
                             <input type="hidden" name="user_id" value="{{ $userId }}">

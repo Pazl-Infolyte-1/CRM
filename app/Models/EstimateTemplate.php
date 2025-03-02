@@ -60,6 +60,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplate whereTotal($value)
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplate whereUnitId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplate whereUpdatedAt($value)
+
  * @mixin \Eloquent
  */
 

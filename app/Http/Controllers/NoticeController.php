@@ -5,16 +5,9 @@ namespace App\Http\Controllers;
 use App\DataTables\NoticeBoardDataTable;
 use App\Helper\Reply;
 use App\Http\Requests\Notice\StoreNotice;
-use App\Models\AutomateShift;
 use App\Models\Notice;
-use App\Models\NoticeBoardUser;
-use App\Models\NoticeFile;
-use App\Models\NoticeUser;
 use App\Models\Team;
-use App\Models\User;
-use App\Scopes\ActiveScope;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class NoticeController extends AccountBaseController
 {
@@ -51,14 +44,13 @@ class NoticeController extends AccountBaseController
 
         $this->teams = Team::all();
         $this->pageTitle = __('modules.notices.addNotice');
-        $this->view = 'notices.ajax.create';
-        $this->employees = User::allEmployees(null, true);
-        $this->clients = User::allClients(null, true);
 
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('notices.ajax.create', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'notices.ajax.create';
         return view('notices.create', $this->data);
     }
 
@@ -72,36 +64,14 @@ class NoticeController extends AccountBaseController
         $this->addPermission = user()->permission('add_notice');
         abort_403(!in_array($this->addPermission, ['all', 'added']));
 
-        DB::beginTransaction();
-
         $notice = new Notice();
         $notice->heading = $request->heading;
         $notice->description = trim_editor($request->description);
         $notice->to = $request->to;
-        $notice->department_id = $request->team_id == 0 ? null : $request->team_id;
+        $notice->department_id = $request->team_id;
         $notice->save();
 
-        if (($request->to == 'employee' && isset($request->employees)) || ($request->to == 'client' && isset($request->clients))) {
-            $noticeUsers = [];
-            $type = $request->to;
-            $users = ($type == 'employee') ? $request->employees : $request->clients;
-
-            foreach ($users as $user) {
-                $noticeUsers[] = [
-                    'notice_id' => $notice->id,
-                    'type' => $type,
-                    'user_id' => $user
-                ];
-            }
-
-            if (!empty($noticeUsers)) {
-                NoticeBoardUser::insert($noticeUsers);
-            }
-        }
-
-        DB::commit();
-
-        return Reply::successWithData(__('messages.recordSaved'), ['noticeID' => $notice->id, 'redirectUrl' => route('notices.index')]);
+        return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => route('notices.index')]);
 
     }
 
@@ -122,7 +92,6 @@ class NoticeController extends AccountBaseController
             || ($this->viewPermission == 'both' && (in_array($this->notice->to, user_roles()) || $this->notice->added_by == user()->id))
         ));
 
-        $this->deletePermission = user()->permission('delete_notice');
 
         $readUser = $this->notice->member->filter(function ($value, $key) {
             return $value->user_id == $this->user->id && $value->notice_id == $this->notice->id;
@@ -131,16 +100,6 @@ class NoticeController extends AccountBaseController
         if ($readUser) {
             $readUser->read = 1;
             $readUser->save();
-        }
-
-        $noticeEmployees = NoticeBoardUser::where('notice_id', $this->notice->id)->where('type', 'employee')->pluck('user_id')->toArray();
-        $this->noticeEmployees = User::whereIn('id', $noticeEmployees)->get();
-
-        $noticeClients = NoticeBoardUser::where('notice_id', $this->notice->id)->where('type', 'client')->pluck('user_id')->toArray();
-        $this->noticeClients = User::whereIn('id', $noticeClients)->get();
-
-        if(in_array('client', user_roles())){
-            $this->noticeClients = User::where('id', auth()->id())->get();
         }
 
         $this->readMembers = $this->notice->member->filter(function ($value, $key) {
@@ -152,14 +111,13 @@ class NoticeController extends AccountBaseController
             return $value->read == 0;
         });
 
-        $this->pageTitle = __('app.menu.noticeBoard');
-
-        $this->view = 'notices.ajax.show';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $this->pageTitle = __('app.menu.noticeBoard');
+            $html = view('notices.ajax.show', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'notices.ajax.show';
         return view('notices.create', $this->data);
 
     }
@@ -185,20 +143,12 @@ class NoticeController extends AccountBaseController
         $this->teams = Team::all();
         $this->pageTitle = __('modules.notices.updateNotice');
 
-        $this->employees = $this->notice->department_id
-            ? User::departmentUsers($this->notice->department_id)
-            : User::allEmployees(null, true);
-
-        $this->clients = User::allClients(null, true);
-
-        $this->employeeArray = NoticeBoardUser::where('notice_id', $id)->where('type', 'employee')->pluck('user_id')->toArray();
-        $this->clientArray = NoticeBoardUser::where('notice_id', $id)->where('type', 'client')->pluck('user_id')->toArray();
+        if (request()->ajax()) {
+            $html = view('notices.ajax.edit', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        }
 
         $this->view = 'notices.ajax.edit';
-
-        if (request()->ajax()) {
-            return $this->returnAjax($this->view);
-        }
 
         return view('notices.create', $this->data);
 
@@ -214,51 +164,20 @@ class NoticeController extends AccountBaseController
     {
         $notice = Notice::findOrFail($id);
         $this->editPermission = user()->permission('edit_notice');
-
         abort_403(!(
             $this->editPermission == 'all'
-            || ($this->editPermission == 'added' && $notice->added_by == user()->id)
-            || ($this->editPermission == 'owned' && in_array($notice->to, user_roles()))
-            || ($this->editPermission == 'both' && (in_array($notice->to, user_roles()) || $notice->added_by == user()->id))
+            || ($this->editPermission == 'added' && $this->notice->added_by == user()->id)
+            || ($this->editPermission == 'owned' && in_array($this->notice->to, user_roles()))
+            || ($this->editPermission == 'both' && (in_array($this->notice->to, user_roles()) || $this->notice->added_by == user()->id))
         ));
-
-        DB::beginTransaction();
 
         $notice->heading = $request->heading;
         $notice->description = trim_editor($request->description);
         $notice->to = $request->to;
-        $notice->department_id = $request->team_id == 0 ? null : $request->team_id;
+        $notice->department_id = $request->team_id;
         $notice->save();
 
-        $type = $request->to;
-        $users = ($type == 'employee') ? $request->employees : $request->clients;
-
-        if (!empty($users)) {
-            $noticeUsers = [];
-
-            foreach ($users as $user) {
-                $exists = NoticeBoardUser::where('notice_id', $notice->id)
-                    ->where('type', $type)
-                    ->where('user_id', $user)
-                    ->exists();
-
-                if (!$exists) {
-                    $noticeUsers[] = [
-                        'notice_id' => $notice->id,
-                        'type' => $type,
-                        'user_id' => $user
-                    ];
-                }
-            }
-
-            if (!empty($noticeUsers)) {
-                NoticeBoardUser::insert($noticeUsers);
-            }
-        }
-
-        DB::commit();
-
-        return Reply::successWithData(__('messages.updateSuccess'), ['noticeID' => $notice->id, 'redirectUrl' => route('notices.index')]);
+        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('notices.index')]);
     }
 
     /**
@@ -277,12 +196,6 @@ class NoticeController extends AccountBaseController
             || ($this->deletePermission == 'owned' && in_array($notice->to, user_roles()))
             || ($this->deletePermission == 'both' && (in_array($notice->to, user_roles()) || $notice->added_by == user()->id))
         ));
-
-        $file = NoticeFile::where('notice_id', $id)->first();
-
-        if ($file) {
-            $file->delete();
-        }
 
         Notice::destroy($id);
         return Reply::successWithData(__('messages.deleteSuccess'), ['redirectUrl' => route('notices.index')]);

@@ -8,6 +8,7 @@ use App\Models\Currency;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -48,13 +49,13 @@ class FinanceReportController extends AccountBaseController
             ->where('payments.status', 'complete');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
         }
 
         $payments = $payments->where(DB::raw('DATE(payments.`paid_on`)'), '>=', $startDate);
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
         }
 
         $payments = $payments->where(DB::raw('DATE(payments.`paid_on`)'), '<=', $endDate);
@@ -100,10 +101,10 @@ class FinanceReportController extends AccountBaseController
             }
 
             if ($invoice->currency_id != $this->company->currency_id && $exchangeRate != 0) {
-                $incomes[$invoice->date] += floatval($invoice->total) * floatval($exchangeRate);
+                $incomes[$invoice->date] += round(floatval($invoice->total) / floatval($exchangeRate), 2);
             }
             else {
-                $incomes[$invoice->date] += floatval($invoice->total);
+                $incomes[$invoice->date] += round(floatval($invoice->total), 2);
             }
         }
 

@@ -10,8 +10,6 @@ use App\Models\ProjectTemplateTaskUser;
 use App\Models\TaskCategory;
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Models\TaskLabelList;
-use App\Models\TaskSetting;
 
 class ProjectTemplateTaskController extends AccountBaseController
 {
@@ -23,14 +21,8 @@ class ProjectTemplateTaskController extends AccountBaseController
 
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('projects', $this->user->modules));
-
             return $next($request);
         });
-    }
-
-    public function index()
-    {
-        return redirect()->route('project-template.index');
     }
 
     /**
@@ -47,23 +39,22 @@ class ProjectTemplateTaskController extends AccountBaseController
         $this->pageTitle = __('app.menu.addProjectTemplate');
         $this->template = ProjectTemplate::findOrFail($request->project_id);
         $this->categories = TaskCategory::all();
-        $this->labels = TaskLabelList::whereNull('project_id')->get();
+
         $this->project = request('project_id') ? ProjectTemplate::with('projectMembers')->findOrFail(request('project_id')) : null;
 
         if (!is_null($this->project)) {
             $this->employees = $this->project->projectMembers;
 
+        } else {
+            $this->employees = User::allEmployees();
         }
-        else {
-            $this->employees = User::allEmployees(null, true);
+
+        if (request()->ajax()) {
+            $html = view('project-templates.task.ajax.create', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
         $this->view = 'project-templates.task.ajax.create';
-
-        if (request()->ajax()) {
-            return $this->returnAjax($this->view);
-        }
-
         return view('project-templates.task.create', $this->data);
 
     }
@@ -85,14 +76,9 @@ class ProjectTemplateTaskController extends AccountBaseController
         $task->project_template_id = $request->template_id;
         $task->project_template_task_category_id = $request->category_id;
         $task->priority = $request->priority;
-
-        if ($request->has('task_labels')) {
-            $task->task_labels = implode(',', $request->task_labels);
-        }
-
         $task->save();
 
-        if ($request->user_id) {
+        if($request->user_id){
             foreach ($request->user_id as $key => $value) {
                 ProjectTemplateTaskUser::create([
                     'user_id' => $value,
@@ -120,19 +106,21 @@ class ProjectTemplateTaskController extends AccountBaseController
         abort_403(!in_array($manageProjectTemplatePermission, ['all', 'added', 'both']) && !in_array($viewProjectTemplatePermission, ['all']));
 
         $this->pageTitle = __('app.task') . ' # ' . $this->task->id;
-        $this->taskSettings = TaskSetting::first();
-        $this->taskLabelList = TaskLabelList::whereNull('project_id')->get();
+
         $this->tab = 'project-templates.task.ajax.sub_tasks';
-        $this->view = 'project-templates.task.ajax.show';
 
         if (request()->ajax()) {
 
-            if (request('json')) {
-                return $this->returnAjax($this->tab);
+            if (request('json') == true) {
+                $html = view($this->tab, $this->data)->render();
+                return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
             }
 
-            return $this->returnAjax($this->view);
+            $html = view('project-templates.task.ajax.show', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'project-templates.task.ajax.show';
 
         return view('project-templates.task.create', $this->data);
 
@@ -151,25 +139,17 @@ class ProjectTemplateTaskController extends AccountBaseController
         abort_403(!in_array($this->manageProjectTemplatePermission, ['all', 'added']));
 
         $this->pageTitle = __('app.update') . ' ' . __('app.project');
-        $this->labels = TaskLabelList::whereNull('project_id')->get();
+
         $this->categories = TaskCategory::all();
         $this->template = ProjectTemplate::findOrFail($this->task->project_template_id);
+        $this->employees = User::allEmployees();
 
-        $this->selectedLabels = explode(',', $this->task->task_labels);
-
-        $this->project = request('project_id') ? ProjectTemplate::with('projectMembers')->findOrFail(request('project_id')) : null;
-
-        if (!is_null($this->project)) {
-            $this->employees = $this->project->projectMembers;
-        }else {
-            $this->employees = User::allEmployees(null, true);
+        if (request()->ajax()) {
+            $html = view('project-templates.task.ajax.edit', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
         $this->view = 'project-templates.task.ajax.edit';
-
-        if (request()->ajax()) {
-            return $this->returnAjax($this->view);
-        }
 
         return view('project-templates.task.create', $this->data);
 
@@ -192,16 +172,11 @@ class ProjectTemplateTaskController extends AccountBaseController
 
         $task->project_template_task_category_id = $request->category_id;
         $task->priority = $request->priority;
-
-        if ($request->has('task_labels')) {
-            $task->task_labels = implode(',', $request->task_labels);
-        }
-
         $task->save();
 
         ProjectTemplateTaskUser::where('project_template_task_id', $task->id)->delete();
 
-        if ($request->user_id) {
+        if($request->user_id){
             foreach ($request->user_id as $key => $value) {
                 ProjectTemplateTaskUser::create(
                     [
@@ -224,7 +199,6 @@ class ProjectTemplateTaskController extends AccountBaseController
     public function destroy($id)
     {
         ProjectTemplateTask::destroy($id);
-
         return Reply::success(__('messages.deleteSuccess'));
     }
 

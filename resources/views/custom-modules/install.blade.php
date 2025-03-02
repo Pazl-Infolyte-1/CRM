@@ -20,38 +20,16 @@
         <x-setting-card>
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
-                    <h2 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                         @lang($pageTitle)</h2>
                 </div>
             </x-slot>
 
             <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4 ">
-                <h4 class="f-21 font-weight-normal  ">
+                <h4 class="f-21 font-weight-normal text-capitalize ">
                     @lang('modules.moduleSettings.step1')</h4>
-
-
                 <div class="row">
                     <div class="col-sm-12">
-
-                        @php
-                            $uploadMaxFilesize = \App\Helper\Files::getUploadMaxFilesize();
-                            $postMaxSize = \App\Helper\Files::getPostMaxSize();
-                        @endphp
-
-                        @if(!$uploadMaxFilesize['greater'])
-                            <span class="text-danger">
-                                    Your Server upload_max_filesize = {{\App\Helper\Files::getUploadMaxFilesize()['size']}}.
-                                    Please change to min <strong>{{\App\Helper\Files::REQUIRED_FILE_UPLOAD_SIZE}}MB</strong>
-                                    to upload big modules
-                            </span>
-                        @elseif(!$postMaxSize['greater'])
-                            <span class="text-danger">
-                                    Your Server post_max_size = {{\App\Helper\Files::getPostMaxSize()['size']}}.
-                                    Please change to min <strong>{{\App\Helper\Files::REQUIRED_FILE_UPLOAD_SIZE}}MB</strong> to
-                                    upload big modules
-                            </span>
-                        @endif
-
                         <x-forms.file-multiple
                             class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel=" __('messages.downloadFilefromCodecanyon') " fieldName="file"
@@ -63,7 +41,7 @@
             <div class="col-md-12 " id="install-process"></div>
 
             <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4 ">
-                <h4 class="f-21 font-weight-normal ">
+                <h4 class="f-21 font-weight-normal text-capitalize">
                     @lang('modules.moduleSettings.step2')</h4>
 
                 <p>@lang('modules.update.moduleFile')</p>
@@ -79,7 +57,7 @@
                                     </div>
 
                                     <div class="col-lg-4 py-1 text-center f-12">
-                                        @lang('app.uploadDate'):
+                                        @lang('app.upload') @lang('app.date'):
                                         {{ \Carbon\Carbon::parse(\Illuminate\Support\Facades\File::lastModified($filename))->timezone(global_setting()->timezone)->translatedFormat('jS M, Y g:i A') }}
                                     </div>
 

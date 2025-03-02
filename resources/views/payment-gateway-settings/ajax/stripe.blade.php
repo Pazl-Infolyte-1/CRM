@@ -2,7 +2,6 @@
     @include('sections.password-autocomplete-hide')
     <input type="hidden" name="payment_method" value="stripe">
 
-
     <div class="row">
         <div class="col-lg-12 mb-3">
             <x-forms.checkbox :fieldLabel="__('modules.payments.stripeStatus')" fieldName="stripe_status"
@@ -11,13 +10,6 @@
         </div>
     </div>
     <div class="row @if ($credentials->stripe_status == 'deactive') d-none @endif" id="stripe_details">
-
-
-        @if(user()->is_superadmin)
-            <div class="col-lg-12">
-                <x-alert type="info" icon="info-circle"> @lang('superadmin.stripePackageMessage')</x-alert>
-            </div>
-        @endif
 
         <div class="col-lg-12">
             <x-forms.select fieldId="stripe_mode" :fieldLabel="__('app.selectEnvironment')" fieldName="stripe_mode">

@@ -2,7 +2,12 @@
 
 namespace App\Observers;
 
+use App\Events\TicketEvent;
+use App\Events\TicketRequesterEvent;
+use App\Models\Notification;
+use App\Models\Ticket;
 use App\Models\TicketEmailSetting;
+use App\Models\UniversalSearch;
 
 class TicketEmailSettingObserver
 {

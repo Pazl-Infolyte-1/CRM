@@ -46,11 +46,6 @@
             @php
                 $userId = explode('#', $key);
                 $userId = $userId[0];
-                $isActive = '';
-
-                if(in_array($userId,$employeeIdsInactive)){
-                    $isActive = 'no';
-                }
             @endphp
             <tr>
                 <td class="w-30 px-2"> {!! end($attendance) !!} </td>
@@ -68,14 +63,14 @@
                                 <span data-toggle="tooltip" data-original-title="@lang('modules.attendance.halfDay')"><i
                                     class="fa fa-star-half-alt text-red"></i></span>
                             @else
-                                <a href="javascript:;" class="change-shift{{$isActive}}" data-user-id="{{ $userId }}"
+                                <a href="javascript:;" class="change-shift" data-user-id="{{ $userId }}"
                                         data-attendance-date="{{ $key2 }}">
                                     <span data-toggle="tooltip" data-original-title="@lang('modules.attendance.halfDay')"><i
                                             class="fa fa-star-half-alt text-red"></i></span>
                                 </a>
                             @endif
                             @elseif ($day == 'EMPTY')
-                                <button type="button" class="change-shift{{$isActive}} badge badge-light f-10 p-1 border"  data-user-id="{{ $userId }}"
+                                <button type="button" class="change-shift badge badge-light f-10 p-1 border"  data-user-id="{{ $userId }}"
                                     data-attendance-date="{{ $key2 }}">
                                     @if (in_array($manageEmployeeShifts, ['all']))
                                     <i class="fa fa-plus"></i>
@@ -84,7 +79,7 @@
                                     @endif
                                 </button>
                             @elseif ($day == 'Holiday')
-                                <a href="javascript:;" data-toggle="tooltip" class="change-shift{{$isActive}}"
+                                <a href="javascript:;" data-toggle="tooltip" class="change-shift"
                                     data-original-title="{{ $holidayOccasions[$key2] }}"
                                     data-user-id="{{ $userId }}" data-attendance-date="{{ $key2 }}"><i
                                         class="fa fa-star text-primary"></i></a>

@@ -2,7 +2,6 @@
 
 namespace App\View\Components\Forms;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Number extends Component
@@ -25,7 +24,7 @@ class Number extends Component
      *
      * @return void
      */
-    public function __construct($fieldLabel, $fieldName, $fieldId, $fieldRequired = false, $fieldValue = null, $fieldHelp = null, $minValue = 0, $maxValue = '', $popover = null, $fieldPlaceholder = null, $fieldReadOnly = false)
+    public function __construct($fieldLabel, $fieldName, $fieldId,  $fieldRequired = false, $fieldValue = null,$fieldHelp = null, $minValue = 0, $maxValue = '', $popover = null, $fieldPlaceholder = null, $fieldReadOnly = false)
     {
         $this->fieldLabel = $fieldLabel;
         $this->fieldRequired = $fieldRequired;
@@ -43,7 +42,7 @@ class Number extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {

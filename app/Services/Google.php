@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Traits\GoogleOAuth;
-use Exception;
 use Google_Client;
 
 class Google
@@ -25,7 +24,6 @@ class Google
         $client->setApprovalPrompt(config('services.google.approval_prompt'));
         $client->setAccessType(config('services.google.access_type'));
         $client->setIncludeGrantedScopes(config('services.google.include_granted_scopes'));
-        $client->setState(route('googleAuth'));
         $this->client = $client;
     }
 
@@ -53,7 +51,7 @@ class Google
     public function __call($method, $args)
     {
         if (!method_exists($this->client, $method)) {
-            throw new Exception('Call to undefined method ' . $method);
+            throw new \Exception('Call to undefined method ' . $method);
         }
 
         return call_user_func_array([$this->client, $method], $args);

@@ -179,30 +179,28 @@
             let id = $(this).data('row-id');
             let value = $(this).html();
 
-            if(id){
-                var url = "{{ route('expenseCategory.update', ':id') }}";
-                url = url.replace(':id', id);
+            var url = "{{ route('expenseCategory.update', ':id') }}";
+            url = url.replace(':id', id);
 
-                var token = "{{ csrf_token() }}";
+            var token = "{{ csrf_token() }}";
 
-                $.easyAjax({
-                    url: url,
-                    container: '#row-' + id,
-                    type: "POST",
-                    data: {
-                        'category_name': value,
-                        '_token': token,
-                        '_method': 'PUT'
-                    },
-                    blockUI: true,
-                    success: function(response) {
-                        if (response.status == 'success') {
-                            $('#expense_category_id').html(response.data);
-                            $('#expense_category_id').selectpicker('refresh');
-                        }
+            $.easyAjax({
+                url: url,
+                container: '#row-' + id,
+                type: "POST",
+                data: {
+                    'category_name': value,
+                    '_token': token,
+                    '_method': 'PUT'
+                },
+                blockUI: true,
+                success: function(response) {
+                    if (response.status == 'success') {
+                        $('#expense_category_id').html(response.data);
+                        $('#expense_category_id').selectpicker('refresh');
                     }
-                })
-            }
+                }
+            })
         }
     });
 
@@ -215,29 +213,27 @@
 
         let value = $(this).val();
 
-        if(id){
-            var url = "{{ route('expenseCategory.update', ':id') }}";
-            url = url.replace(':id', id);
+        var url = "{{ route('expenseCategory.update', ':id') }}";
+        url = url.replace(':id', id);
 
-            var token = "{{ csrf_token() }}";
+        var token = "{{ csrf_token() }}";
 
-            $.easyAjax({
-                url: url,
-                container: '#row-' + id,
-                type: "POST",
-                data: {
-                    'roles': value,
-                    '_token': token,
-                    'role_update': 1,
-                    '_method': 'PUT'
-                },
-                blockUI: true,
-                success: function(response) {
-                    $('#expense_category_id').html(response.data);
-                    $('#expense_category_id').selectpicker('refresh')
-                }
-            })
-        }
+        $.easyAjax({
+            url: url,
+            container: '#row-' + id,
+            type: "POST",
+            data: {
+                'roles': value,
+                '_token': token,
+                'role_update': 1,
+                '_method': 'PUT'
+            },
+            blockUI: true,
+            success: function(response) {
+                $('#expense_category_id').html(response.data);
+                $('#expense_category_id').selectpicker('refresh')
+            }
+        })
     });
 
     $('.cat_roles').change(function() {

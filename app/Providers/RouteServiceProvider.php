@@ -20,8 +20,6 @@ class RouteServiceProvider extends ServiceProvider
      */
     public const HOME = '/account/dashboard';
 
-    public const SUPER_ADMIN_HOME = '/account/super-admin-dashboard';
-
     /**
      * Define your route model bindings, pattern filters, etc.
      *
@@ -38,11 +36,6 @@ class RouteServiceProvider extends ServiceProvider
             $this->mapApiRoutes();
             $this->mapWebRoutes();
 
-            // WORKSUITESAAS
-            if (isWorksuiteSaas()) {
-                $this->mapSuperAdminRoutes();
-                $this->mapSuperAdminPublicRoutes();
-            }
         });
     }
 
@@ -67,7 +60,7 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapWebRoutes()
     {
-        Route::middleware(['web', 'check-company-package', 'auto-logout'])
+        Route::middleware('web')
             ->namespace($this->namespace)
             ->group(base_path('routes/web.php'));
     }
@@ -110,30 +103,9 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapSettingRoutes()
     {
-        Route::middleware(['web', 'check-company-package', 'auto-logout'])
-            ->namespace($this->namespace)
-            ->group(base_path('routes/web-settings.php'));
-    }
-
-    /**
-     * Define the "super admin" routes for the application.
-     *
-     * These routes are typically stateless.
-     *
-     * @return void
-     */
-    // WORKSUITESAAS
-    protected function mapSuperAdminRoutes()
-    {
         Route::middleware('web')
             ->namespace($this->namespace)
-            ->group(base_path('routes/SuperAdmin/web.php'));
-    }
-
-    protected function mapSuperAdminPublicRoutes()
-    {
-        Route::namespace($this->namespace)
-            ->group(base_path('routes/SuperAdmin/web-public.php'));
+            ->group(base_path('routes/web-settings.php'));
     }
 
 }

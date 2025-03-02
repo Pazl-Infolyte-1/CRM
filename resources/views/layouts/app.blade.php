@@ -31,7 +31,7 @@
     <!-- Template CSS -->
     <link type="text/css" rel="stylesheet" media="all" href="{{ asset('css/main.css') }}">
 
-    <title>{{ is_array(__($pageTitle)) ? $pageTitle : __($pageTitle) }}</title>
+    <title>@lang($pageTitle)</title>
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="{{ companyOrGlobalSetting()->favicon_url }}">
     <meta name="theme-color" content="#ffffff">
@@ -52,10 +52,7 @@
                 transition: filter .2s ease-out;
                 margin-right: 4px;
             }
-            .ql-editor {
-                text-align: left;
-                white-space: unset;
-            }
+
         </style>
     @endisset
 
@@ -77,7 +74,6 @@
 
         .ql-editor p {
             line-height: 1.42;
-            margin: revert;
         }
 
         .ql-container .ql-tooltip {
@@ -100,13 +96,6 @@
         .table-bordered .displayName {
             padding: 17px;
         }
-
-        p {
-            word-break: break-word;
-        }
-        .inactive{
-            opacity: 0.7;
-        }
     </style>
 
     {{-- Custom theme styles --}}
@@ -118,13 +107,8 @@
         <link href="{{ asset('css/app-custom.css') }}" rel="stylesheet">
     @endif
 
-    @if (file_exists(public_path() . '/css/custom-css/theme-custom.css'))
-        <link href="{{ asset('css/custom-css/theme-custom.css') }}" rel="stylesheet">
-    @endif
-
     <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('vendor/jquery/modernizr.min.js') }}"></script>
-    <script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 
     {{-- Timepicker --}}
     <script src="{{ asset('vendor/jquery/bootstrap-timepicker.min.js') }}" defer="defer"></script>
@@ -134,6 +118,7 @@
     {{-- Include file for widgets if exist --}}
     @includeif('sections.custom_script')
 
+
     <script>
         const checkMiniSidebar = localStorage.getItem("mini-sidebar");
     </script>
@@ -141,28 +126,24 @@
 </head>
 
 
-<body id="body" class="{{ user()->dark_theme ? 'dark-theme' : '' }} {{ isRtl('rtl') }}">
+<body id="body" class="{{ user()->dark_theme ? 'dark-theme' : '' }} {{ user()->rtl ? 'rtl' : '' }}">
 <script>
     if (checkMiniSidebar == "yes" || checkMiniSidebar == "") {
         $('body').addClass('sidebar-toggled');
     }
 </script>
 {{-- include topbar --}}
-@if(user()->is_superadmin)
-    @includeIf('super-admin.sections.topbar')
-@else
-    @include('sections.topbar')
-@endif
+@include('sections.topbar')
 
 {{-- include sidebar menu --}}
 @include('sections.sidebar')
 
 <!-- BODY WRAPPER START -->
-<div class="clearfix body-wrapper">
+<div class="body-wrapper clearfix">
 
 
     <!-- MAIN CONTAINER START -->
-    <section class="mb-5 main-container bg-additional-grey mb-sm-0" id="fullscreen">
+    <section class="main-container bg-additional-grey mb-5 mb-sm-0" id="fullscreen">
 
         <div class="preloader-container d-flex justify-content-center align-items-center">
             <div class="spinner-border" role="status" aria-hidden="true"></div>
@@ -171,7 +152,7 @@
 
         @yield('filter-section')
 
-        <x-app-title class="d-block d-lg-none" :pageTitle="$pageTitle"></x-app-title>
+        <x-app-title class="d-block d-lg-none" :pageTitle="__($pageTitle)"></x-app-title>
 
         @yield('content')
 
@@ -263,9 +244,9 @@
 
     $('#datatableRange').on('apply.daterangepicker', (event, picker) => {
         cb(picker.startDate, picker.endDate);
-        const startDate = picker.startDate.format('{{ companyOrGlobalSetting()->moment_date_format }}');
-        const endDate = picker.endDate.format('{{ companyOrGlobalSetting()->moment_date_format }}');
-        $('#datatableRange').val(`${startDate} @lang("app.to") ${endDate}`);
+        $('#datatableRange').val(picker.startDate.format('{{ companyOrGlobalSetting()->moment_date_format }}') +
+            ' @lang("app.to") ' + picker.endDate.format(
+                '{{ companyOrGlobalSetting()->moment_date_format }}'));
     });
 
     $('#datatableRange2').on('apply.daterangepicker', (event, picker) => {
@@ -331,14 +312,6 @@
         $.ajaxModal(MODAL_XL, url);
     });
 
-    $('body').on('click', '.piechart-full-screen', function () {
-        const chartData = JSON.stringify($(this).data('chart-data'));
-        const chartId = $(this).data('chart-id');
-        const url = "{{ route('front.public.show_piechart').'?chart_data=' }}" + encodeURIComponent(chartData) + "&chart_id=" + chartId;
-        $(MODAL_XL + ' ' + MODAL_HEADING).html('...');
-        $.ajaxModal(MODAL_XL, url);
-    });
-
     function updateOnesignalPlayerId(userId) {
         $.easyAjax({
             url: '{{ route('profile.update_onesignal_id') }}',
@@ -380,7 +353,7 @@
                         'list': 'bullet'
                     }],
                     ['bold', 'italic', 'underline', 'strike'],
-                    ['image', 'link', 'video'],
+                    ['image', 'code-block', 'link', 'video'],
                     [{
                         'direction': 'rtl'
                     }],
@@ -422,7 +395,7 @@
     }
 
     function quillMention(atValues, ID) {
-        const mentionItemTemplate = '<div class="mention-item"> <img src="{image}" class="mr-3 rounded align-self-start taskEmployeeImg">{name}</div>';
+        const mentionItemTemplate = '<div class="mention-item"> <img src="{image}" class="align-self-start mr-3 taskEmployeeImg rounded">{name}</div>';
 
         const customRenderItem = function (item, searchTerm) {
             const html = mentionItemTemplate.replace('{image}', item.image).replace('{name}', item.value);
@@ -434,8 +407,6 @@
         } else {
             placeholder = '';
         }
-
-        const quillContainer = document.querySelector(ID);
 
         quillArray[ID] = new Quill(ID, {
             placeholder: placeholder,
@@ -454,7 +425,7 @@
                         'list': 'bullet'
                     }],
                     ['bold', 'italic', 'underline', 'strike'],
-                    ['image', 'link', 'video'],
+                    ['image', 'code-block', 'link', 'video'],
                     [{
                         'direction': 'rtl'
                     }],
@@ -489,15 +460,9 @@
                     renderItem: customRenderItem,
 
                 },
-                clipboard: {
-                    matchVisual: false
-                },
-                "emoji-toolbar": true,
-                "emoji-textarea": true,
-                "emoji-shortname": true,
+
             },
-            theme: 'snow',
-            bounds: quillContainer
+            theme: 'snow'
         });
 
         quillArray[ID].getModule('toolbar').addHandler('image', selectLocalImage);
@@ -569,14 +534,6 @@
             }
         });
     }
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type='checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 </script>
 
 <script>
@@ -605,12 +562,12 @@
                         $(MODAL_XL + ' .modal-content').html(response.html);
 
                         if ($('#allTasks-table').length) {
-                            window.LaravelDataTables["allTasks-table"].draw(true);
+                            window.LaravelDataTables["allTasks-table"].draw(false);
                         }
                     }
 
                     if ($('#allTasks-table').length) {
-                        window.LaravelDataTables["allTasks-table"].draw(true);
+                        window.LaravelDataTables["allTasks-table"].draw(false);
                     }
 
                     if (response.reload === 'yes') {
@@ -651,7 +608,7 @@
 
                     $('#timer-clock').html(response.clockHtml);
                     if ($('#allTasks-table').length) {
-                        window.LaravelDataTables["allTasks-table"].draw(true);
+                        window.LaravelDataTables["allTasks-table"].draw(false);
                     }
 
                     if (response.reload === 'yes') {
@@ -662,13 +619,47 @@
         })
     });
 
-    $('body').on('click', '.stop-active-timer', function() {
-            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
-            var id = $(this).data('time-id');
-            url = url.replace(':id', id);
-            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-            $.ajaxModal(MODAL_LG, url);
+    $('body').on('click', '.stop-active-timer', function () {
+        const id = $(this).data('time-id');
+        let url = "{{ route('timelogs.stop_timer', ':id') }}";
+        url = url.replace(':id', id);
+        const token = '{{ csrf_token() }}';
+
+        let currentUrl = $(this).data('url');
+
+        $.easyAjax({
+            url: url,
+            type: "POST",
+            data: {
+                timeId: id,
+                currentUrl: currentUrl,
+                _token: token
+            },
+            success: function (response) {
+                if ($('#myActiveTimer').length > 0) {
+                    $(MODAL_XL + ' .modal-content').html(response.html);
+                }
+
+                if (response.activeTimerCount > 0) {
+                    $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
+                } else {
+                    $('#show-active-timer .active-timer-count').addClass('d-none');
+                }
+
+                $('#timer-clock').html('');
+                if ($('#allTasks-table').length) {
+                    window.LaravelDataTables["allTasks-table"].draw(false);
+                }
+
+                if (response.reload === 'yes') {
+                    window.location.reload();
+                }
+
+            }
+        })
+
     });
+
 </script>
 
 @if (in_array('messages', user_modules()))
@@ -714,13 +705,11 @@
             });
         }
 
-    @if(!user()->is_superadmin)
-        // if (message_setting.send_sound_notification == 1 && !(pusher_setting.status === 1 && pusher_setting.messages === 1)) {
-        //     window.setInterval(function () {
-        //         checkNewMessage()
-        //     }, 10000); // Check messages every 10 seconds
-        // }
-    @endif
+        if (message_setting.send_sound_notification == 1 && !(pusher_setting.status === 1 && pusher_setting.messages === 1)) {
+            window.setInterval(function () {
+                checkNewMessage()
+            }, 10000); // Check messages every 10 seconds
+        }
 
     </script>
 @endif

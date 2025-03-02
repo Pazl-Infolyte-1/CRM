@@ -10,8 +10,8 @@ use App\Models\Invoice;
 use Illuminate\Http\Request;
 use App\Traits\MakePaymentTrait;
 use App\Traits\PaymentGatewayTrait;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Models\GlobalSetting;
 use App\Traits\MakeOrderInvoiceTrait;
 
 class PayfastController extends Controller
@@ -89,7 +89,7 @@ class PayfastController extends Controller
                 $this->makePayment('Payfast', $invoice->amountDue(), $invoice, 'payfast_' . $invoice->id, ($status == 'success' ? 'complete' : 'failed'));
             }
 
-            return redirect(url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash));
+            return redirect(route('front.invoice', $invoice->hash));
 
         case 'order':
             $order = Order::findOrFail($id);

@@ -9,6 +9,7 @@ use App\Models\QuickBooksSetting;
 use Illuminate\Http\Request;
 use Illuminate\Log\Logger;
 use QuickBooksOnline\API\DataService\DataService;
+use QuickBooksOnline\API\Core\Http\Serialization\XmlObjectSerializer;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
 use QuickBooksOnline\API\Facades\Account;
 use QuickBooksOnline\API\Facades\Customer;

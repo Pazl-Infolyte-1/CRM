@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\TaskLabelList;
 use Yajra\DataTables\Html\Column;
 

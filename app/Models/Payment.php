@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Models\OfflinePaymentMethod;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -21,9 +21,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float $amount
  * @property string|null $gateway
  * @property string|null $transaction_id
- * @property string $exchange_rate
- * @property float $price
- * @property float $default_currency_price
  * @property int|null $currency_id
  * @property string|null $plan_id
  * @property string|null $customer_id
@@ -106,7 +103,7 @@ class Payment extends BaseModel
         'payment_gateway_response' => 'object'
     ];
 
-    protected $appends = ['total_amount', 'paid_date', 'file_url', 'default_currency_price'];
+    protected $appends = ['total_amount', 'paid_date', 'file_url'];
     protected $with = ['currency', 'order'];
 
     public function client()
@@ -186,32 +183,6 @@ class Payment extends BaseModel
     public function offlineMethods(): BelongsTo
     {
         return $this->belongsTo(OfflinePaymentMethod::class, 'offline_method_id');
-    }
-
-    public function defaultCurrencyPrice() : Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                $currency = (company() == null) ? $this->company->currency_id : company()->currency_id;
-                if ($this->currency_id == $currency) {
-                    return $this->amount;
-                }
-
-                if($this->exchange_rate){
-                    return ($this->amount * ((float)$this->exchange_rate));
-                }
-
-                // Retrieve the currency associated with the payment
-                $currency = Currency::find($this->currency_id);
-
-                if($currency && $currency->exchange_rate){
-                    return ($this->amount * ((float)$currency->exchange_rate));
-                }
-
-                // If exchange rate is not available or invalid, return the original amount
-                return $this->amount;
-            },
-        );
     }
 
 }

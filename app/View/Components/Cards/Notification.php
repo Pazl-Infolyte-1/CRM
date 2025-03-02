@@ -2,7 +2,6 @@
 
 namespace App\View\Components\Cards;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Notification extends Component
@@ -35,7 +34,7 @@ class Notification extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|Closure|string
+     * @return \Illuminate\Contracts\View\View|\Closure|string
      */
     public function render()
     {

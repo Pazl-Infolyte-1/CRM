@@ -3,14 +3,11 @@
     $addLeadPermission = user()->permission('add_lead');
 @endphp
 
-<!-- for sortable content -->
-<link rel="stylesheet" href="{{ asset('vendor/css/jquery-ui.css') }}">
-
     <!-- CREATE INVOICE START -->
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal ">@lang('app.proposalDetails')
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('modules.lead.proposal') @lang('app.details')
         </h4>
     </div>
     <!-- HEADING END -->
@@ -21,44 +18,36 @@
         <div class="row px-lg-4 px-md-4 px-3 py-3">
             <!-- CLIENT START -->
             <input type="hidden" name="template_id" value="{{ $proposalTemplate->id ?? '' }}">
-            @if (isset($deal) && !is_null($deal))
-                <div class="col-md-6 col-lg-3">
-                    <x-forms.label fieldId="client_id" :fieldLabel="__('modules.deal.title')" fieldRequired="true"
-                                   class="mt-3"/>
+
+            <div class="col-md-6 col-lg-3">
+                <x-forms.label fieldId="client_id" :fieldLabel="__('app.lead')" fieldRequired="true" class="mt-3" />
+                @if (isset($lead) && !is_null($lead))
                     <x-forms.input-group>
                         <input type="text" readonly
                                class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
-                               placeholder="{{ $deal->name }}"
-                               value="{{ $deal->name }}">
+                               placeholder="{{ $lead->client_name }}"
+                               value="{{ $lead->client_name }}">
                     </x-forms.input-group>
-                                        <input type="hidden" name="deal_id" value="{{ $deal->id }}">
-                </div>
-                <!-- CLIENT END -->
-            @else
-                <div class="col-lg-4 ">
-                    <x-forms.select fieldId="lead_contact" :fieldLabel="__('modules.leadContact.leadContacts')" search="true"
-                                    fieldName="lead_contact" fieldRequired="true">
-                        <option value="">--</option>
-                        @foreach ($leadContacts as $leadContact)
-                            <option value="{{ $leadContact->id }}">
-                                {{ $leadContact->client_name_salutation }}</option>
-                        @endforeach
-                    </x-forms.select>
-                </div>
-                <div class="col-lg-4 ">
-                    <x-forms.label fieldId="client_id" :fieldLabel="__('modules.deal.title')" fieldRequired="true"
-                                   class="mt-3"/>
-                    <select name="deal_id" id="deal_id" class="form-control select-picker" data-live-search="true"
-                            data-size="8">
-                        <option value="">--</option>
-                        @foreach ($deals as $clientOpt)
-                            <option @if ($proposalTemplate && $clientOpt->id == $proposalTemplate->deal_id) selected
-                                    @endif value="{{ $clientOpt->id }}">
-                                {{ $clientOpt->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            @endif
+                    <input type="hidden" name="lead_id" value="{{ $lead->id }}">
+                @else
+                    <x-forms.input-group>
+                        <select name="lead_id" id="lead_id" class="form-control select-picker" data-live-search="true" data-size="8">
+                            <option value="">--</option>
+                            @foreach ($leads as $clientOpt)
+                                <option @if ($proposalTemplate && $clientOpt->id == $proposalTemplate->lead_id) selected @endif value="{{ $clientOpt->id }}">
+                                    {{ $clientOpt->client_name }}</option>
+                            @endforeach
+                        </select>
+                        @if ($addLeadPermission == 'all' || $addLeadPermission == 'added')
+                            <x-slot name="append">
+                                <a href="{{ route('leads.create') }}" id="add-client" data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newLead') }}" class="btn btn-outline-secondary border-grey openRightModal" data-redirect-url="{{ url()->full() }}">@lang('app.add')</a>
+                            </x-slot>
+                        @endif
+                    </x-forms.input-group>
+                @endif
+            </div>
+            <!-- CLIENT END -->
+
             <!-- INVOICE DATE START -->
             <div class="col-md-6 col-lg-3">
                 <div class="form-group mb-lg-0 mb-md-0 mb-4 mt-3">
@@ -103,15 +92,14 @@
                             <select class="form-control select-picker" data-live-search="true" data-size="8"
                                     name="calculate_tax" id="calculate_tax">
                                 <option value="after_discount">@lang('modules.invoices.afterDiscount')</option>
-                                <option value="before_discount"
-                                        @if ($proposalTemplate->calculate_tax == 'before_discount') selected @endif>
+                                <option value="before_discount" @if ($proposalTemplate->calculate_tax == 'before_discount') selected @endif>
                                     @lang('modules.invoices.beforeDiscount')</option>
                             </select>
                         @else
                             <select class="form-control select-picker" data-live-search="true" data-size="8"
                                     name="calculate_tax" id="calculate_tax">
                                 <option value="after_discount">@lang('modules.invoices.afterDiscount')</option>
-                                <option value="before_discount">
+                                <option  value="before_discount">
                                     @lang('modules.invoices.beforeDiscount')</option>
                             </select>
                         @endif
@@ -131,7 +119,7 @@
             <!-- FREQUENCY START -->
             <div class="col-md-6">
                 <x-forms.checkbox :fieldLabel="__('modules.proposal.requireSignature')" fieldName="require_signature"
-                                  fieldId="require_signature" fieldValue="true" checked="true"/>
+                                  fieldId="require_signature" fieldValue="true" checked="true" />
             </div>
             <!-- FREQUENCY END -->
 
@@ -146,8 +134,7 @@
                     <x-forms.input-group>
                         <select class="form-control select-picker" name="category_id"
                                 id="product_category_id" data-live-search="true">
-                            <option
-                                value="">{{ __('app.select') . ' ' . __('app.product') . ' ' . __('app.category')  }}</option>
+                            <option value="">{{ __('app.select') . ' ' . __('app.product') . ' ' . __('app.category')  }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">
                                     {{ $category->category_name }}</option>
@@ -160,8 +147,7 @@
                 <div class="col-md-3">
                     <div class="form-group c-inv-select mb-4">
                         <x-forms.input-group>
-                            <select class="form-control select-picker" data-live-search="true" data-size="8"
-                                    id="add-products" title="{{ __('app.menu.selectProduct') }}">
+                            <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
                                 @foreach ($products as $item)
                                     <option data-content="{{ $item->name }}" value="{{ $item->id }}">
                                         {{ $item->name }}</option>
@@ -169,17 +155,14 @@
                             </select>
                             <x-slot name="preappend">
                                 <a href="javascript:;"
-                                   class="btn btn-outline-secondary border-grey toggle-product-category"
-                                   data-toggle="tooltip"
-                                   data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i
-                                        class="fa fa-filter"></i></a>
+                                class="btn btn-outline-secondary border-grey toggle-product-category"
+                                data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
                             </x-slot>
                             @if ($addProductPermission == 'all' || $addProductPermission == 'added')
                                 <x-slot name="append">
                                     <a href="{{ route('products.create') }}" data-redirect-url="no"
-                                       class="btn btn-outline-secondary border-grey openRightModal"
-                                       data-toggle="tooltip"
-                                       data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                                    class="btn btn-outline-secondary border-grey openRightModal"
+                                    data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
                                 </x-slot>
                             @endif
                         </x-forms.input-group>
@@ -194,11 +177,6 @@
                 @foreach ($estimate->items as $key => $item)
                     <!-- DESKTOP DESCRIPTION TABLE START -->
                     <div class="d-flex px-4 py-3 c-inv-desc item-row">
-                        <div class="d-flex align-items-center">
-                            <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-                            <input type="hidden" name="sort_order[]"
-                                    value="1">
-                        </div>
 
                         <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                             <table width="100%">
@@ -222,8 +200,7 @@
                                 </tr>
                                 <tr>
                                     <td class="border-bottom-0 btrr-mbl btlr">
-                                        <input type="text" class="f-14 border-0 w-100 item_name form-control"
-                                               name="item_name[]"
+                                        <input type="text" class="f-14 border-0 w-100 item_name form-control" name="item_name[]"
                                                placeholder="@lang('modules.expenses.itemName')"
                                                value="{{ $item->item_name }}">
                                     </td>
@@ -240,12 +217,10 @@
                                         </td>
                                     @endif
                                     <td class="border-bottom-0">
-                                        <input type="number" min="1"
-                                               class="f-14 border-0 w-100 text-right quantity form-control mt-3"
+                                        <input type="number" min="1" class="f-14 border-0 w-100 text-right quantity form-control mt-3"
                                                value="{{ $item->quantity }}" name="quantity[]">
                                         @if (!is_null($item->product_id) && $item->product_id != 0)
-                                            <span
-                                                class="text-dark-grey float-right border-0 f-12">{{ $item->unit->unit_type }}</span>
+                                            <span class="text-dark-grey float-right border-0 f-12">{{ $item->unit->unit_type }}</span>
                                             <input type="hidden" name="product_id[]" value="{{ $item->product_id }}">
                                             <input type="hidden" name="unit_id[]" value="{{ $item->unit_id }}">
                                         @else
@@ -261,8 +236,7 @@
                                     </td>
                                     <td class="border-bottom-0">
                                         <input type="number" min="1"
-                                               class="f-14 border-0 w-100 text-right cost_per_item form-control"
-                                               placeholder="0.00"
+                                               class="f-14 border-0 w-100 text-right cost_per_item form-control" placeholder="0.00"
                                                value="{{ $item->unit_price }}" name="cost_per_item[]">
                                     </td>
                                     <td class="border-bottom-0">
@@ -271,13 +245,10 @@
                                                     multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}"
-                                                            data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
-                                                            @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected
-                                                            @endif value="{{ $tax->id }}">
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                            @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif value="{{ $tax->id }}">
                                                         {{ $tax->tax_name }}:
-                                                        {{ $tax->rate_percent }}%
-                                                    </option>
+                                                        {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -297,9 +268,7 @@
                                                       placeholder="@lang('placeholders.invoices.description')">{{ $item->item_summary }}</textarea>
                                     </td>
                                     <td class="border-left-0">
-                                        <input type="file" class="dropify" name="invoice_item_image[]"
-                                               data-allowed-file-extensions="png jpg jpeg bmp"
-                                               data-messages-default="test" data-height="70"/>
+                                        <input type="file" class="dropify" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" />
                                         <input type="hidden" name="invoice_item_image_url[]">
                                     </td>
                                 </tr>
@@ -317,12 +286,6 @@
                 @foreach ($proposalTemplateItem as $key => $item)
                     <!-- DESKTOP DESCRIPTION TABLE START -->
                     <div class="d-flex px-4 py-3 c-inv-desc item-row">
-                        <div class="d-flex align-items-center">
-                            <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-                            <input type="hidden" name="sort_order[]"
-                                    value="1">
-                        </div>
-
                         <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                             <table width="100%">
                                 <tbody>
@@ -344,25 +307,20 @@
                                 </tr>
                                 <tr>
                                     <td class="border-bottom-0 btrr-mbl btlr">
-                                        <input type="text" class="f-14 border-0 w-100 item_name form-control"
-                                               name="item_name[]"
-                                               placeholder="@lang('modules.expenses.itemName')"
-                                               value="{{ $item->item_name }}">
+                                        <input type="text" class="f-14 border-0 w-100 item_name form-control" name="item_name[]"
+                                               placeholder="@lang('modules.expenses.itemName')" value="{{ $item->item_name }}">
                                     </td>
                                     @if ($invoiceSetting->hsn_sac_code_show)
                                         <td class="border-bottom-0">
-                                            <input type="text"
-                                                   class="f-14 border-0 w-100 text-right hsn_sac_code form-control"
+                                            <input type="text" class="f-14 border-0 w-100 text-right hsn_sac_code form-control"
                                                    value="{{  $item->hsn_sac_code }}" name="hsn_sac_code[]">
                                         </td>
                                     @endif
                                     <td class="border-bottom-0">
-                                        <input type="number" min="1"
-                                               class="f-14 border-0 w-100 text-right quantity form-control mt-3"
+                                        <input type="number" min="1" class="f-14 border-0 w-100 text-right quantity form-control mt-3"
                                                name="quantity[]" value="{{ $item->quantity }}">
                                         @if (!is_null($item->product_id) && $item->product_id != 0)
-                                            <span
-                                                class="text-dark-grey float-right border-0 f-12">{{ $item->unit->unit_type }}</span>
+                                            <span class="text-dark-grey float-right border-0 f-12">{{ $item->unit->unit_type }}</span>
                                             <input type="hidden" name="product_id[]" value="{{ $item->product_id }}">
                                             <input type="hidden" name="unit_id[]" value="{{ $item->unit_id }}">
                                         @else
@@ -378,8 +336,7 @@
                                     </td>
                                     <td class="border-bottom-0">
                                         <input type="number" min="1"
-                                               class="f-14 border-0 w-100 text-right cost_per_item form-control"
-                                               placeholder="0.00"
+                                               class="f-14 border-0 w-100 text-right cost_per_item form-control" placeholder="0.00"
                                                name="cost_per_item[]" value="{{ $item->unit_price }}">
                                     </td>
                                     <td class="border-bottom-0">
@@ -387,27 +344,22 @@
                                             <select id="multiselect" name="taxes[{{$key}}][]" multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}"
-                                                            data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
-                                                            @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected
-                                                            @endif value="{{ $tax->id }}">{{ $tax->tax_name }}
-                                                        {{ $tax->rate_percent }}%
-                                                    </option>
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                            @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif value="{{ $tax->id }}">{{ $tax->tax_name }}
+                                                        {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
                                         </div>
                                     </td>
                                     <td rowspan="2" align="right" valign="top" class="bg-amt-grey btrr-bbrr">
-                                        <span
-                                            class="amount-html">{{ number_format((float) $item->amount, 2, '.', '')}}</span>
+                                        <span class="amount-html">{{ number_format((float) $item->amount, 2, '.', '')}}</span>
                                         <input type="hidden" class="amount" name="amount[]" value="{{ $item->amount }}">
                                     </td>
                                 </tr>
                                 <tr class="d-none d-md-table-row d-lg-table-row">
                                     <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '4' : '3' }}"
                                         class="dash-border-top bblr">
-                                            <textarea class="f-14 border-0 w-100 desktop-description form-control"
-                                                      name="item_summary[]"
+                                            <textarea class="f-14 border-0 w-100 desktop-description form-control" name="item_summary[]"
                                                       placeholder="@lang('placeholders.invoices.description')">{{ $item->item_summary }}</textarea>
                                     </td>
                                     <td class="border-left-0">
@@ -427,8 +379,7 @@
                                                    data-show-remove="false"
                                             @endif
                                         />
-                                        <input type="hidden" name="invoice_item_image_url[]"
-                                               value="{{ $item->proposalTemplateItemImage ? $item->proposalTemplateItemImage->file : '' }}">
+                                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->proposalTemplateItemImage ? $item->proposalTemplateItemImage->file : '' }}">
                                     </td>
                                 </tr>
                                 </tbody>
@@ -444,11 +395,6 @@
             @else
                 <!-- DESKTOP DESCRIPTION TABLE START -->
                 <div class="d-flex px-4 py-3 c-inv-desc item-row">
-                    <div class="d-flex align-items-center">
-                        <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-                        <input type="hidden" name="sort_order[]"
-                                value="1">
-                    </div>
 
                     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
                         <table width="100%">
@@ -471,25 +417,21 @@
                             </tr>
                             <tr>
                                 <td class="border-bottom-0 btrr-mbl btlr">
-                                    <input type="text" class="f-14 border-0 w-100 item_name form-control"
-                                           name="item_name[]"
+                                    <input type="text" class="f-14 border-0 w-100 item_name form-control" name="item_name[]"
                                            placeholder="@lang('modules.expenses.itemName')">
                                 </td>
                                 <td class="border-bottom-0 d-block d-lg-none d-md-none">
-                                        <textarea class="f-14 border-0 w-100 mobile-description form-control"
-                                                  name="item_summary[]"
+                                        <textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]"
                                                   placeholder="@lang('placeholders.invoices.description')"></textarea>
                                 </td>
                                 @if ($invoiceSetting->hsn_sac_code_show)
                                     <td class="border-bottom-0">
-                                        <input type="text"
-                                               class="f-14 border-0 w-100 text-right hsn_sac_code form-control"
+                                        <input type="text" class="f-14 border-0 w-100 text-right hsn_sac_code form-control"
                                                value="" name="hsn_sac_code[]">
                                     </td>
                                 @endif
                                 <td class="border-bottom-0">
-                                    <input type="number" min="1"
-                                           class="f-14 border-0 w-100 text-right quantity form-control mt-3"
+                                    <input type="number" min="1" class="f-14 border-0 w-100 text-right quantity form-control mt-3"
                                            value="1" name="quantity[]">
                                     <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                         @foreach ($units as $unit)
@@ -501,8 +443,7 @@
                                 </td>
                                 <td class="border-bottom-0">
                                     <input type="number" min="1"
-                                           class="f-14 border-0 w-100 text-right cost_per_item form-control"
-                                           placeholder="0.00"
+                                           class="f-14 border-0 w-100 text-right cost_per_item form-control" placeholder="0.00"
                                            value="0" name="cost_per_item[]">
                                 </td>
                                 <td class="border-bottom-0">
@@ -510,11 +451,9 @@
                                         <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                             @foreach ($taxes as $tax)
-                                                <option data-rate="{{ $tax->rate_percent }}"
-                                                        data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
                                                         value="{{ $tax->id }}">{{ $tax->tax_name }}:
-                                                    {{ $tax->rate_percent }}%
-                                                </option>
+                                                    {{ $tax->rate_percent }}%</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -527,14 +466,11 @@
                             <tr class="d-none d-md-table-row d-lg-table-row">
                                 <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '4' : '3' }}"
                                     class="dash-border-top bblr">
-                                        <textarea class="f-14 border-0 w-100 desktop-description form-control"
-                                                  name="item_summary[]"
+                                        <textarea class="f-14 border-0 w-100 desktop-description form-control" name="item_summary[]"
                                                   placeholder="@lang('placeholders.invoices.description')"></textarea>
                                 </td>
                                 <td class="border-left-0">
-                                    <input type="file" class="dropify" name="invoice_item_image[]"
-                                           data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test"
-                                           data-height="70"/>
+                                    <input type="file" class="dropify" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" />
                                     <input type="hidden" name="invoice_item_image_url[]">
                                 </td>
                             </tr>
@@ -563,7 +499,7 @@
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14 ">
+            <table width="100%" class="text-right f-14 text-capitalize">
                 <tbody>
                 <tr>
                     <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -594,13 +530,9 @@
                                                     class="select-others select-tax height-35 rounded border-0">
                                                     <select class="form-control select-picker"
                                                             id="discount_type" name="discount_type">
-                                                        <option
-                                                            @if (isset($proposalTemplate) && $proposalTemplate->discount_type == 'percent') selected
-                                                            @endif value="percent">%
+                                                        <option @if (isset($proposalTemplate) && $proposalTemplate->discount_type == 'percent') selected @endif value="percent">%
                                                         </option>
-                                                        <option
-                                                            @if (isset($proposalTemplate) && $proposalTemplate->discount_type == 'fixed') selected
-                                                            @endif value="fixed">
+                                                        <option @if (isset($proposalTemplate) && $proposalTemplate->discount_type == 'fixed') selected @endif value="fixed">
                                                             @lang('modules.invoices.amount')</option>
                                                     </select>
                                                 </div>
@@ -642,7 +574,7 @@
         <!-- NOTE AND TERMS AND CONDITIONS START -->
         <div class="d-flex flex-wrap px-lg-4 px-md-4 px-3 py-3">
             <div class="col-md-6 col-sm-12 c-inv-note-terms p-0 mb-lg-0 mb-md-0 mb-3">
-                <label class="f-14 text-dark-grey mb-12  w-100"
+                <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
                        for="usr">@lang('modules.invoices.note')</label>
                 <textarea class="form-control" name="note" id="lead_note" rows="4"
                           placeholder="@lang('placeholders.invoices.note')"></textarea>
@@ -683,8 +615,7 @@
                         </li>
                         <li>
                             <a class="dropdown-item f-14 text-dark save-form" href="javascript:void(0);"
-                               data-type="mark_as_send" data-toggle="tooltip"
-                               data-original-title="@lang('messages.markSentInfo')">
+                               data-type="mark_as_send" data-toggle="tooltip" data-original-title="@lang('messages.markSentInfo')">
                                 <i class="fa fa-check-double f-w-500  mr-2 f-12"></i> @lang('app.saveMark')
                             </a>
                         </li>
@@ -704,32 +635,18 @@
     <!-- FORM END -->
 </div>
 <!-- CREATE INVOICE END -->
-<!-- for sortable content -->
-<script src="{{ asset('vendor/jquery/jquery-ui.min.js') }}"></script>
 
 <script>
-    $(function () {
-        $("#sortable").sortable();
-    });
-    $(document).ready(function () {
+    $(document).ready(function() {
 
         $('.toggle-product-category').click(function() {
             $('.product-category-filter').toggleClass('d-none');
-            var url = "{{route('invoices.product_category', ':id')}}";
-            url = url.replace(':id', null);
-            changeProductCategory(url);
-            $('#product_category_id').val('').trigger('change');
-            $('#product_category_id').selectpicker('refresh');
         });
 
         $('#product_category_id').on('change', function(){
             var categoryId = $(this).val();
-            var url = "{{route('invoices.product_category', ':id')}}";
-            url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);
-            changeProductCategory(url);
-        });
-
-        function changeProductCategory(url) {
+            var url = "{{route('invoices.product_category', ':id')}}",
+                url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);;
             $.easyAjax({
                 url : url,
                 type : "GET",
@@ -747,41 +664,12 @@
                             options.push(selectData);
                         });
                         $('#add-products').html(
-                            '<option value="" class="form-control" >{{  __('app.menu.selectProduct') }}</option>' +
+                            '<option value="" class="form-control" >{{ __('app.select') . ' ' . __('app.product') }}</option>' +
                             options);
                         $('#add-products').selectpicker('refresh');
                     }
                 }
             });
-        }
-
-        $('#lead_contact').change(function (e) {
-
-            let contactId = $(this).val();
-
-            var url = "{{ route('deals.get-deals', ':id') }}";
-            url = url.replace(':id', contactId);
-
-            $.easyAjax({
-                url: url,
-                type: "GET",
-                success: function (response) {
-                    if (response.status == 'success') {
-                        var options = [];
-                        var rData = [];
-                        rData = response.data;
-                        $.each(rData, function (index, value) {
-                            var selectData;
-                            selectData = '<option value="' + value.id + '">' + value.name + '</option>';
-                            options.push(selectData);
-                        });
-
-                        $('#deal_id').html('<option value="">--</option>' + options);
-                        $('#deal_id').selectpicker('refresh');
-                    }
-                }
-            })
-
         });
 
         const hsn_status = {{ $invoiceSetting->hsn_sac_code_show }};
@@ -797,7 +685,7 @@
             $("#add-products").val('').selectpicker("refresh");
         };
 
-        $('#add-products').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+        $('#add-products').on('changed.bs.select', function(e, clickedIndex, isSelected, previousValue) {
             e.stopImmediatePropagation()
             var id = $(this).val();
             if (previousValue != id && id != '') {
@@ -806,8 +694,8 @@
             }
         });
 
-        function ucWord(str) {
-            str = str.toLowerCase().replace(/\b[a-z]/g, function (letter) {
+        function ucWord(str){
+            str = str.toLowerCase().replace(/\b[a-z]/g, function(letter) {
                 return letter.toUpperCase();
             });
             return str;
@@ -824,8 +712,8 @@
                     currencyId: currencyId
                 },
                 blockUI: true,
-                success: function (response) {
-                    if ($('input[name="item_name[]"]').val() == '') {
+                success: function(response) {
+                    if($('input[name="item_name[]"]').val() == ''){
                         $("#sortable .item-row").remove();
                     }
                     $(response.view).hide().appendTo("#sortable").fadeIn(500);
@@ -846,15 +734,10 @@
             });
         }
 
-        $(document).on('click', '#add-item', function () {
+        $(document).on('click', '#add-item', function() {
 
             var i = $(document).find('.item_name').length;
             var item = ' <div class="d-flex px-4 py-3 c-inv-desc item-row">' +
-                `<div class="d-flex align-items-center">
-                    <span class="ui-icon ui-icon-arrowthick-2-n-s mr-2"></span>
-                    <input type="hidden" name="sort_order[]"
-                            value="${i+1}">
-                </div>` +
                 '<div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">' +
                 '<table width="100%">' +
                 '<tbody>' +
@@ -894,7 +777,7 @@
                 value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                     @endforeach
                 </select>
-                <input type="hidden" name="product_id[]" value="">` +
+                <input type="hidden" name="product_id[]" value="">`+
                 '</td>' +
                 '<td class="border-bottom-0">' +
                 '<input type="number" min="1" class="f-14 border-0 w-100 text-right cost_per_item" placeholder="0.00" value="0" name="cost_per_item[]">' +
@@ -904,8 +787,8 @@
                 '<select id="multiselect' + i + '" name="taxes[' + i +
                 '][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
                 @foreach ($taxes as $tax)
-                + '<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
-                + '{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
+                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
+                +'{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
                 @endforeach
                 +
                 '</select>' +
@@ -921,7 +804,7 @@
                 '<textarea class="f-14 border-0 w-100 desktop-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
                 '</td>' +
                 '<td class="border-left-0">' +
-                '<input type="file" class="dropify" id="dropify' + i + '" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
+                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
                 '</td>' +
                 '</tr>' +
                 '</tbody>' +
@@ -937,10 +820,10 @@
             });
         });
 
-        $('#saveInvoiceForm').on('click', '.remove-item', function () {
-            $(this).closest('.item-row').fadeOut(300, function () {
+        $('#saveInvoiceForm').on('click', '.remove-item', function() {
+            $(this).closest('.item-row').fadeOut(300, function() {
                 $(this).remove();
-                $('select.customSequence').each(function (index) {
+                $('select.customSequence').each(function(index) {
                     $(this).attr('name', 'taxes[' + index + '][]');
                     $(this).attr('id', 'multiselect' + index + '');
                 });
@@ -948,7 +831,7 @@
             });
         });
 
-        $('.save-form').click(function () {
+        $('.save-form').click(function() {
             let note = document.getElementById('description').children[0].innerHTML;
             document.getElementById('description-text').value = note;
 
@@ -994,10 +877,10 @@
             })
         });
 
-        $('#saveInvoiceForm').on('click', '.remove-item', function () {
-            $(this).closest('.item-row').fadeOut(300, function () {
+        $('#saveInvoiceForm').on('click', '.remove-item', function() {
+            $(this).closest('.item-row').fadeOut(300, function() {
                 $(this).remove();
-                $('select.customSequence').each(function (index) {
+                $('select.customSequence').each(function(index) {
                     $(this).attr('name', 'taxes[' + index + '][]');
                     $(this).attr('id', 'multiselect' + index + '');
                 });
@@ -1005,7 +888,7 @@
             });
         });
 
-        $('#saveInvoiceForm').on('keyup', '.quantity,.cost_per_item,.item_name, .discount_value', function () {
+        $('#saveInvoiceForm').on('keyup', '.quantity,.cost_per_item,.item_name, .discount_value', function() {
             var quantity = $(this).closest('.item-row').find('.quantity').val();
             var perItemCost = $(this).closest('.item-row').find('.cost_per_item').val();
             var amount = (quantity * perItemCost);
@@ -1016,7 +899,7 @@
             calculateTotal();
         });
 
-        $('#saveInvoiceForm').on('change', '.type, #discount_type, #calculate_tax', function () {
+        $('#saveInvoiceForm').on('change', '.type, #discount_type, #calculate_tax', function() {
             var quantity = $(this).closest('.item-row').find('.quantity').val();
             var perItemCost = $(this).closest('.item-row').find('.cost_per_item').val();
             var amount = (quantity * perItemCost);
@@ -1027,7 +910,7 @@
             calculateTotal();
         });
 
-        $('#saveInvoiceForm').on('input', '.quantity', function () {
+        $('#saveInvoiceForm').on('input', '.quantity', function() {
             var quantity = $(this).closest('.item-row').find('.quantity').val();
             var perItemCost = $(this).closest('.item-row').find('.cost_per_item').val();
             var amount = (quantity * perItemCost);

@@ -5,18 +5,13 @@ namespace App\Console;
 use App\Console\Commands\AddMissingRolePermission;
 use App\Console\Commands\AutoCreateRecurringExpenses;
 use App\Console\Commands\AutoCreateRecurringInvoices;
-use App\Console\Commands\CarryForwardLeaves;
 use App\Console\Commands\AutoCreateRecurringTasks;
 use App\Console\Commands\AutoStopTimer;
 use App\Console\Commands\BirthdayReminderCommand;
-use App\Console\Commands\ClearLogs;
 use App\Console\Commands\ClearNullSessions;
-use App\Console\Commands\CreateEmployeeLeaveQuotaHistory;
 use App\Console\Commands\CreateTranslations;
-use App\Console\Commands\DeleteSpamCompanies;
 use App\Console\Commands\FetchTicketEmails;
 use App\Console\Commands\HideCronJobMessage;
-use App\Console\Commands\LeavesQuotaRenew;
 use App\Console\Commands\RemoveSeenNotification;
 use App\Console\Commands\SendAttendanceReminder;
 use App\Console\Commands\SendAutoTaskReminder;
@@ -29,21 +24,11 @@ use App\Console\Commands\SendInvoiceReminder;
 use App\Console\Commands\SendMonthlyAttendanceReport;
 use App\Console\Commands\SyncUserPermissions;
 use App\Console\Commands\SendTimeTracker;
-use App\Console\Commands\InActiveEmployee;
-use App\Console\Commands\AssignShiftRotation;
-use App\Console\Commands\AssignEmployeeShiftRotation;
-use App\Console\Commands\RecalculateLeavesQuotas;
-use App\Console\Commands\AutoClockOut;
-use DateTimeZone;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-use App\Console\Commands\SuperAdmin\FreeLicenceRenew;
-use App\Console\Commands\SuperAdmin\TrialExpire;
 
 class Kernel extends ConsoleKernel
 {
-
-
 
     /**
      * The Artisan commands provided by your application.
@@ -51,7 +36,6 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        AutoClockOut::class,
         UpdateExchangeRates::class,
         AutoStopTimer::class,
         SendEventReminder::class,
@@ -60,7 +44,6 @@ class Kernel extends ConsoleKernel
         SendAutoTaskReminder::class,
         CreateTranslations::class,
         AutoCreateRecurringInvoices::class,
-        CarryForwardLeaves::class,
         AutoCreateRecurringExpenses::class,
         ClearNullSessions::class,
         SendInvoiceReminder::class,
@@ -74,54 +57,27 @@ class Kernel extends ConsoleKernel
         BirthdayReminderCommand::class,
         SendTimeTracker::class,
         SendMonthlyAttendanceReport::class,
-        SendDailyTimelogReport::class,
-        LeavesQuotaRenew::class,
-        ClearLogs::class,
-        InActiveEmployee::class,
-        ClearLogs::class,
-        CreateEmployeeLeaveQuotaHistory::class,
-
-        // SAAS
-        FreeLicenceRenew::class,
-        TrialExpire::class,
-        DeleteSpamCompanies::class,
-        AssignShiftRotation::class,
-        AssignEmployeeShiftRotation::class,
-        RecalculateLeavesQuotas::class,
+        SendDailyTimelogReport::class
     ];
-
-    /**
-     * Get the timezone that should be used by default for scheduled events.
-     */
-    protected function scheduleTimezone(): DateTimeZone|string|null
-    {
-        // Get the timezone from the configuration
-        return config('app.cron_timezone');
-
-    }
-
-    // Cache for schedule commands to be array. Such that it do not conflict with application cache
-    protected function scheduleCache()
-    {
-        return 'array';
-    }
 
     /**
      * Define the application's command schedule.
      *
-     * @param Schedule $schedule
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule
      * @return void
      */
     protected function schedule(Schedule $schedule)
     {
+        // Get the timezone from the configuration
+        $timezone = config('app.cron_timezone');
 
-        $schedule->command('recurring-task-create')->dailyAt('00:30');
-        $schedule->command('auto-stop-timer')->everyThirtyMinutes();
-        $schedule->command('birthday-notification')->dailyAt('09:00');
+
+        $schedule->command('recurring-task-create')->dailyAt('23:59')->timezone($timezone);
+        $schedule->command('auto-stop-timer')->dailyAt('23:30')->timezone($timezone);
+        $schedule->command('birthday-notification')->dailyAt('09:00')->timezone($timezone);
 
         // Every Minute
         $schedule->command('send-event-reminder')->everyMinute();
-        $schedule->command('auto-clock-out')->everyMinute();
         $schedule->command('hide-cron-message')->everyMinute();
         $schedule->command('send-attendance-reminder')->everyMinute();
         $schedule->command('sync-user-permissions')->everyMinute();
@@ -129,21 +85,16 @@ class Kernel extends ConsoleKernel
         $schedule->command('send-auto-followup-reminder')->everyMinute();
         $schedule->command('send-time-tracker')->everyMinute();
 
-
-        // Daily added different time to reduce server load
-        $schedule->command('send-project-reminder')->dailyAt('01:10');
-        $schedule->command('send-auto-task-reminder')->dailyAt('01:20');
-        $schedule->command('recurring-invoice-create')->dailyAt('01:30');
-        $schedule->command('recurring-expenses-create')->dailyAt('01:40');
-        $schedule->command('send-invoice-reminder')->dailyAt('01:50');
-        $schedule->command('delete-seen-notification')->dailyAt('02:10');
-        $schedule->command('update-exchange-rate')->dailyAt('02:20');
-        $schedule->command('send-daily-timelog-report')->dailyAt('02:30');
-        // $schedule->command('app:leaves-quota-renew')->dailyAt('02:30');
-        $schedule->command('log:clean --keep-last')->dailyAt('02:40');
-        $schedule->command('inactive-employee')->dailyAt('02:50');
-        // $schedule->command('daily-schedule-reminder')->daily();
-        $schedule->command('assign-shift-rotation')->dailyAt('00:01');
+        // Daily
+        $schedule->command('send-project-reminder')->daily()->timezone($timezone);
+        $schedule->command('send-auto-task-reminder')->daily()->timezone($timezone);
+        $schedule->command('recurring-invoice-create')->daily()->timezone($timezone);
+        $schedule->command('recurring-expenses-create')->daily()->timezone($timezone);
+        $schedule->command('send-invoice-reminder')->daily()->timezone($timezone);
+        $schedule->command('delete-seen-notification')->daily()->timezone($timezone);
+        $schedule->command('update-exchange-rate')->daily()->timezone($timezone);
+        $schedule->command('send-daily-timelog-report')->daily()->timezone($timezone);
+        $schedule->command('log:clear --keep-last')->daily()->timezone($timezone);
 
         // Hourly
         $schedule->command('clear-null-session')->hourly();
@@ -151,22 +102,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('delete-database-backup')->hourly();
         $schedule->command('add-missing-permissions')->everyThirtyMinutes();
 
-        $schedule->command('send-monthly-attendance-report')->monthly();
-        $schedule->command('app:create-employee-leave-quota-history')->monthly();
-        // $schedule->command('carry-forward-leave')->monthly();
-        $schedule->command('app:annual-carry-forward-leaves')->monthly();
-        $schedule->command('app:annual-reimburse-leaves')->monthly();
-        $schedule->command('app:recalculate-leaves-quotas')->monthly();
+        $schedule->command('send-monthly-attendance-report')->monthlyOn();
 
         $schedule->command('queue:flush')->weekly();
 
-        // SAAS added one after the other in hours to reduce server load
-        $schedule->command('free-licence-renew')->dailyAt('01:00');
-        $schedule->command('licence-expire')->dailyAt('02:00');
-        $schedule->command('trial-expire')->dailyAt('03:00');
-
         // Schedule the queue:work command to run without overlapping and with 3 tries
-        $schedule->command('queue:work database --tries=3 --stop-when-empty')->withoutOverlapping();
+        $schedule->command('queue:work --tries=3 --stop-when-empty')->withoutOverlapping();
     }
 
     /**

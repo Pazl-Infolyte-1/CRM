@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Traits\HasCompany;
-
 
 /**
  * App\Models\ProjectMilestone
@@ -53,8 +51,6 @@ use App\Traits\HasCompany;
 class ProjectMilestone extends BaseModel
 {
 
-    use HasCompany;
-    
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
@@ -67,26 +63,12 @@ class ProjectMilestone extends BaseModel
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'project_id')->withTrashed();
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class, 'milestone_id');
-    }
-
-    public function completeTasks(): HasMany
-    {
-        $taskBoardColumn = TaskboardColumn::completeColumn();
-        return $this->hasMany(Task::class, 'milestone_id')->where('tasks.board_column_id', $taskBoardColumn->id);
-    }
-
-    public function completionPercent()
-    {
-        $taskBoardColumn = TaskboardColumn::completeColumn();
-        $tasks = $this->tasks()->count();
-        $completedTasks = $this->tasks()->where('tasks.board_column_id', $taskBoardColumn->id)->count();
-        return ($completedTasks / $tasks) * 100;
     }
 
 }

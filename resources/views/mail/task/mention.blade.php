@@ -3,14 +3,14 @@
 
 @lang('email.newTask.mentionSubject')
 
-# @lang('app.taskDetails')
+# @lang('app.task') @lang('app.details')
 
 @component('mail::text', ['text' => $content])
 
 @endcomponent
 
 @component('mail::button', ['url' => $url, 'themeColor' => $themeColor])
-@lang('app.viewTask')
+@lang('app.view') @lang('app.task')
 @endcomponent
 
 @lang('email.regards'),<br>

@@ -28,7 +28,7 @@
 </div>
 
 <div class="col-xl-4 col-lg-12 col-md-12 ntfcn-tab-content-right border-left-grey p-4">
-    <h4 class="f-16  f-w-500 text-dark-grey">@lang("modules.slackSettings.notificationTitle")</h4>
+    <h4 class="f-16 text-capitalize f-w-500 text-dark-grey">@lang("modules.slackSettings.notificationTitle")</h4>
     <div class="mb-3 d-flex">
         <x-forms.checkbox  :checked="$checkedAll==true"
                 :fieldLabel="__('modules.permission.selectAll')"

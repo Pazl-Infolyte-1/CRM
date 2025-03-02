@@ -6,7 +6,7 @@ namespace App\Models;
  * App\Models\PurposeConsentLead
  *
  * @property int $id
- * @property int $deal_id
+ * @property int $lead_id
  * @property int $purpose_consent_id
  * @property string $status
  * @property string|null $ip
@@ -27,7 +27,6 @@ namespace App\Models;
  * @method static \Illuminate\Database\Eloquent\Builder|PurposeConsentLead whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder|PurposeConsentLead whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|PurposeConsentLead whereUpdatedById($value)
- * @method static \Illuminate\Database\Eloquent\Builder|PurposeConsentLead whereDealId($value)
  * @mixin \Eloquent
  */
 class PurposeConsentLead extends BaseModel

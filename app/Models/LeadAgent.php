@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder|LeadAgent whereCompanyId($value)
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
  * @property-read int|null $leads_count
+
  * @mixin \Eloquent
  */
 class LeadAgent extends BaseModel
@@ -51,7 +52,7 @@ class LeadAgent extends BaseModel
 
     public function leads(): HasMany
     {
-        return $this->hasMany(Deal::class, 'agent_id');
+        return $this->hasMany(Lead::class);
     }
 
 }

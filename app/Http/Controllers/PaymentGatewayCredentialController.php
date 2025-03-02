@@ -7,7 +7,6 @@ use App\Http\Requests\PaymentGateway\UpdateGatewayCredentials;
 use App\Models\Currency;
 use App\Models\OfflinePaymentMethod;
 use App\Models\PaymentGatewayCredentials;
-use Illuminate\Contracts\Encryption\DecryptException;
 
 class PaymentGatewayCredentialController extends AccountBaseController
 {
@@ -34,12 +33,8 @@ class PaymentGatewayCredentialController extends AccountBaseController
 
         $tab = request('tab');
 
-        // TODO: to be removed in future updates
-        $this->fixPayloadMismatch($this->credentials);
-
         switch ($tab) {
         case 'stripe':
-
             $this->webhookRoute = route('stripe.webhook', [$hash]);
             $this->view = 'payment-gateway-settings.ajax.stripe';
             break;
@@ -80,7 +75,9 @@ class PaymentGatewayCredentialController extends AccountBaseController
         $this->activeTab = $tab ?: 'paypal';
 
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view($this->view, $this->data)->render();
+
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
         return view('payment-gateway-settings.index', $this->data);
@@ -172,14 +169,11 @@ class PaymentGatewayCredentialController extends AccountBaseController
         if ($request->razorpay_mode == 'test') {
             $credential->test_razorpay_key = $request->test_razorpay_key;
             $credential->test_razorpay_secret = $request->test_razorpay_secret;
-            $credential->test_razorpay_webhook_secret = $request->test_razorpay_webhook_secret;
         }
         else {
             $credential->live_razorpay_key = $request->live_razorpay_key;
             $credential->live_razorpay_secret = $request->live_razorpay_secret;
-            $credential->live_razorpay_webhook_secret = $request->live_razorpay_webhook_secret;
         }
-
 
         $credential->razorpay_mode = $request->razorpay_mode;
         $credential->razorpay_status = ($request->razorpay_status) ? 'active' : 'inactive';
@@ -252,33 +246,6 @@ class PaymentGatewayCredentialController extends AccountBaseController
         $credential->flutterwave_mode = $request->flutterwave_mode;
         $credential->flutterwave_webhook_secret_hash = $request->flutterwave_webhook_secret_hash;
         $credential->flutterwave_status = $request->flutterwave_status ? 'active' : 'deactive';
-    }
-
-    public function fixPayloadMismatch($gateway)
-    {
-        $casts = (new PaymentGatewayCredentials())->getCasts();
-
-        // Filter out the encrypted fields
-        $encryptedFields = array_keys(array_filter($casts, function ($value) {
-            return $value === 'encrypted';
-        }));
-
-        try {
-            // Attempt to access each encrypted field to check for decryption issues
-            foreach ($encryptedFields as $field) {
-                $gateway->$field;
-            }
-        } catch (DecryptException $e) {
-            // If a decryption error occurs, set each encrypted field to null
-            // when we get message like below set as null or o
-            // The MAC is invalid.
-            // The payload is invalid.
-            foreach ($encryptedFields as $field) {
-                $gateway->$field = null;
-            }
-            // Save the credentials after setting fields to null
-            $gateway->save();
-        }
     }
 
 }

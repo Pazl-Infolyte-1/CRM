@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\Models\Notice;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -32,12 +33,12 @@ class NoticeBoardDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
-                <a href="' . route('notices.show', [$row->id]) . '"
-                        class="taskView openRightModal text-darkest-grey f-w-500">' . __('app.view') . '</a>
 
                     <div class="dropdown">
                         <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
@@ -45,6 +46,8 @@ class NoticeBoardDataTable extends BaseDataTable
                             <i class="icon-options-vertical icons"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
+
+                $action .= '<a href="' . route('notices.show', $row->id) . '" class="dropdown-item openRightModal" ><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->editNoticePermission == 'all' || ($this->editNoticePermission == 'added' && user()->id == $row->added_by) || ($this->editNoticePermission == 'owned' && in_array($row->to, user_roles())) || ($this->editNoticePermission == 'both' && (in_array($row->to, user_roles()) || $row->added_by == user()->id))
                 ) {
@@ -89,7 +92,9 @@ class NoticeBoardDataTable extends BaseDataTable
             )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['action', 'heading', 'check']);
     }
 
@@ -100,15 +105,15 @@ class NoticeBoardDataTable extends BaseDataTable
     public function query(Notice $model)
     {
         $request = $this->request();
-        $model = $model->with('member')->select('id', 'heading', 'to', 'created_at', 'added_by', 'department_id');
+        $model = $model->select('id', 'heading', 'to', 'created_at', 'added_by', 'department_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $model = $model->where(DB::raw('DATE(notices.`created_at`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
             $model = $model->where(DB::raw('DATE(notices.`created_at`)'), '<=', $endDate);
         }
 
@@ -120,35 +125,26 @@ class NoticeBoardDataTable extends BaseDataTable
 
         if (in_array('employee', user_roles()) && !in_array('admin', user_roles())) {
             $model->where(function ($query) {
+                $query->where('to', 'employee');
+
                 if ($this->user && $this->user->employeeDetail && $this->user->employeeDetail->department) {
                     $departmentId = $this->user->employeeDetail->department->id;
                     $query->whereNull('department_id');
                     $query->orWhere('department_id', $departmentId);
                 }
             });
-
-            if($this->viewNoticePermission == 'owned'){
-                $model->whereHas('noticeEmployees', function($query){
-                    $query->where('user_id', user()->id);
-                });
-            }
         }
 
         if (in_array('client', user_roles())) {
-            $model->whereHas('noticeClients', function($query){
-                $query->where('user_id', user()->id);
-            });
+            $model = $model->where('to', 'client');
+        }
+
+        if (in_array('client', user_roles())) {
+            $model = $model->where('to', 'client');
         }
 
         if ($this->viewNoticePermission == 'added') {
             $model->where('notices.added_by', user()->id);
-        }
-
-        if ($this->viewNoticePermission === 'both') {
-            $model->where(function ($query) {
-                $query->where('notices.added_by', user()->id)
-                      ->orWhereHas('member', fn($q) => $q->where('user_id', auth()->id()));
-            });
         }
 
         return $model;

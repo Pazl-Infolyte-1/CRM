@@ -36,14 +36,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTemplateTask whereProjectTemplateId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTemplateTask whereProjectTemplateTaskCategoryId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTemplateTask whereUpdatedAt($value)
- * @property-read \App\Models\TaskCategory|null $category
  * @mixin \Eloquent
  */
 class ProjectTemplateTask extends BaseModel
 {
-    protected $casts = [
-        'task_labels' => 'array',
-    ];
 
     public function projectTemplate(): BelongsTo
     {

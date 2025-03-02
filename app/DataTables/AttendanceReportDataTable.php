@@ -2,10 +2,14 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\Attendance;
+use App\Models\AttendanceSetting;
 use App\Models\Holiday;
+use App\Models\Leave;
 use App\Models\User;
 use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
@@ -25,7 +29,7 @@ class AttendanceReportDataTable extends BaseDataTable
     public function __construct()
     {
         parent::__construct();
-        $this->attendanceSettings = attendance_setting();
+        $this->attendanceSettings = AttendanceSetting::first();
     }
 
     /**
@@ -36,7 +40,7 @@ class AttendanceReportDataTable extends BaseDataTable
     {
         $request = $this->request();
         $startDate = now($this->company->timezone)->startOfMonth();
-        $endDate = now($this->company->timezone);
+        $endDate = $endDate = now($this->company->timezone);
 
         $diff = 0;
 
@@ -44,7 +48,7 @@ class AttendanceReportDataTable extends BaseDataTable
             // if this month filter's end date is not equal to now
             $diff = ($endDate->lt(Carbon::createFromFormat($this->company->date_format, $request->endDate))) ? $endDate->diffInDays(Carbon::createFromFormat($this->company->date_format, $request->endDate)) : 0;
             $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->startOfDay();
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->endOfDay();
+            $endDate = $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->endOfDay();
         }
 
         $period = CarbonPeriod::create($startDate, $endDate);
@@ -65,28 +69,64 @@ class AttendanceReportDataTable extends BaseDataTable
             array_push($holidays, $item->date);
         }
 
+        $this->totalWorkingDays = $this->totalWorkingDays;
         $this->daysPresent = 0;
         $this->extraDays = 0;
 
         return datatables()
             ->eloquent($query)
             ->addIndexColumn()
-            ->addColumn('employee_name', fn($row) => $row->name)
-            ->addColumn('name', fn($row) => view('components.employee', ['user' => $row]))
-            ->addColumn('present_days', fn($row) => $this->daysPresent = Attendance::countDaysPresentByUser($startDate, $endDate, $row->id) ?: '0')
-            ->addColumn('extra_days', fn($row) => $this->extraDays($startDate, $endDate, $row->id, $holidays))
+            ->addColumn('employee_name', function ($row) {
+                return $row->name;
+            })
+            ->addColumn('name', function ($row) {
+                return view('components.employee', [
+                    'user' => $row
+                ]);
+            })
+            ->addColumn('present_days', function ($row) use ($startDate, $endDate) {
+                $this->daysPresent = Attendance::countDaysPresentByUser($startDate, $endDate, $row->id);
+
+                if ($this->daysPresent == 0) {
+                    return '0';
+                }
+
+                return $this->daysPresent;
+            })
+            ->addColumn('extra_days', function ($row) use ($startDate, $endDate, $holidays) {
+                return $this->extraDays($startDate, $endDate, $row->id, $holidays);
+            })
             ->addColumn('absent_days', function ($row) {
                 $this->holidaysCount = $this->holidaysCount - $this->extraDays;
 
                 if ($this->holidaysCount > 0) {
                     return (($this->totalWorkingDays - ($this->daysPresent + $this->extraDays + $this->holidaysCount)) <= 0) ? '0' : ($this->totalWorkingDays - ($this->daysPresent + $this->extraDays + $this->holidaysCount));
                 }
-
-                return (($this->totalWorkingDays - ($this->daysPresent + $this->extraDays)) <= 0) ? '0' : ($this->totalWorkingDays - ($this->daysPresent + $this->extraDays));
+                else {
+                    return (($this->totalWorkingDays - ($this->daysPresent + $this->extraDays)) <= 0) ? '0' : ($this->totalWorkingDays - ($this->daysPresent + $this->extraDays));
+                }
             })
-            ->addColumn('hours_clocked', fn($row) => $this->calculateHours($period, $row))
-            ->addColumn('late_day_count', fn($row) => Attendance::countDaysLateByUser($startDate, $endDate, $row->id) ?: '0')
-            ->addColumn('half_day_count', fn($row) => Attendance::countHalfDaysByUser($startDate, $endDate, $row->id) ?: '0')
+            ->addColumn('hours_clocked', function ($row) use ($period) {
+                return $this->calculateHours($period, $row);
+            })
+            ->addColumn('late_day_count', function ($row) use ($startDate, $endDate) {
+                $lateDayCount = Attendance::countDaysLateByUser($startDate, $endDate, $row->id);
+
+                if ($lateDayCount == 0) {
+                    return '0';
+                }
+
+                return $lateDayCount;
+            })
+            ->addColumn('half_day_count', function ($row) use ($startDate, $endDate) {
+                $halfDayCount = Attendance::countHalfDaysByUser($startDate, $endDate, $row->id);
+
+                if ($halfDayCount == 0) {
+                    return '0';
+                }
+
+                return $halfDayCount;
+            })
             ->orderColumn('present_days', 'user_id $1')
             ->orderColumn('absent_days', 'user_id $1')
             ->orderColumn('extra_days', 'user_id $1')
@@ -170,49 +210,41 @@ class AttendanceReportDataTable extends BaseDataTable
             $clockins = Attendance::select('clock_in_time', 'clock_out_time')
                 ->where(DB::raw('DATE(attendances.clock_in_time)'), $attendanceDate)
                 ->where('user_id', $user->id)
-                ->orderBy('id')
-                ->get();
+                ->orderBy('id', 'asc')->get();
 
             foreach ($clockins as $value) {
 
-                $this->startTime = $value->clock_in_time->timezone($this->company->timezone);
+                if (!is_null($value)) {
 
-                if (!is_null($value->clock_out_time)) {
-                    $this->endTime = $value->clock_out_time->timezone($this->company->timezone);
-                }
-                elseif (($value->clock_in_time->timezone($this->company->timezone)->translatedFormat('Y-m-d') != now()->timezone($this->company->timezone)->translatedFormat('Y-m-d')) && is_null($value->clock_out_time)) {
-                    $this->endTime = Carbon::parse($this->startTime->translatedFormat('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time, $this->company->timezone);
-                    if ($this->endTime->gt(now()->timezone($this->company->timezone))) {
+                    $this->startTime = Carbon::parse($value->clock_in_time)
+                        ->timezone($this->company->timezone);
+
+                    if (!is_null($value->clock_out_time)) {
+                        $this->endTime = Carbon::parse($value->clock_out_time)
+                            ->timezone($this->company->timezone);
+                    }
+                    elseif (($value->clock_in_time->timezone($this->company->timezone)->translatedFormat('Y-m-d') != now()->timezone($this->company->timezone)->translatedFormat('Y-m-d')) && is_null($value->clock_out_time)) {
+                        $this->endTime = Carbon::parse($this->startTime->translatedFormat('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time, $this->company->timezone);
+                        $this->notClockedOut = true;
+                    }
+                    else {
+                        $this->notClockedOut = true;
                         $this->endTime = now()->timezone($this->company->timezone);
                     }
-                    $this->notClockedOut = true;
-                }
-                else {
-                    $this->notClockedOut = true;
-                    $this->endTime = now()->timezone($this->company->timezone);
-                }
 
-                $timeLogInMinutes = $timeLogInMinutes + $this->endTime->diffInMinutes($this->startTime, true);
+                    $timeLogInMinutes = $timeLogInMinutes + $this->endTime->diffInMinutes($this->startTime, true);
+                }
             }
 
         }
 
-
-        if ($timeLogInMinutes <= 59) {
-            return sprintf('%d' . __('app.hrs') . ' %d' . __('app.mins'), 0, $timeLogInMinutes);
-        }
-
-        return sprintf('%d' . __('app.hrs') . ' %d' . __('app.mins'), floor($timeLogInMinutes / 60), floor($timeLogInMinutes % 60));
-
+        return sprintf('%d'.__('app.hrs').' %d'.__('app.mins'), floor($timeLogInMinutes / 60), floor($timeLogInMinutes / 60) % 60);
     }
 
     public function extraDays($startDate, $endDate, $userId, $holidays)
     {
-        $extraDays = Attendance::whereBetween(DB::raw('DATE(attendances.`clock_in_time`)'), [$startDate->toDateString(), $endDate->toDateString()])
-            ->where('user_id', $userId)
-            ->whereIn(DB::raw('DATE(`clock_in_time`)'), $holidays)
-            ->select(DB::raw('count(DISTINCT DATE(attendances.clock_in_time) ) as attendance'))
-            ->first();
+        $extraDays = Attendance::whereBetween(DB::raw('DATE(attendances.`clock_in_time`)'), [$startDate->toDateString(), $endDate->toDateString()])->where('user_id', $userId)->whereIn(DB::raw('DATE(`clock_in_time`)'), $holidays)
+            ->select(DB::raw('count(DISTINCT DATE(attendances.clock_in_time) ) as attendance'))->first();
 
         return $extraDays->attendance;
     }

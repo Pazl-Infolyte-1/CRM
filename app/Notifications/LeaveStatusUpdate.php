@@ -51,18 +51,13 @@ class LeaveStatusUpdate extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('leaves.show', $this->leave->id);
-
-        if ($this->leave->duration == "multiple") {
-            $url .= '?type=single';
-        }
-
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.leaves.statusSubject') . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . '<br>' . __('app.status') . ': ' . $this->leave->status;
 
-        $build
+        return $build
             ->subject(__('email.leaves.statusSubject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -71,10 +66,6 @@ class LeaveStatusUpdate extends BaseNotification
                 'actionText' => __('email.leaves.action'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

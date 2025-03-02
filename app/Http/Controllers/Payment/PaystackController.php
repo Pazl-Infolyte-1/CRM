@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Payment;
 
+use Illuminate\Support\Facades\Config;
+use Log;
 use App\Helper\Reply;
 use App\Models\Order;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 use App\Traits\MakePaymentTrait;
 use App\Http\Controllers\Controller;
-use App\Models\GlobalSetting;
 use App\Traits\MakeOrderInvoiceTrait;
 use Unicodeveloper\Paystack\Paystack;
 use GuzzleHttp\Exception\ClientException;
@@ -32,7 +33,7 @@ class PaystackController extends Controller
 
         $request->validate([
             'name' => 'required|string',
-            'email' => 'required|email:rfc,strict',
+            'email' => 'required|email',
         ]);
 
         $paystack = new Paystack();
@@ -96,7 +97,7 @@ class PaystackController extends Controller
 
             $this->makePayment('Paystack', ($paymentDetails['data']['amount'] / 100), $invoice, $paymentDetails['data']['reference'], (($paymentDetails['data']['status'] == 'success') ? 'complete' : 'failed'));
 
-            return redirect(url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash));
+            return redirect(route('front.invoice', $invoice->hash));
 
         case 'order':
             $order = Order::findOrFail($id);

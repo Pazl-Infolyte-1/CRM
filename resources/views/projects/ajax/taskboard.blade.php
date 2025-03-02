@@ -31,7 +31,8 @@ $addTaskPermission = ($project->project_admin == user()->id) ? 'all' : user()->p
             @if (($addTaskPermission == 'all' || $addTaskPermission == 'added') && !$project->trashed())
                 <x-forms.link-primary :link="route('tasks.create').'?task_project_id='.$project->id"
                     class="mr-3 openRightModal float-left" icon="plus" data-redirect-url="{{ url()->full() }}">
-                    @lang('app.addTask')
+                    @lang('app.add')
+                    @lang('app.task')
                 </x-forms.link-primary>
             @endif
             @if (user()->permission('change_status') == 'all' && !$project->trashed())
@@ -41,41 +42,6 @@ $addTaskPermission = ($project->project_admin == user()->id) ? 'all' : user()->p
             @endif
         </div>
     </div>
-
-    <div class="d-flex justify-content-between">
-        <form action="" class="flex-grow-1 " id="filter-form">
-            <div class="d-flex">
-                <!-- SEARCH BY TASK START -->
-                <div class="select-box py-2 px-0 mr-3 pb-3">
-                    {{-- <x-forms.label fieldId="status" /> --}}
-                    <div class="input-group bg-grey rounded">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text bg-additional-grey">
-                                <i class="fa fa-search f-13 text-dark-grey"></i>
-                            </span>
-                        </div>
-                        <input type="text" class="form-control f-14 p-1 height-35 border" id="search-text-field"
-                            placeholder="@lang('app.startTyping')">
-                    </div>
-                </div>
-                <!-- SEARCH BY TASK END -->
-
-                <!-- RESET START -->
-                <div class="select-box d-flex py-2 px-0 pb-3">
-                    <x-forms.button-secondary class="btn-xs d-none height-35" id="reset-filters"
-                        icon="times-circle">
-                        @lang('app.clearFilters')
-                    </x-forms.button-secondary>
-                </div>
-                <!-- RESET END -->
-            </div>
-        </form>
-    </div>
-
-
-    <x-alert type="warning">
-        <div><b>Note:</b>@lang('modules.tasks.taskboardNote') <a href="{{ route('tasks.index') }}">@lang('app.tasks')</a> @lang('modules.tasks.menu') </div>
-    </x-alert>
 
     <div class="w-task-board-panel d-flex" id="taskboard-columns">
     </div>
@@ -92,13 +58,10 @@ $addTaskPermission = ($project->project_admin == user()->id) ? 'all' : user()->p
             var startDate = null;
             var endDate = null;
             var projectAdmin = "{{ ($project->project_admin == user()->id) ? 1 : 0 }}";
-            var searchText = $('#search-text-field').val();
-
 
             var url = "{{ route('taskboards.index') }}?startDate=" + encodeURIComponent(startDate) +
                 '&endDate=' +
-                encodeURIComponent(endDate) + '&projectID=' + projectID + '&project_admin=' + projectAdmin +
-                '&searchText=' + encodeURIComponent(searchText);
+                encodeURIComponent(endDate) + '&projectID=' + projectID + '&project_admin=' + projectAdmin;
 
             $.easyAjax({
                 url: url,
@@ -114,21 +77,6 @@ $addTaskPermission = ($project->project_admin == user()->id) ? 'all' : user()->p
                 }
             });
         }
-
-        $('#search-text-field').on('keyup', function() {
-            if ($('#search-text-field').val() != "") {
-                $('#reset-filters').removeClass('d-none');
-                loadData();
-            }
-        });
-
-        $('#reset-filters,#reset-filters-2').click(function() {
-            $('#filter-form')[0].reset();
-            $('#filter-form #status').val('not finished');
-            $('#filter-form .select-picker').selectpicker("refresh");
-            $('#reset-filters').addClass('d-none');
-            loadData();
-        });
 
         $('body').on('click', '.load-more-tasks', function() {
             var columnId = $(this).data('column-id');

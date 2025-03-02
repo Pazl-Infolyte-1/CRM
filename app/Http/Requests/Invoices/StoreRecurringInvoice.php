@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Invoices;
 
 use App\Http\Requests\CoreRequest;
+use Carbon\Carbon;
 
 class StoreRecurringInvoice extends CoreRequest
 {
@@ -36,7 +37,7 @@ class StoreRecurringInvoice extends CoreRequest
         ];
 
         if (!$this->has('immediate_invoice')) {
-            $rules['issue_date'] = 'required|date_format:"' . $setting->date_format . '"|after:'.now()->format($setting->date_format);
+            $rules['issue_date'] = 'required|date_format:"' . $setting->date_format . '"|after:'.Carbon::now()->format($setting->date_format);
         }
 
         if ($this->show_shipping_address == 'on') {

@@ -102,7 +102,7 @@ class Leave extends BaseModel
 
     public function type(): BelongsTo
     {
-        return $this->belongsTo(LeaveType::class, 'leave_type_id')->withTrashed();
+        return $this->belongsTo(LeaveType::class, 'leave_type_id');
     }
 
     public function getLeavesTakenCountAttribute()
@@ -185,7 +185,7 @@ class Leave extends BaseModel
 
     public function files(): HasMany
     {
-        return $this->hasMany(LeaveFile::class, 'leave_id')->orderByDesc('id');
+        return $this->hasMany(LeaveFile::class, 'leave_id')->orderBy('id', 'desc');
     }
 
 }

@@ -2,7 +2,6 @@
 
 namespace App\View\Components\Forms;
 
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Label extends Component
@@ -25,7 +24,7 @@ class Label extends Component
         $popover = null
     )
     {
-        $this->fieldLabel = $fieldLabel;
+        $this->fieldLabel   = $fieldLabel;
         $this->fieldId = $fieldId;
         $this->popover = $popover;
         $this->fieldRequired = $fieldRequired;
@@ -34,7 +33,7 @@ class Label extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {

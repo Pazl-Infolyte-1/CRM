@@ -5,7 +5,6 @@
     $addTaskFilePermission = user()->permission('add_task_files');
     $addTaskPermission = user()->permission('add_tasks');
     $viewMilestonePermission = user()->permission('view_project_milestones');
-    $viewProjectPermission = user()->permission('view_projects');
     $checked = request()->has('duplicate_task') ? ($projectId = $task->project_id) : ($projectId = '');
 @endphp
 
@@ -15,7 +14,7 @@
     <div class="col-sm-12">
         <x-form id="save-task-data-form">
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('modules.tasks.taskInfo')</h4>
                 <div class="row p-20">
 
@@ -37,7 +36,7 @@
                                     @foreach ($categories as $category)
                                         <option
                                             @if (!is_null($task) && $task->task_category_id == $category->id) selected
-                                            @endif value="{{ $category->id }}">{{ html_entity_decode($category->category_name) }}
+                                            @endif value="{{ $category->id }}">{{ $category->category_name }}
                                         </option>
 
                                     @endforeach
@@ -55,50 +54,43 @@
                         </x-forms.input-group>
                     </div>
 
-                    @if (in_array('projects',user_modules()))
-                        <div class="col-md-12 col-lg-6">
+                    <div class="col-md-12 col-lg-6">
 
 
-                            @if (isset($project) && !is_null($project))
-                                <input type="hidden" name="project_id" id="project_id" value="{{ $project->id }}">
-                                <input type="hidden" name="task_project_id" value="{{ $project->id }}">
-                                <x-forms.text :fieldLabel="__('app.project')" fieldName="projectName" fieldId="projectName"
-                                              :fieldValue="$project->project_name" fieldReadOnly="true"
-                                />
+                        @if (isset($project) && !is_null($project))
+                            <input type="hidden" name="project_id" id="project_id" value="{{ $project->id }}">
+                            <input type="hidden" name="task_project_id" value="{{ $project->id }}">
+                            <x-forms.text :fieldLabel="__('app.project')" fieldName="projectName" fieldId="projectName"
+                                          :fieldValue="$project->project_name" fieldReadOnly="true"
+                            />
 
-    {{--                        @elseif($projects->count() > \App\Models\GlobalSetting::SELECT2_SHOW_COUNT)--}}
-    {{--                            <x-forms.select2-ajax fieldId="project_id" fieldName="project_id"--}}
-    {{--                                                  :fieldLabel="__('app.project')"--}}
-    {{--                                                  :route="route('get.projects-ajax')"--}}
-    {{--                                                  :placeholder="__('placeholders.searchForProjects')"--}}
-    {{--                            ></x-forms.select2-ajax>--}}
-                            @else
-                                <x-forms.select fieldId="project_id" fieldName="project_id" :fieldLabel="__('app.project')"
-                                                :popover="__('modules.tasks.notFinishedProjects')"
-                                                search="true">
-                                    <option value="">--</option>
-                                    @if($viewProjectPermission != 'none' && (in_array('employee', user_roles()) || in_array('client', user_roles())))
-                                    @foreach ($projects as $data)
-                                        <option
-                                            data-content="{!! '<strong>'.$data->project_short_code."</strong> ".$data->project_name !!}"
-                                            @if ((isset($project) && $project->id == $data->id) || ( !is_null($task) && $data->id == $task->project_id)) selected
-                                            @endif value="{{ $data->id }}">
-                                        </option>
-                                    @endforeach
-                                    @endif
-                                </x-forms.select>
-                            @endif
-                        </div>
-
-                        @if (in_array('clients', user_modules()))
-                            <div class="col-md-6 col-lg-6 pt-5" id='clientDetails'></div>
+{{--                        @elseif($projects->count() > \App\Models\GlobalSetting::SELECT2_SHOW_COUNT)--}}
+{{--                            <x-forms.select2-ajax fieldId="project_id" fieldName="project_id"--}}
+{{--                                                  :fieldLabel="__('app.project')"--}}
+{{--                                                  :route="route('get.projects-ajax')"--}}
+{{--                                                  :placeholder="__('placeholders.searchForProjects')"--}}
+{{--                            ></x-forms.select2-ajax>--}}
+                        @else
+                            <x-forms.select fieldId="project_id" fieldName="project_id" :fieldLabel="__('app.project')"
+                                            search="true">
+                                <option value="">--</option>
+                                @foreach ($projects as $data)
+                                    <option
+                                        @if ((isset($project) && $project->id == $data->id) || ( !is_null($task) && $data->id == $task->project_id)) selected
+                                        @endif value="{{ $data->id }}">
+                                        {{ $data->project_name }}
+                                    </option>
+                                @endforeach
+                            </x-forms.select>
                         @endif
-                    @endif
+                    </div>
+                    <div class="col-md-6 col-lg-6 pt-5" id='clientDetails'></div>
+
 
                     <div class="col-md-5 col-lg-3">
                         <x-forms.datepicker fieldId="task_start_date" fieldRequired="true"
                                             :fieldLabel="__('modules.projects.startDate')" fieldName="start_date"
-                                            :fieldValue="(($task) ? $task->start_date->format(company()->date_format) : now(company()->timezone)->translatedFormat(company()->date_format))"
+                                            :fieldValue="(($task) ? $task->start_date->format(company()->date_format) : \Carbon\Carbon::now(company()->timezone)->translatedFormat(company()->date_format))"
                                             :fieldPlaceholder="__('placeholders.date')"/>
                     </div>
 
@@ -106,48 +98,13 @@
                          @if($task && is_null($task->due_date)) style="display: none" @endif>
                         <x-forms.datepicker fieldId="due_date" fieldRequired="true" :fieldLabel="__('app.dueDate')"
                                 fieldName="due_date" :fieldPlaceholder="__('placeholders.date')"
-                                :fieldValue="(($task && $task->due_date) ? $task->due_date->format(company()->date_format) : now(company()->timezone)->translatedFormat(company()->date_format))"/>
+                                :fieldValue="(($task && $task->due_date) ? $task->due_date->format(company()->date_format) : \Carbon\Carbon::now(company()->timezone)->translatedFormat(company()->date_format))"/>
                     </div>
                     <div class="col-md-2 col-lg-2 pt-5">
                         <x-forms.checkbox class="mr-0 mr-lg-2 mr-md-2" :checked="$task ? is_null($task->due_date) : ''"
                                           :fieldLabel="__('app.withoutDueDate')"
                                           fieldName="without_duedate" fieldId="without_duedate" fieldValue="yes"/>
                     </div>
-
-                    @if (user()->permission('change_status') == 'all')
-                        <div class="col-lg-3 col-md-6">
-                            <x-forms.select fieldId="board_column_id" :fieldLabel="__('app.status')"
-                                            fieldName="board_column_id" search="true">
-                                @foreach ($taskboardColumns as $item)
-                                    @php
-                                        if ($item->slug == 'completed' || $item->slug == 'incomplete') {
-                                            if ($item->slug == 'completed') {
-                                                $icon = "<i class='fa fa-circle mr-2 text-dark-green'></i>".__('app.' . $item->slug);
-                                            }
-                                            elseif($item->slug == 'incomplete'){
-                                                $icon = "<i class='fa fa-circle mr-2 text-red'></i>".__('app.' . $item->slug);
-                                            }
-                                        }
-                                        else {
-                                            if ($item->slug == 'to_do') {
-                                                $icon = "<i class='fa fa-circle mr-2 text-yellow'></i>".$item->column_name;
-                                            }
-                                            elseif($item->slug == 'doing'){
-                                                $icon = "<i class='fa fa-circle mr-2 text-blue'></i>".$item->column_name;
-                                            }
-                                            else {
-                                                $icon = "<i class='fa fa-circle mr-2' style='color: " . ($item->label_color ?? '#000000') . "'></i>". $item->column_name;
-                                            }
-                                        }
-                                    @endphp
-                                    <option
-                                        @if ($columnId == $item->id || ( !is_null($task) && $task->board_column_id == $item->id)) selected
-                                        @elseif (company()->default_task_status == $item->id) selected @endif value="{{ $item->id }}" data-content = "{{$icon}}">
-                                    </option>
-                                @endforeach
-                            </x-forms.select>
-                        </div>
-                    @endif
 
                     <div class="col-md-12 col-lg-12">
                     </div>
@@ -200,7 +157,7 @@
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-top-grey other-details-button">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey other-details-button">
                     <a href="javascript:;" class="text-dark toggle-other-details"><i class="fa fa-chevron-down"></i>
                         @lang('modules.client.clientOtherDetails')</a>
                 </h4>
@@ -237,7 +194,6 @@
                                 </div>
                             </div>
 
-                        @if (in_array('projects', user_modules()))
                             <div class="col-md-12 col-lg-4">
                                 <x-forms.select fieldName="milestone_id" fieldId="milestone-id"
                                                 :fieldLabel="__('modules.projects.milestones')">
@@ -246,14 +202,14 @@
                                         @if(in_array($viewMilestonePermission,['all','owned','added']) || user()->id == $project->client_id)
                                             @foreach ($milestones as $item)
                                                 <option value="{{ $item->id }}"
-                                                        @selected (!is_null($task) && $item->id == $task->milestone_id) >{{ $item->milestone_title }}</option>
+                                                        @if (!is_null($task) && $item->id == $task->milestone_id) selected @endif>{{ $item->milestone_title }}</option>
                                             @endforeach
                                         @endif
                                     @endif
                                 </x-forms.select>
                             </div>
-                        @endif
-                            {{-- @if (user()->permission('change_status') == 'all')
+
+                            @if (user()->permission('change_status') == 'all')
                                 <div class="col-lg-3 col-md-6">
                                     <x-forms.select fieldId="board_column_id" :fieldLabel="__('app.status')"
                                                     fieldName="board_column_id" search="true">
@@ -275,29 +231,33 @@
                                                         $icon = "<i class='fa fa-circle mr-2 text-blue'></i>".$item->column_name;
                                                     }
                                                     else {
-                                                        $icon = "<i class='fa fa-circle mr-2' style='color: " . ($item->label_color ?? '#000000') . "'></i>". $item->column_name;
+                                                        $icon = "<i class='fa fa-circle mr-2 text-black'></i>". $item->column_name;
                                                     }
                                                 }
                                             @endphp
                                             <option
                                                 @if ($columnId == $item->id || ( !is_null($task) && $task->board_column_id == $item->id)) selected
-                                                @elseif (company()->default_task_status == $item->id) selected @endif value="{{ $item->id }}" data-content = "{{$icon}}">
+                                                @elseif (company()->default_task_status == $item->id) selected
+                                                @endif value="{{ $item->id }}" data-content = "{{$icon}}">
                                             </option>
                                         @endforeach
                                     </x-forms.select>
                                 </div>
-                            @endif --}}
+                            @endif
 
                             <div class="col-lg-3 col-md-6">
                                 <x-forms.select fieldId="priority" :fieldLabel="__('modules.tasks.priority')"
                                                 fieldName="priority">
-                                    <option @selected (!is_null($task) && $task->priority == 'high')
+                                    <option @if (!is_null($task) && $task->priority == 'high') selected
+                                            @endif
                                             data-content="<i class='fa fa-circle mr-2' style='color: #dd0000'></i> @lang('modules.tasks.high')"
                                             value="high">@lang('modules.tasks.high')</option>
-                                    <option @selected (!is_null($task) && $task->priority == 'medium')  value="medium"
+                                    <option @if (!is_null($task) && $task->priority == 'medium') selected
+                                            @endif value="medium"
                                             data-content="<i class='fa fa-circle mr-2' style='color: #ffc202'></i> @lang('modules.tasks.medium')"
-                                            @selected(is_null($task))>@lang('modules.tasks.medium')</option>
-                                    <option @selected(!is_null($task) && $task->priority == 'low')
+                                            @if (is_null($task)) selected @endif>@lang('modules.tasks.medium')</option>
+                                    <option @if (!is_null($task) && $task->priority == 'low') selected
+                                            @endif
                                             data-content="<i class='fa fa-circle mr-2' style='color: #0a8a1f'></i> @lang('modules.tasks.low')"
                                             value="low">@lang('modules.tasks.low')</option>
                                 </x-forms.select>
@@ -373,13 +333,13 @@
                                         <x-slot name="append">
                                             <select name="repeat_type" class="select-picker form-control">
                                                 <option value="day"
-                                                    @selected (!is_null($task) && $task->repeat_type == 'day')>@lang('app.day')</option>
+                                                        @if (!is_null($task) && $task->repeat_type == 'day') selected @endif>@lang('app.day')</option>
                                                 <option value="week"
-                                                    @selected(!is_null($task) && $task->repeat_type == 'week')>@lang('app.week')</option>
+                                                        @if (!is_null($task) && $task->repeat_type == 'week') selected @endif>@lang('app.week')</option>
                                                 <option value="month"
-                                                    @selected(!is_null($task) && $task->repeat_type == 'month')>@lang('app.month')</option>
+                                                        @if (!is_null($task) && $task->repeat_type == 'month') selected @endif>@lang('app.month')</option>
                                                 <option value="year"
-                                                    @selected(!is_null($task) && $task->repeat_type == 'year')>@lang('app.year')</option>
+                                                        @if (!is_null($task) && $task->repeat_type == 'year') selected @endif>@lang('app.year')</option>
                                             </select>
                                         </x-slot>
                                     </x-forms.input-group>
@@ -401,7 +361,7 @@
                             <div class="form-group my-3">
                                 <div class="d-flex">
                                     <x-forms.checkbox :fieldLabel="__('modules.tasks.dependent')" fieldName="dependent"
-                                                      fieldId="dependent-task" :popover="__('modules.tasks.dependentTaskInfo')"/>
+                                                      fieldId="dependent-task"/>
                                 </div>
                             </div>
 
@@ -468,28 +428,12 @@
 
         var add_task_files = "{{ $addTaskFilePermission }}";
 
-        $('#board_column_id').selectpicker();
-
-        document.querySelectorAll('input[name="estimate_hours"], input[name="estimate_minutes"]').forEach(input => {
-            input.addEventListener('input', function() {
-                this.value = this.value.replace(/^0+(?!$)/, ''); // Remove leading zeros
-            });
-        });
-
-        // Remove title attribute from selectpicker button
-        $('#board_column_id').on('loaded.bs.select', function () {
-            // Find the button element and remove the title attribute
-            $(this).siblings('button').removeAttr('title');
-        });
-
         @if (isset($project) && !is_null($project))
         $('#project_id').attr("readonly", true);
         @endif
 
             @if ($projectId == '')
-                var projectElement = document.getElementById('project_id');
-                projectId = (projectElement) ? projectElement.value : '';
-                // projectId = document.getElementById('project_id').value;
+            projectId = document.getElementById('project_id').value;
             @endif
 
             (projectId != 'all' && projectId != '') ? projectClient(projectId) : '';
@@ -974,4 +918,11 @@
         init(RIGHT_MODAL);
     });
 
+    function checkboxChange(parentClass, id) {
+        let checkedData = '';
+        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function () {
+            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
+        });
+        $('#' + id).val(checkedData);
+    }
 </script>

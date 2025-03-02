@@ -11,30 +11,13 @@
                     fieldName="column_name" fieldId="column_name" :placeholder="__('placeholders.columnName')"
                     :fieldValue="$boardColumn->column_name" fieldRequired="true" />
             </div>
+
             <div class="col-md-6">
                 <x-forms.select fieldId="priority" :fieldLabel="__('modules.tasks.position')" fieldName="priority"
                     search="true">
-                    @php
-                        $firstPriority = min($allBoardColumns->pluck('priority')->toArray());
-                        $priority = $allBoardColumns->pluck('priority')->toArray();
-                    @endphp
-
-                    @foreach ($allBoardColumns as $column)
-                        @if($column->id != $boardColumn->id)
-                            @if ($column->priority == $firstPriority)
-                                    <option value="{{$column->priority}}" priority-type="before">Before {{$column->column_name}}</option>
-                                    <option value="{{$column->priority}}" @if(!is_null($lastBoardColumn) && $lastBoardColumn->id == $column->id) selected @endif>After {{$column->column_name}}</option>
-
-                            @elseif (isset($afterBoardColumn) && $afterBoardColumn->priority == $column->priority)
-                                    @if ($boardColumn->priority == $firstPriority)
-                                        <option value="{{$column->priority - 1}}">Before {{$column->column_name}}</option>
-                                    @endif
-                                        <option value="{{$column->priority}}">After {{$column->column_name}}</option>
-                            @else
-                                <option value="{{$column->priority}}" @if(!is_null($lastBoardColumn) && $lastBoardColumn->id == $column->id) selected @endif>After {{$column->column_name}}</option>
-                            @endif
-                        @endif
-                    @endforeach
+                    @for ($i = 1; $i <= $maxPriority; $i++)
+                        <option @if ($i == $boardColumn->priority) selected @endif>{{ $i }}</option>
+                    @endfor
                 </x-forms.select>
             </div>
 
@@ -62,6 +45,7 @@
     <x-forms.button-primary id="update-board-column" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
 
+<script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 <script>
     $("#updateTaskBoardColumn .select-picker").selectpicker();
 
@@ -70,14 +54,7 @@
     });
 
     $('#update-board-column').click(function() {
-        var priorityType = $("#priority").find(':selected').attr('priority-type');
-
-        if(priorityType == "before"){
-            var url = "{{ route('taskboards.update', $boardColumn->id) }}?before";
-        }
-        else{
-            var url = "{{ route('taskboards.update', $boardColumn->id) }}";
-        }
+        var url = "{{ route('taskboards.update', $boardColumn->id) }}";
 
         $.easyAjax({
             url: url,

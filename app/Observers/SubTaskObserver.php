@@ -46,7 +46,7 @@ class SubTaskObserver
             'App\Notifications\SubTaskCreated'
         ];
 
-        Notification::deleteNotification($notifyData, $subTask->id);
+        \App\Models\Notification::deleteNotification($notifyData, $subTask->id);
 
     }
 

@@ -2,9 +2,10 @@
 
 namespace App\DataTables;
 
-use App\Helper\Common;
 use App\Models\Award;
+use App\Models\Notice;
 use App\Scopes\ActiveScope;
+use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 
 class AwardDataTable extends BaseDataTable
@@ -28,7 +29,13 @@ class AwardDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->manageAwardPermission == 'all' ? $this->checkBox($row) : '--')
+            ->addColumn('check', function ($row) {
+                if ($this->manageAwardPermission == 'all') {
+                    return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+                }
+
+                return '--';
+            })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
@@ -70,37 +77,61 @@ class AwardDataTable extends BaseDataTable
                     $status .= '<option ';
 
                     if ($row->status == 'active') {
-                        $status .= 'selected ';
+                        $status .= 'selected';
                     }
 
-                    $status .= "value='active' data-content='".Common::active()."'>' . __('app.active') . ' </option>";
+                    $status .= 'value="active" data-content="<i class=\'fa fa-circle mr-2 text-light-green\'></i> ' . __('app.active') . '">' . __('app.active') . '</option>';
                     $status .= '<option ';
 
                     if ($row->status == 'inactive') {
-                        $status .= 'selected ';
+                        $status .= 'selected';
                     }
 
-                    $status .= "value='inactive' data-content='".Common::inactive()."'>' . __('app.inactive') . ' </option>";
+                    $status .= ' value="inactive" data-content="<i class=\'fa fa-circle mr-2 text-red\'></i> ' . __('app.inactive') . '">' . __('app.inactive') . '</option>';
 
                     $status .= '</select>';
 
-                    return $status;
-
                 }
 
-                if ($row->status == 'active') {
-                    return Common::active();
+                else {
+                    if ($row->status == 'active') {
+                        $class = 'text-light-green';
+                        $status = __('app.active');
+                    }
+
+                    else {
+                        $class = 'text-red';
+                        $status = __('app.inactive');
+                    }
+
+                    $status = '<i class="fa fa-circle mr-1 ' . $class . ' f-10"></i> ' . $status;
                 }
 
-                return Common::inactive();
+                return $status;
 
             })
-            ->addColumn('appreciation_status', fn($row) => $row->status)
-            ->editColumn('award_icon_id', fn($row) => view('components.award-icon', ['award' => $row]))
-            ->editColumn('title', fn($row) => $row->title)
+            ->addColumn('appreciation_status', function ($row) {
+                return $row->status;
+            })
+            ->editColumn(
+                'award_icon_id',
+                function ($row) {
+                    return view('components.award-icon', [
+                        'award' => $row
+                    ]);
+                }
+            )
+            ->editColumn(
+                'title',
+                function ($row) {
+                    return $row->title;
+                }
+            )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['check', 'status', 'action', 'award_icon_id']);
     }
 

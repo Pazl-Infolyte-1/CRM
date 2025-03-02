@@ -62,8 +62,6 @@
 
 @php
 $addEstimatePermission = user()->permission('add_estimates');
-$addEstimateRequestPermission = user()->permission('add_estimate_request');
-$viewEstimateRequestPermission = user()->permission('view_estimate_request');
 @endphp
 
 @section('content')
@@ -82,20 +80,9 @@ $viewEstimateRequestPermission = user()->permission('view_estimate_request');
                     @lang('modules.estimates.estimateTemplate')
                     </x-forms.link-secondary>
                 @endif
-                @if (in_array('client', user_roles()) && ($addEstimateRequestPermission == 'all' || $addEstimateRequestPermission == 'added'))
-                    <x-forms.link-primary :link="route('estimate-request.create')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 openRightModal" icon="plus">
-                        @lang('modules.estimateRequest.createEstimateRequest')
-                    </x-forms.link-primary>
-                @endif
             </div>
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
-                @if (in_array($viewEstimateRequestPermission, ['all', 'added', 'owned', 'both']))
-                    <a href="{{ route('estimate-request.index') }}" class=" btn btn-secondary f-14"
-                    data-toggle="tooltip" data-original-title="@lang('modules.estimateRequest.estimateRequests')">
-                    <i class="side-icon fa fa-file-invoice-dollar"></i></a>
-                @endif
-
+            <div class="btn-group mt-3 mt-lg-0 mt-md-0 ml-lg-3 d-none d-lg-block" role="group">
                 <a href="javascript:;" class="img-lightbox btn btn-secondary f-14"
                 data-image-url="{{ asset('img/estimate-lc.png') }}" data-toggle="tooltip"
                 data-original-title="@lang('app.howItWorks')"><i class="side-icon bi bi-question-circle"></i></a>
@@ -163,7 +150,7 @@ $viewEstimateRequestPermission = user()->permission('view_estimate_request');
             data['searchText'] = searchText;
         });
         const showTable = () => {
-            window.LaravelDataTables["invoices-table"].draw(true);
+            window.LaravelDataTables["invoices-table"].draw(false);
         }
 
         $('#filter-status')
@@ -274,7 +261,7 @@ $viewEstimateRequestPermission = user()->permission('view_estimate_request');
                         blockUI: true,
                         success: function(response) {
                             if (response.status == "success") {
-                                window.LaravelDataTables["invoices-table"].draw(true);
+                                window.LaravelDataTables["invoices-table"].draw(false);
                             }
                         }
                     });
@@ -367,7 +354,7 @@ $viewEstimateRequestPermission = user()->permission('view_estimate_request');
                 },
                 success: function(response) {
                     if (response.status == "success") {
-                        window.LaravelDataTables["invoices-table"].draw(true);
+                        window.LaravelDataTables["invoices-table"].draw(false);
                     }
                 }
             });

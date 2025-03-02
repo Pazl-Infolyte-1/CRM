@@ -2,10 +2,8 @@
     <x-forms.label :fieldId="$fieldId" :fieldLabel="$fieldLabel"></x-forms.label>
 
     <input type="range" class="form-control-range" @if ($disabled == 'true') disabled
-           @endif id="{{ $fieldId }}" value="{{ $fieldValue }}" name="{{ $fieldName }}"
-           @if ($max) max="{{ $max }}" @endif
-           @if ($min) min="{{ $min }}" @endif
-           onInput="$('#{{ $fieldId }}-val').html($(this).val())">
+    @endif id="{{ $fieldId }}" value="{{ $fieldValue }}" name="{{ $fieldName }}"
+    onInput="$('#{{ $fieldId }}-val').html($(this).val())">
 
     <span class="badge badge-light" id="{{ $fieldId }}-val">{{ $fieldValue }}</span>
 

@@ -24,18 +24,10 @@ class StoreRequest extends CoreRequest
      */
     public function rules()
     {
-        $rules = [
-            'description' => 'required',
+        return [
+            'name' => 'required|unique:offline_payment_methods,name,null,id,company_id,' . company()->id,
+            'description' => 'required'
         ];
-
-        if (company()) {
-            $rules['name'] = 'required|unique:offline_payment_methods,name,null,id,company_id,' . company()->id;
-        }
-        else{
-            $rules['name'] = 'required|unique:offline_payment_methods,name,null,id,company_id,null';
-        }
-
-        return $rules;
     }
 
 }

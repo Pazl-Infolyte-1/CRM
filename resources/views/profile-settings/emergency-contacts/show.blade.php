@@ -5,7 +5,7 @@
 <div class="modal-body">
     <div class="portlet-body">
         <x-form id="save-emergency-contact-form">
-            <div class="bg-white rounded">
+            <div class="add-client bg-white rounded">
                 <div class="row">
                     <div class="col-xl-12 col-lg-12 col-sm-12">
                         <x-cards.data-row :label="__('app.name')" :value="$contact->name" />

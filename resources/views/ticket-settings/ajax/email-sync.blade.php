@@ -9,7 +9,7 @@
         <div class="col-lg-12 ticket_email_details @if (!$ticketEmailSetting->status) d-none @endif">
             <div class="row mt-3">
                 <div class="col-md-12">
-                    <h4 class="f-16 font-weight-500 ">
+                    <h4 class="f-16 font-weight-500 text-capitalize">
                         @lang('modules.tickets.imapSettings')</h4>
                 </div>
 

@@ -27,26 +27,14 @@
     cardButton.disabled = true;
     var elements = stripe.elements();
 
-    function isDarkTheme() {
-        return document.body.classList.contains('dark-theme');
-    }
-
-    if (isDarkTheme()) {
-        var color = "#99A5B5";
-        var placeholderColor = "#99A5B5";
-    } else {
-        var color = "#32325d";
-        var placeholderColor = "#32325d";
-    }
-
     var style = {
         base: {
-            color: color,
+            color: "#32325d",
             fontFamily: 'Arial, sans-serif',
             fontSmoothing: "antialiased",
             fontSize: "16px",
             "::placeholder": {
-                color: placeholderColor
+                color: "#32325d"
             }
         },
         invalid: {

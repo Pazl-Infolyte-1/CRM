@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
+use Eloquent;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 /**
  * App\Models\EmailNotificationSetting
@@ -84,13 +87,6 @@ class EmailNotificationSetting extends BaseModel
             'send_slack' => 'no',
             'setting_name' => 'Task Completed',
             'slug' => 'task-completed',
-        ],
-        [
-            'send_email' => 'yes',
-            'send_push' => 'no',
-            'send_slack' => 'no',
-            'setting_name' => 'Task Status Changed',
-            'slug' => 'task-status-updated',
         ],
         [
             'send_email' => 'yes',
@@ -246,13 +242,6 @@ class EmailNotificationSetting extends BaseModel
             'send_slack' => 'no',
             'setting_name' => 'Shift Assign Notification',
             'slug' => 'shift-assign-notification',
-        ],
-        [
-            'send_email' => 'no',
-            'send_push' => 'no',
-            'send_slack' => 'no',
-            'setting_name' => 'Daily Schedule Notification',
-            'slug' => 'daily-schedule-notification',
         ]
     ];
 

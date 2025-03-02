@@ -29,33 +29,31 @@
 
     @if($invoiceSetting->locale == 'vi')
     @font-face {
-        font-family: 'BeVietnamPro';
-        font-style: normal;
-        font-weight: normal;
-        src: url("{{ storage_path('fonts/BeVietnamPro-Black.ttf') }}") format('truetype');
-    }
+            font-family: 'BeVietnamPro';
+            font-style: normal;
+            font-weight: normal;
+            src: url("{{ storage_path('fonts/BeVietnamPro-Black.ttf') }}") format('truetype');
+        }
+        @font-face {
+            font-family: 'BeVietnamPro';
+            font-style: italic;
+            font-weight: normal;
+            src: url("{{ storage_path('fonts/BeVietnamPro-BlackItalic.ttf') }}") format('truetype');
+        }
+        @font-face {
+            font-family: 'BeVietnamPro';
+            font-style: italic;
+            font-weight: bold;
+            src: url("{{ storage_path('fonts/BeVietnamPro-bold.ttf') }}") format('truetype');
+        }
 
-    @font-face {
-        font-family: 'BeVietnamPro';
-        font-style: italic;
-        font-weight: normal;
-        src: url("{{ storage_path('fonts/BeVietnamPro-BlackItalic.ttf') }}") format('truetype');
-    }
+        @endif
 
-    @font-face {
-        font-family: 'BeVietnamPro';
-        font-style: italic;
-        font-weight: bold;
-        src: url("{{ storage_path('fonts/BeVietnamPro-bold.ttf') }}") format('truetype');
-    }
-
-    @endif
-
-@if ($invoiceSetting->is_chinese_lang)
-@font-face {
+    @if ($invoiceSetting->is_chinese_lang)
+        @font-face {
         font-family: SimHei;
         /*font-style: normal;*/
-        /*font-weight: bold;*/
+        font-weight: bold;
         src: url('{{ asset('fonts/simhei.ttf') }}') format('truetype');
     }
 
@@ -94,6 +92,6 @@
 
     @endif
     * {
-        font-family: {{$font}}, DejaVu Sans, sans-serif;
+        font-family: DejaVu Sans, {{ $font }}, sans-serif;
     }
 </style>

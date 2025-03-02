@@ -37,7 +37,7 @@ $editImmigrationPermission = user()->permission('edit_immigration');
 
                 <x-cards.data-row :label="__('modules.employees.visaNumber')" :value="$visa->visa_number ?? '--'" />
                 <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                         @lang('app.country')</p>
                     <p class="mb-0 text-dark-grey f-14 w-70">
                         <span class='flag-icon flag-icon-{{ strtolower($visa->country->iso) }} flag-icon-squared'></span>
@@ -48,12 +48,12 @@ $editImmigrationPermission = user()->permission('edit_immigration');
                 <x-cards.data-row :label="__('modules.employees.issueDate')" :value=" $visa ? $visa->issue_date->format(company()->date_format) : '--'" />
                 <x-cards.data-row :label="__('modules.employees.expiryDate')" :value=" $visa  ? $visa->expiry_date->format(company()->date_format) : '--'" />
                 <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
+                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
                         @lang('modules.employees.scanCopy')</p>
                     <p class="mb-0 text-dark-grey f-14 w-70">
                         @if($visa->file)
                             <a target="_blank" class="text-dark-grey"
-                                href="{{ $visa->image_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.viewScanCopy')</u></a>
+                                href="{{ $visa->image_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.view') @lang('modules.employees.scanCopy')</u></a>
                         @else
                         --
                         @endif

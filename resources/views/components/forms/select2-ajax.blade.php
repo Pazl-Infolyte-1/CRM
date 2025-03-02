@@ -1,5 +1,5 @@
 <div {{ $attributes->merge(['class' => 'w-100 form-group mb-0']) }}>
-    <x-forms.select :fieldId="$fieldId" :fieldLabel="$fieldLabel" :fieldName="$fieldName" :fieldRequired="$fieldRequired"></x-forms.select>
+    <x-forms.select :fieldId="$fieldId" :fieldLabel="$fieldLabel" :fieldName="$fieldName"></x-forms.select>
 </div>
 
 <script>

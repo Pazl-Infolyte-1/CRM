@@ -3,6 +3,7 @@
 namespace App\Http\Requests\ProjectMembers;
 
 use App\Http\Requests\CoreRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreProjectMembers extends CoreRequest
 {

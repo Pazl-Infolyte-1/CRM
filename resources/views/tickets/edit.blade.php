@@ -39,14 +39,6 @@
             width: 1px;
         }
 
-        .update-buttons {
-            padding: 0.25rem 0.5rem !important;
-            font-size: 0.875rem !important;
-            line-height: 1.5 !important;
-            border-radius: 0.2rem !important;
-            margin-bottom: 3px !important;
-        }
-
     </style>
     <script src="{{ asset('vendor/jquery/frappe-charts.min.iife.js') }}"></script>
     <script src="{{ asset('vendor/jquery/Chart.min.js') }}"></script>
@@ -69,31 +61,31 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
     <div class="d-flex px-4 filter-box bg-white">
 
         <a href="javascript:;"
-            class="d-flex align-items-center height-44 text-dark-grey  border-right-grey pr-3 reply-button"><i
+            class="d-flex align-items-center height-44 text-dark-grey text-capitalize border-right-grey pr-3 reply-button"><i
                 class="fa fa-reply mr-0 mr-lg-2 mr-md-2"></i><span
                 class="d-none d-lg-block d-md-block">@lang('app.reply')</span></a>
 
-        @if(!in_array('client', user_roles()))
-            <a href="javascript:;" class="d-flex align-items-center height-44 text-dark-grey  border-right-grey px-3 note-button"><i
-                    class="fa fa-clipboard-list mr-0 mr-lg-2 mr-md-2"></i><span class="d-none d-lg-block d-md-block">@lang('app.addNote')</span></a>
-        @endif
+        {{-- <a href="javascript:;" class="d-flex align-items-center height-44 text-dark-grey text-capitalize border-right-grey px-3"><i
+                class="fa fa-clipboard-list mr-0 mr-lg-2 mr-md-2"></i><span class="d-none d-lg-block d-md-block">add
+                note</span></a> --}}
+
         <div id="ticket-closed" @if ($ticket->status == 'closed') style="display:none" @endif>
             <a href="javascript:;" data-status="closed"
-                class="d-flex align-items-center height-44 text-dark-grey  border-right-grey px-3 submit-ticket"><i
+                class="d-flex align-items-center height-44 text-dark-grey text-capitalize border-right-grey px-3 submit-ticket"><i
                     class="fa fa-times-circle mr-0 mr-lg-2 mr-md-2"></i><span
                     class="d-none d-lg-block d-md-block">@lang('app.close')</span></a>
         </div>
 
         @if ($deleteTicketPermission == 'all' || ($deleteTicketPermission == 'owned' && $ticket->agent_id == user()->id))
             <a href="javascript:;"
-                class="d-flex align-items-center height-44 text-dark-grey  border-right-grey px-3 delete-ticket"><i
+                class="d-flex align-items-center height-44 text-dark-grey text-capitalize border-right-grey px-3 delete-ticket"><i
                     class="fa fa-trash mr-0 mr-lg-2 mr-md-2"></i><span
                     class="d-none d-lg-block d-md-block">@lang('app.delete')</span>
             </a>
         @endif
 
         <a onclick="openTicketsSidebar()"
-            class="d-flex d-lg-none ml-auto align-items-center justify-content-center height-44 text-dark-grey  border-left-grey pl-3"><i
+            class="d-flex d-lg-none ml-auto align-items-center justify-content-center height-44 text-dark-grey text-capitalize border-left-grey pl-3"><i
                 class="fa fa-ellipsis-v"></i></a>
 
     </div>
@@ -110,7 +102,6 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
         <div class="ticket-left w-100">
             <x-form id="updateTicket2" method="PUT">
                 <input type="hidden" name="status" id="status" value="{{ $ticket->status }}">
-                <input type="hidden" name="type" id="type" value="{{ $ticket->type }}">
                 <input type="hidden" id="ticket_reply_id" value="">
 
                 <!-- START -->
@@ -139,7 +130,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                 $statusColor = 'blue';
                             @endphp
                         @endif
-                        <p class="mb-0  ticket-status">
+                        <p class="mb-0 text-capitalize ticket-status">
                            {!! $ticket->badge('span') !!}
                             <x-status :color="$statusColor" :value="__('app.'. $ticket->status)" />
                         </p>
@@ -149,10 +140,9 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                 <!-- TICKET MESSAGE START -->
                 <div class="ticket-msg border-right-grey" data-menu-vertical="1" data-menu-scroll="1"
                     data-menu-dropdown-timeout="500" id="ticketMsg">
+
                     @foreach ($ticket->reply as $reply)
-                    @if (!in_array('client', user_roles()) || $reply->type != 'note')
                         <x-cards.ticket :message="$reply" :user="$reply->user" />
-                    @endif
                     @endforeach
 
                 </div>
@@ -177,51 +167,11 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                             fieldName="file[]" fieldId="ticket-file-upload-dropzone" />
                     </div>
 
-                    <div class="col-md-12 border-top d-none mb-5" id="note-section">
-                        <div class="my-3">
-                            {{-- @if ($ticket->requester->id != user()->id || (!is_null($ticket->agent_id) && $ticket->agent_id != user()->id)) --}}
-                            <div class="d-flex align-items-center mb-3">
-                                <p class="f-w-500 m-0">@lang('app.to'):</p>
-                                <div class="col-md-9 mb-0 form-group">
-                                    <select class="multiple-users form-control" multiple name="user_id[]"
-                                        id="user_id" data-live-search="true" data-size="8">
-                                        @foreach ($ticketAgents as $item)
-                                            <x-user-option :user="$item" :pill="true"/>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            {{-- @endif --}}
-                            <div class="form-group">
-
-                                <div id="description2"></div>
-
-                                <textarea name="message2" id="description-text2" class="d-none"></textarea>
-                            </div>
-
-                        </div>
-                        <div class="form-group">
-                        <div class="my-3 form-group">
-                            <a class="f-15 f-w-500" href="javascript:;" id="add-note-file"><i
-                                    class="fa fa-paperclip font-weight-bold mr-1"></i>@lang('modules.projects.uploadFile')</a>
-                        </div>
-
-                            <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2 upload-note-section d-none"
-                                fieldLabel=""
-                                fieldName="file[]" fieldId="ticket-note-file-upload-dropzone"/>
-                        </div>
-                    </div>
-
                     <div class="ticket-reply-back justify-content-start px-lg-4 px-md-4 px-3 py-3  d-flex bg-white border-top-grey"
                         id="reply-section-action">
 
                         <x-forms.button-primary class="reply-button mr-3" icon="reply">@lang('app.reply')
                         </x-forms.button-primary>
-
-                        @if (!in_array('client', user_roles()))
-                            <x-forms.button-secondary class="note-button mr-3" icon="edit">@lang('app.addNote')
-                            </x-forms.button-secondary>
-                        @endif
 
                         <x-forms.link-secondary :link="route('tickets.index')" icon="arrow-left">@lang('app.back')
                         </x-forms.link-secondary>
@@ -243,25 +193,25 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuBtn" tabindex="0">
                                     <li>
                                         <a class="dropdown-item f-14 text-dark submit-ticket" href="javascript:;"
-                                            data-status="open" data-type="reply">
+                                            data-status="open">
                                             <x-status color="red" :value="__('modules.tickets.submitOpen')" />
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item f-14 text-dark submit-ticket" href="javascript:;"
-                                            data-status="pending" data-type="reply">
+                                            data-status="pending">
                                             <x-status color="yellow" :value="__('modules.tickets.submitPending')" />
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item f-14 text-dark submit-ticket" href="javascript:;"
-                                            data-status="resolved" data-type="reply">
+                                            data-status="resolved">
                                             <x-status color="dark-green" :value="__('modules.tickets.submitResolved')" />
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item f-14 text-dark submit-ticket" href="javascript:;"
-                                            data-status="closed" data-type="reply">
+                                            data-status="closed">
                                             <x-status color="blue" :value="__('modules.tickets.submitClosed')" />
                                         </a>
                                     </li>
@@ -269,7 +219,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                 </ul>
                             </div>
                         @else
-                            <x-forms.button-primary icon="check" data-status="open" class="submit-ticket mr-3" data-type="reply">
+                            <x-forms.button-primary icon="check" data-status="open" class="submit-ticket mr-3">
                                 @lang('app.submit')
                             </x-forms.button-primary>
                         @endif
@@ -299,58 +249,6 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                         </x-forms.link-secondary>
 
                     </div>
-
-                    <div class="ticket-reply-back flex-row justify-content-start px-lg-4 px-md-4 px-3 py-3 c-inv-btns bg-white border-top-grey d-none"
-                        id="note-section-action-2">
-                        @if ($editTicketPermission == 'all'
-                        || ($editTicketPermission == 'added' && user()->id == $ticket->added_by)
-                        || ($editTicketPermission == 'owned' && (user()->id == $ticket->user_id || $ticket->agent_id == user()->id))
-                        || ($editTicketPermission == 'both' && (user()->id == $ticket->user_id || $ticket->agent_id == user()->id || $ticket->added_by == user()->id)))
-                            <div class="inv-action dropup mr-3">
-                                <button class="btn-primary dropdown-toggle" type="button" data-toggle="dropdown"
-                                    aria-haspopup="true" aria-expanded="false">
-                                    @lang('app.addNote')
-                                    <span><i class="fa fa-chevron-up f-15 text-white"></i></span>
-                                </button>
-                                <!-- DROPDOWN - INFORMATION -->
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuBtn" tabindex="0">
-                                    <li>
-                                        <a class="dropdown-item f-14 text-dark submit-ticket" href="javascript:;"
-                                            data-status="open" data-type="note">
-                                            <x-status color="red" :value="__('modules.tickets.noteOpen')" />
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item f-14 text-dark submit-ticket" href="javascript:;"
-                                            data-status="pending" data-type="note">
-                                            <x-status color="yellow" :value="__('modules.tickets.notePending')" />
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item f-14 text-dark submit-ticket" href="javascript:;"
-                                            data-status="resolved" data-type="note">
-                                            <x-status color="dark-green" :value="__('modules.tickets.noteResolved')" />
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item f-14 text-dark submit-ticket" href="javascript:;"
-                                            data-status="closed" data-type="note">
-                                            <x-status color="blue" :value="__('modules.tickets.noteClosed')" />
-                                        </a>
-                                    </li>
-
-                                </ul>
-                            </div>
-                        @else
-                            <x-forms.button-primary icon="edit" data-status="open" class="submit-ticket mr-3">
-                                @lang('app.addNote')
-                            </x-forms.button-primary>
-                        @endif
-
-                        <x-forms.link-secondary id="cancel-note" class="border-0" link="javascript:;">@lang('app.cancel')
-                        </x-forms.link-secondary>
-
-                    </div>
             </div>
             </x-form>
         </div>
@@ -359,7 +257,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
         <!-- TICKET RIGHT START -->
         <div class="mobile-close-overlay w-100 h-100" id="close-tickets-overlay"></div>
         <div class="ticket-right bg-white ticket-sidebar" id="ticket-detail-contact">
-            <a class="d-none" id="close-tickets"><i class="fa fa-times"></i></a>
+            <a class="d-block d-lg-none close-it" id="close-tickets"><i class="fa fa-times"></i></a>
             <div id="tabs">
                 <nav class="tabs px-2 border-bottom-grey">
                     <div class="nav" id="nav-tab" role="tablist">
@@ -400,7 +298,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                     <select class="form-control select-picker " name="group_id" id="group_id"
                                         data-live-search="true" data-container="body" data-size="8">
                                         @foreach ($groups as $group)
-                                            <option @selected($group->id == $ticket->group_id) value="{{ $group->id }}">{{ $group->group_name }}</option>
+                                            <option @if($group->id == $ticket->group_id) selected @endif value="{{ $group->id }}">{{ $group->group_name }}</option>
                                         @endforeach
                                     </select>
                                     @if($manageGroupPermission == 'all')
@@ -430,19 +328,19 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                             </div>
                             <div class="more-filter-items">
                                 <x-forms.select fieldId="priority" :fieldLabel="__('modules.tasks.priority')"
-                                                fieldName="priority" data-container="body">
-                                    <option @selected($ticket->priority == 'low') value="low"
-                                            data-content="<i class='fa fa-circle mr-2 text-dark-green'></i> {{ __('app.low')}}"
-                                    >@lang('app.low')</option>
-                                    <option @selected($ticket->priority == 'medium') value="medium"
-                                            data-content="<i class='fa fa-circle mr-2 text-blue'></i> {{ __('app.medium')}}"
-                                    >@lang('app.medium')</option>
-                                    <option @selected($ticket->priority == 'high') value="high"
-                                            data-content="<i class='fa fa-circle mr-2 text-warning'></i> {{ __('app.high')}}"
-                                    >@lang('app.high')</option>
-                                    <option @selected($ticket->priority == 'urgent') value="urgent"
-                                            data-content="<i class='fa fa-circle mr-2 text-red'></i> {{ __('app.urgent')}}"
-                                    >@lang('app.urgent')</option>
+                                    fieldName="priority" data-container="body">
+                                    <option @if ($ticket->priority == 'low') selected @endif value="low"
+                                        data-content="<i class='fa fa-circle mr-2 text-dark-green'></i> {{ __('app.low')}}"
+                                        >@lang('app.low')</option>
+                                    <option @if ($ticket->priority == 'medium') selected @endif value="medium"
+                                        data-content="<i class='fa fa-circle mr-2 text-blue'></i> {{ __('app.medium')}}"
+                                        >@lang('app.medium')</option>
+                                    <option @if ($ticket->priority == 'high') selected @endif value="high"
+                                        data-content="<i class='fa fa-circle mr-2 text-warning'></i> {{ __('app.high')}}"
+                                        >@lang('app.high')</option>
+                                    <option @if ($ticket->priority == 'urgent') selected @endif value="urgent"
+                                        data-content="<i class='fa fa-circle mr-2 text-red'></i> {{ __('app.urgent')}}"
+                                        >@lang('app.urgent')</option>
                                 </x-forms.select>
                             </div>
                             <div class="more-filter-items mb-4">
@@ -454,7 +352,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                         data-container="body" data-live-search="true" data-size="8">
                                         <option value="">--</option>
                                         @foreach ($types as $type)
-                                            <option @selected($type->id == $ticket->type_id) value="{{ $type->id }}">
+                                            <option @if ($type->id == $ticket->type_id) selected @endif value="{{ $type->id }}">
                                                 {{ $type->type }}</option>
                                         @endforeach
                                     </select>
@@ -475,7 +373,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                         data-container="body" data-live-search="true" data-size="8">
                                         <option value="">--</option>
                                         @foreach ($channels as $channel)
-                                            <option @selected($channel->id == $ticket->channel_id) value="{{ $channel->id }}">
+                                            <option @if ($channel->id == $ticket->channel_id) selected @endif value="{{ $channel->id }}">
                                                 {{ $channel->channel_name }}
                                             </option>
                                         @endforeach
@@ -491,17 +389,17 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                             <div class="more-filter-items">
                                 <x-forms.select fieldId="ticket-status" :fieldLabel="__('app.status')"
                                     fieldName="status" data-container="body">
-                                    <option @selected($ticket->status == 'open') value="open"
+                                    <option @if ($ticket->status == 'open') selected @endif value="open"
                                         data-content="<i class='fa fa-circle mr-2 text-red'></i>{{ __('app.open') }}">
                                         @lang('app.open')
                                     </option>
-                                    <option @selected($ticket->status == 'pending') value="pending"
+                                    <option @if ($ticket->status == 'pending') selected @endif value="pending"
                                         data-content="<i class='fa fa-circle mr-2 text-yellow'></i>{{ __('app.pending') }}">
                                         @lang('app.pending')</option>
-                                    <option @selected($ticket->status == 'resolved') value="resolved"
+                                    <option @if ($ticket->status == 'resolved') selected @endif value="resolved"
                                         data-content="<i class='fa fa-circle mr-2 text-dark-green'></i>{{ __('app.resolved') }}">
                                         @lang("app.resolved")</option>
-                                    <option @selected($ticket->status == 'closed') value="closed"
+                                    <option @if ($ticket->status == 'closed') selected @endif value="closed"
                                         data-content="<i class='fa fa-circle mr-2 text-blue'></i>{{ __('app.closed') }}">
                                         @lang('app.closed')</option>
                                 </x-forms.select>
@@ -549,7 +447,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                 </a>
                             </h4>
                             @if ($ticket->requester->country_id)
-                                <span class="card-text f-12 text-dark-grey  d-flex align-items-center">
+                                <span class="card-text f-12 text-dark-grey text-capitalize d-flex align-items-center">
                                     <span class='flag-icon flag-icon-{{ strtolower($ticket->requester->country->iso) }} mr-2'></span>
                                     {{ $ticket->requester->country->nicename }}
                                 </span>
@@ -561,18 +459,15 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                     </div>
                     <!-- CONTACT OWNER END  -->
                     <!-- TICKET CHART START  -->
-                    <x-cards.data :title="__('app.menu.tickets')" padding="false" class="pb-3">
-                        @if (array_sum($ticketChart['values']) > 0)
-                            <a href="javascript:;" class="text-darkest-grey f-w-500 piechart-full-screen" data-chart-id="ticket-chart" data-chart-data="{{ json_encode($ticketChart) }}"><i class="fas fa-expand float-right mr-3"></i></a>
-                        @endif
+                    <x-cards.data :title="__('app.menu.tickets')" padding="false">
                         <x-pie-chart id="ticket-chart" :labels="$ticketChart['labels']" :values="$ticketChart['values']"
-                            :colors="$ticketChart['colors']" height="200" width="200" />
+                            :colors="$ticketChart['colors']" height="200" width="220" />
                     </x-cards.data>
                     <!-- TICKET CHART END  -->
                     <!-- RECENT TICKETS START -->
                     <div class="card pt-4 px-4 border-grey border-left-0 border-right-0 rounded-0">
                         <div class="card-title">
-                            <h4 class="f-18 f-w-500  mb-3">@lang('modules.tickets.recentTickets')</h4>
+                            <h4 class="f-18 f-w-500 text-capitalize mb-3">@lang('modules.tickets.recentTickets')</h4>
                         </div>
                         <!-- CHART START -->
                         <div class="card-body p-0">
@@ -608,7 +503,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                                             $statusColor = 'blue';
                                                         @endphp
                                                     @endif
-                                                    <span class="f-13 text-darkest-grey ">
+                                                    <span class="f-13 text-darkest-grey text-capitalize">
                                                         <x-status :color="$statusColor" :value="$item->status" />
                                                     </span>
 
@@ -650,7 +545,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                     <!-- Activity TICKETS START -->
                     <div class="card pt-4 pl-4 border-grey border-left-0 border-right-0 rounded-0 h-100">
                         <div class="card-title">
-                            <h4 class="f-18 f-w-500  mb-3">@lang('app.ticketActivity')</h4>
+                            <h4 class="f-18 f-w-500 text-capitalize mb-3">@lang('app.ticketActivity')</h4>
                         </div>
                         <!-- CHART START -->
                         <div class="card-body p-0">
@@ -658,7 +553,6 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                 data-menu-dropdown-timeout="500" id="ticketActivity">
                                 <div class="recent-ticket-inner position-relative">
                                     @foreach ($ticket->activities as $activity)
-                                    @if (!in_array('client', user_roles()) || $activity->type != 'note')
                                         <div class="r-t-items d-flex">
                                             <div class="r-t-items-left text-lightest f-21">
                                                 <i class="fa fa-ticket-alt"></i>
@@ -677,7 +571,6 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
                                                 </p>
                                             </div>
                                         </div><!-- item end -->
-                                    @endif
                                     @endforeach
 
                                 </div>
@@ -701,31 +594,7 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
 
     <script>
         $(document).ready(function() {
-            // quillImageLoad('#description');
-            // quillImageLoad('#description2');
-
-            const atValues = @json($userData);
-            quillMention(atValues, '#description');
-            quillMention(atValues, '#description2');
-        });
-
-        $("#user_id").selectpicker({
-            actionsBox: true,
-            selectAllText: "{{ __('modules.permission.selectAll') }}",
-            deselectAllText: "{{ __('modules.permission.deselectAll') }}",
-            multipleSeparator: " ",
-            selectedTextFormat: "count > 8",
-            countSelectedText: function(selected, total) {
-                return selected + " {{ __('app.membersSelected') }} ";
-            }
-        });
-
-        $('.note-button').click(function() {
-            $('#reply-section-action').toggleClass('d-none d-flex');
-            $('#note-section-action-2').toggleClass('d-none flex-row');
-            $('#note-section').removeClass('d-none');
-            window.scrollTo(0, document.body.scrollHeight);
-            setViewHeight();
+            quillImageLoad('#description');
         });
 
         $('.reply-button').click(function() {
@@ -744,31 +613,17 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
             setViewHeight();
         });
 
-        $('#cancel-note').click(function() {
-            $('#reply-section-action').toggleClass('d-none d-flex');
-            $('#note-section-action-2').toggleClass('d-none flex-row');
-            $('#note-section').addClass('d-none');
-            window.scrollTo(0, document.body.scrollHeight);
-            setViewHeight();
-        });
-
         $('#add-file').click(function() {
             $('.upload-section').removeClass('d-none');
             $('#add-file').addClass('d-none');
             window.scrollTo(0, document.body.scrollHeight);
         });
 
-        $('#add-note-file').click(function() {
-            $('.upload-note-section').removeClass('d-none');
-            $(this).addClass('d-none');
-            window.scrollTo(0, document.body.scrollHeight);
-        });
-
         var input = document.querySelector('input[name=tags]'),
             // init Tagify script on the above inputs
             tagify = new Tagify(input);
-            Dropzone.autoDiscover = false;
 
+            Dropzone.autoDiscover = false;
         //Dropzone class
         ticketDropzone = new Dropzone("div#ticket-file-upload-dropzone", {
             dictDefaultMessage: "{{ __('app.dragDrop') }}",
@@ -824,89 +679,27 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
 
         });
 
-        ticketNoteDropzone = new Dropzone("div#ticket-note-file-upload-dropzone", {
-            dictDefaultMessage: "{{ __('app.dragDrop') }}",
-            url: "{{ route('ticket-files.store') }}",
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            paramName: "file",
-            maxFilesize: DROPZONE_MAX_FILESIZE,
-            maxFiles: DROPZONE_MAX_FILES,
-            autoProcessQueue: false,
-            uploadMultiple: true,
-            addRemoveLinks: true,
-            parallelUploads: DROPZONE_MAX_FILES,
-            acceptedFiles: DROPZONE_FILE_ALLOW,
-            init: function() {
-                ticketNoteDropzone = this;
-            }
-        });
-        ticketNoteDropzone.on('sending', function(file, xhr, formData) {
-            let ids = $('#ticket_reply_id').val();
-            let type = $('#type').val();
-            formData.append('ticket_reply_id', ids);
-            formData.append('ticket_id', '{{ $ticket->id }}');
-            formData.append('type', type);
-        });
-        ticketNoteDropzone.on('uploadprogress', function() {
-            $.easyBlockUI();
-        });
-        ticketNoteDropzone.on('queuecomplete', function() {
-            var msgs = "@lang('messages.addDiscussion')";
-            window.location.href = "{{ route('tickets.show', $ticket->ticket_number) }}";
-        });
-        ticketNoteDropzone.on('removedfile', function () {
-            var grp = $('div#note-file-upload-dropzone').closest(".form-group");
-            var label = $('div#note-file-upload-box').siblings("label");
-            $(grp).removeClass("has-error");
-            $(label).removeClass("is-invalid");
-        });
-        ticketNoteDropzone.on('error', function (file, message) {
-            ticketNoteDropzone.removeFile(file);
-            var grp = $('div#note-file-upload-dropzone').closest(".form-group");
-            var label = $('div#note-file-upload-box').siblings("label");
-            $(grp).find(".help-block").remove();
-            var helpBlockContainer = $(grp);
-
-            if (helpBlockContainer.length == 0) {
-                helpBlockContainer = $(grp);
-            }
-
-            helpBlockContainer.append('<div class="help-block invalid-feedback">' + message + '</div>');
-            $(grp).addClass("has-error");
-            $(label).addClass("is-invalid");
-        });
-
         $('.submit-ticket').click(function() {
             var note = document.getElementById('description').children[0].innerHTML;
             document.getElementById('description-text').value = note;
 
-            var note2 = document.getElementById('description2').children[0].innerHTML;
-            document.getElementById('description-text2').value = note2;
-
             var status = $(this).data('status');
             $('#status').val(status);
-            var type = $(this).data('type');
-            $('#type').val(type);
-            var userId = $('#user_id').val();
 
             const url = "{{ route('tickets.update', $ticket->id) }}";
 
             $.easyAjax({
                 url: url,
-                container: '#note-section',
+                container: '#ticketMsg',
                 type: "POST",
                 blockUI: true,
                 data: $('#updateTicket2').serialize(),
                 success: function(response) {
+
                     if (response.status == 'success') {
                         if (ticketDropzone.getQueuedFiles().length > 0) {
                             $('#ticket_reply_id').val(response.reply_id);
                             ticketDropzone.processQueue();
-                        } else if (ticketNoteDropzone.getQueuedFiles().length > 0) {
-                            $('#ticket_reply_id').val(response.reply_id);
-                            ticketNoteDropzone.processQueue();
                         } else {
                             window.location.href = "{{ route('tickets.show', $ticket->ticket_number) }}";
                         }
@@ -979,130 +772,6 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
             })
         })
 
-        $('body').on('click', '#cancel-notes', function() {
-            var messageId = $(this).closest('.card').attr('id');
-            var id = messageId.replace('message-', '');
-            $('#' + messageId + ' .note-message').removeClass('d-none');
-            $('#' + messageId + ' .edit-note-message').addClass('d-none');
-        });
-
-        $('body').on('click', '.edit-message', function() {
-            var messageId = $(this).closest('.card').attr('id');
-            var id = messageId.replace('message-', '');
-            $('#' + messageId + ' .note-message').addClass('d-none');
-            $('#' + messageId + ' .edit-note-message').removeClass('d-none');
-
-            destory_editor('#description-note'+id);
-            quillImageLoad('#description-note'+id);
-            var editNoteDropzoneId = 'div#edit-note-file-upload-dropzone-'+id+'';
-            editNoteDropzone = new Dropzone(editNoteDropzoneId, {
-            dictDefaultMessage: "{{ __('app.dragDrop') }}",
-            url: "{{ route('ticket-files.store') }}",
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            paramName: "file",
-            maxFilesize: DROPZONE_MAX_FILESIZE,
-            maxFiles: DROPZONE_MAX_FILES,
-            autoProcessQueue: false,
-            uploadMultiple: true,
-            addRemoveLinks: true,
-            parallelUploads: DROPZONE_MAX_FILES,
-            acceptedFiles: DROPZONE_FILE_ALLOW,
-            init: function() {
-                editNoteDropzone = this;
-            }
-        });
-
-        editNoteDropzone.on('sending', function(file, xhr, formData) {
-            let ids = $('#ticket_reply_id').val();
-
-            let type = $('#type').val();
-            formData.append('ticket_reply_id', ids);
-            formData.append('ticket_id', '{{ $ticket->id }}');
-            formData.append('type', type);
-        });
-
-        editNoteDropzone.on('uploadprogress', function() {
-            $.easyBlockUI();
-        });
-        editNoteDropzone.on('queuecomplete', function() {
-            var msgs = "@lang('messages.addDiscussion')";
-            window.location.href = "{{ route('tickets.show', $ticket->ticket_number) }}";
-        });
-        editNoteDropzone.on('removedfile', function () {
-            var grp = $('div#edit-note-file-upload-dropzone').closest(".form-group");
-            var label = $('div#edit-note-file-upload-box').siblings("label");
-            $(grp).removeClass("has-error");
-            $(label).removeClass("is-invalid");
-        });
-        editNoteDropzone.on('error', function (file, message) {
-            editNoteDropzone.removeFile(file);
-            var grp = $('div#edit-note-file-upload-dropzone').closest(".form-group");
-            var label = $('div#edit-note-file-upload-box').siblings("label");
-            $(grp).find(".help-block").remove();
-            var helpBlockContainer = $(grp);
-
-            if (helpBlockContainer.length == 0) {
-                helpBlockContainer = $(grp);
-            }
-
-            helpBlockContainer.append('<div class="help-block invalid-feedback">' + message + '</div>');
-            $(grp).addClass("has-error");
-            $(label).addClass("is-invalid");
-        });
-
-        });
-
-        $('body').on('click', '#edit-note-file', function() {
-            $('.upload-edit-note-section').removeClass('d-none');
-            $('.edit-ticket-file').addClass('d-none');
-        });
-
-        $('body').on('click', '#save-notes', function() {
-            var messageId = $(this).closest('.card').attr('id');
-            var id = messageId.replace('message-', '');
-
-            url = '{{ route("ticket-replies.edit_note", ":id") }}';
-            url = url.replace(':id', id);
-            var formId = 'text-'+id+'';
-
-            var editedMessage = $('#description-note' + id)[0].children[0].innerHTML;
-
-            var token = '{{ csrf_token() }}';
-
-            $.easyAjax({
-                type: 'POST',
-                container: formId,
-                url: url,
-                disableButton: true,
-                blockUI: true,
-                file: true,
-                buttonSelector: "#save-notes",
-                data: {
-                    '_token': token,
-                    'messageId': messageId,
-                    'editedMessage': editedMessage,
-                    'id': id,
-                },
-                success: function(response) {
-                    if (response.status == "success") {
-                        if (editNoteDropzone.getQueuedFiles().length > 0) {
-                            $('#ticket_reply_id').val(id);
-                            editNoteDropzone.processQueue();
-                        }
-
-                        $('#text-'+id+'').addClass('d-none');
-                        $('#' + messageId + ' .notified-message').removeClass('d-none');
-                        $('#' + messageId + ' .note-message').children('span').html(editedMessage);
-                        $('#' + messageId + ' .note-message').removeClass('d-none');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    // Handle errors if any
-                }
-            });
-        });
 
         $('body').on('click', '.delete-file', function() {
             var id = $(this).data('row-id');
@@ -1263,11 +932,12 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
 
         getAgents($('#group_id').val());
 
-        function getAgents(groupId,exceptThis=null ){
-            var url = "{{ route('tickets.agent_group', [':id', ':exceptThis']).'?ticketNumber='.$ticket->ticket_number}}";
+        function getAgents(groupId){
+            var url = "{{ route('tickets.agent_group', ':id').'?ticketNumber='.$ticket->ticket_number}}";
             url = url.replace(':id', groupId);
-            url = url.replace(':exceptThis', exceptThis);
-            
+            // alert(url);
+            // var ticket_number = "{{$ticket->ticket_number}}"
+            // alert(ticket);
             $.easyAjax({
                 url: url,
                 type: "GET",
@@ -1308,9 +978,9 @@ $canEditTicket = ($editTicketPermission == 'all' || ($editTicketPermission == 'o
         function setViewHeight() {
             let otherBodyHeight = $('#header').outerHeight() + $('.filter-box').outerHeight();
 
-            // document.getElementById("ticket-detail-contact").style.height = "calc(100vh - " + (
-            //     $('#tabs').outerHeight() + otherBodyHeight
-            // ) + "px)";
+            document.getElementById("ticket-detail-contact").style.height = "calc(100vh - " + (
+                $('#tabs').outerHeight() + otherBodyHeight
+            ) + "px)";
             document.getElementById("ticketMsg").style.height = "calc(100vh - " + (
                 otherBodyHeight + $('#ticket-info-bar').outerHeight() +
                 $('#ticketMsgBottom').outerHeight()

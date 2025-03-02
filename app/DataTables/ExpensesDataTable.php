@@ -2,9 +2,12 @@
 
 namespace App\DataTables;
 
+use Carbon\Carbon;
 use App\Models\Expense;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
+use App\DataTables\BaseDataTable;
+use Illuminate\Database\Eloquent\Model;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
@@ -16,16 +19,14 @@ class ExpensesDataTable extends BaseDataTable
     private $deleteExpensePermission;
     private $viewExpensePermission;
     private $approveExpensePermission;
-    private $includeSoftDeletedProjects;
 
-    public function __construct($includeSoftDeletedProjects = false)
+    public function __construct()
     {
         parent::__construct();
         $this->editExpensePermission = user()->permission('edit_expenses');
         $this->deleteExpensePermission = user()->permission('delete_expenses');
         $this->viewExpensePermission = user()->permission('view_expenses');
         $this->approveExpensePermission = user()->permission('approve_expenses');
-        $this->includeSoftDeletedProjects = $includeSoftDeletedProjects;
     }
 
     /**
@@ -39,7 +40,9 @@ class ExpensesDataTable extends BaseDataTable
 
         $datatables = datatables()->eloquent($query);
         $datatables->addIndexColumn();
-        $datatables->addColumn('check', fn($row) => $this->checkBox($row));
+        $datatables->addColumn('check', function ($row) {
+            return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+        });
         $datatables->addColumn('action', function ($row) {
 
             $action = '<div class="task_view">
@@ -55,17 +58,10 @@ class ExpensesDataTable extends BaseDataTable
 
             if (is_null($row->expenses_recurring_id)) {
                 if ($this->editExpensePermission == 'all' || ($this->editExpensePermission == 'added' && user()->id == $row->added_by)) {
-                    if (is_null($row->project_id)) {
-                        $action .= '<a class="dropdown-item openRightModal" href="' . route('expenses.edit', [$row->id]) . '">
+                    $action .= '<a class="dropdown-item openRightModal" href="' . route('expenses.edit', [$row->id]) . '">
                                 <i class="fa fa-edit mr-2"></i>
                                 ' . trans('app.edit') . '
-                                </a>';
-                    } else if (!is_null($row->project_id) && is_null($row->project_deleted_at)) {
-                        $action .= '<a class="dropdown-item openRightModal" href="' . route('expenses.edit', [$row->id]) . '">
-                            <i class="fa fa-edit mr-2"></i>
-                            ' . trans('app.edit') . '
                             </a>';
-                    }
                 }
 
                 if ($this->deleteExpensePermission == 'all' || ($this->deleteExpensePermission == 'added' && user()->id == $row->added_by)) {
@@ -82,19 +78,28 @@ class ExpensesDataTable extends BaseDataTable
 
             return $action;
         });
-        $datatables->editColumn('price', fn($row) => $row->total_amount);
-
-        $datatables->editColumn('item_name', function ($row) {
-            $link = '<a href="' . route('expenses.show', $row->id) . '" class="openRightModal text-darkest-grey">' . $row->item_name . '</a>';
-            return is_null($row->expenses_recurring_id) ? $link : "$link <p class='mb-0'><span class='badge badge-primary'>" . __('app.recurring') . "</span></p>";
+        $datatables->editColumn('price', function ($row) {
+            return $row->total_amount;
         });
+        $datatables->editColumn('item_name', function ($row) {
+            if (is_null($row->expenses_recurring_id)) {
+                return '<a href="' . route('expenses.show', $row->id) . '" class="openRightModal text-darkest-grey">' . $row->item_name . '</a>';
+            }
 
-        $datatables->addColumn('export_item_name', fn($row) => $row->item_name);
-
-        $datatables->addColumn('employee_name', fn($row) => $row->user?->name);
-
-        $datatables->editColumn('user_id', fn($row) => view('components.employee', ['user' => $row->user]));
-
+            return '<a href="' . route('expenses.show', $row->id) . '" class="openRightModal text-darkest-grey">' . $row->item_name . '</a>
+                <p class="mb-0"><span class="badge badge-primary"> ' . __('app.recurring') . ' </span></p>';
+        });
+        $datatables->addColumn('export_item_name', function ($row) {
+            return $row->item_name;
+        });
+        $datatables->addColumn('employee_name', function ($row) {
+            return $row->user->name;
+        });
+        $datatables->editColumn('user_id', function ($row) {
+            return view('components.employee', [
+                'user' => $row->user
+            ]);
+        });
         $datatables->editColumn('status', function ($row) {
             if (
                 $this->approveExpensePermission != 'none'
@@ -154,11 +159,28 @@ class ExpensesDataTable extends BaseDataTable
 
             return $status;
         });
-        $datatables->addColumn('status_export', fn($row) => $row->status);
-        $datatables->editColumn('purchase_date', fn($row) => $row->purchase_date?->translatedFormat($this->company->date_format));
-        $datatables->editColumn('purchase_from', fn($row) => $row->purchase_from ?? '--');
+        $datatables->addColumn('status_export', function ($row) {
+            return $row->status;
+        });
+
+        $datatables->editColumn(
+            'purchase_date',
+            function ($row) {
+                if (!is_null($row->purchase_date)) {
+                    return $row->purchase_date->translatedFormat($this->company->date_format);
+                }
+            }
+        );
+        $datatables->editColumn(
+            'purchase_from',
+            function ($row) {
+                return !is_null($row->purchase_from) ? $row->purchase_from : '--';
+            }
+        );
         $datatables->smart(false);
-        $datatables->setRowId(fn($row) => 'row-' . $row->id);
+        $datatables->setRowId(function ($row) {
+            return 'row-' . $row->id;
+        });
         $datatables->addIndexColumn();
         $datatables->removeColumn('currency_id');
         $datatables->removeColumn('name');
@@ -182,24 +204,19 @@ class ExpensesDataTable extends BaseDataTable
         $request = $this->request();
 
         $model = Expense::with('currency', 'user', 'user.employeeDetail', 'user.employeeDetail.designation', 'user.session')
-            ->select('expenses.id', 'expenses.project_id', 'expenses.item_name', 'expenses.user_id', 'expenses.price', 'users.salutation', 'users.name', 'expenses.purchase_date', 'expenses.currency_id', 'currencies.currency_symbol', 'expenses.status', 'expenses.purchase_from', 'expenses.expenses_recurring_id', 'designations.name as designation_name', 'expenses.added_by', 'projects.deleted_at as project_deleted_at')
-            ->leftjoin('users', 'users.id', 'expenses.user_id')
+            ->select('expenses.id', 'expenses.item_name', 'expenses.user_id', 'expenses.price', 'users.salutation', 'users.name', 'expenses.purchase_date', 'expenses.currency_id', 'currencies.currency_symbol', 'expenses.status', 'expenses.purchase_from', 'expenses.expenses_recurring_id', 'designations.name as designation_name', 'expenses.added_by')
+            ->join('users', 'users.id', 'expenses.user_id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
-            ->leftJoin('projects', 'projects.id', 'expenses.project_id')
             ->join('currencies', 'currencies.id', 'expenses.currency_id');
 
-        if (!$this->includeSoftDeletedProjects) {
-            $model->whereNull('projects.deleted_at');
-        }
-
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = companyToDateString($request->startDate);
+            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $model = $model->where(DB::raw('DATE(expenses.`purchase_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = companyToDateString($request->endDate);
+            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
             $model = $model->where(DB::raw('DATE(expenses.`purchase_date`)'), '<=', $endDate);
         }
 
@@ -227,8 +244,7 @@ class ExpensesDataTable extends BaseDataTable
             $model->where(function ($query) {
                 $query->where('expenses.item_name', 'like', '%' . request('searchText') . '%')
                     ->orWhere('users.name', 'like', '%' . request('searchText') . '%')
-                    ->orWhere('expenses.price', 'like', '%' . request('searchText') . '%')
-                    ->orWhere('expenses.purchase_from', 'like', '%' . request('searchText') . '%');
+                    ->orWhere('expenses.price', 'like', '%' . request('searchText') . '%');
             });
         }
 
@@ -289,7 +305,7 @@ class ExpensesDataTable extends BaseDataTable
                 'orderable' => false,
                 'searchable' => false
             ],
-            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId(),'title' => '#'],
+            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId()],
             __('app.id') => ['data' => 'id', 'name' => 'expenses.id', 'title' => __('app.id'),'visible' => showId()],
             __('modules.expenses.itemName') => ['data' => 'item_name', 'name' => 'item_name', 'exportable' => false, 'title' => __('modules.expenses.itemName')],
             __('app.menu.itemName') => ['data' => 'export_item_name', 'name' => 'export_item_name', 'visible' => false, 'title' => __('modules.expenses.itemName')],

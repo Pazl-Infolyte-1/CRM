@@ -2,7 +2,12 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\BankTransaction;
+use App\Models\CustomField;
+use App\Models\CustomFieldGroup;
+use Google\Service\AnalyticsData\OrderBy;
+use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 
 class BankTransactionDataTable extends BaseDataTable
@@ -91,7 +96,9 @@ class BankTransactionDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->orderColumn('transaction_date', 'transaction_date $1')
             ->rawColumns(['action', 'check', 'account_name', 'status', 'transaction_type']);
     }

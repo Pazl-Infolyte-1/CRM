@@ -14,7 +14,7 @@ class EstimateTemplateObserver
 
     public function creating(EstimateTemplate $estimate)
     {
-        if (company()) {
+        if(company()) {
             $estimate->company_id = company()->id;
         }
     }
@@ -86,14 +86,14 @@ class EstimateTemplateObserver
                         $estimateTemplateItemImage->save();
                     }
 
-                }
+                };
             }
 
         }
     }
 
     /**
-     * @throws RelatedResourceNotFoundException
+     * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
      */
     public function updated(EstimateTemplate $estimate)
     {

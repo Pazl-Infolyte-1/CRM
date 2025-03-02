@@ -2,9 +2,8 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\ClientContact;
-use App\Models\User;
-use App\Scopes\ActiveScope;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -12,12 +11,14 @@ use Yajra\DataTables\Html\Column;
 class ClientContactsDataTable extends BaseDataTable
 {
 
+    private $viewClientPermission;
     private $editClientPermission;
     private $deleteClientPermission;
 
     public function __construct()
     {
         parent::__construct();
+        $this->viewClientPermission = user()->permission('view_client_contacts');
         $this->editClientPermission = user()->permission('edit_client_contacts');
         $this->deleteClientPermission = user()->permission('delete_client_contacts');
     }
@@ -33,7 +34,9 @@ class ClientContactsDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
@@ -44,7 +47,7 @@ class ClientContactsDataTable extends BaseDataTable
                             <i class="icon-options-vertical icons"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
-                $action .= '<a href="' . route('client-contacts.show', [$row->id]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
+
                 if ($this->editClientPermission == 'all' || ($this->editClientPermission == 'added' && user()->id == $row->added_by) || ($this->editClientPermission == 'both' && user()->id == $row->added_by)) {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('client-contacts.edit', [$row->id]) . '">
                                 <i class="fa fa-edit mr-2"></i>
@@ -65,19 +68,29 @@ class ClientContactsDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->editColumn('contact_name', function ($row) {
-                return '<div class="media align-items-center">
-                        <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey">
-                    <a href="' . route('client-contacts.show', [$row->id]) . '">' . $row->contact_name . '</a></h5>
-                    </div>
-                  </div>';
-            })
-            ->editColumn('title', fn($row) => $row->title)
-            ->editColumn('created_at', fn($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format))
+            ->editColumn(
+                'contact_name',
+                function ($row) {
+                    return $row->contact_name;
+                }
+            )
+            ->editColumn(
+                'title',
+                function ($row) {
+                    return $row->title;
+                }
+            )
+            ->editColumn(
+                'created_at',
+                function ($row) {
+                    return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
+                }
+            )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->rawColumns(['contact_name', 'action', 'check']);
     }
 

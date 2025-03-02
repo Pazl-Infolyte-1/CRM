@@ -24,7 +24,7 @@
             </div>
             <div class="col-2 text-right">
                 <div class="dropdown">
-                    <button class="btn btn-lg f-14 px-2 py-0 text-dark-grey  rounded  dropdown-toggle"
+                    <button class="btn btn-lg f-14 px-2 py-0 text-dark-grey text-capitalize rounded  dropdown-toggle"
                         type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fa fa-ellipsis-h"></i>
                     </button>
@@ -46,7 +46,7 @@
     </div>
     <div class="card-footer bg-white border-0">
         <div class="d-flex justify-content-between">
-            <div class="text-lightest">{{ $stickyNote->created_at->translatedFormat(companyOrGlobalSetting()->date_format) }}</div>
+            <div class="text-lightest">{{ $stickyNote->created_at->translatedFormat(company()->date_format) }}</div>
             <div class="text-{{ $colour }}"><i class="fa fa-circle"></i></div>
         </div>
     </div>

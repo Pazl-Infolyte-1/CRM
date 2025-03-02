@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\EventInviteMentionEvent;
+use App\Notifications\EventInvite;
 use App\Notifications\EventInviteMention;
 use Illuminate\Support\Facades\Notification;
 

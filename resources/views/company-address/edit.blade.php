@@ -151,7 +151,7 @@
 
                 @if(!is_null(global_setting()->google_map_key))
                     <div class="col-lg-12">
-                        <h4 class="f-16 font-weight-500 ">
+                        <h4 class="f-16 font-weight-500 text-capitalize">
                             @lang('modules.accountSettings.businessMapLocation')</h4>
 
                         <div class="pac-card" id="pac-card">
@@ -198,15 +198,13 @@
                         <div id="map" class="border rounded"></div>
                     </div>
                 @else
-                    @if(isWorksuite())
-                        <div class="col-md-12">
-                            <x-alert type="secondary">
-                                <span class="form-text">
-                                    @lang('messages.googleMapMessage') <a href="{{ route('app-settings.index') }}?tab=google-map-setting">@lang('app.googleMapSettings')</a>
-                                </span>
-                            </x-alert>
-                        </div>
-                    @endif
+                    <div class="col-md-12">
+                        <x-alert type="secondary">
+                            <span class="form-text">
+                                @lang('messages.googleMapMessage') <a href="{{ route('app-settings.index') }}?tab=google-map-setting">@lang('app.googleMapSettings')</a>
+                            </span>
+                        </x-alert>
+                    </div>
                 @endif
             </div>
         </div>

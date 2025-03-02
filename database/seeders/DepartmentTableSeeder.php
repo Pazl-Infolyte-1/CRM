@@ -6,6 +6,7 @@ use App\Models\Designation;
 use App\Models\LeaveType;
 use App\Models\Team;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DepartmentTableSeeder extends Seeder
 {

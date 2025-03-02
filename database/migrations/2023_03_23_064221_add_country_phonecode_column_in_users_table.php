@@ -3,12 +3,9 @@
 use App\Models\User;
 use App\Scopes\ActiveScope;
 use App\Scopes\CompanyScope;
-use Illuminate\Support\Facades\DB;
-use App\Models\SuperAdmin\FooterMenu;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
-use App\Observers\SuperAdmin\FooterMenuObserver;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
 
@@ -39,10 +36,6 @@ return new class extends Migration {
                 });
             });
         }
-
-        FooterMenu::get()->each(function ($menu) {
-            (new FooterMenuObserver())->createDuplicateForOtherLanguage($menu);
-        });
 
     }
 

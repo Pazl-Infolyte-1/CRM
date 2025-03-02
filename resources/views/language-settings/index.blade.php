@@ -15,9 +15,9 @@
 
             <x-slot name="buttons">
                 <div class="row">
-                    <div class="mb-2 col-md-12">
+                    <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="add-language"
-                                                class="mb-2 mr-2"> @lang('app.addNewLanguage')
+                                                class="mb-2 mr-2"> @lang('app.addNew') @lang('app.language')
                         </x-forms.button-primary>
                         <x-forms.button-secondary icon="cog" id="translations"
                                                   class="mb-2 mr-2"> @lang('modules.languageSettings.translate')
@@ -34,7 +34,7 @@
 
                 <div class="s-b-n-header" id="tabs">
 
-                    <h2 class="p-20 mb-0 f-21 font-weight-normal  border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                         @lang($pageTitle)
                     </h2>
                 </div>
@@ -44,7 +44,7 @@
             <!-- LEAVE SETTING START -->
             <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100">
 
-                <div class="mt-2 mb-2 alert alert-primary">
+                <div class="mt-2  alert alert-primary mb-2">
 
                     <div><strong>Note:</strong>
                         {{__('messages.languageEnabledAlertMessage')}}
@@ -53,31 +53,23 @@
 
                 <x-table class="table table-sm-responsive">
                     <x-slot name="thead">
-                        <th>@lang('app.languageName')</th>
-                        <th>@lang('app.languageCode')</th>
-                        <th width="10%">@lang('app.rtlStatus')</th>
+                        <th>@lang('app.language') @lang('app.name')</th>
+                        <th>@lang('app.language') @lang('app.code')</th>
                         <th>@lang('app.status')</th>
                         <th width="50%" class="text-right">@lang('app.action')</th>
                     </x-slot>
 
                     @forelse($languages as $language)
-                        <tr id="languageRow{{ $language->id }}" @if (!user()->dark_theme)
-                                @class(['bg-additional-grey' => companyOrGlobalSetting()->locale === $language->language_code])
-                            @endif >
+                        <tr id="languageRow{{ $language->id }}" @class(['bg-additional-grey' => companyOrGlobalSetting()->locale === $language->language_code]) >
                             <td><span class='flag-icon flag-icon-{{ $language->language_code=='en'?'gb':$language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}</td>
                             <td>{{ $language->language_code }}</td>
-                            <td>
-                                <span class="badge badge-{{ $language->is_rtl == 1 ? 'success' : 'secondary' }}">
-                                    @lang('app.' . ($language->is_rtl == 1 ? 'yes' : 'no'))
-                                </span>
-                            </td>
                             <td>
                                 @if(companyOrGlobalSetting()->locale !== $language->language_code)
                                     <div class="custom-control custom-switch">
                                         <input type="checkbox" @if($language->status == 'enabled') checked
                                                @endif class="custom-control-input change-language-setting"
                                                id="{{ $language->id }}">
-                                        <label class="cursor-pointer custom-control-label f-14"
+                                        <label class="custom-control-label cursor-pointer f-14"
                                                for="{{ $language->id }}"></label>
                                     </div>
                                 @else
@@ -86,27 +78,26 @@
                                 @endif
 
                             </td>
-
                             @php $appSettingLink = "<a href='".route('app-settings.index')."'>".__('app.menu.appSettings')."</a>" @endphp
                             <td class='text-right'>
                                 @if($language->language_code !=='en' && companyOrGlobalSetting()->locale != $language->language_code)
                                     @if (companyOrGlobalSetting()->locale != $language->language_code)
                                         @includeIf('languagepack::publish', ['language' => $language])
                                         <button type="button"
-                                            class="p-2 rounded edit-language btn btn-outline-secondary f-14"
+                                            class="edit-language btn btn-outline-secondary  rounded f-14 p-2"
                                             data-language-id="{{ $language->id }}">
-                                            <i class="mr-2 fa fa-edit icons"></i> @lang('app.edit')
+                                            <i class="fa fa-edit icons mr-2"></i> @lang('app.edit')
                                         </button>
                                         <button type="button"
-                                            class="p-2 rounded delete-language btn btn-outline-secondary f-14"
+                                            class="delete-language btn btn-outline-secondary  rounded f-14 p-2"
                                             data-language-id="{{ $language->id }}">
-                                            <i class="mr-2 fa fa-trash icons"></i> @lang('app.delete')
+                                            <i class="fa fa-trash icons mr-2"></i> @lang('app.delete')
                                         </button>
                                     @else
                                         @includeIf('languagepack::publish', ['language' => $language])
 
                                         <button type="button" onclick="window.location.href='{{ route('app-settings.index') }}'"
-                                            class="p-2 rounded btn btn-outline-secondary f-14"
+                                            class="btn btn-outline-secondary  rounded f-14 p-2"
                                             data-toggle="popover" data-placement="top"
                                             data-content="@lang('messages.defaultLanguageCantChange',['appsettings'=> $appSettingLink])"
                                             data-html="true" data-trigger="hover">
@@ -116,7 +107,7 @@
                                 @else
                                     @includeIf('languagepack::publish', ['language' => $language])
                                     <button type="button" onclick="window.location.href='{{ route('app-settings.index') }}'"
-                                        class="p-2 rounded btn btn-outline-secondary f-14"
+                                        class="btn btn-outline-secondary  rounded f-14 p-2"
                                         data-toggle="popover" data-placement="top"
                                         data-content="@if (companyOrGlobalSetting()->locale == $language->language_code)@lang('messages.defaultLanguageCantChange',['appsettings'=> $appSettingLink])@else @lang('messages.defaultEnLanguageCantChange')@endif"
                                         data-html="true" data-trigger="hover">

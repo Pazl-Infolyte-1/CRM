@@ -8,6 +8,7 @@ use App\Models\EmailNotificationSetting;
 use App\Models\PushNotificationSetting;
 use App\Models\User;
 use App\Notifications\TestPush;
+use Illuminate\Http\Request;
 
 class PushNotificationController extends AccountBaseController
 {
@@ -18,7 +19,7 @@ class PushNotificationController extends AccountBaseController
         $this->pageTitle = 'app.menu.pushNotifications';
         $this->activeSettingMenu = 'notification_settings';
         $this->middleware(function ($request, $next) {
-            abort_403(!(user()->permission('manage_notification_setting') == 'all') && (!user()->is_superadmin));
+            abort_403(!(user()->permission('manage_notification_setting') == 'all'));
             return $next($request);
         });
     }
@@ -26,24 +27,16 @@ class PushNotificationController extends AccountBaseController
     //phpcs:ignore
     public function update(UpdateRequest $request, $id)
     {
-        // WORKSUITESAAS
-        if(!user()->is_superadmin) {
-            $this->savePushNotificationSettings($request);
-        }
-        // WORKSUITESAAS
-        if(user()->is_superadmin){
-            $setting = PushNotificationSetting::first();
-            $setting->onesignal_app_id = $request->onesignal_app_id;
-            $setting->onesignal_rest_api_key = $request->onesignal_rest_api_key;
-            $setting->status = ($request->has('status') ? $request->status : 'inactive');
-            $setting->beams_push_status = ($request->has('beams_push_status') ? $request->beams_push_status : 'inactive');
-        $setting->instance_id = $request->instance_id;
-        $setting->beam_secret = $request->beam_secret;
+        $this->savePushNotificationSettings($request);
+
+        $setting = PushNotificationSetting::first();
+        $setting->onesignal_app_id = $request->onesignal_app_id;
+        $setting->onesignal_rest_api_key = $request->onesignal_rest_api_key;
+        $setting->status = ($request->has('status') ? $request->status : 'inactive');
         $setting->save();
-        }
 
         session()->forget('email_notification_setting');
-        cache()->forget('push_setting');
+        session()->forget('push_setting');
 
         return Reply::success(__('messages.updateSuccess'));
     }
@@ -51,16 +44,8 @@ class PushNotificationController extends AccountBaseController
     public function sendTestNotification()
     {
         $user = User::findOrFail($this->user->id);
-
-        $setting = PushNotificationSetting::first();
-        if ($setting->beams_push_status == 'active') {
-            // Notify User
-            $user->notify(new TestPush());
-        } else {
-            // Notify User
-            $user->notify(new TestPush());
-        }
-
+        // Notify User
+        $user->notify(new TestPush());
 
         return Reply::success('Test notification sent.');
     }

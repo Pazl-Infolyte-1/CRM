@@ -19,20 +19,16 @@ $addLeadCategoryPermission = user()->permission('add_lead_category');
                             <a class="nav-item nav-link f-15 active source" href="{{ route('lead-settings.index') }}"
                                 role="tab" aria-controls="nav-leadSource" aria-selected="true">@lang('app.menu.leadSource')
                             </a>
-                            <a class="nav-item nav-link f-15 pipeline" href="{{ route('lead-settings.index') }}?tab=pipeline"
-                                role="tab" aria-controls="nav-pipeline" aria-selected="true">@lang('modules.deal.pipeline')
+                            <a class="nav-item nav-link f-15 status" href="{{ route('lead-settings.index') }}?tab=status"
+                                role="tab" aria-controls="nav-leadStatus" aria-selected="true">@lang('app.menu.leadStatus')
                             </a>
                             <a class="nav-item nav-link f-15 agent" href="{{ route('lead-settings.index') }}?tab=agent"
                                 role="tab" aria-controls="nav-leadAgent"
-                                aria-selected="true">@lang('modules.deal.dealAgent')
+                                aria-selected="true">@lang('modules.lead.leadAgent')
                             </a>
                             <a class="nav-item nav-link f-15 category"
                                 href="{{ route('lead-settings.index') }}?tab=category" role="tab"
-                                aria-controls="nav-leadAgent" aria-selected="true">@lang('modules.deal.dealCategory')
-                            </a>
-                            <a class="nav-item nav-link f-15 method"
-                                href="{{ route('lead-settings.index') }}?tab=method" role="tab"
-                                aria-controls="nav-leadAgent" aria-selected="true">@lang('modules.deal.dealMethod')
+                                aria-controls="nav-leadAgent" aria-selected="true">@lang('modules.lead.leadCategory')
                             </a>
                         </div>
                     </nav>
@@ -44,26 +40,23 @@ $addLeadCategoryPermission = user()->permission('add_lead_category');
                     <div class="col-md-12 mb-2">
                         @if ($addLeadAgentPermission != 'none')
                             <x-forms.button-primary icon="plus" id="addAgent" class="agent-btn mb-2 d-none actionBtn">
-                                @lang('app.addNewDealAgent')
+                                @lang('app.addNew') @lang('modules.lead.leadAgent')
                             </x-forms.button-primary>
                         @endif
 
                         @if ($addLeadSourcesPermission != 'none')
                             <x-forms.button-primary icon="plus" id="addSource" class="source-btn mb-2 d-none actionBtn">
-                                @lang('app.addNewLeadSource')
+                                @lang('app.addNew') @lang('app.menu.leadSource')
                             </x-forms.button-primary>
                         @endif
 
-                        <x-forms.button-primary icon="plus" id="addPipeline" class="pipeline-btn mb-2  actionBtn">
-                            @lang('app.addNew') @lang('modules.deal.pipeline')
+                        <x-forms.button-primary icon="plus" id="addStatus" class="status-btn mb-2 d-none actionBtn">
+                            @lang('app.addNew') @lang('app.menu.leadStatus')
                         </x-forms.button-primary>
 
-                        <x-forms.button-primary icon="plus" id="addStage" class="pipeline-btn mb-2  actionBtn">
-                            @lang('app.addNew') @lang('modules.deal.leadStage')
-                        </x-forms.button-primary>
                         @if ($addLeadCategoryPermission != 'none')
                             <x-forms.button-primary icon="plus" id="addCategory" class="category-btn mb-2 d-none actionBtn">
-                                @lang('app.addNewDealCategory')
+                                @lang('app.addNew') @lang('modules.lead.leadCategory')
                             </x-forms.button-primary>
                         @endif
                     </div>
@@ -117,10 +110,6 @@ $addLeadCategoryPermission = user()->permission('add_lead_category');
 
         showBtn(activeTab);
         /* MENU SCRIPTS */
-
-        $(document).on('show.bs.dropdown', '.table-responsive', function() {
-            $('.table-responsive').css( "overflow", "inherit" );
-        });
 
         /* LEAD AGENT SCRIPTS */
         /* open add agent modal */
@@ -243,14 +232,10 @@ $addLeadCategoryPermission = user()->permission('add_lead_category');
 
         /* LEAD STATUS SCRIPTS */
 
-
-
-           /* LEAD PIPELINE SCRIPTS */
-
-           $('body').on('click', '.set_default_stage', function() {
+        $('body').on('click', '.set_default_status', function() {
             var id = $(this).data('status-id');
 
-            var url = "{{ route('lead-stage-setting.stageUpdate', ':id') }}";
+            var url = "{{ route('leadSetting.statusUpdate', ':id') }}";
             url = url.replace(':id', id);
 
             $.easyAjax({
@@ -267,109 +252,25 @@ $addLeadCategoryPermission = user()->permission('add_lead_category');
 
         });
 
-
-           $('body').on('click', '.set_default_pipeline', function() {
-            var id = $(this).data('pipeline-id');
-
-            var url = "{{ route('lead-pipeline-update.stageUpdate', ':id') }}";
-            url = url.replace(':id', id);
-
-            $.easyAjax({
-                url: url,
-                type: "GET",
-                blockUI: true,
-                container: '#editSettings',
-                success: function(response) {
-                    if (response.status == "success") {
-                        window.location.reload();
-                    }
-                }
-            })
-
-        });
-
-        /* open add stage modal */
-        $('body').on('click', '#addStage', function() {
-            var url = "{{ route('lead-stage-setting.create') }}";
+        /* open add status modal */
+        $('body').on('click', '#addStatus', function() {
+            var url = "{{ route('lead-status-settings.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
 
-
         /* open edit status modal */
         $('body').on('click', '.edit-status', function() {
             var statusId = $(this).data('status-id');
-            var url = "{{ route('lead-stage-setting.edit', ':id ') }}";
+            var url = "{{ route('lead-status-settings.edit', ':id ') }}";
             url = url.replace(':id', statusId);
 
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $('body').on('click', '.delete-stage', function() {
-            var id = $(this).data('stage-id');
-            Swal.fire({
-                title: "@lang('messages.sweetAlertTitle')",
-                text: "@lang('messages.deal.deleteStage')",
-                icon: 'warning',
-                showCancelButton: true,
-                focusConfirm: false,
-                confirmButtonText: "@lang('messages.confirmDelete')",
-                cancelButtonText: "@lang('app.cancel')",
-                customClass: {
-                    confirmButton: 'btn btn-primary mr-3',
-                    cancelButton: 'btn btn-secondary'
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-
-                    var url = "{{ route('lead-stage-setting.destroy', ':id') }}";
-                    url = url.replace(':id', id);
-
-                    var token = "{{ csrf_token() }}";
-
-                    $.easyAjax({
-                        type: 'POST',
-                        url: url,
-                        blockUI: true,
-                        data: {
-                            '_token': token,
-                            '_method': 'DELETE'
-                        },
-                        success: function(response) {
-                            if (response.status == "success") {
-                                $('.row'+id).fadeOut();
-                            }
-                        }
-                    });
-                }
-            });
-        });
-
-        /* open add pipeline modal */
-        $('body').on('click', '#addPipeline', function() {
-            var url = "{{ route('lead-pipeline-setting.create') }}";
-            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-            $.ajaxModal(MODAL_LG, url);
-        });
-
-        /* open edit pipeline modal */
-        $('body').on('click', '.edit-pipeline', function() {
-            var pipelineId = $(this).data('pipeline-id');
-            var url = "{{ route('lead-pipeline-setting.edit', ':id ') }}";
-            url = url.replace(':id', pipelineId);
-            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-            $.ajaxModal(MODAL_LG, url);
-        });
-
-        /* delete pipeline */
-        $('body').on('click', '.delete-pipeline', function() {
-            var id = $(this).data('pipeline-id');
+        $('body').on('click', '.delete-status', function() {
+            var id = $(this).data('status-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
                 text: "@lang('messages.recoverRecord')",
@@ -390,7 +291,7 @@ $addLeadCategoryPermission = user()->permission('add_lead_category');
             }).then((result) => {
                 if (result.isConfirmed) {
 
-                    var url = "{{ route('lead-pipeline-setting.destroy', ':id') }}";
+                    var url = "{{ route('lead-status-settings.destroy', ':id') }}";
                     url = url.replace(':id', id);
 
                     var token = "{{ csrf_token() }}";
@@ -480,96 +381,6 @@ $addLeadCategoryPermission = user()->permission('add_lead_category');
             });
         });
         /* LEAD CATEGORY */
-
-        $(".change-agent-category").selectpicker({
-            multipleSeparator: ", ",
-            selectedTextFormat: "count > 8",
-            countSelectedText: function(selected, total) {
-                return selected + " {{ __('app.categorySelected') }} ";
-            }
-        });
-
-        $('body').on('change', '.change-agent-category',function(e) {
-            e.preventDefault();
-            var agentId = $(this).data('agent-id');
-            var categoryId = $(this).val();
-            var token = '{{ csrf_token() }}';
-            var url = "{{ route('lead_agents.update_category', ':id') }}";
-            url = url.replace(':id', agentId);
-
-            $.easyAjax({
-                type: 'POST',
-                url: url,
-                blockUI: true,
-                data: {
-                    '_token': token,
-                    'categoryId': categoryId
-                }
-            });
-            return false;
-        });
-        $('body').on('change', '.change-agent-status',function() {
-            var agentId = $(this).data('agent-id');
-            var status = $(this).val();
-            var token = '{{ csrf_token() }}';
-            var url = "{{ route('lead_agents.update_status', ':id') }}";
-            url = url.replace(':id', agentId);
-
-            $.easyAjax({
-                type: 'POST',
-                url: url,
-                blockUI: true,
-                data: {
-                    '_token': token,
-                    'status': status
-                }
-            });
-        });
-
-        /* delete agent */
-        $('body').on('click', '.delete-agents', function() {
-            var id = $(this).data('agent-id');
-            Swal.fire({
-                title: "@lang('messages.sweetAlertTitle')",
-                text: "@lang('messages.removeAgentText')",
-                icon: 'warning',
-                showCancelButton: true,
-                focusConfirm: false,
-                confirmButtonText: "@lang('messages.confirmDelete')",
-                cancelButtonText: "@lang('app.cancel')",
-                customClass: {
-                    confirmButton: 'btn btn-primary mr-3',
-                    cancelButton: 'btn btn-secondary'
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    var url = "{{ route('lead-agent-settings.destroy', ':id') }}";
-                    url = url.replace(':id', id);
-
-                    var token = "{{ csrf_token() }}";
-
-                    $.easyAjax({
-                        type: 'POST',
-                        url: url,
-                        blockUI: true,
-                        data: {
-                            '_token': token,
-                            '_method': 'DELETE'
-                        },
-                        success: function(response) {
-                            if (response.status == "success") {
-                                $('.row' + id).fadeOut(100);
-                            }
-                        }
-                    });
-                }
-            });
-        });
 
     </script>
 @endpush

@@ -47,37 +47,16 @@ class SocialAuthSetting extends BaseModel
     protected $table = 'social_auth_settings';
     protected $guarded = ['id'];
 
-    protected $appends = ['social_auth_enable', 'social_auth_enable_count'];
-
-    protected $casts = [
-        'facebook_secret_id' => 'encrypted',
-        'google_secret_id' => 'encrypted',
-        'linkedin_secret_id' => 'encrypted',
-        'twitter_secret_id' => 'encrypted',
-    ];
+    protected $appends = ['social_auth_enable'];
 
     public function getSocialAuthEnableAttribute()
     {
         return in_array('enable', [
+
             $this->linkedin_status,
             $this->google_status,
-            $this->twitter_status,
-            $this->facebook_status
+            $this->twitter_status
         ]);
-    }
-
-    public function getSocialAuthEnableCountAttribute()
-    {
-        $statuses = [
-            $this->linkedin_status,
-            $this->google_status,
-            $this->twitter_status,
-            $this->facebook_status
-        ];
-
-        return count(array_filter($statuses, function ($status) {
-            return $status == 'enable';
-        }));
     }
 
 }

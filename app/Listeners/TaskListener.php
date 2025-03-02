@@ -8,11 +8,10 @@ use App\Notifications\NewTask;
 use App\Notifications\TaskUpdated;
 use App\Notifications\NewClientTask;
 use App\Notifications\TaskCompleted;
-use App\Notifications\TaskApproval;
-use App\Notifications\TaskStatusUpdated;
 use App\Notifications\TaskUpdatedClient;
 use App\Notifications\TaskCompletedClient;
 use App\Notifications\TaskMention;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class TaskListener
@@ -36,12 +35,6 @@ class TaskListener
             }
             elseif ($event->notificationName == 'TaskUpdated') {
                 Notification::send($event->notifyUser, new TaskUpdated($event->task));
-            }
-            elseif ($event->notificationName == 'TaskStatusUpdated') {
-                Notification::send($event->notifyUser, new TaskStatusUpdated($event->task, user()));
-            }
-            elseif ($event->notificationName == 'TaskApproval') {
-                Notification::send($event->notifyUser, new TaskApproval($event->task, user()));
             }
             elseif ($event->notificationName == 'TaskCompleted') {
                 Notification::send($event->notifyUser, new TaskCompleted($event->task, user()));

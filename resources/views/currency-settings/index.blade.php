@@ -25,20 +25,16 @@
                         <x-forms.button-primary icon="plus" id="addNewCurrency">
                             @lang('modules.currencySettings.addNewCurrency')
                         </x-forms.button-primary>
-
-                        @if(user()->is_superadmin)
-                            <x-forms.button-secondary icon="key" id="addCurrencyExchangeKey">
-                                @lang('modules.accountSettings.currencyConverterKey')
-                            </x-forms.button-secondary>
-                        @endif
-
+                        <x-forms.button-secondary icon="key" id="addCurrencyExchangeKey">
+                            @lang('modules.accountSettings.currencyConverterKey')
+                        </x-forms.button-secondary>
                     </div>
                 </div>
             </x-slot>
 
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
-                    <h2 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    <h2 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                         @lang('modules.accountSettings.currencySetting')</h2>
                 </div>
             </x-slot>

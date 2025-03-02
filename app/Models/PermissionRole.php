@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Scopes\CompanyScope;
-use App\Scopes\SuperAdminModuleScope;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -106,7 +105,7 @@ class PermissionRole extends BaseModel
             'view_leaves_taken' => PermissionType::ALL,
 
             'add_lead' => PermissionType::ADDED,
-            'view_lead' => PermissionType::ALL,
+            'view_lead' => PermissionType::BOTH,
             'edit_lead' => PermissionType::ADDED,
             'view_lead_files' => PermissionType::ADDED,
             'add_lead_files' => PermissionType::ALL,
@@ -114,8 +113,9 @@ class PermissionRole extends BaseModel
             'add_lead_follow_up' => PermissionType::ALL,
             'edit_lead_follow_up' => PermissionType::ADDED,
             'delete_lead_follow_up' => PermissionType::ADDED,
+            'change_lead_status' => PermissionType::BOTH,
 
-            'view_holiday' => PermissionType::OWNED,
+            'view_holiday' => PermissionType::ALL,
 
             'add_expenses' => PermissionType::ADDED,
             'view_expenses' => PermissionType::BOTH,
@@ -198,42 +198,36 @@ class PermissionRole extends BaseModel
 
     public static function insertModuleRolePermission($moduleName, $companyId)
     {
-        $modulePermissions = \App\Models\Module::withoutGlobalScope(SuperAdminModuleScope::class)
-            ->with('permissionsAll')
-            ->where('module_name', $moduleName)
-            ->firstOrFail();
+        $modulePermissions = \App\Models\Module::with('permissionsAll')->where('module_name', $moduleName)->firstOrFail();
 
         $adminRole = Role::withoutGlobalScope(CompanyScope::class)->with('roleuser', 'roleuser.user.roles')
             ->where('name', 'admin')
             ->where('company_id', $companyId)
             ->first();
 
-        if ($adminRole) {
-            PermissionRole::whereHas('permission', function ($query) use ($modulePermissions) {
-                $query->where('module_id', $modulePermissions->id);
-            })->where('role_id', $adminRole->id)->delete();
+        PermissionRole::whereHas('permission', function ($query) use ($modulePermissions) {
+            $query->where('module_id', $modulePermissions->id);
+        })->where('role_id', $adminRole->id)->delete();
 
+        foreach ($modulePermissions->permissionsAll as $permission) {
+
+            PermissionRole::create([
+                'permission_id' => $permission->id,
+                'role_id' => $adminRole->id,
+                'permission_type_id' => PermissionType::ALL
+            ]);
+        }
+
+        foreach ($adminRole->roleuser as $roleuser) {
 
             foreach ($modulePermissions->permissionsAll as $permission) {
 
-                PermissionRole::create([
+                UserPermission::firstOrCreate([
                     'permission_id' => $permission->id,
-                    'role_id' => $adminRole->id,
+                    'user_id' => $roleuser->user_id,
                     'permission_type_id' => PermissionType::ALL
                 ]);
-            }
 
-            foreach ($adminRole->roleuser as $roleuser) {
-
-                foreach ($modulePermissions->permissionsAll as $permission) {
-
-                    UserPermission::firstOrCreate([
-                        'permission_id' => $permission->id,
-                        'user_id' => $roleuser->user_id,
-                        'permission_type_id' => PermissionType::ALL
-                    ]);
-
-                }
             }
         }
 

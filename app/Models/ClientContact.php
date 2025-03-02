@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -41,13 +42,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ClientContact extends BaseModel
 {
 
-    protected $with = [
-                'client'
-        ];
-
     use HasCompany;
 
-    protected $fillable = ['user_id', 'client_id' ,'contact_name', 'email', 'phone', 'title', 'address'];
+    protected $fillable = ['user_id', 'contact_name', 'email', 'phone', 'title'];
 
     public function client(): BelongsTo
     {

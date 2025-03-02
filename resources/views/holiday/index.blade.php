@@ -16,9 +16,8 @@
         <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.month')</p>
             <div class="select-month">
-                <select class="form-control select-picker" name="month" id="month" data-live-search="true"
-                        data-size="8">
-                    <x-forms.months :selectedMonth="$currentMonth" fieldRequired="true" all="true"/>
+                <select class="form-control select-picker" name="month" id="month" data-live-search="true" data-size="8">
+                    <x-forms.months :selectedMonth="$currentMonth" fieldRequired="true"/>
                 </select>
             </div>
         </div>
@@ -30,9 +29,8 @@
             <div class="select-year">
                 <select class="form-control select-picker" name="year" id="year" data-live-search="true" data-size="8">
                     @foreach ($years as $year)
-                        <option
-                            @selected ($year == $currentYear) value="{{ $year }}">{{ $year }}
-                        </option>
+                        <option @if ($year == $currentYear) selected @endif
+                            value="{{ $year }}">{{ $year }}</option>
                     @endforeach
                 </select>
             </div>
@@ -49,7 +47,7 @@
                         </span>
                     </div>
                     <input type="text" class="form-control f-14 p-1 border-additional-grey" id="search-text-field"
-                           placeholder="@lang('app.startTyping')">
+                        placeholder="@lang('app.startTyping')">
                 </div>
             </form>
         </div>
@@ -66,7 +64,7 @@
 @endsection
 
 @php
-    $addPermission = user()->permission('add_holiday');
+$addPermission = user()->permission('add_holiday');
 @endphp
 
 @section('content')
@@ -76,13 +74,11 @@
         <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addPermission == 'all' || $addPermission == 'added')
-                    <x-forms.link-primary :link="route('holidays.create')"
-                                          class="mr-3 openRightModal float-left mb-1 mb-lg-0 mb-md-0"
-                                          icon="plus">
+                    <x-forms.link-primary :link="route('holidays.create')" class="mr-3 openRightModal float-left mb-1 mb-lg-0 mb-md-0"
+                        icon="plus">
                         @lang('modules.holiday.addNewHoliday')
                     </x-forms.link-primary>
-                    <x-forms.button-secondary icon="check" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0"
-                                              id="mark-holiday">
+                    <x-forms.button-secondary icon="check" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0" id="mark-holiday">
                         @lang('modules.holiday.markSunday')
                     </x-forms.button-secondary>
                 @endif
@@ -100,11 +96,10 @@
 
             <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group" aria-label="Basic example">
                 <a href="{{ route('holidays.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
-                   data-original-title="@lang('app.menu.calendar')"><i class="side-icon bi bi-calendar"></i></a>
+                    data-original-title="@lang('app.menu.calendar')"><i class="side-icon bi bi-calendar"></i></a>
 
-                <a href="{{ route('holidays.table_view') }}" class="btn btn-secondary f-14 btn-active"
-                   data-toggle="tooltip"
-                   data-original-title="@lang('modules.leaves.tableView')"><i class="side-icon bi bi-list-ul"></i></a>
+                <a href="{{ route('holidays.table_view') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
+                    data-original-title="@lang('modules.leaves.tableView')"><i class="side-icon bi bi-list-ul"></i></a>
             </div>
         </div>
 
@@ -126,7 +121,7 @@
     @include('sections.datatable_js')
 
     <script>
-        $('#holiday-table').on('preXhr.dt', function (e, settings, data) {
+        $('#holiday-table').on('preXhr.dt', function(e, settings, data) {
             var month = $('#month').val();
             var year = $('#year').val();
             var searchText = $('#search-text-field').val();
@@ -137,11 +132,11 @@
         });
 
         const showTable = () => {
-            window.LaravelDataTables["holiday-table"].draw(true);
+            window.LaravelDataTables["holiday-table"].draw(false);
         }
 
         $('#month, #year').on('change keyup',
-            function () {
+            function() {
                 if ($('#month').val() != "") {
                     $('#reset-filters').removeClass('d-none');
                     showTable();
@@ -154,14 +149,14 @@
                 }
             });
 
-        $('#search-text-field').on('keyup', function () {
+        $('#search-text-field').on('keyup', function() {
             if ($('#search-text-field').val() != "") {
                 $('#reset-filters').removeClass('d-none');
                 showTable();
             }
         });
 
-        $('#reset-filters').click(function () {
+        $('#reset-filters').click(function() {
             $('#filter-form')[0].reset();
             $('#month').val('{{ $currentMonth }}');
             $('#year').val('{{ $currentYear }}');
@@ -170,7 +165,7 @@
             showTable();
         });
 
-        $('#quick-action-type').change(function () {
+        $('#quick-action-type').change(function() {
             const actionValue = $(this).val();
 
             if (actionValue != '') {
@@ -181,7 +176,7 @@
             }
         });
 
-        $('#quick-action-apply').click(function () {
+        $('#quick-action-apply').click(function() {
             const actionValue = $('#quick-action-type').val();
             if (actionValue == 'delete') {
                 Swal.fire({
@@ -212,7 +207,7 @@
             }
         });
 
-        $('body').on('click', '.delete-table-row', function () {
+        $('body').on('click', '.delete-table-row', function() {
             var id = $(this).data('holiday-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
@@ -245,7 +240,7 @@
                             '_token': token,
                             '_method': 'DELETE'
                         },
-                        success: function (response) {
+                        success: function(response) {
                             if (response.status == "success") {
                                 showTable();
                             }
@@ -256,7 +251,7 @@
         });
 
         const applyQuickAction = () => {
-            var rowdIds = $("#holiday-table input:checkbox:checked").map(function () {
+            var rowdIds = $("#holiday-table input:checkbox:checked").map(function() {
                 return $(this).val();
             }).get();
 
@@ -269,7 +264,7 @@
                 disableButton: true,
                 buttonSelector: "#quick-action-apply",
                 data: $('#quick-action-form').serialize(),
-                success: function (response) {
+                success: function(response) {
                     if (response.status == 'success') {
                         showTable();
                         resetActionButtons();
@@ -280,7 +275,7 @@
             })
         };
 
-        $('body').on('click', '.show-holiday', function () {
+        $('body').on('click', '.show-holiday', function() {
             var holidayId = $(this).data('holiday-id');
 
             var url = '{{ route('holidays.show', ':id') }}';
@@ -290,7 +285,7 @@
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $('body').on('click', '#mark-holiday', function () {
+        $('body').on('click', '#mark-holiday', function() {
             var url = "{{ route('holidays.mark_holiday') }}?year" + $('#year').val();
 
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');

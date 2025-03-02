@@ -4,11 +4,10 @@ namespace App\Observers;
 
 use App\Events\LeadEvent;
 use App\Models\Lead;
+use App\Notifications\LeadAgentAssigned;
 use App\Models\UniversalSearch;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
-use App\Notifications\LeadImported;
-
 
 class LeadObserver
 {
@@ -19,61 +18,62 @@ class LeadObserver
             $userID = (!is_null(user())) ? user()->id : null;
             $lead->last_updated_by = $userID;
         }
-
     }
 
-    public function creating(Lead $leadContact)
+    public function creating(Lead $lead)
     {
-        $leadContact->hash = md5(microtime());
+        $lead->hash = md5(microtime());
 
         if (!isRunningInConsoleOrSeeding()) {
-            if (request()->has('added_by')) {
-                $leadContact->added_by = request('added_by');
-
-            }
-            else {
-                $userID = (!is_null(user())) ? user()->id : null;
-                $leadContact->added_by = $userID;
-            }
+            $userID = (!is_null(user())) ? user()->id : null;
+            $lead->added_by = $userID;
         }
 
         if (company()) {
-            $leadContact->company_id = company()->id;
+            $lead->company_id = company()->id;
         }
     }
 
-    public function created(Lead $leadContact)
+    public function updated(Lead $lead)
     {
         if (!isRunningInConsoleOrSeeding()) {
-
-            if (!session()->has('is_imported')) {
-
-                event(new LeadEvent($leadContact, 'NewLeadCreated'));
-            }else{
-
-                // info('leads_count:' . session('leads_count'));
-                // info('total_leads:' . session('total_leads'));
-
-                if (session('leads_count') == (session('total_leads'))) {
-
-                    info('check');
-                    $admins = User::allAdmins(company()->id);
-                    Notification::send($admins, new LeadImported());
-                }
-
+            if ($lead->isDirty('agent_id')) {
+                event(new LeadEvent($lead, $lead->leadAgent, 'LeadAgentAssigned'));
             }
         }
     }
 
-    public function deleting(Lead $leadContact)
+    public function created(Lead $lead)
     {
-        $notifyData = ['App\Notifications\LeadAgentAssigned', 'App\Notifications\NewDealCreated', 'App\Notifications\NewLeadCreated', 'App\Notifications\LeadImported'];
-        \App\Models\Notification::deleteNotification($notifyData, $leadContact->id);
+        // Save lead note
+        if (!empty($lead->note)) {
+            $lead->note()->create([
+                'lead_id' => $lead->id,
+                'title' => 'Note',
+                'details' => $lead->note
+            ]);
+        }
+
+        if (!isRunningInConsoleOrSeeding()) {
+            if (request('agent_id') != '') {
+                event(new LeadEvent($lead, $lead->leadAgent, 'LeadAgentAssigned'));
+            }
+            else {
+                Notification::send(User::allAdmins($lead->company->id), new LeadAgentAssigned($lead));
+            }
+        }
     }
 
-    public function deleted(Lead $leadContact)
+    public function deleting(Lead $lead)
     {
-        UniversalSearch::where('searchable_id', $leadContact->id)->where('module_type', 'lead')->delete();
+        $notifyData = ['App\Notifications\LeadAgentAssigned'];
+        \App\Models\Notification::deleteNotification($notifyData, $lead->id);
+
+    }
+
+    public function deleted(Lead $lead)
+    {
+        UniversalSearch::where('searchable_id', $lead->id)->where('module_type', 'lead')->delete();
     }
 
 }

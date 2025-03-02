@@ -18,7 +18,7 @@
     <link href="{{ asset('vendor/froiden-helper/helper.css') }}" rel="stylesheet" defer="defer">
     <link type="text/css" rel="stylesheet" media="all" href="{{ asset('css/main.css') }}">
 
-    <title>{{ $globalSetting->global_app_name ?? $globalSetting->app_name }}</title>
+    <title>{{ $globalSetting->global_app_name }}</title>
 
 
     @stack('styles')
@@ -26,7 +26,7 @@
 
     <style defer="defer">
         .login_header {
-            background-color: {{ $globalSetting->logo_background_color }}         !important;
+            background-color: {{ $globalSetting->logo_background_color }}      !important;
         }
 
     </style>
@@ -43,15 +43,11 @@
         </style>
     @endif
 
-    @includeif('sections.custom_script')
-
-
 </head>
 
-<body
-    class="{{ $globalSetting->auth_theme == 'dark' ? 'dark-theme' : '' }} {{ isRtl() ? (session('changedRtl') === false ? '' : 'rtl') : (session('changedRtl') == true ? 'rtl' : '') }}">
+<body class="{{ $globalSetting->auth_theme == 'dark' ? 'dark-theme' : '' }}">
 
-<header class="px-4 bg-white sticky-top d-flex justify-content-center align-items-center login_header">
+<header class="sticky-top d-flex justify-content-center align-items-center login_header bg-white px-4">
     <img class="mr-2 rounded" src="{{ $globalSetting->logo_url }}" alt="Logo"/>
     @if ($globalSetting->sidebar_logo_style != 'full')
         <h3 class="mb-0 pl-1 {{ $globalSetting->auth_theme_text == 'light' ? ($globalSetting->auth_theme == 'dark' ? 'text-dark' : 'text-white') : '' }}">{{ $globalSetting->global_app_name ?? $globalSetting->app_name }}</h3>
@@ -59,52 +55,34 @@
 </header>
 
 
-<section class="py-5 bg-grey login_section"
-         @if ($globalSetting->login_background_url) style="background: url('{{ $globalSetting->login_background_url }}') center center/cover no-repeat;" @endif>
+<section class="bg-grey py-5 login_section"  @if ($globalSetting->login_background_url) style="background: url('{{ $globalSetting->login_background_url }}') center center/cover no-repeat;" @endif>
     <div class="container">
         <div class="row">
-            <div class="text-center col-md-12">
+            <div class="col-md-12 text-center">
 
-                <div class="mx-auto text-center bg-white rounded login_box">
+                <div class="login_box mx-auto rounded bg-white text-center">
                     {{ $slot }}
                 </div>
 
                 {{ $outsideLoginBox ?? '' }}
-                @if($languages->count() > 1)
+
+                @if($languages->count() >1)
                     <div class="my-3 d-flex flex-column flex-grow-1">
-                        <div class="d-flex flex-wrap align-items-center justify-content-center">
-                            @foreach($languages->take(4) as $index => $language)
-                                <span class="mx-3 my-10 f-12">
-                                    <a href="javascript:;" class="text-dark-grey change-lang d-flex align-items-center"
-                                       data-lang="{{ $language->language_code }}">
-                                        <span class="mr-2 flag-icon flag-icon-{{ $language->flag_code === 'en' ? 'gb' : $language->flag_code }} flag-icon-squared"></span>
-                                        {{ \App\Models\LanguageSetting::LANGUAGES_TRANS[$language->language_code] ?? $language->language_name }}
-                                    </a>
-                                </span>
+                        <div class="align-items-center flex-grow-1">
+                            @foreach($languages as $language)
+                                <span class="my-10 f-12 mx-1 ">
+                                <a href="javascript:;" class="text-dark-grey my-2 change-lang"
+                                   data-lang="{{$language->language_code}}">
+                                    <span
+                                        class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span>
+                                    {{\App\Models\LanguageSetting::LANGUAGES_TRANS[$language->language_code] ?? $language->language_name}}
+                                </a>
+                            </span>
                             @endforeach
-
-                            @if($languages->count() > 4)
-                                <div class="dropdown" style="z-index:10000">
-                                    <a class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded dropdown-toggle"
-                                       type="button" id="languageDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fa fa-ellipsis-h"></i>
-                                    </a>
-
-                                    <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
-                                         aria-labelledby="languageDropdown" style="max-height: 600px; overflow-y: auto;">
-                                        @foreach($languages->slice(4) as $language)
-                                            <a class="dropdown-item change-lang" href="javascript:;"
-                                               data-lang="{{ $language->language_code }}">
-                                                <span class="mr-2 flag-icon flag-icon-{{ $language->flag_code === 'en' ? 'gb' : $language->flag_code }} flag-icon-squared"></span>
-                                                {{ \App\Models\LanguageSetting::LANGUAGES_TRANS[$language->language_code] ?? $language->language_name }}
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                     </div>
                 @endif
+
 
             </div>
         </div>
@@ -112,6 +90,8 @@
     </div>
 
 </section>
+<!-- Global Required Javascript -->
+<script src="{{ asset('vendor/bootstrap/javascript/bootstrap-native.js') }}" defer="defer"></script>
 
 <!-- Font Awesome -->
 <script src="{{ asset('vendor/jquery/all.min.js') }}" defer="defer"></script>
@@ -142,7 +122,7 @@
         $.easyAjax({
             url: url,
             container: '#login-form',
-            blockUI: true,
+            blockUI:true,
             type: "GET",
             success: function (response) {
                 if (response.status === 'success') {

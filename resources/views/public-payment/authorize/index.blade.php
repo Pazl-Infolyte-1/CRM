@@ -55,7 +55,7 @@
 
         var url = "{{ route('authorize_public', $id)}}";
         $.easyAjax({
-            container: '.modal-content',
+            container: '#authorizeDetails',
             buttonSelector: "#save-authorize-detail",
             disableButton: true,
             blockUI: true,

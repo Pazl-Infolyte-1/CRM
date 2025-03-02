@@ -2,8 +2,8 @@
 
 namespace App\DataTables;
 
+use App\DataTables\BaseDataTable;
 use App\Models\Holiday;
-use App\Models\Designation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\EloquentDataTable;
@@ -34,63 +34,19 @@ class HolidayDataTable extends BaseDataTable
     public function dataTable($query)
     {
         return (new EloquentDataTable($query))
-
             ->addIndexColumn()
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+            })
             ->editColumn('holiday_date', function ($row) {
-
                 return Carbon::parse($row->date)->translatedFormat($this->company->date_format);
             })
-
             ->addColumn('occasion', function ($row) {
                 return $row->occassion;
             })
             ->addColumn('day', function ($row) {
                 return $row->date->translatedFormat('l');
             })
-
-
-
-
-            ->addColumn('department', function ($row) {
-                $value = (!empty($row->department_id_json) && $row->department_id_json != 'null') ? collect (Holiday::department(json_decode($row->department_id_json)))
-
-                    ->map(function($val){
-                        return '<ul>' . $val  . '</ul>';
-
-                    })
-                      ->implode('') : '--';
-
-                         return $value !== '' ? $value : '--';
-
-            })
-            ->addColumn('designation', function ($row) {
-                $value = (!empty($row->designation_id_json) && $row->designation_id_json != 'null') ? collect( Holiday::designation(json_decode($row->designation_id_json)))
-                  ->map(function($val){
-                    return '<ul>' . $val  . '</ul>';
-
-                  })
-                  ->implode('') : '--';
-
-                     return $value !== '' ? $value : '--';
-
-            })
-
-
-
-
-
-            ->addColumn('employment_type', function ($row) {
-                $value = !empty($row->employment_type_json) ? collect(json_decode($row->employment_type_json))
-                        ->map(function ($employmentType) {
-                            return '<ul>' . __('modules.employees.' . $employmentType) . '</ul>';
-                        })
-                        ->implode('') : '--';
-                return $value !== '' ? $value : '--';
-            })
-
-
-
             ->addColumn('action', function ($row) {
 
                 $actions = '<div class="task_view">
@@ -101,11 +57,11 @@ class HolidayDataTable extends BaseDataTable
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-41" tabindex="0" x-placement="bottom-end" style="position: absolute; transform: translate3d(-137px, 26px, 0px); top: 0px; left: 0px; will-change: transform;">';
 
-                $actions .= '<a href="' . route('holidays.show', [$row->id]) . '" class="dropdown-item openRightModal"><i class="mr-2 fa fa-eye"></i>' . __('app.view') . '</a>';
+                $actions .= '<a href="' . route('holidays.show', [$row->id]) . '" class="dropdown-item openRightModal"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->editPermission == 'all' || ($this->editPermission == 'added' && user()->id == $row->added_by)) {
                     $actions .= '<a class="dropdown-item openRightModal" href="' . route('holidays.edit', [$row->id]) . '">
-                                    <i class="mr-2 fa fa-edit"></i>
+                                    <i class="fa fa-edit mr-2"></i>
                                     ' . __('app.edit') . '
                             </a>';
                 }
@@ -113,7 +69,7 @@ class HolidayDataTable extends BaseDataTable
                 if ($this->deletePermission == 'all' || ($this->deletePermission == 'added' && user()->id == $row->added_by)) {
                     $actions .= '<a data-holiday-id=' . $row->id . '
                             class="dropdown-item delete-table-row" href="javascript:;">
-                               <i class="mr-2 fa fa-trash"></i>
+                               <i class="fa fa-trash mr-2"></i>
                                 ' . __('app.delete') . '
                         </a>';
                 }
@@ -123,10 +79,12 @@ class HolidayDataTable extends BaseDataTable
                 return $actions;
             })
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->orderColumn('holiday_date', 'date $1')
             ->orderColumn('day', 'day_name $1')
-            ->rawColumns(['check', 'action', 'employment_type','department','designation']);
+            ->rawColumns(['check', 'action']);
     }
 
     /**
@@ -135,7 +93,6 @@ class HolidayDataTable extends BaseDataTable
      */
     public function query(Holiday $model)
     {
-        $user = user();
         $holidays = $model->select('holidays.*', DB::raw('DAYNAME(date) as day_name'));
 
         if (!is_null(request()->year)) {
@@ -153,51 +110,6 @@ class HolidayDataTable extends BaseDataTable
         if ($this->viewPermission == 'added') {
             $holidays->where('holidays.added_by', user()->id);
         }
-
-        if ($this->viewPermission == 'owned') {
-            $holidays->where(function ($query) use ($user) {
-                $query->where(function ($q) use ($user) {
-                    $q->orWhere('department_id_json', 'like', '%"' . $user->employeeDetail->department_id . '"%')
-                        ->orWhereNull('department_id_json');
-                });
-                $query->where(function ($q) use ($user) {
-                    $q->orWhere('designation_id_json', 'like', '%"' . $user->employeeDetail->designation_id . '"%')
-                        ->orWhereNull('designation_id_json');
-                });
-                $query->where(function ($q) use ($user) {
-                    $q->orWhere('employment_type_json', 'like', '%"' . $user->employeeDetail->employment_type . '"%')
-                        ->orWhereNull('employment_type_json');
-                });
-
-            });
-        }
-
-        if ($this->viewPermission == 'both') {
-            $holidays->where(function ($query) use ($user) {
-                $query->where('holidays.added_by', $user->id)
-
-                    ->orWhere(function ($subquery) use ($user) {
-                        $subquery->where(function ($q) use ($user) {
-                            $q->where('department_id_json', 'like', '%"' . $user->employeeDetail->department_id . '"%')
-                                ->orWhereNull('department_id_json');
-                        });
-                        $subquery->where(function ($q) use ($user) {
-                            $q->where('designation_id_json', 'like', '%"' . $user->employeeDetail->designation_id . '"%')
-                                ->orWhereNull('designation_id_json');
-                        });
-                        $subquery->where(function ($q) use ($user) {
-                            $q->where('employment_type_json', 'like', '%"' . $user->employeeDetail->employment_type . '"%')
-                                ->orWhereNull('employment_type_json');
-                        });
-
-                    });
-
-            });
-        }
-
-
-
-
 
         return $holidays;
     }
@@ -248,10 +160,6 @@ class HolidayDataTable extends BaseDataTable
             __('modules.holiday.date') => ['data' => 'holiday_date', 'name' => 'date', 'title' => __('modules.holiday.date')],
             __('modules.holiday.occasion') => ['data' => 'occasion', 'name' => 'occasion', 'title' => __('modules.holiday.occasion')],
             __('modules.holiday.day') => ['data' => 'day', 'name' => 'day', 'title' => __('modules.holiday.day')],
-            __('app.department') => ['data' => 'department', 'name' => 'department', 'title' => __('app.department')],
-             __('app.designation') => ['data' => 'designation', 'name' => 'designation', 'title' => __('app.designation')],
-             __('modules.employees.employmentType') => ['data' => 'employment_type', 'name' => 'employment_type', 'title' => __('modules.employees.employmentType')],
-
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

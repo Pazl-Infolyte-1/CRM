@@ -76,8 +76,6 @@ class CustomLinkSettingController extends AccountBaseController
         $custom_link->status = $request->status;
         $custom_link->save();
 
-        session()->forget('custom_link_setting');
-
         return Reply::success(__('messages.recordSaved'));
     }
 
@@ -123,8 +121,6 @@ class CustomLinkSettingController extends AccountBaseController
         $custom_link->status = $request->status;
         $custom_link->save();
 
-        session()->forget('custom_link_setting');
-
         return Reply::success(__('messages.updateSuccess'));
 
     }
@@ -138,8 +134,6 @@ class CustomLinkSettingController extends AccountBaseController
     public function destroy($id)
     {
         CustomLinkSetting::destroy($id);
-
-        session()->forget('custom_link_setting');
 
         return Reply::success(__('messages.deleteSuccess'));
 

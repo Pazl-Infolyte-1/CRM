@@ -7,10 +7,10 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
 <div class="row">
     <div class="col-sm-12">
         <div class="card bg-white border-0 b-shadow-4">
-            <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
+            <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                 <div class="row">
                     <div class="col-lg-8 col-xs-4">
-                        <h3 class="heading-h1 mb-3">@lang('app.multipleDetails')</h3>
+                        <h3 class="heading-h1 mb-3">@lang('modules.leaves.multiple') @lang('app.details')</h3>
                     </div>
                     <div class="col-lg-4 col-xs-8 text-right">
                         @php
@@ -38,23 +38,6 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                 </div>
             </div>
             <div class="card-body">
-
-                <div class="px-4"></div>
-                    <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                            @lang('modules.leaves.applicantName')</p>
-                        <p class="mb-0 text-dark-grey f-14">
-                            <x-employee :user="$leave->user" />
-                        </p>
-                    </div>
-
-                    <x-cards.data-row :label="__('modules.leaves.reason')" :value="$leave->reason" html="true" />
-
-                    @if (!is_null($leave->manager_status_permission))
-                        <x-cards.data-row :label="__('modules.leaves.statusReport')" :value="$leave->manager_status_permission==='pre-approve' ? __('modules.leaves.preApproved') : ''" html="true" />
-                    @endif
-                </div>
-
                 @include('leaves.multiple-leave-table')
             </div>
         </div>
@@ -138,51 +121,4 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             }
         });
     });
-
-    $('body').on('click', '.leave-action-preapprove', function() {
-            var action = $(this).data('leave-action');
-            var leaveId = $(this).data('leave-id');
-            var leaveUId = $(this).data('leave-uid');
-            leaveUId = (leaveUId == null) ? null : leaveUId;
-            
-            var url = "{{ route('leaves.pre_approve_leave') }}";
-
-            Swal.fire({
-                title: "@lang('messages.sweetAlertTitle')",
-                text: "@lang('messages.changeLeaveStatusConfirmation')",
-                icon: 'warning',
-                showCancelButton: true,
-                focusConfirm: false,
-                confirmButtonText: "@lang('messages.confirm')",
-                cancelButtonText: "@lang('app.cancel')",
-                customClass: {
-                    confirmButton: 'btn btn-primary mr-3',
-                    cancelButton: 'btn btn-secondary'
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.easyAjax({
-                        type: 'POST',
-                        url: url,
-                        blockUI: true,
-                        data: {
-                            'action': action,
-                            'leaveId': leaveId,
-                            'leaveUId': leaveUId,
-                            '_token': '{{ csrf_token() }}'
-                        },
-                        success: function(response) {
-                            if (response.status == 'success') {
-                                window.location.reload();
-                            }
-                        }
-                    });
-                }
-            });
-        });
 </script>

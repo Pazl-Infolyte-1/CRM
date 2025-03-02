@@ -28,7 +28,7 @@
         data['recurringID'] = recurringID;
     });
     const showTable = () => {
-        window.LaravelDataTables["recurring-invoices-table"].draw(true);
+        window.LaravelDataTables["recurring-invoices-table"].draw(false);
     }
 
     $('body').on('click', '.cancel-invoice', function() {
@@ -63,7 +63,7 @@
                     url: url,
                     success: function(response) {
                         if (response.status == "success") {
-                            window.LaravelDataTables["recurring-invoices-table"].draw(true);
+                            window.LaravelDataTables["recurring-invoices-table"].draw(false);
                         }
                     }
                 });
@@ -119,7 +119,7 @@
             },
             success: function(response) {
                 if (response.status == "success") {
-                    window.LaravelDataTables["recurring-invoices-table"].draw(true);
+                    window.LaravelDataTables["recurring-invoices-table"].draw(false);
                 }
             }
         });
@@ -140,7 +140,7 @@
             success: function(response) {
                 if (response.status == "success") {
                     $.unblockUI();
-                    window.LaravelDataTables["recurring-invoices-table"].draw(true);
+                    window.LaravelDataTables["recurring-invoices-table"].draw(false);
                 }
             }
         });
@@ -166,7 +166,7 @@
             type: 'GET',
             success: function (response) {
                 if (response.status === 'success') {
-                    window.LaravelDataTables["recurring-invoices-table"].draw(true);
+                    window.LaravelDataTables["recurring-invoices-table"].draw(false);
                 }
             }
         })

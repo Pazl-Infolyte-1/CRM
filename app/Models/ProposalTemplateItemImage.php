@@ -30,7 +30,6 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|ProposalTemplateItemImage whereProposalTemplateItemId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProposalTemplateItemImage whereSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProposalTemplateItemImage whereUpdatedAt($value)
- * @property-read mixed $file
  * @mixin \Eloquent
  */
 class ProposalTemplateItemImage extends BaseModel

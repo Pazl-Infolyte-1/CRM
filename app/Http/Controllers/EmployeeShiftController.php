@@ -34,18 +34,11 @@ class EmployeeShiftController extends AccountBaseController
         $setting->color = $request->color;
         $setting->office_start_time = Carbon::createFromFormat($this->company->time_format, $request->office_start_time);
         $setting->office_end_time = Carbon::createFromFormat($this->company->time_format, $request->office_end_time);
-        $setting->auto_clock_out_time = $request->auto_clock_out_time;
         $setting->halfday_mark_time = Carbon::createFromFormat($this->company->time_format, $request->halfday_mark_time);
-        $setting->late_mark_duration = $request->late_mark_duration ?? 0;
+        $setting->late_mark_duration = $request->late_mark_duration;
         $setting->clockin_in_day = $request->clockin_in_day;
         $setting->office_open_days = json_encode($request->office_open_days);
         $setting->early_clock_in = $request->early_clock_in;
-
-        $setting->shift_type = $request->shift_type;
-        $setting->flexible_total_hours = $request->total_shift_hours;
-        $setting->flexible_half_day_hours = $request->halfday_shift_hours;
-        $setting->flexible_auto_clockout = $request->auto_clockout;
-
         $setting->save();
         session()->forget('attendance_setting');
         return Reply::success(__('messages.employeeShiftAdded'));
@@ -83,17 +76,11 @@ class EmployeeShiftController extends AccountBaseController
         $setting->color = $request->color;
         $setting->office_start_time = Carbon::createFromFormat($this->company->time_format, $request->office_start_time);
         $setting->office_end_time = Carbon::createFromFormat($this->company->time_format, $request->office_end_time);
-        $setting->auto_clock_out_time = $request->auto_clock_out_time;
         $setting->halfday_mark_time = Carbon::createFromFormat($this->company->time_format, $request->halfday_mark_time);
-        $setting->late_mark_duration = $request->late_mark_duration ?? 0;
+        $setting->late_mark_duration = $request->late_mark_duration;
         $setting->clockin_in_day = $request->clockin_in_day;
         $setting->office_open_days = json_encode($request->office_open_days);
         $setting->early_clock_in = $request->early_clock_in;
-
-        $setting->flexible_total_hours = $request->total_shift_hours;
-        $setting->flexible_half_day_hours = $request->halfday_shift_hours;
-        $setting->flexible_auto_clockout = $request->auto_clockout;
-
         $setting->save();
         session()->forget('attendance_setting');
         return Reply::success(__('messages.updateSuccess'));
@@ -103,7 +90,7 @@ class EmployeeShiftController extends AccountBaseController
     {
         $this->weekMap = Holiday::weekMap();
         $this->employeeShifts = EmployeeShift::where('shift_name', '<>', 'Day Off')->get();
-        $generalShift = attendance_setting();
+        $generalShift = Company::with(['attendanceSetting', 'attendanceSetting.shift'])->first();
         $this->defaultShift = ($generalShift && $generalShift->attendanceSetting && $generalShift->attendanceSetting->shift) ? $generalShift->attendanceSetting->shift : '--';
 
         return view('employee-shifts.index', $this->data);

@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use App\Models\Contract;
-use App\Models\GlobalSetting;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class NewContract extends BaseNotification
@@ -48,13 +47,13 @@ class NewContract extends BaseNotification
      */
     public function toMail($notifiable): MailMessage
     {
-        $build = parent::build($notifiable);
-        $url = url()->temporarySignedRoute('front.contract.show', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->contract->hash);
+        $build = parent::build();
+        $url = route('front.contract.show', $this->contract->hash);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.newContract.text') . '<br>';
 
-        $build
+        return $build
             ->subject(__('email.newContract.subject'))
             ->markdown('mail.email', [
                 'url' => $url,
@@ -62,10 +61,6 @@ class NewContract extends BaseNotification
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('app.view') . ' ' . __('app.menu.contract'),
                 'notifiableName' => $notifiable->name]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**

@@ -3,7 +3,6 @@
 namespace App\View\Components;
 
 use App\Models\GlobalSetting;
-use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class CronMessage extends Component
@@ -23,11 +22,11 @@ class CronMessage extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return View|string
+     * @return \Illuminate\Contracts\View\View|string
      */
     public function render()
     {
-        $globalSetting = GlobalSetting::select(['id', 'hide_cron_message', 'last_cron_run'])->first();
+        $globalSetting = GlobalSetting::first();
 
         $modal = $this->modal;
 

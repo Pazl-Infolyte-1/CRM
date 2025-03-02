@@ -20,7 +20,6 @@ class SessionDriverConfigProvider extends ServiceProvider
     {
         try {
 
-            // TODO: To be removed in next update
             $setting = DB::table('global_settings')->first();
 
             if ($setting) {

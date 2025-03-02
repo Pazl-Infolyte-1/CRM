@@ -5,13 +5,9 @@ $updateLeaveQuotaPermission = user()->permission('update_leaves_quota');
 <!-- TAB CONTENT START -->
 <div class="tab-pane fade show active mt-5" role="tabpanel" aria-labelledby="nav-email-tab">
 
-    <x-alert type="info" icon="info-circle">
-        @lang('messages.leaveQuotaShowing', ['start_date' => $leaveStartDate, 'end_date' => $leaveEndDate])
-    </x-alert>
-
     <div class="row mb-4">
         <div class="col-lg-4">
-            <x-cards.widget icon="sign-out-alt" :title="__('modules.leaves.remainingLeaves')" :value="$allowedLeaves" />
+            <x-cards.widget icon="sign-out-alt" :title="__('modules.leaves.remainingLeaves')" :value="($allowedLeaves - $leavesTakenByUser)" />
         </div>
     </div>
 
@@ -35,45 +31,29 @@ $updateLeaveQuotaPermission = user()->permission('update_leaves_quota');
                             <x-slot name="thead">
                                 <th>@lang('modules.leaves.leaveType')</th>
                                 <th>@lang('modules.leaves.noOfLeaves')</th>
-                                <th class="text-right"></th>
                                 <th class="text-right">@lang('app.action')</th>
                             </x-slot>
 
-                            @foreach ($employeeLeavesQuotas as $key => $leavesQuota)
-                                @if($leavesQuota->leaveType && $leavesQuota->leaveType->leaveTypeCondition($leavesQuota->leaveType,  $employee)
-                                        && ($leavesQuota->leaveType->deleted_at == null || $leavesQuota->leaves_used > 0)
-                                    )
+                            @forelse($leaveTypes as $key => $leave)
+                                @if($leave->leaveTypeCodition($leave, $userRole))
                                     <tr>
                                         <td>
-                                            <x-status :value="$leavesQuota->leaveType->type_name" :style="'color:'.$leavesQuota->leaveType->color" />
+                                            <x-status :value="$leave->type_name" :style="'color:'.$leave->color" />
                                         </td>
-                                        <td> <input type="number" min="0" value="{{ $leavesQuota?->no_of_leaves ?: 0 }}"
-                                                class="form-control height-35 f-14 leave-count-{{ $leavesQuota->id }}">
-                                        </td>
-                                        <td >
-                                            <div class="form-check float-right">
-                                            <x-forms.checkbox :fieldLabel="__('modules.leaves.leaveTypeImpacttrue')"
-                                                    fieldName="allowed_impact" fieldId="allowed_probation-{{ $leavesQuota->id }}" fieldValue="0" fieldRequired="false"
-                                                    :checked="$leavesQuota->leave_type_impact == 1"
-                                                    :popover="__('modules.leaves.leavemanageimpact')"/>
-                                            </div>
+                                        <td> <input type="number" min="0" value="{{ isset($employeeLeavesQuota[$key]) ? $employeeLeavesQuota[$key]->no_of_leaves : 0 }}"
+                                                class="form-control height-35 f-14 leave-count-{{ $employeeLeavesQuota[$key]->id }}">
                                         </td>
                                         <td class="text-right">
-                                            <button type="button" data-type-id="{{ $leavesQuota->id }}"
+                                            <button type="button" data-type-id="{{ $employeeLeavesQuota[$key]->id }}"
                                                 class="btn btn-sm btn-primary btn-outline update-category">
                                                 <i class="fa fa-check"></i>
                                             </button>
                                         </td>
                                     </tr>
                                 @endif
-                            @endforeach
-                            @if (!$hasLeaveQuotas)
-                                <tr>
-                                    <td colspan="3">
-                                        <x-cards.no-record icon="redo" :message="__('messages.noRecordFound')" />
-                                    </td>
-                                </tr>
-                            @endif
+                            @empty
+                                <x-cards.no-record icon="redo" :message="__('messages.noRecordFound')" />
+                            @endforelse
                         </x-table>
                     </div>
                 </div>
@@ -96,18 +76,6 @@ $updateLeaveQuotaPermission = user()->permission('update_leaves_quota');
 
 <script>
     $(document).ready(function() {
-        
-        $(document).on('keydown', 'input', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                return false;
-            }
-        });
-
-        setTimeout(function(){
-            $('[data-toggle="popover"]').popover(); 
-        }, 300);
-
         $('#renew-contract').click(function() {
             $(this).closest('.row').addClass('d-none');
             $('#save-renew-data-form').removeClass('d-none');
@@ -121,14 +89,6 @@ $updateLeaveQuotaPermission = user()->permission('update_leaves_quota');
         $('.update-category').click(function() {
             var id = $(this).data('type-id');
             var leaves = $('.leave-count-' + id).val();
-            let editLeaveimpact = null;
-
-            if ($('#allowed_probation-' + id).is(':checked')) {
-                editLeaveimpact = 1;
-            } else {
-                editLeaveimpact = 0;
-            }
-
             var url = "{{ route('employee-leaves.update', ':id') }}";
             url = url.replace(':id', id);
 
@@ -140,8 +100,7 @@ $updateLeaveQuotaPermission = user()->permission('update_leaves_quota');
                 data: {
                     '_method': 'PUT',
                     '_token': token,
-                    'leaves': leaves,
-                    'leaveimpact' : editLeaveimpact,
+                    'leaves': leaves
                 },
                 success: function(response) {
                     if (response.status == "success") {

@@ -4,14 +4,14 @@
 
 @lang('email.newProjectStatus.subject')
 
-<h5>@lang('app.projectDetails')</h5>
+<h5>@lang('app.project') @lang('app.details')</h5>
 
 @component('mail::text', ['text' => $content])
 
 @endcomponent
 
 @component('mail::button', ['url' => $url, 'themeColor' => $themeColor])
-@lang('app.viewProject')
+@lang('app.view') @lang('app.project')
 @endcomponent
 
 @lang('email.regards'),<br>

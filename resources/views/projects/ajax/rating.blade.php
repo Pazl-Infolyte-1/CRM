@@ -40,21 +40,13 @@
 
     <div class="col-lg-12 col-md-12 mb-4 mb-xl-0 mb-lg-4">
 
-        @php
-            $memberIds = $project->members->pluck('user_id')->toArray();
-        @endphp
-
-        @if (
-            $editRatingPermission == 'all'
-            || ($editRatingPermission == 'added' && $project->rating->added_by == user()->id)
-            || ($editRatingPermission == 'owned' && (in_array(user()->id, $memberIds) || $project->client_id == user()->id))
-            || ($editRatingPermission == 'both' && (in_array(user()->id, $memberIds) || $project->client_id == user()->id || $project->rating->added_by == user()->id))
-            || in_array('client', user_roles())
-            )
-
-            <x-form id="save-project-rating-form" @class(['d-none' => (!is_null($project->rating) || ($addRatingPermission == 'none') && is_null($project->rating))])>
+        @if (in_array('client', user_roles()))
+            <x-form id="save-project-rating-form">
                 <div class="add-client rounded bg-white">
                     <div class="row p-20">
+
+                        {{-- raing id here --}}
+                        <input type="hidden" id="ratingID" @if (!is_null($project->rating)) value="{{ $project->rating->id }}" @endif>
 
                         <div class="col-md-12">
                             <x-forms.label :fieldLabel="__('app.menu.projectRating')" fieldId="project-rating" />
@@ -87,12 +79,6 @@
                                     </li>
                                 </ul>
                             </div>
-
-                            <div class="form-group">
-                                {{-- raing id here --}}
-                                    <input type="hidden" name="rating" id="ratingID" @if (!is_null($project->rating)) value="{{ $project->rating->id }}" @endif>
-                            </div>
-
                         </div>
 
                         <div class="col-md-12 mt-4">
@@ -102,14 +88,12 @@
                     </div>
 
                     <!-- CANCEL SAVE SEND START -->
-                    @if (is_null($project->deleted_at))
-                        <div class="px-lg-4 px-md-4 px-3 py-3 c-inv-btns">
-                            <div class="d-flex">
-                                <x-forms.button-primary class="save-form" icon="check">@lang('app.save')
-                                </x-forms.button-primary>
-                            </div>
+                    <div class="px-lg-4 px-md-4 px-3 py-3 c-inv-btns">
+                        <div class="d-flex">
+                            <x-forms.button-primary class="save-form" icon="check">@lang('app.save')
+                            </x-forms.button-primary>
                         </div>
-                    @endif
+                    </div>
                     <!-- CANCEL SAVE SEND END -->
 
                 </div>
@@ -123,13 +107,13 @@
                     @if (
                         $viewRatingPermission == 'all'
                         || ($viewRatingPermission == 'added' && $project->rating->added_by == user()->id)
-                        || ($viewRatingPermission == 'owned' && (in_array(user()->id, $memberIds) || $project->client_id == user()->id))
-                        || ($viewRatingPermission == 'both' && (in_array(user()->id, $memberIds) || $project->client_id == user()->id || $project->rating->added_by == user()->id))
+                        || ($viewRatingPermission == 'owned' && $project->client_id == user()->id)
+                        || ($viewRatingPermission == 'both' && ($project->client_id == user()->id || $project->rating->added_by == user()->id))
                         )
-
-                        <div class="col-md-12 mt-1 rating-detail">
+                
+                        <div class="col-md-12 mt-1">
                             <div class="rating-stars">
-                                <ul>
+                                <ul id="stars">
                                     <li class="star @if ($project->rating->rating >= 1) selected @endif" title="Poor" data-value="1">
                                         <i class="fa fa-star f-18"></i>
                                     </li>
@@ -148,36 +132,12 @@
                                 </ul>
                             </div>
                         </div>
-                        <div class="col-md-12 mt-4 rating-detail">
+                        <div class="col-md-12 mt-4">
                             <blockquote class="blockquote">
-                                <p class="mb-0 f-16">{{ nl2br($project->rating->comment) }}</p>
-                                <footer class="blockquote-footer f-14">{{ $project->client->name }}, <em class="f-11">{{ $project->rating->created_at->diffForHumans() }}</em></footer>
+                                <p class="mb-0">{{ nl2br($project->rating->comment) }}</p>
+                                <footer class="blockquote-footer">{{ $project->client->name }}</footer>
                             </blockquote>
-
-                            @if (
-                                is_null($project->deleted_at) &&
-                                $editRatingPermission == 'all'
-                                || ($editRatingPermission == 'added' && $project->rating->added_by == user()->id)
-                                || ($editRatingPermission == 'owned' && (in_array(user()->id, $memberIds) || $project->client_id == user()->id))
-                                || ($editRatingPermission == 'both' && (in_array(user()->id, $memberIds) || $project->client_id == user()->id || $project->rating->added_by == user()->id))
-                                || in_array('client', user_roles())
-                                )
-                                <a href="javascript:;" class="text-darkest-grey edit-rating"><u>@lang('app.edit')</u></a>
-                            @endif
-
-                            @if (
-                                is_null($project->deleted_at) &&
-                                $deleteRatingPermission == 'all'
-                                || ($deleteRatingPermission == 'added' && $project->rating->added_by == user()->id)
-                                || ($deleteRatingPermission == 'owned' && (in_array(user()->id, $memberIds) || $project->client_id == user()->id))
-                                || ($deleteRatingPermission == 'both' && (in_array(user()->id, $memberIds) || $project->client_id == user()->id || $project->rating->added_by == user()->id))
-                                || in_array('client', user_roles())
-                                )
-                                <a href="javascript:;" data-rating-id="{{  $project->rating->id }}" class="text-darkest-grey delete-rating ml-2"><u>@lang('app.delete')</u></a>
-                            @endif
-
                         </div>
-
                     @else
                         <x-cards.no-record icon="star" :message="__('modules.projects.noRatingAvailable')" />
                     @endif
@@ -191,6 +151,7 @@
     </div>
 </div>
 
+@if (in_array('client', user_roles()))
     <script>
         $(document).ready(function() {
             var ratingValue = "{{ !is_null($project->rating) ? $project->rating->rating : 0 }}";
@@ -255,47 +216,10 @@
                             'comment': $('#comment').val(),
                             '_token': token,
                             '_method': method
-                        },
-                        success: function () {
-                            window.location.reload();
                         }
                     })
                 }
             });
-
-            $('.delete-rating').click(function() {
-
-                var token = "{{ csrf_token() }}";
-                var method = 'DELETE';
-                var ratingID = $(this).data('rating-id');
-
-                if (ratingID) {
-                    url = "{{ route('project-ratings.destroy', ':id') }}";
-                    url = url.replace(':id', ratingID);
-                }
-
-                $.easyAjax({
-                    url: url,
-                    container: "#save-project-rating-form",
-                    type: "POST",
-                    blockUI: true,
-                    redirect: true,
-                    data: {
-                        'ratingID': ratingID,
-                        '_token': token,
-                        '_method': method
-                    },
-                    success: function () {
-                        window.location.reload();
-                    }
-                })
-            });
-
-            $('.edit-rating').click(function() {
-                $('#save-project-rating-form').removeClass('d-none');
-                $('.rating-detail').addClass('d-none');
-            });
-
-
         });
     </script>
+@endif

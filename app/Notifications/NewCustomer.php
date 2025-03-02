@@ -28,14 +28,7 @@ class NewCustomer extends BaseNotification
      */
     public function via()
     {
-
-        $via = ['mail', 'database'];
-
-        if ($this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
-        }
-
-        return $via;
+        return ['mail', 'database'];
     }
 
     /**
@@ -46,13 +39,13 @@ class NewCustomer extends BaseNotification
      */
     public function toMail($notifiable)
     {
-        $build = parent::build($notifiable);
+        $build = parent::build();
         $url = route('clients.show', $this->user->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.newCustomer.text') . '<br>' . __('app.name') . ': ' . $this->user->name . '<br>' . __('app.email') . ': ' . $this->user->email;
 
-        $build
+        return $build
             ->subject(__('email.newCustomer.subject') . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
@@ -61,10 +54,6 @@ class NewCustomer extends BaseNotification
                 'actionText' => __('app.view') . ' ' . __('app.client'),
                 'notifiableName' => $notifiable->name
             ]);
-
-        parent::resetLocale();
-
-        return $build;
     }
 
     /**
@@ -78,24 +67,6 @@ class NewCustomer extends BaseNotification
             'id' => $this->user->id,
             'name' => $this->user->name
         ];
-    }
-
-    /**
-     * Get the Slack representation of the notification.
-     *
-     * @param mixed $notifiable
-     * @return \Illuminate\Notifications\Messages\SlackMessage
-     */
-    public function toSlack($notifiable)
-    {
-        try {
-            $url = route('clients.show', $this->user->id);
-            $url = getDomainSpecificUrl($url, $this->company);
-            $content = '*' . __('email.newCustomer.subject') . ' ' . config('app.name') . '!*' . "\n" . __('email.newCustomer.text') . "\n" . __('app.name') . ': ' . $this->user->name . "\n" . __('app.email') . ': ' . $this->user->email;
-            return $this->slackBuild($notifiable)->content($content );
-        } catch (\Exception $e) {
-            return $this->slackRedirectMessage('email.newCustomer.subject', $notifiable);
-        }
     }
 
 }

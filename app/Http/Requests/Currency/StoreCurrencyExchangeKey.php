@@ -26,7 +26,6 @@ class StoreCurrencyExchangeKey extends CoreRequest
     {
         return [
             'currency_converter_key' => 'required',
-            'dedicated_subdomain' => 'required_if:currency_key_version,dedicated',
         ];
     }
 

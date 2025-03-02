@@ -12,7 +12,7 @@ $addPermission = user()->permission('add_clients');
         <x-form id="save-client-data-form">
 
             <div class="add-client bg-white rounded">
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('modules.employees.accountDetails')</h4>
 
                 @if (isset($lead->id)) <input type="hidden" name="lead"
@@ -42,12 +42,33 @@ $addPermission = user()->permission('add_clients');
                                 </x-forms.email>
                             </div>
                             <div class="col-md-4">
+                                <x-forms.label class="mt-3" fieldId="password" :fieldLabel="__('app.password')"
+                                    :popover="__('messages.requiredForLogin')">
+                                </x-forms.label>
+                                <x-forms.input-group>
+                                    <input type="password" name="password" id="password" class="form-control height-35 f-14">
+                                    <x-slot name="preappend">
+                                        <button type="button" data-toggle="tooltip"
+                                            data-original-title="@lang('app.viewPassword')"
+                                            class="btn btn-outline-secondary border-grey height-35 toggle-password"><i
+                                                class="fa fa-eye"></i></button>
+                                    </x-slot>
+                                    <x-slot name="append">
+                                        <button id="random_password" type="button" data-toggle="tooltip"
+                                            data-original-title="@lang('modules.client.generateRandomPassword')"
+                                            class="btn btn-outline-secondary border-grey height-35"><i
+                                                class="fa fa-random"></i></button>
+                                    </x-slot>
+                                </x-forms.input-group>
+                                <small class="form-text text-muted">@lang('placeholders.password')</small>
+                            </div>
+                            <div class="col-md-4">
                                 <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country"
                                     search="true">
                                     @foreach ($countries as $item)
                                     <option data-tokens="{{ $item->iso3 }}" data-phonecode = "{{$item->phonecode}}"
-                                        data-iso="{{ $item->iso }}" data-content="<span class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span> {{ $item->nicename }}"
-                                        @selected(isset($lead) && $item->nicename == $lead->country || ($item->id == user()->country_id))
+                                        data-content="<span class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span> {{ $item->nicename }}"
+                                        @selected(isset($lead) && $item->nicename == $lead->country)
                                         value="{{ $item->id }}">{{ $item->nicename }}</option>
                                 @endforeach
                                 </x-forms.select>
@@ -62,7 +83,7 @@ $addPermission = user()->permission('add_clients');
                                         search="true">
 
                                         @foreach ($countries as $item)
-                                            <option data-tokens="{{ $item->name }}" data-country-iso="{{ $item->iso }}"
+                                            <option data-tokens="{{ $item->name }}"
                                                     data-content="{{$item->flagSpanCountryCode()}}"
                                                     @selected(isset($lead) && $item->nicename == $lead->country)
                                                     value="{{ $item->phonecode }}">{{ $item->phonecode }}
@@ -90,7 +111,7 @@ $addPermission = user()->permission('add_clients');
                         </x-forms.select>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <x-forms.select fieldId="locale" :fieldLabel="__('modules.accountSettings.changeLanguage')"
                             fieldName="locale" search="true">
                             @foreach ($languages as $language)
@@ -101,7 +122,7 @@ $addPermission = user()->permission('add_clients');
                         </x-forms.select>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <x-forms.label class="mt-3" fieldId="category"
                             :fieldLabel="__('modules.client.clientCategory')">
                         </x-forms.label>
@@ -110,7 +131,7 @@ $addPermission = user()->permission('add_clients');
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
-                                    <option @selected(isset($lead) && $lead->category_id == $category->id) value="{{ $category->id }}">
+                                    <option @if (isset($lead) && $lead->category_id == $category->id) selected @endif value="{{ $category->id }}">
                                   {{ $category->category_name }}</option>
                                 @endforeach
                             </select>
@@ -126,7 +147,7 @@ $addPermission = user()->permission('add_clients');
                         </x-forms.input-group>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <x-forms.label class="mt-3" fieldId="sub_category_id"
                             :fieldLabel="__('modules.client.clientSubCategory')"></x-forms.label>
                         <x-forms.input-group>
@@ -146,7 +167,7 @@ $addPermission = user()->permission('add_clients');
                         </x-forms.input-group>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group my-3">
                             <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
                                 for="usr">@lang('modules.client.clientCanLogin')</label>
@@ -159,7 +180,7 @@ $addPermission = user()->permission('add_clients');
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group my-3">
                             <label class="f-14 text-dark-grey mb-12 w-100 mt-3"
                                 for="usr">@lang('modules.emailSettings.emailNotifications')</label>
@@ -177,28 +198,22 @@ $addPermission = user()->permission('add_clients');
 
                 </div>
 
-                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-top-grey">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
                     @lang('modules.client.companyDetails')</h4>
                 <div class="row p-20">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="company_name"
                             :fieldLabel="__('modules.client.companyName')" fieldName="company_name"
                             :fieldPlaceholder="__('placeholders.company')" :fieldValue="$lead->company_name ?? ''">
                         </x-forms.text>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="website"
                             :fieldLabel="__('modules.client.website')" fieldName="website"
                             :fieldPlaceholder="__('placeholders.website')" :fieldValue="$lead->website ?? ''">
                         </x-forms.text>
                     </div>
-                    <div class="col-md-3">
-                        <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="tax_name"
-                            :fieldLabel="__('app.taxName')" fieldName="tax_name"
-                            :fieldPlaceholder="__('placeholders.gst/vat')">
-                        </x-forms.text>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="gst_number"
                             :fieldLabel="__('app.gstNumber')" fieldName="gst_number"
                             :fieldPlaceholder="__('placeholders.gstNumber')">
@@ -253,7 +268,7 @@ $addPermission = user()->permission('add_clients');
                         <div class="form-group my-3">
                             <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.shippingAddress')"
                                 fieldName="shipping_address" fieldId="shipping_address"
-                                :fieldPlaceholder="__('placeholders.address')" :fieldValue="$lead->address ?? ''">
+                                :fieldPlaceholder="__('placeholders.address')" :fieldValue="$lead->shipping_address ?? ''">
                             </x-forms.textarea>
                         </div>
                     </div>
@@ -329,27 +344,10 @@ $addPermission = user()->permission('add_clients');
         });
 
 
-        $(document).ready(function () {
-            function updatePhoneCode() {
-                var phonecode = $('#country').find(':selected').data('phonecode');
-                var iso = $('#country').find(':selected').data('iso');
-
-                $('#country_phonecode').find('option').each(function () {
-                    if ($(this).data('country-iso') === iso) {
-                        $(this).val(phonecode);
-                        $(this).prop('selected', true); // Set the option as selected
-                    }
-                });
-                $('.select-picker').selectpicker('refresh');
-            }
-
-            // Trigger on country change
-            $('#country').change(function () {
-                updatePhoneCode();
-            });
-
-            // Call the function once when the page loads
-            updatePhoneCode();
+        $('#country').change(function(){
+            var phonecode = $(this).find(':selected').data('phonecode');
+            $('#country_phonecode').val(phonecode);
+            $('.select-picker').selectpicker('refresh');
         });
 
         if(add_client_note_permission == 'all' || add_client_note_permission == 'added' || add_client_note_permission == 'both')
@@ -360,12 +358,6 @@ $addPermission = user()->permission('add_clients');
         $('#category_id').change(function(e) {
 
             let categoryId = $(this).val();
-
-            if (categoryId === '') {
-                $('#sub_category_id').html('<option value="">--</option>');
-                $('#sub_category_id').selectpicker('refresh');
-                return; // Stop further execution when no category is selected
-            }
 
             var url = "{{ route('get_client_sub_categories', ':id') }}";
             url = url.replace(':id', categoryId);
@@ -404,7 +396,7 @@ $addPermission = user()->permission('add_clients');
                 document.getElementById('note-text').value = note;
             }
 
-            const url = "{{ route('clients.store') }}?add_more=true";
+            const url = "{{ route('clients.store') }}&add_more=true";
             // var data = $('#save-client-data-form').serialize() + '&add_more=true';
             var data = $('#save-client-data-form').serialize();
 
@@ -489,6 +481,14 @@ $addPermission = user()->permission('add_clients');
 
         init(RIGHT_MODAL);
     });
+
+    function checkboxChange(parentClass, id) {
+        var checkedData = '';
+        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
+            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
+        });
+        $('#' + id).val(checkedData);
+    }
 
     @if (function_exists('sms_setting') && sms_setting()->telegram_status)
         var clipboard = new ClipboardJS('.btn-copy');

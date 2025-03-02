@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\ModuleStatusChanged;
 use App\Helper\Reply;
-use App\Models\ModuleSetting;
-use App\Models\GlobalSetting;
+use App\Http\Controllers\AccountBaseController;
+use App\Models\User;
+use App\Scopes\ActiveScope;
+use App\Scopes\CompanyScope;
+use App\Traits\ModuleVerify;
 use Froiden\Envato\Functions\EnvatoUpdate;
-use Froiden\Envato\Traits\ModuleVerify;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Session;
 use Macellan\Zip\Zip;
-use Nwidart\Modules\Facades\Module;
+use \Nwidart\Modules\Facades\Module;
 
 class CustomModuleController extends AccountBaseController
 {
@@ -25,11 +28,6 @@ class CustomModuleController extends AccountBaseController
         parent::__construct();
         $this->pageTitle = 'app.menu.moduleSettings';
         $this->activeSettingMenu = 'module_settings';
-        $this->middleware(function ($request, $next) {
-            abort_403(GlobalSetting::validateSuperAdmin('manage_superadmin_custom_module_settings'));
-
-            return $next($request);
-        });
     }
 
     /**
@@ -41,17 +39,24 @@ class CustomModuleController extends AccountBaseController
     {
         $this->type = 'custom';
         $this->updateFilePath = config('froiden_envato.tmp_path');
-        /** @phpstan-ignore-next-line */
         $this->allModules = Module::toCollection()->filter(function ($module, $key) {
+            /* @phpstan-ignore-line */
             return $key !== 'UniversalBundle';
         });
 
-        /** @phpstan-ignore-next-line */
         $this->universalBundle = Module::find('UniversalBundle');
+        /* @phpstan-ignore-line */
 
         $this->view = 'custom-modules.ajax.custom';
         $this->activeTab = 'custom';
-        $this->plugins = collect(EnvatoUpdate::plugins());
+        $plugins = EnvatoUpdate::plugins();
+        $version = [];
+
+        foreach ($plugins as $value) {
+            $version[$value['envato_id']] = $value['version'];
+        }
+
+        $this->version = $version;
 
         if (request()->ajax()) {
             $html = view($this->view, $this->data)->render();
@@ -99,7 +104,8 @@ class CustomModuleController extends AccountBaseController
         // Filename Like codecanyon-0gOuGKoY-zoom-meeting-module-for-worksuite.zip
         if (str_contains($zipName, 'codecanyon-')) {
             $zipName = $this->unzipCodecanyon($zip);
-        } else {
+        }
+        else {
             $zip->extract(storage_path('app') . '/Modules');
         }
 
@@ -108,26 +114,21 @@ class CustomModuleController extends AccountBaseController
 
         $validateModule = $this->validateModule($moduleName);
 
-        if ($validateModule['status'] == true) {
+        if ($validateModule ['status'] == true) {
             // Move files to Modules if modules belongs to this product
             File::moveDirectory(storage_path('app') . '/Modules/' . $moduleName, base_path() . '/Modules/' . $moduleName, true);
-
-            cache()->forget('laravel-modules');
 
             // Delete Modules Directory after moving files
             File::deleteDirectory(storage_path('app') . '/Modules/');
 
-            if (module_enabled($moduleName)) {
-                $this->updateVersion($moduleName);
-            }
+            $this->updateVersion($moduleName);
 
             // if module is universal bundle module then activate the module
             if ($moduleName == 'UniversalBundle') {
-                /** @phpstan-ignore-next-line */
                 $module = Module::findOrFail($moduleName);
+                /* @phpstan-ignore-line */
                 $module->enable();
                 Artisan::call('module:migrate', array($moduleName, '--force' => true));
-                event(new ModuleStatusChanged($module, 'active'));
             }
 
             $this->flushData();
@@ -135,7 +136,7 @@ class CustomModuleController extends AccountBaseController
             return Reply::success('Installed successfully.');
         }
 
-        return Reply::error($validateModule['message']);
+        return Reply::error($validateModule ['message']);
     }
 
     public function validateModule($moduleName)
@@ -143,7 +144,7 @@ class CustomModuleController extends AccountBaseController
         $appName = str_replace('-new', '', config('froiden_envato.envato_product_name'));
         $wrongMessage = 'The zip that you are trying to install is not compatible with ' . $appName . ' version';
 
-        // Check if PHP-ZIP extension is missing
+
         if (!extension_loaded('zip')) {
             return [
                 'status' => false,
@@ -151,23 +152,46 @@ class CustomModuleController extends AccountBaseController
             ];
         }
 
-        $configPath = storage_path('app') . '/Modules/' . $moduleName . '/Config/config.php';
-
-        // Check if module configuration file exists
-        if (!file_exists($configPath)) {
+        if (!file_exists(storage_path('app') . '/Modules/' . $moduleName . '/Config/config.php')) {
             return [
                 'status' => false,
                 'message' => $wrongMessage
             ];
         }
 
-        $config = require_once $configPath;
+        $config = require_once storage_path('app') . '/Modules/' . $moduleName . '/Config/config.php';
 
-        // Check if parent_envato_id is defined and matches the application's envato_id
-        if (!isset($config['parent_envato_id']) || $config['parent_envato_id'] !== config('froiden_envato.envato_item_id')) {
+        // parent_min_version id is not defined
+        if (!isset($config['parent_min_version'])) {
+            if (!App::environment('codecanyon')) {
+                return [
+                    'status' => false,
+                    'message' => 'Minimum version of <b>' . $appName . ' main application</b> is not defined in Module.'
+                ];
+
+            }
+            else {
+                return [
+                    'status' => false,
+                    'message' => 'Please download and install the latest version of the module.'
+                ];
+            }
+        }
+
+
+        // Parent envato id is not defined
+        if ($config['parent_min_version'] >= File::get('version.txt')) {
             return [
                 'status' => false,
-                'message' => 'You are installing the wrong module for this product'
+                'message' => 'Minimum version of <b>' . $appName . ' main application</b> should be greater than equal to <b>' . $config['parent_min_version'] . '</b> But your application version is <b>' . File::get('version.txt') . '</b>'
+            ];
+        }
+
+        // Parent envato id is not defined
+        if (!isset($config['parent_envato_id'])) {
+            return [
+                'status' => false,
+                'message' => 'You are installing wrong module for this product'
             ];
         }
 
@@ -179,27 +203,16 @@ class CustomModuleController extends AccountBaseController
             ];
         }
 
-        // Check if parent_min_version is defined
-        if (!isset($config['parent_min_version'])) {
-            $errorMessage = App::environment('codecanyon') ? 'Please download and install the latest version of the module.' : 'Minimum version of <b>' . $appName . ' main application</b> is not defined in the Module.';
-
+        // Parent product name is not defined
+        if (!isset($config['parent_product_name'])) {
             return [
                 'status' => false,
-                'message' => $errorMessage
+                'message' => $wrongMessage
             ];
         }
 
-        // Check if the application version is lower than the required minimum version
-        if ($config['parent_min_version'] >= File::get('version.txt')) {
-            return [
-                'status' => false,
-                'message' => 'Minimum version of <b>' . $appName . ' main application</b> should be greater than or equal to <b>' . $config['parent_min_version'] . '</b>. Your application version is <b>' . File::get('version.txt') . '</b>'
-            ];
-        }
-
-
-        // Check if parent_product_name is defined and matches the application's product name
-        if (!isset($config['parent_product_name']) || $config['parent_product_name'] !== config('froiden_envato.envato_product_name')) {
+        // Parent envato id is different from module envato id
+        if ($config['parent_product_name'] !== config('froiden_envato.envato_product_name')) {
             return [
                 'status' => false,
                 'message' => $wrongMessage
@@ -210,6 +223,8 @@ class CustomModuleController extends AccountBaseController
             'status' => true,
             'message' => 'Unzipped successfully'
         ];
+
+
     }
 
     private function flushData()
@@ -239,44 +254,42 @@ class CustomModuleController extends AccountBaseController
 
     public function update(Request $request, $moduleName)
     {
-        /** @phpstan-ignore-next-line */
         $module = Module::findOrFail($moduleName);
+        /* @phpstan-ignore-line */
 
         $status = $request->status;
 
-        ModuleSetting::where('module_name', $moduleName)->delete();
-
         ($status == 'active') ? $module->enable() : $module->disable();
-
-        event(new ModuleStatusChanged($moduleName, $status));
 
         // We are registering the module to run the commands
         $module->register();
 
-        /** @phpstan-ignore-next-line */
         $plugins = \Nwidart\Modules\Facades\Module::allEnabled();
+        /* @phpstan-ignore-line */
 
-        if ($status == 'active') {
-            $this->runModuleMigrateCommand($moduleName);
+        foreach ($plugins as $plugin) {
+            Artisan::call('module:migrate', array($plugin, '--force' => true));
+        }
 
-            // We will call the module function php artisan asset:activate, zoom:active , etc
-            $this->runActivateCommand(strtolower($moduleName));
+        $command = $moduleName . ':activate';
+
+        // We will call the module function php artisan asset:activate, zoom:active , etc
+        if (array_has(\Artisan::all(), $command) && ($status == 'active')) {
+            Artisan::call($command);
+        }
+
+        $command = strtolower($moduleName) . ':activate';
+
+        // We will call the module function php artisan asset:activate, zoom:active , etc
+        if (array_has(\Artisan::all(), $command) && ($status == 'active')) {
+            Artisan::call($command);
+        }
+
+        if (strtolower($moduleName) == 'languagepack' && ($status == 'active')) {
+            \session(['languagepack_module_activated' => true]);
         }
 
         $this->flushData();
-        // WORKSUITESAAS
-        if (strtolower($moduleName) == 'subdomain' && ($status == 'active')) {
-            \session(['subdomain_module_activated' => true]);
-        }
-
-        cache()->forget('user_modules');
-        /** @phpstan-ignore-next-line */
-        cache(['worksuite_plugins' => array_keys($plugins)]);
-
-
-        if (strtolower($moduleName) == 'languagepack' && $status == 'active') {
-            session(['languagepack_module_activated' => true]);
-        }
 
         return Reply::redirect(route('custom-modules.index') . '?tab=custom', 'Status Changed. Reloading');
     }
@@ -293,9 +306,6 @@ class CustomModuleController extends AccountBaseController
         return $this->modulePurchaseVerified($module, $purchaseCode);
     }
 
-    /**
-     * @throws \Exception
-     */
     private function unzipCodecanyon($zip)
     {
         $codeCanyonPath = storage_path('app') . '/Modules/Codecanyon';
@@ -304,7 +314,7 @@ class CustomModuleController extends AccountBaseController
 
         foreach ($files as $file) {
 
-            if (str_contains($file->getRelativePathname(), '.zip')) {
+            if (strpos($file->getRelativePathname(), '.zip') !== false) {
                 $filePath = $file->getRelativePathname();
                 $zip = Zip::open($codeCanyonPath . '/' . $filePath);
                 $zip->extract(storage_path('app') . '/Modules');
@@ -338,24 +348,10 @@ class CustomModuleController extends AccountBaseController
             if ($setting?->purchase_code) {
                 $this->modulePurchaseVerified(strtolower($moduleName), $setting->purchase_code);
             }
+
         } catch (\Exception $e) {
             logger($e->getMessage());
         }
     }
 
-    private function runModuleMigrateCommand($moduleName)
-    {
-        Artisan::call('module:migrate', [$moduleName, '--force' => true]);
-    }
-
-    private function runActivateCommand($moduleName)
-    {
-        $command = $moduleName . ':activate';
-
-        $artisanCommands = \Artisan::all();
-
-        if (array_has($artisanCommands, $command)) {
-            Artisan::call($command);
-        }
-    }
 }

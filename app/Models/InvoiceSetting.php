@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
-use App\Traits\HasMaskImage;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -20,7 +18,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $template
  * @property int $due_after
  * @property string $invoice_terms
- * @property string|null $other_info
  * @property string|null $gst_number
  * @property string|null $show_gst
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -102,13 +99,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceSetting whereOrderDigit($value)
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceSetting whereOrderNumberSeparator($value)
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceSetting whereOrderPrefix($value)
- * @method static \Illuminate\Database\Eloquent\Builder|InvoiceSetting whereOtherInfo($value)
  * @mixin \Eloquent
  */
 class InvoiceSetting extends BaseModel
 {
 
-    use HasCompany,HasMaskImage;
+    use HasCompany;
 
     protected $appends = ['logo_url','authorised_signatory_signature_url', 'is_chinese_lang'];
 
@@ -117,29 +113,9 @@ class InvoiceSetting extends BaseModel
         return (is_null($this->logo)) ? $this->company->logo_url : asset_url_local_s3('app-logo/' . $this->logo);
     }
 
-    public function maskedLogoUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                return (is_null($this->logo)) ? $this->company->logo_url : $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
-            },
-        );
-
-    }
-
     public function getAuthorisedSignatorySignatureUrlAttribute()
     {
         return (is_null($this->authorised_signatory_signature)) ? '' : asset_url_local_s3('app-logo/' . $this->authorised_signatory_signature);
-    }
-
-    public function maskedAuthorisedSignatorySignatureUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                return (is_null($this->authorised_signatory_signature)) ? '' : $this->generateMaskedImageAppUrl('app-logo/' . $this->authorised_signatory_signature);
-            },
-        );
-
     }
 
     public function getIsChineseLangAttribute()

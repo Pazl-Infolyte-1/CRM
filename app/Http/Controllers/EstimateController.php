@@ -28,7 +28,6 @@ use App\Models\EstimateTemplateItem;
 use Illuminate\Support\Facades\File;
 use App\DataTables\EstimatesDataTable;
 use App\Http\Requests\EstimateAcceptRequest;
-use App\Models\EstimateRequest;
 
 class EstimateController extends AccountBaseController
 {
@@ -40,7 +39,6 @@ class EstimateController extends AccountBaseController
         $this->pageIcon = 'ti-file';
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('estimates', $this->user->modules));
-
             return $next($request);
         });
     }
@@ -62,7 +60,7 @@ class EstimateController extends AccountBaseController
         if (request('estimate') != '') {
             $this->estimateId = request('estimate');
             $this->type = 'estimate';
-            $this->estimate = Estimate::with('items', 'items.estimateItemImage', 'client', 'unit', 'client.projects')->findOrFail($this->estimateId);
+            $this->estimate = Estimate::with('items', 'items.estimateItemImage', 'client', 'unit', 'client.projects' )->findOrFail($this->estimateId);
         }
 
         $this->pageTitle = __('modules.estimates.createEstimate');
@@ -86,26 +84,16 @@ class EstimateController extends AccountBaseController
         $this->template = EstimateTemplate::all();
         $this->units = UnitType::all();
 
-        $this->estimateTemplate = null;
-        $this->estimateTemplateItem = null;
+        $this->estimateTemplate = request('template') ? EstimateTemplate::findOrFail(request('template')) : null;
 
-        if (request()->has('template')) {
-            $this->estimateTemplate = EstimateTemplate::findOrFail(request('template'));
 
-            $this->estimateTemplateItem = EstimateTemplateItem::with('estimateTemplateItemImage')->where('estimate_template_id', request('template'))->get();
-        }
-
-        if (request()->has('estimate-request')) {
-            $this->estimateTemplate = EstimateRequest::findOrFail(request('estimate-request'));
-            $this->estimateRequestId = $this->estimateTemplate->id;
-        }
+        $this->estimateTemplateItem = request('template') ? EstimateTemplateItem::with('estimateTemplateItemImage')->where('estimate_template_id', request('template'))->get() : null;
 
 
         $estimate = new Estimate();
-        $getCustomFieldGroupsWithFields = $estimate->getCustomFieldGroupsWithFields();
 
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        if ($estimate->getCustomFieldGroupsWithFields()) {
+            $this->fields = $estimate->getCustomFieldGroupsWithFields()->fields;
         }
 
         $this->client = isset(request()->default_client) ? User::findOrFail(request()->default_client) : null;
@@ -116,16 +104,12 @@ class EstimateController extends AccountBaseController
             $this->client = User::findOrFail(user()->id);
         }
 
-        if (request()->has('estimate-request')) {
-            $this->client = EstimateRequest::findOrFail(request('estimate-request'))->client;
+        if (request()->ajax()) {
+            $html = view('estimates.ajax.create', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
         $this->view = 'estimates.ajax.create';
-
-        if (request()->ajax()) {
-            return $this->returnAjax($this->view);
-        }
-
         return view('estimates.create', $this->data);
 
     }
@@ -167,8 +151,7 @@ class EstimateController extends AccountBaseController
 
         $estimate = new Estimate();
         $estimate->client_id = $request->client_id;
-        $estimate->project_id = $request->project_id ?? null;
-        $estimate->valid_till = companyToYmd($request->valid_till);
+        $estimate->valid_till = Carbon::createFromFormat($this->company->date_format, $request->valid_till)->format('Y-m-d');
         $estimate->sub_total = round($request->sub_total, 2);
         $estimate->total = round($request->total, 2);
         $estimate->currency_id = $request->currency_id;
@@ -178,13 +161,7 @@ class EstimateController extends AccountBaseController
         $estimate->status = 'waiting';
         $estimate->description = trim_editor($request->description);
         $estimate->estimate_number = $request->estimate_number;
-        $estimate->estimate_request_id = $request->estimate_request_id ?? null;
         $estimate->save();
-
-        if (request()->has('estimate_request_id')) {
-            $estimateRequest = EstimateRequest::findOrFail(request('estimate_request_id'));
-            $estimateRequest->update(['status' => 'accepted', 'estimate_id' => $estimate->id]);
-        }
 
 
         // To add custom fields data
@@ -215,18 +192,8 @@ class EstimateController extends AccountBaseController
             || ($this->viewPermission == 'both' && ($this->invoice->client_id == user()->id || $this->invoice->added_by == user()->id))
         ));
 
-        if($this->invoice->discount_type == 'percent') {
-            $discountAmount = $this->invoice->discount;
-            $this->discountType = $discountAmount.'%';
-        }else {
-            $discountAmount = $this->invoice->discount;
-            $this->discountType = currency_format($discountAmount, $this->invoice->currency_id);
-        }
-
-        $getCustomFieldGroupsWithFields = $this->invoice->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        if ($this->invoice->getCustomFieldGroupsWithFields()) {
+            $this->fields = $this->invoice->getCustomFieldGroupsWithFields()->fields;
         }
 
         $this->pageTitle = $this->invoice->estimate_number;
@@ -286,7 +253,7 @@ class EstimateController extends AccountBaseController
         $this->settings = company();
         $this->invoiceSetting = invoice_setting();
 
-        if (in_array('client', user_roles())) {
+        if(in_array('client', user_roles())) {
             $lastViewed = now();
             $ipAddress = request()->ip();
             $this->invoice->last_viewed = $lastViewed;
@@ -313,10 +280,8 @@ class EstimateController extends AccountBaseController
 
         $this->pageTitle = $this->estimate->estimate_number;
 
-        $getCustomFieldGroupsWithFields = $this->estimate->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        if ($this->estimate->getCustomFieldGroupsWithFields()) {
+            $this->fields = $this->estimate->getCustomFieldGroupsWithFields()->fields;
         }
 
         $this->units = UnitType::all();
@@ -327,12 +292,12 @@ class EstimateController extends AccountBaseController
         $this->categories = ProductCategory::all();
         $this->invoiceSetting = invoice_setting();
 
-        $this->view = 'estimates.ajax.edit';
-
         if (request()->ajax()) {
-            return $this->returnAjax($this->view);
+            $html = view('estimates.ajax.edit', $this->data)->render();
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+        $this->view = 'estimates.ajax.edit';
         return view('estimates.create', $this->data);
     }
 
@@ -381,8 +346,7 @@ class EstimateController extends AccountBaseController
 
         $estimate = Estimate::findOrFail($id);
         $estimate->client_id = $request->client_id;
-        $estimate->project_id = $request->project_id ?? null;
-        $estimate->valid_till = companyToYmd($request->valid_till);
+        $estimate->valid_till = Carbon::createFromFormat($this->company->date_format, $request->valid_till)->format('Y-m-d');
         $estimate->sub_total = round($request->sub_total, 2);
         $estimate->total = round($request->total, 2);
         $estimate->discount = round($request->discount_value, 2);
@@ -404,9 +368,6 @@ class EstimateController extends AccountBaseController
             // Step1 - Delete all invoice items which are not avaialable
             if (!empty($item_ids)) {
                 EstimateItem::whereNotIn('id', $item_ids)->where('estimate_id', $estimate->id)->delete();
-            }else {
-                // If `item_ids` is empty, delete all items for the estimate
-                EstimateItem::where('estimate_id', $estimate->id)->delete();
             }
 
             // Step2&3 - Find old invoices items, update it and check if images are newer or older
@@ -415,7 +376,8 @@ class EstimateController extends AccountBaseController
 
                 try {
                     $estimateItem = EstimateItem::findOrFail($invoice_item_id);
-                } catch (Exception) {
+                }
+                catch(Exception) {
                     $estimateItem = new EstimateItem();
                 }
 
@@ -430,7 +392,6 @@ class EstimateController extends AccountBaseController
                 $estimateItem->unit_price = round($cost_per_item[$key], 2);
                 $estimateItem->amount = round($amount[$key], 2);
                 $estimateItem->taxes = ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null);
-                $estimateItem->field_order = $key + 1;
                 $estimateItem->save();
 
                 /* Invoice file save here */
@@ -439,7 +400,7 @@ class EstimateController extends AccountBaseController
                     /* Delete previous uploaded file if it not a product (because product images cannot be deleted) */
                     //phpcs:ignore
                     if (!isset($invoice_item_image_url[$key]) && $estimateItem && $estimateItem->estimateItemImage) {
-                        Files::deleteFile($estimateItem->estimateItemImage->hashname, EstimateItemImage::FILE_PATH . '/' . $estimateItem->id . '/');
+                        Files::deleteFile($estimateItem->estimateItemImage->hashname, EstimateItemImage::FILE_PATH.'/' . $estimateItem->id . '/');
                     }
 
                     $filename = '';
@@ -485,7 +446,6 @@ class EstimateController extends AccountBaseController
         ));
 
         Estimate::destroy($id);
-
         return Reply::success(__('messages.deleteSuccess'));
 
     }
@@ -495,10 +455,8 @@ class EstimateController extends AccountBaseController
         $this->invoiceSetting = invoice_setting();
         $this->estimate = Estimate::with('unit')->findOrFail($id)->withCustomFields();
 
-        $getCustomFieldGroupsWithFields = $this->estimate->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        if ($this->estimate->getCustomFieldGroupsWithFields()) {
+            $this->fields = $this->estimate->getCustomFieldGroupsWithFields()->fields;
         }
 
         $this->viewPermission = user()->permission('view_estimates');
@@ -510,8 +468,8 @@ class EstimateController extends AccountBaseController
             || ($this->viewPermission == 'both' && ($this->estimate->client_id == user()->id || $this->estimate->added_by == user()->id))
         ));
 
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
 
         $pdfOption = $this->domPdfObjectForDownload($id);
         $pdf = $pdfOption['pdf'];
@@ -523,14 +481,12 @@ class EstimateController extends AccountBaseController
     public function domPdfObjectForDownload($id)
     {
         $this->invoiceSetting = invoice_setting();
-        App::setLocale($this->invoiceSetting->locale ?? 'en');
-        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        App::setLocale($this->invoiceSetting->locale);
+        Carbon::setLocale($this->invoiceSetting->locale);
         $this->estimate = Estimate::findOrFail($id)->withCustomFields();
 
-        $getCustomFieldGroupsWithFields = $this->estimate->getCustomFieldGroupsWithFields();
-
-        if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        if ($this->estimate->getCustomFieldGroupsWithFields()) {
+            $this->fields = $this->estimate->getCustomFieldGroupsWithFields()->fields;
         }
 
         $this->discount = 0;
@@ -592,13 +548,11 @@ class EstimateController extends AccountBaseController
 
         $pdf->setOption('enable_php', true);
         $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
-        // $pdf->loadView('estimates.pdf.' . $this->invoiceSetting->template, $this->data);
-        $customCss = '<style>
-                * { text-transform: none !important; }
-            </style>';
+        $pdf->loadView('estimates.pdf.' . $this->invoiceSetting->template, $this->data);
 
-        $pdf->loadHTML($customCss . view('estimates.pdf.' . $this->invoiceSetting->template, $this->data)->render());
-
+        $dom_pdf = $pdf->getDomPDF();
+        $canvas = $dom_pdf->getCanvas();
+        $canvas->page_text(530, 820, null, null, 10);
         $filename = $this->estimate->estimate_number;
 
         return [
@@ -619,7 +573,6 @@ class EstimateController extends AccountBaseController
 
         $estimate->save();
         event(new NewEstimateEvent($estimate));
-
         return Reply::success(__('messages.updateSuccess'));
     }
 
@@ -680,13 +633,13 @@ class EstimateController extends AccountBaseController
 
         $invoiceExist = Invoice::where('estimate_id', $estimate->id)->first();
 
-        if (is_null($invoiceExist)) {
+        if(is_null($invoiceExist)) {
 
             $invoice = new Invoice();
 
             $invoice->client_id = $estimate->client_id;
-            $invoice->issue_date = now($this->company->timezone)->format('Y-m-d');
-            $invoice->due_date = now($this->company->timezone)->addDays(invoice_setting()->due_after)->format('Y-m-d');
+            $invoice->issue_date = Carbon::now($this->company->timezone)->format('Y-m-d');
+            $invoice->due_date = Carbon::now($this->company->timezone)->addDays(invoice_setting()->due_after)->format('Y-m-d');
             $invoice->sub_total = round($estimate->sub_total, 2);
             $invoice->discount = round($estimate->discount, 2);
             $invoice->discount_type = $estimate->discount_type;
@@ -723,7 +676,6 @@ class EstimateController extends AccountBaseController
 
 
         DB::commit();
-
         return Reply::redirect(route('estimates.index'), __('messages.estimateSigned'));
     }
 
@@ -752,8 +704,7 @@ class EstimateController extends AccountBaseController
     {
         $client_data = Product::where('unit_id', $id)->get();
         $unitId = UnitType::where('id', $id)->first();
-
-        return Reply::dataOnly(['status' => 'success', 'data' => $client_data, 'type' => $unitId]);
+        return Reply::dataOnly(['status' => 'success', 'data' => $client_data, 'type' => $unitId] );
     }
 
     public function addItem(Request $request)
@@ -763,14 +714,14 @@ class EstimateController extends AccountBaseController
 
         $exchangeRate = Currency::findOrFail($request->currencyId);
 
-        if (!is_null($exchangeRate) && !is_null($exchangeRate->exchange_rate) && $exchangeRate->exchange_rate > 0) {
+        if (!is_null($exchangeRate) && !is_null($exchangeRate->exchange_rate)) {
             if ($this->items->total_amount != '') {
                 /** @phpstan-ignore-next-line */
-                $this->items->price = floor($this->items->total_amount / $exchangeRate->exchange_rate);
+                $this->items->price = floor($this->items->total_amount * $exchangeRate->exchange_rate);
             }
             else {
 
-                $this->items->price = floatval($this->items->price) / floatval($exchangeRate->exchange_rate);
+                $this->items->price = floatval($this->items->price) * floatval($exchangeRate->exchange_rate);
             }
         }
         else {

@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\Project;
 use App\Models\Notification;
 use App\Models\ProjectMember;
 use App\Models\EmployeeDetails;

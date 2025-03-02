@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\Models\ExpensesCategory;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 
@@ -20,14 +21,13 @@ class ExpenseCategoryReportDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('category_name', function ($row) {
-                return html_entity_decode($row->category_name);
-            })
             ->addColumn('converted_price', function ($row) {
                 return currency_format($row->expenses->sum('default_currency_price'), company()->currency_id);
             })
             ->smart(false)
-            ->setRowId(fn($row) => 'row-' . $row->id)
+            ->setRowId(function ($row) {
+                return 'row-' . $row->id;
+            })
             ->addIndexColumn();
     }
 
@@ -47,12 +47,12 @@ class ExpenseCategoryReportDataTable extends BaseDataTable
 
         $model = $model->with(['expenses' => function ($query) use ($request) {
             if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-                $startDate = companyToDateString($request->startDate);
+                $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
                 $query->where(DB::raw('DATE(`purchase_date`)'), '>=', $startDate);
             }
 
             if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-                $endDate = companyToDateString($request->endDate);
+                $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
                 $query->where(DB::raw('DATE(`purchase_date`)'), '<=', $endDate);
             }
 
